@@ -1,6 +1,6 @@
 import {
   MonthlyConsumption, EquipmentItem, Kit, DimensioningResult,
-  SEASONAL_FACTORS, MONTH_KEYS, AVAILABILITY_FEE, CA_MATERIAL_TABLE, INSTALLMENT_OPTIONS
+  SEASONAL_FACTORS, MONTH_KEYS, AVAILABILITY_FEE, INSTALLMENT_OPTIONS
 } from './types';
 import { getSettings, getKits } from './store';
 
@@ -75,10 +75,14 @@ export function findBestInverter(line: string, powerKwp: number): Kit | null {
 
 /** Find the smallest inverter that supports panelCount panels using the 1.5x rule */
 export function findInverterForPanels(line: string, panelCount: number, panelPowerKwp: number = 0.570): Kit | null {
+  if (line === 'premium') {
+    // Premium uses micro inverters - return the single micro inverter
+    const micros = getKits().filter(k => k.line === 'premium' && k.type === 'inversor' && k.active);
+    return micros[0] || null;
+  }
   const kits = getKits().filter(k => k.line === line && k.type === 'inversor' && k.active);
   kits.sort((a, b) => a.power - b.power);
   const totalPanelKwp = panelCount * panelPowerKwp;
-  // Smallest inverter where power * 1.5 >= totalPanelKwp
   return kits.find(k => k.power * 1.5 >= totalPanelKwp) || kits[kits.length - 1] || null;
 }
 
@@ -87,27 +91,59 @@ export function maxPanelsForInverter(inverterKw: number, panelPowerKwp: number =
   return Math.floor((inverterKw * 1.5) / panelPowerKwp);
 }
 
+/** Premium: how many micro inverters needed (1 micro per 4 panels) */
+export function calcMicroInverterCount(panelCount: number): number {
+  return Math.ceil(panelCount / 4);
+}
+
+/** Premium: trunk cable cost (R$300 per additional micro beyond the first) */
+export function calcTrunkCableCost(panelCount: number): number {
+  const settings = getSettings();
+  const micros = calcMicroInverterCount(panelCount);
+  return Math.max(0, micros - 1) * settings.trunkCablePrice;
+}
+
 export function findPanel(line: string): Kit | null {
   return getKits().find(k => k.line === line && k.type === 'placa' && k.active) || null;
 }
 
-/** Get all inverters for a line, sorted by power ascending */
 export function getInvertersList(line: string): Kit[] {
   return getKits().filter(k => k.line === line && k.type === 'inversor' && k.active).sort((a, b) => a.power - b.power);
 }
 
 export function getCaMaterialCost(inverterKw: number): number {
-  const entry = CA_MATERIAL_TABLE.find(e => inverterKw <= e.maxKw);
-  return entry?.cost || CA_MATERIAL_TABLE[CA_MATERIAL_TABLE.length - 1].cost;
+  const settings = getSettings();
+  const table = settings.caMaterialTable || [];
+  const entry = table.find(e => inverterKw <= e.maxKw);
+  return entry?.cost || table[table.length - 1]?.cost || 0;
 }
 
-export function calcTotalPrice(inverter: Kit | null, panel: Kit | null, panelCount: number): number {
+export function calcTotalPrice(inverter: Kit | null, panel: Kit | null, panelCount: number, line?: string): number {
   const settings = getSettings();
-  const eqCost = (inverter?.costPrice || 0) + (panel?.costPrice || 0) * panelCount;
-  const installation = 100 * panelCount;
-  const homologation = 70;
-  const caMaterial = getCaMaterialCost(inverter?.power || 5);
-  const totalCost = eqCost + installation + homologation + caMaterial;
+  const isPremium = line === 'premium';
+
+  let eqCost: number;
+  if (isPremium) {
+    const microCount = calcMicroInverterCount(panelCount);
+    eqCost = (inverter?.costPrice || 0) * microCount + (panel?.costPrice || 0) * panelCount;
+  } else {
+    eqCost = (inverter?.costPrice || 0) + (panel?.costPrice || 0) * panelCount;
+  }
+
+  const installation = settings.installationPricePerPanel * panelCount;
+  const homologation = settings.homologationPrice;
+
+  let caMaterial: number;
+  if (isPremium) {
+    const microCount = calcMicroInverterCount(panelCount);
+    const totalMicroPower = (inverter?.power || 2) * microCount;
+    caMaterial = getCaMaterialCost(totalMicroPower);
+  } else {
+    caMaterial = getCaMaterialCost(inverter?.power || 5);
+  }
+
+  const trunkCable = isPremium ? calcTrunkCableCost(panelCount) : 0;
+  const totalCost = eqCost + installation + homologation + caMaterial + trunkCable;
   return totalCost / (1 - settings.profitMargin / 100);
 }
 
