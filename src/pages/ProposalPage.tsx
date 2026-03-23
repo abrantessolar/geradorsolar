@@ -25,27 +25,14 @@ export default function ProposalPage() {
   const [cetValue, setCetValue] = useState('');
   const [lightbox, setLightbox] = useState<string | null>(null);
   const [videoModal, setVideoModal] = useState<string | null>(null);
-
-  // Interactive state
   const [panelDelta, setPanelDelta] = useState(0);
 
-  if (!proposal) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center space-y-4">
-          <h1 className="text-2xl font-bold text-primary">Proposta não encontrada</h1>
-          <button onClick={() => navigate('/')} className="solar-btn-primary">Voltar</button>
-        </div>
-      </div>
-    );
-  }
+  const basePanelCount = proposal?.selectedKit.panelCount ?? 0;
+  const finalPanels = Math.max(Math.max(1, basePanelCount - 2), basePanelCount + panelDelta);
+  const irradiation = settings.irradiation[proposal?.clientData.city || ''] || 5.0;
 
-  const basePanelCount = proposal.selectedKit.panelCount;
-  const finalPanels = Math.max(basePanelCount - 2, Math.max(1, basePanelCount + panelDelta));
-  const irradiation = settings.irradiation[proposal.clientData.city] || 5.0;
-
-  // Compute all 3 lines with current panel count
   const lineCards = useMemo(() => {
+    if (!proposal) return [];
     return LINES.map(line => {
       const panel = findPanel(line);
       const panelPowerKwp = (panel?.power || 570) / 1000;
@@ -70,8 +57,8 @@ export default function ProposalPage() {
     });
   }, [finalPanels, proposal, irradiation, settings.systemLoss]);
 
-  // Chart data based on first card's power
   const chartData = useMemo(() => {
+    if (!proposal || lineCards.length === 0) return [];
     const card = lineCards.find(c => c.line === proposal.selectedLine) || lineCards[0];
     if (!card) return [];
     return MONTH_KEYS.map((k, i) => {
@@ -87,6 +74,17 @@ export default function ProposalPage() {
       return row;
     });
   }, [lineCards, proposal, irradiation, settings.systemLoss]);
+
+  if (!proposal) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center space-y-4">
+          <h1 className="text-2xl font-bold text-primary">Proposta não encontrada</h1>
+          <button onClick={() => navigate('/')} className="solar-btn-primary">Voltar</button>
+        </div>
+      </div>
+    );
+  }
 
   const applyCet = () => {
     const cet = parseFloat(cetValue);
