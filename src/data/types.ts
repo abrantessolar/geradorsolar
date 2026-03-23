@@ -1,6 +1,21 @@
+export interface Seller {
+  id: string;
+  name: string;
+  phone: string;
+  active: boolean;
+}
+
+export interface IrradiationEntry {
+  id: string;
+  state: string;
+  city: string;
+  value: number;
+}
+
 export interface ClientData {
   id: string;
   name: string;
+  state: string;
   city: string;
   networkType: 'monofasica' | 'bifasica' | 'trifasica';
   kwhPrice: number;
@@ -34,7 +49,7 @@ export interface EquipmentItem {
   daysPerMonth: number;
   hoursPerDay: number;
   unit: 'day' | 'use' | 'km';
-  value: number; // km/month for EV, or hours/day
+  value: number;
 }
 
 export interface Kit {
@@ -43,7 +58,7 @@ export interface Kit {
   type: 'inversor' | 'placa' | 'estrutura' | 'cabo' | 'stringbox';
   brand: string;
   model: string;
-  power: number; // Wp for panels, kW for inverters
+  power: number;
   warranty: number;
   costPrice: number;
   minPower: number;
@@ -52,17 +67,30 @@ export interface Kit {
 }
 
 export interface AdminSettings {
-  profitMargin: number; // percentage
-  defaultCET: number; // % monthly
+  profitMargin: number;
+  defaultCET: number;
   defaultKwhPrice: Record<string, number>;
-  irradiation: Record<string, number>;
+  irradiationEntries: IrradiationEntry[];
   proposalValidity: number;
   installationDays: number;
+  homologationDays: number;
   systemLoss: number;
+  installationPricePerPanel: number;
+  homologationPrice: number;
+  trunkCablePrice: number;
+  caMaterialTable: { maxKw: number; cost: number }[];
   company: {
     name: string; cnpj: string; phone: string; email: string; site: string; social: string;
   };
-  sellers: string[];
+  sellers: Seller[];
+}
+
+export interface PriceTableEntry {
+  panels: number;
+  acesso: number | null;
+  excellence: number | null;
+  premium: number | null;
+  estimated?: { acesso?: boolean; excellence?: boolean; premium?: boolean };
 }
 
 export interface SocialProof {
@@ -135,7 +163,7 @@ export const EQUIPMENT_CATALOG = [
   { type: 'notebook', label: 'Notebook', dailyKwh: 0.06, unit: 'day' as const },
 ];
 
-export const CA_MATERIAL_TABLE = [
+export const CA_MATERIAL_TABLE_DEFAULT = [
   { maxKw: 3, cost: 700 }, { maxKw: 4, cost: 700 }, { maxKw: 5, cost: 900 },
   { maxKw: 6, cost: 900 }, { maxKw: 7, cost: 1150 }, { maxKw: 8, cost: 1150 },
   { maxKw: 10, cost: 1500 }, { maxKw: 15, cost: 2000 }, { maxKw: 25, cost: 2700 },
@@ -143,3 +171,8 @@ export const CA_MATERIAL_TABLE = [
 ];
 
 export const INSTALLMENT_OPTIONS = [72, 60, 48, 36, 24];
+
+export const BRAZILIAN_STATES = [
+  'AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA',
+  'PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO',
+];

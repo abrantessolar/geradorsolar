@@ -1,10 +1,10 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useState, useMemo } from 'react';
-import { getProposals, saveProposal, getSettings, getSocialProofs } from '@/data/store';
+import { getProposals, saveProposal, getSettings, getSocialProofs, lookupIrradiation } from '@/data/store';
 import {
   formatCurrency, formatNumber, calcInstallments, calcDimensioning,
   findInverterForPanels, findPanel, calcTotalPrice, maxPanelsForInverter,
-  getInvertersList,
+  getInvertersList, calcMicroInverterCount,
 } from '@/data/calculations';
 import { MONTH_LABELS, MONTH_KEYS, SEASONAL_FACTORS, INSTALLMENT_OPTIONS, UC_COLORS } from '@/data/types';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
@@ -12,7 +12,7 @@ import { Printer, Share2, Edit, ArrowLeft, Sun, Zap, TrendingUp, Shield, X, Chev
 
 const LINES = ['acesso', 'excellence', 'premium'] as const;
 const LINE_NAMES: Record<string, string> = { acesso: 'ACESSO', excellence: 'EXCELLENCE', premium: 'PREMIUM' };
-const LINE_SUBS: Record<string, string> = { acesso: 'Equipamentos nacionais', excellence: 'Importados intermediários', premium: 'Top de linha' };
+const LINE_SUBS: Record<string, string> = { acesso: 'Equipamentos nacionais', excellence: 'Importados intermediários', premium: 'Micro inversores — Top de linha' };
 
 export default function ProposalPage() {
   const { id } = useParams();
@@ -29,7 +29,7 @@ export default function ProposalPage() {
 
   const basePanelCount = proposal?.selectedKit.panelCount ?? 0;
   const finalPanels = Math.max(Math.max(1, basePanelCount - 2), basePanelCount + panelDelta);
-  const irradiation = settings.irradiation[proposal?.clientData.city || ''] || 5.0;
+  const irradiation = proposal ? lookupIrradiation(proposal.clientData.state || 'MS', proposal.clientData.city).value : 5.0;
 
   const lineCards = useMemo(() => {
     if (!proposal) return [];
@@ -38,21 +38,25 @@ export default function ProposalPage() {
       const panelPowerKwp = (panel?.power || 570) / 1000;
       const inverter = findInverterForPanels(line, finalPanels, panelPowerKwp);
       const powerKwp = finalPanels * panelPowerKwp;
-      const totalPrice = calcTotalPrice(inverter, panel, finalPanels);
+      const totalPrice = calcTotalPrice(inverter, panel, finalPanels, line);
       const dim = calcDimensioning(
         proposal.consumption, proposal.equipment, proposal.clientData.networkType,
         irradiation, proposal.clientData.kwhPrice, totalPrice, settings.systemLoss
       );
-      const maxPanels = inverter ? maxPanelsForInverter(inverter.power, panelPowerKwp) : 0;
-      const panelsRemaining = maxPanels - finalPanels;
+      const isPremium = line === 'premium';
+      const microCount = isPremium ? calcMicroInverterCount(finalPanels) : 0;
+      const maxPanels = isPremium ? 999 : (inverter ? maxPanelsForInverter(inverter.power, panelPowerKwp) : 0);
+      const panelsRemaining = isPremium ? 999 : maxPanels - finalPanels;
+      const monthlyGeneration = powerKwp * irradiation * 30 * (1 - settings.systemLoss / 100);
+      const surplus = monthlyGeneration - dim.avgMonthlyKwh;
       const installments = proposal.cetApplied
         ? calcInstallments(totalPrice, proposal.cetApplied)
         : calcInstallments(totalPrice);
 
       return {
-        line, inverter, panel, panelCount: finalPanels, totalPrice, maxPanels, panelsRemaining,
+        line, inverter, panel, panelCount: finalPanels, totalPrice, maxPanels, panelsRemaining, microCount,
         installments,
-        dimensioning: { ...dim, panelCount: finalPanels, powerKwp },
+        dimensioning: { ...dim, panelCount: finalPanels, powerKwp, monthlyGeneration, surplus },
       };
     });
   }, [finalPanels, proposal, irradiation, settings.systemLoss]);
@@ -69,7 +73,7 @@ export default function ProposalPage() {
           row[`UC ${j + 1}`] = Math.round(u.averageKwh * SEASONAL_FACTORS[k]);
         });
       } else {
-        row['consumo'] = proposal.consumption[k];
+        row['consumo'] = Math.round((proposal.dimensioning.avgMonthlyKwh) * SEASONAL_FACTORS[k]);
       }
       return row;
     });
@@ -132,13 +136,14 @@ export default function ProposalPage() {
             <div className="w-20 h-20 rounded-full bg-primary flex items-center justify-center mx-auto mb-6">
               <Sun className="w-12 h-12 text-secondary" />
             </div>
-            <p className="text-sm uppercase tracking-widest text-muted-foreground mb-2">Três Lagoas Solar — Energia Limpa</p>
+            <p className="text-sm uppercase tracking-widest text-muted-foreground mb-2">{settings.company.name}</p>
             <h1 className="text-4xl md:text-5xl font-bold text-primary text-balance" style={{ lineHeight: '1.1' }}>
               Meu Projeto de<br />Energia Solar Fotovoltaica
             </h1>
             <div className="mt-8 space-y-1">
               <p className="text-xl font-semibold">{proposal.clientData.name}</p>
-              <p className="text-muted-foreground">{formatNumber(lineCards[0].dimensioning.avgMonthlyKwh, 0)} kWh/mês</p>
+              <p className="text-muted-foreground">{proposal.clientData.city} — {proposal.clientData.state || 'MS'}</p>
+              <p className="text-muted-foreground">{formatNumber(lineCards[0]?.dimensioning.avgMonthlyKwh || 0, 0)} kWh/mês</p>
               <p className="text-sm text-muted-foreground mt-4">
                 Representante: {proposal.clientData.seller}<br />
                 {settings.company.phone} • {settings.company.email}
@@ -189,11 +194,10 @@ export default function ProposalPage() {
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {lineCards.map(card => {
+              const isPremium = card.line === 'premium';
               const maxP = card.maxPanels;
               const remaining = card.panelsRemaining;
-              const limitColor = remaining <= 0 ? '#E84855' : remaining <= 2 ? '#E8B84B' : undefined;
-              const inverters = getInvertersList(card.line);
-              const currentIdx = inverters.findIndex(inv => inv.id === card.inverter?.id);
+              const limitColor = isPremium ? undefined : (remaining <= 0 ? '#E84855' : remaining <= 2 ? '#E8B84B' : undefined);
 
               return (
                 <div key={card.line} className={`solar-card p-6 space-y-4 ${card.line === proposal.selectedLine ? 'ring-2 ring-primary' : ''}`}>
@@ -203,14 +207,23 @@ export default function ProposalPage() {
                   </div>
 
                   <div className="space-y-2 text-sm">
-                    <div className="flex justify-between"><span className="text-muted-foreground">Inversor</span><span className="font-medium text-right">{card.inverter?.brand} {card.inverter?.model}</span></div>
-                    <div className="flex justify-between items-start">
-                      <span className="text-muted-foreground">Suporta até</span>
-                      <span className="font-medium text-right" style={limitColor ? { color: limitColor } : undefined}>
-                        {maxP} placas
-                        {remaining <= 0 && <span className="block text-xs">Limite atingido — inversor será atualizado na próxima placa</span>}
-                      </span>
-                    </div>
+                    {isPremium ? (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Micro inversores</span>
+                        <span className="font-medium text-right">{card.microCount}× {card.inverter?.brand} {card.inverter?.model}</span>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="flex justify-between"><span className="text-muted-foreground">Inversor</span><span className="font-medium text-right">{card.inverter?.brand} {card.inverter?.model}</span></div>
+                        <div className="flex justify-between items-start">
+                          <span className="text-muted-foreground">Suporta até</span>
+                          <span className="font-medium text-right" style={limitColor ? { color: limitColor } : undefined}>
+                            {maxP} placas
+                            {remaining <= 0 && <span className="block text-xs">Limite atingido — inversor será atualizado na próxima placa</span>}
+                          </span>
+                        </div>
+                      </>
+                    )}
                     <div className="flex justify-between"><span className="text-muted-foreground">Placas</span><span className="font-medium">{card.panelCount}× {card.panel?.brand} {card.panel?.power}Wp</span></div>
                     <div className="flex justify-between"><span className="text-muted-foreground">Potência</span><span className="font-medium">{formatNumber(card.dimensioning.powerKwp)} kWp</span></div>
                     <div className="flex justify-between"><span className="text-muted-foreground">Geração/mês</span><span className="font-semibold text-primary">{formatNumber(card.dimensioning.monthlyGeneration, 0)} kWh</span></div>
@@ -230,26 +243,6 @@ export default function ProposalPage() {
                     ))}
                     {proposal.cetApplied && <p className="text-xs text-muted-foreground mt-1">CET {proposal.cetApplied}% a.m.</p>}
                   </div>
-
-                  {/* Inverter upgrade/downgrade buttons */}
-                  <div className="flex gap-2">
-                    <button
-                      disabled={currentIdx <= 0 || (currentIdx > 0 && maxPanelsForInverter(inverters[currentIdx - 1].power, (card.panel?.power || 570) / 1000) < card.panelCount)}
-                      onClick={() => {/* Inverter changes automatically via 1.5x rule; manual downgrade would require reducing panels */}}
-                      className="flex-1 text-xs py-2 rounded-lg border border-border text-muted-foreground hover:bg-muted/50 disabled:opacity-30 transition-all"
-                      title="O inversor ajusta automaticamente conforme o número de placas"
-                    >
-                      <ChevronDown className="w-3 h-3 inline mr-1" />Inversor menor
-                    </button>
-                    <button
-                      disabled={currentIdx >= inverters.length - 1}
-                      onClick={() => {/* Handled by increasing panels past limit */}}
-                      className="flex-1 text-xs py-2 rounded-lg border border-border text-muted-foreground hover:bg-muted/50 disabled:opacity-30 transition-all"
-                      title="Aumente placas para fazer upgrade automático do inversor"
-                    >
-                      Inversor maior<ChevronUp className="w-3 h-3 inline ml-1" />
-                    </button>
-                  </div>
                 </div>
               );
             })}
@@ -268,14 +261,14 @@ export default function ProposalPage() {
                 <YAxis tick={{ fontSize: 12 }} />
                 <Tooltip formatter={(v: number) => `${v} kWh`} />
                 <Legend />
-                <Bar dataKey="geração" fill="hsl(80,37%,26%)" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="geração" fill="#4A5A2A" radius={[4, 4, 0, 0]} />
                 {proposal.consumerUnits && proposal.consumerUnits.length > 1 ? (
                   proposal.consumerUnits.map((u, j) => (
                     <Bar key={u.id} dataKey={`UC ${j + 1}`} stackId="consumption"
                       fill={UC_COLORS[j % UC_COLORS.length]} />
                   ))
                 ) : (
-                  <Bar dataKey="consumo" stackId="consumption" fill="hsl(40,79%,60%)" radius={[0, 0, 0, 0]} />
+                  <Bar dataKey="consumo" stackId="consumption" fill="#E8B84B" />
                 )}
               </BarChart>
             </ResponsiveContainer>
@@ -289,6 +282,7 @@ export default function ProposalPage() {
           </h2>
           {(() => {
             const selectedCard = lineCards.find(c => c.line === proposal.selectedLine) || lineCards[0];
+            if (!selectedCard) return null;
             const dim = selectedCard.dimensioning;
             return (
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -314,7 +308,7 @@ export default function ProposalPage() {
               <h3 className="font-semibold text-primary">Prazos</h3>
               <ul className="space-y-1 text-muted-foreground">
                 <li>📦 Instalação: até {settings.installationDays} dias úteis</li>
-                <li>📋 Homologação: +10 dias úteis</li>
+                <li>📋 Homologação: +{settings.homologationDays} dias úteis</li>
                 <li>💳 Pagamento à vista ou cartão 12× (taxa 1,1% a.m.)</li>
               </ul>
             </div>

@@ -1,17 +1,18 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Minus, ChevronDown, ChevronUp, Zap, Sun, TrendingUp, ArrowRight } from 'lucide-react';
+import { Plus, Minus, ChevronDown, ChevronUp, Zap, Sun, TrendingUp, ArrowRight, AlertTriangle } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import {
   ClientData, MonthlyConsumption, ConsumptionMode, ConsumerUnit, EquipmentItem,
   MONTH_LABELS, MONTH_KEYS, EQUIPMENT_CATALOG, SEASONAL_FACTORS, UC_COLORS,
+  BRAZILIAN_STATES,
 } from '@/data/types';
 import {
   estimateFullConsumption, calcEquipmentMonthly, calcDimensioning,
   findInverterForPanels, findPanel, calcTotalPrice, calcInstallments,
-  formatCurrency, formatNumber, maxPanelsForInverter,
+  formatCurrency, formatNumber, maxPanelsForInverter, calcMicroInverterCount,
 } from '@/data/calculations';
-import { getSettings, saveProposal } from '@/data/store';
+import { getSettings, saveProposal, lookupIrradiation } from '@/data/store';
 import type { Proposal } from '@/data/types';
 
 const EQUIPMENT_COLORS = [
@@ -22,10 +23,11 @@ const EQUIPMENT_COLORS = [
 export default function CalculatorPage() {
   const settings = getSettings();
   const navigate = useNavigate();
+  const activeSellers = settings.sellers.filter(s => s.active);
 
   const [client, setClient] = useState<ClientData>({
-    id: '', name: '', city: 'Três Lagoas', networkType: 'bifasica',
-    kwhPrice: 0.85, seller: settings.sellers[0] || '',
+    id: '', name: '', state: 'MS', city: 'Três Lagoas', networkType: 'bifasica',
+    kwhPrice: 0.85, seller: activeSellers[0]?.name || '',
   });
 
   const [mode, setMode] = useState<ConsumptionMode>('average');
@@ -49,7 +51,8 @@ export default function CalculatorPage() {
     return monthly;
   }, [mode, totalAverage, monthly]);
 
-  const irradiation = settings.irradiation[client.city] || 5.0;
+  const irradiationLookup = lookupIrradiation(client.state, client.city);
+  const irradiation = irradiationLookup.value;
 
   const basePanelCount = useMemo(() => {
     const baseDim = calcDimensioning(consumption, equipment, client.networkType, irradiation, client.kwhPrice, 0, settings.systemLoss);
@@ -64,15 +67,19 @@ export default function CalculatorPage() {
       const panelPowerKwp = (panel?.power || 570) / 1000;
       const inverter = findInverterForPanels(line, finalPanels, panelPowerKwp);
       const powerKwp = finalPanels * panelPowerKwp;
-      const totalPrice = calcTotalPrice(inverter, panel, finalPanels);
+      const totalPrice = calcTotalPrice(inverter, panel, finalPanels, line);
       const dim = calcDimensioning(consumption, equipment, client.networkType, irradiation, client.kwhPrice, totalPrice, settings.systemLoss);
-      const maxPanels = inverter ? maxPanelsForInverter(inverter.power, panelPowerKwp) : 0;
-      const panelsRemaining = maxPanels - finalPanels;
+
+      const isPremium = line === 'premium';
+      const microCount = isPremium ? calcMicroInverterCount(finalPanels) : 0;
+      const maxPanels = isPremium ? 999 : (inverter ? maxPanelsForInverter(inverter.power, panelPowerKwp) : 0);
+      const panelsRemaining = isPremium ? 999 : maxPanels - finalPanels;
+
       const monthlyGeneration = powerKwp * irradiation * 30 * (1 - settings.systemLoss / 100);
       const surplus = monthlyGeneration - dim.avgMonthlyKwh;
 
       return {
-        line, inverter, panel, panelCount: finalPanels, totalPrice, maxPanels, panelsRemaining,
+        line, inverter, panel, panelCount: finalPanels, totalPrice, maxPanels, panelsRemaining, microCount,
         installments: calcInstallments(totalPrice),
         dimensioning: { ...dim, panelCount: finalPanels, powerKwp, monthlyGeneration, surplus },
       };
@@ -85,7 +92,6 @@ export default function CalculatorPage() {
     return MONTH_KEYS.map((k, i) => {
       const gen = baseDim.powerKwp * irradiation * 30 * (1 - settings.systemLoss / 100) * SEASONAL_FACTORS[k];
       const row: any = { month: MONTH_LABELS[i], geração: Math.round(gen) };
-      // Per-UC consumption bars
       if (mode === 'average') {
         units.forEach((u, j) => {
           row[`UC ${j + 1}`] = Math.round(u.averageKwh * SEASONAL_FACTORS[k]);
@@ -93,8 +99,8 @@ export default function CalculatorPage() {
       } else {
         row['consumo'] = consumption[k];
       }
-      equipment.forEach((eq, j) => {
-        row[eq.label || `Equip ${j + 1}`] = Math.round(calcEquipmentMonthly(eq) * SEASONAL_FACTORS[k]);
+      equipment.forEach((eq, idx) => {
+        row[eq.label || `Equip ${idx + 1}`] = Math.round(calcEquipmentMonthly(eq) * SEASONAL_FACTORS[k]);
       });
       return row;
     });
@@ -141,7 +147,7 @@ export default function CalculatorPage() {
   const LINE_LABELS: Record<string, { title: string; sub: string }> = {
     acesso: { title: 'ACESSO', sub: 'Equipamentos nacionais' },
     excellence: { title: 'EXCELLENCE', sub: 'Importados intermediários' },
-    premium: { title: 'PREMIUM', sub: 'Top de linha' },
+    premium: { title: 'PREMIUM', sub: 'Micro inversores — Top de linha' },
   };
 
   return (
@@ -170,8 +176,20 @@ export default function CalculatorPage() {
             <input className="solar-input" value={client.name} onChange={e => setClient(p => ({ ...p, name: e.target.value }))} />
           </div>
           <div>
+            <label className="block text-sm font-medium mb-1">Estado (UF)</label>
+            <select className="solar-input" value={client.state} onChange={e => setClient(p => ({ ...p, state: e.target.value }))}>
+              {BRAZILIAN_STATES.map(uf => <option key={uf} value={uf}>{uf}</option>)}
+            </select>
+          </div>
+          <div>
             <label className="block text-sm font-medium mb-1">Cidade</label>
             <input className="solar-input" value={client.city} onChange={e => setClient(p => ({ ...p, city: e.target.value }))} />
+            {!irradiationLookup.found && client.city && (
+              <p className="text-xs mt-1 flex items-center gap-1" style={{ color: '#E8B84B' }}>
+                <AlertTriangle className="w-3 h-3" />
+                Irradiação não cadastrada. Usando valor padrão (Três Lagoas — MS).
+              </p>
+            )}
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">Tipo de rede</label>
@@ -189,7 +207,7 @@ export default function CalculatorPage() {
           <div>
             <label className="block text-sm font-medium mb-1">Vendedor</label>
             <select className="solar-input" value={client.seller} onChange={e => setClient(p => ({ ...p, seller: e.target.value }))}>
-              {settings.sellers.map(s => <option key={s} value={s}>{s}</option>)}
+              {activeSellers.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
             </select>
           </div>
         </div>
@@ -343,14 +361,14 @@ export default function CalculatorPage() {
               <YAxis tick={{ fontSize: 12 }} />
               <Tooltip formatter={(v: number) => `${v} kWh`} />
               <Legend />
-              <Bar dataKey="geração" fill="hsl(80,37%,26%)" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="geração" fill="#4A5A2A" radius={[4, 4, 0, 0]} />
               {mode === 'average' ? (
                 units.map((u, j) => (
                   <Bar key={u.id} dataKey={`UC ${j + 1}`} stackId="consumption"
                     fill={UC_COLORS[j % UC_COLORS.length]} />
                 ))
               ) : (
-                <Bar dataKey="consumo" stackId="consumption" fill="hsl(40,79%,60%)" />
+                <Bar dataKey="consumo" stackId="consumption" fill="#E8B84B" />
               )}
               {equipment.map((eq, idx) => (
                 <Bar key={eq.id} dataKey={eq.label} stackId="consumption"
@@ -397,10 +415,10 @@ export default function CalculatorPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {systemCards.map((card, idx) => {
             const meta = LINE_LABELS[card.line];
-            const panelPowerKwp = (card.panel?.power || 570) / 1000;
+            const isPremium = card.line === 'premium';
             const maxP = card.maxPanels;
             const remaining = card.panelsRemaining;
-            const limitColor = remaining <= 0 ? '#E84855' : remaining <= 2 ? '#E8B84B' : undefined;
+            const limitColor = isPremium ? undefined : (remaining <= 0 ? '#E84855' : remaining <= 2 ? '#E8B84B' : undefined);
             return (
               <div key={card.line} className="solar-card p-6 space-y-4 relative">
                 <div className="text-center">
@@ -409,14 +427,25 @@ export default function CalculatorPage() {
                 </div>
 
                 <div className="space-y-2 text-sm">
-                  <div className="flex justify-between"><span className="text-muted-foreground">Inversor</span><span className="font-medium">{card.inverter?.brand} {card.inverter?.model}</span></div>
-                  <div className="flex justify-between items-start">
-                    <span className="text-muted-foreground">Suporta até</span>
-                    <span className="font-medium text-right" style={limitColor ? { color: limitColor } : undefined}>
-                      {maxP} placas
-                      {remaining <= 0 && <span className="block text-xs">Limite atingido — inversor será atualizado na próxima placa</span>}
-                    </span>
-                  </div>
+                  {isPremium ? (
+                    <>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Micro inversores</span>
+                        <span className="font-medium">{card.microCount}× {card.inverter?.brand} {card.inverter?.model}</span>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex justify-between"><span className="text-muted-foreground">Inversor</span><span className="font-medium">{card.inverter?.brand} {card.inverter?.model}</span></div>
+                      <div className="flex justify-between items-start">
+                        <span className="text-muted-foreground">Suporta até</span>
+                        <span className="font-medium text-right" style={limitColor ? { color: limitColor } : undefined}>
+                          {maxP} placas
+                          {remaining <= 0 && <span className="block text-xs">Limite atingido — inversor será atualizado na próxima placa</span>}
+                        </span>
+                      </div>
+                    </>
+                  )}
                   <div className="flex justify-between"><span className="text-muted-foreground">Placas</span><span className="font-medium">{card.panelCount}× {card.panel?.brand}</span></div>
                   <div className="flex justify-between"><span className="text-muted-foreground">Potência</span><span className="font-medium">{formatNumber(card.dimensioning.powerKwp)} kWp</span></div>
                   <div className="flex justify-between"><span className="text-muted-foreground">Geração/mês</span><span className="font-medium">{formatNumber(card.dimensioning.monthlyGeneration, 0)} kWh</span></div>
