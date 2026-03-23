@@ -4,12 +4,12 @@ import { Plus, Minus, ChevronDown, ChevronUp, Zap, Sun, TrendingUp, ArrowRight }
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import {
   ClientData, MonthlyConsumption, ConsumptionMode, ConsumerUnit, EquipmentItem,
-  MONTH_LABELS, MONTH_KEYS, EQUIPMENT_CATALOG, SEASONAL_FACTORS, AVAILABILITY_FEE,
+  MONTH_LABELS, MONTH_KEYS, EQUIPMENT_CATALOG, SEASONAL_FACTORS, UC_COLORS,
 } from '@/data/types';
 import {
   estimateFullConsumption, calcEquipmentMonthly, calcDimensioning,
-  findBestInverter, findPanel, calcTotalPrice, calcInstallments,
-  formatCurrency, formatNumber,
+  findInverterForPanels, findPanel, calcTotalPrice, calcInstallments,
+  formatCurrency, formatNumber, maxPanelsForInverter,
 } from '@/data/calculations';
 import { getSettings, saveProposal } from '@/data/store';
 import type { Proposal } from '@/data/types';
@@ -25,7 +25,7 @@ export default function CalculatorPage() {
 
   const [client, setClient] = useState<ClientData>({
     id: '', name: '', city: 'Três Lagoas', networkType: 'bifasica',
-    roofType: 'ceramica', kwhPrice: 0.85, seller: settings.sellers[0] || '',
+    kwhPrice: 0.85, seller: settings.sellers[0] || '',
   });
 
   const [mode, setMode] = useState<ConsumptionMode>('average');
@@ -36,9 +36,7 @@ export default function CalculatorPage() {
   });
   const [equipment, setEquipment] = useState<EquipmentItem[]>([]);
   const [eqOpen, setEqOpen] = useState(false);
-  const [adjustments, setAdjustments] = useState<Record<string, { panelDelta: number }>>({
-    acesso: { panelDelta: 0 }, excellence: { panelDelta: 0 }, premium: { panelDelta: 0 },
-  });
+  const [panelDelta, setPanelDelta] = useState(0);
 
   const totalAverage = units.reduce((s, u) => s + u.averageKwh, 0);
 
@@ -53,38 +51,52 @@ export default function CalculatorPage() {
 
   const irradiation = settings.irradiation[client.city] || 5.0;
 
+  const basePanelCount = useMemo(() => {
+    const baseDim = calcDimensioning(consumption, equipment, client.networkType, irradiation, client.kwhPrice, 0, settings.systemLoss);
+    return baseDim.panelCount;
+  }, [consumption, equipment, client.networkType, irradiation, client.kwhPrice, settings.systemLoss]);
+
+  const finalPanels = Math.max(1, basePanelCount + panelDelta);
+
   const systemCards = useMemo(() => {
     return (['acesso', 'excellence', 'premium'] as const).map(line => {
-      const baseDim = calcDimensioning(consumption, equipment, client.networkType, irradiation, client.kwhPrice, 0, settings.systemLoss);
       const panel = findPanel(line);
-      const adjustedPanels = baseDim.panelCount + (adjustments[line]?.panelDelta || 0);
-      const finalPanels = Math.max(1, adjustedPanels);
-      const powerKwp = finalPanels * 0.570;
-      const inverter = findBestInverter(line, powerKwp);
+      const panelPowerKwp = (panel?.power || 570) / 1000;
+      const inverter = findInverterForPanels(line, finalPanels, panelPowerKwp);
+      const powerKwp = finalPanels * panelPowerKwp;
       const totalPrice = calcTotalPrice(inverter, panel, finalPanels);
       const dim = calcDimensioning(consumption, equipment, client.networkType, irradiation, client.kwhPrice, totalPrice, settings.systemLoss);
+      const maxPanels = inverter ? maxPanelsForInverter(inverter.power, panelPowerKwp) : 0;
+      const panelsRemaining = maxPanels - finalPanels;
 
       return {
-        line, inverter, panel, panelCount: finalPanels, totalPrice,
+        line, inverter, panel, panelCount: finalPanels, totalPrice, maxPanels, panelsRemaining,
         installments: calcInstallments(totalPrice),
         dimensioning: { ...dim, panelCount: finalPanels, powerKwp },
       };
     });
-  }, [consumption, equipment, client, irradiation, adjustments, settings.systemLoss]);
+  }, [consumption, equipment, client, irradiation, finalPanels, settings.systemLoss]);
 
   const chartData = useMemo(() => {
     const baseDim = systemCards[0]?.dimensioning;
     if (!baseDim) return [];
     return MONTH_KEYS.map((k, i) => {
       const gen = baseDim.powerKwp * irradiation * 30 * (1 - settings.systemLoss / 100) * SEASONAL_FACTORS[k];
-      const base = consumption[k];
-      const row: any = { month: MONTH_LABELS[i], geração: Math.round(gen), consumo: base };
+      const row: any = { month: MONTH_LABELS[i], geração: Math.round(gen) };
+      // Per-UC consumption bars
+      if (mode === 'average') {
+        units.forEach((u, j) => {
+          row[`UC ${j + 1}`] = Math.round(u.averageKwh * SEASONAL_FACTORS[k]);
+        });
+      } else {
+        row['consumo'] = consumption[k];
+      }
       equipment.forEach((eq, j) => {
         row[eq.label || `Equip ${j + 1}`] = Math.round(calcEquipmentMonthly(eq) * SEASONAL_FACTORS[k]);
       });
       return row;
     });
-  }, [consumption, equipment, systemCards, irradiation, settings.systemLoss]);
+  }, [consumption, equipment, systemCards, irradiation, settings.systemLoss, units, mode]);
 
   const handleEstimate = () => {
     setMonthly(estimateFullConsumption(monthly));
@@ -168,16 +180,6 @@ export default function CalculatorPage() {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Tipo de telhado</label>
-            <select className="solar-input" value={client.roofType} onChange={e => setClient(p => ({ ...p, roofType: e.target.value as any }))}>
-              <option value="ceramica">Cerâmica</option>
-              <option value="metalico">Metálico</option>
-              <option value="fibrocimento">Fibrocimento</option>
-              <option value="laje">Laje</option>
-              <option value="solo">Solo</option>
-            </select>
-          </div>
-          <div>
             <label className="block text-sm font-medium mb-1">Valor kWh (R$)</label>
             <input className="solar-input" type="number" step="0.01" value={client.kwhPrice}
               onChange={e => setClient(p => ({ ...p, kwhPrice: parseFloat(e.target.value) || 0 }))} />
@@ -213,8 +215,12 @@ export default function CalculatorPage() {
             {units.map((u, i) => (
               <div key={u.id} className="flex items-end gap-3">
                 <div className="flex-1">
-                  <label className="block text-sm font-medium mb-1">UC {i + 1}: {u.name}</label>
+                  <label className="block text-sm font-medium mb-1 flex items-center gap-2">
+                    <span className="w-3 h-3 rounded-full inline-block" style={{ backgroundColor: UC_COLORS[i % UC_COLORS.length] }} />
+                    UC {i + 1}: {u.name}
+                  </label>
                   <input className="solar-input" type="number" placeholder="kWh/mês" value={u.averageKwh || ''}
+                    style={{ borderLeftWidth: '4px', borderLeftColor: UC_COLORS[i % UC_COLORS.length] }}
                     onChange={e => setUnits(prev => prev.map(x => x.id === u.id ? { ...x, averageKwh: parseFloat(e.target.value) || 0 } : x))} />
                 </div>
                 {units.length > 1 && (
@@ -225,7 +231,7 @@ export default function CalculatorPage() {
                 )}
               </div>
             ))}
-            {units.length < 4 && (
+            {units.length < 10 && (
               <button onClick={() => setUnits(prev => [...prev, { id: Date.now().toString(), name: `UC ${prev.length + 1}`, averageKwh: 0 }])}
                 className="flex items-center gap-2 text-sm text-primary font-medium hover:underline">
                 <Plus className="w-4 h-4" /> Adicionar unidade consumidora
@@ -336,7 +342,14 @@ export default function CalculatorPage() {
               <Tooltip formatter={(v: number) => `${v} kWh`} />
               <Legend />
               <Bar dataKey="geração" fill="hsl(80,37%,26%)" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="consumo" stackId="consumption" fill="hsl(40,79%,60%)" radius={[0, 0, 0, 0]} />
+              {mode === 'average' ? (
+                units.map((u, j) => (
+                  <Bar key={u.id} dataKey={`UC ${j + 1}`} stackId="consumption"
+                    fill={UC_COLORS[j % UC_COLORS.length]} />
+                ))
+              ) : (
+                <Bar dataKey="consumo" stackId="consumption" fill="hsl(40,79%,60%)" />
+              )}
               {equipment.map((eq, idx) => (
                 <Bar key={eq.id} dataKey={eq.label} stackId="consumption"
                   fill={EQUIPMENT_COLORS[idx % EQUIPMENT_COLORS.length]} />
@@ -346,20 +359,48 @@ export default function CalculatorPage() {
         </div>
       </section>
 
+      {/* Unified Panel Adjustment */}
+      <section className="solar-card p-6 space-y-4 animate-fade-in-up" style={{ animationDelay: '450ms' }}>
+        <h2 className="text-xl font-bold text-primary text-center">Ajustar Quantidade de Placas</h2>
+        <div className="flex items-center justify-center gap-6">
+          <button
+            onClick={() => setPanelDelta(d => d - 1)}
+            disabled={finalPanels <= 1}
+            className="w-12 h-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xl font-bold hover:bg-primary/90 disabled:opacity-40 transition-all active:scale-95"
+          >
+            −
+          </button>
+          <div className="text-center">
+            <p className="text-4xl font-bold text-primary">{finalPanels}</p>
+            <p className="text-sm text-muted-foreground">placas</p>
+          </div>
+          <button
+            onClick={() => setPanelDelta(d => d + 1)}
+            className="w-12 h-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xl font-bold hover:bg-primary/90 transition-all active:scale-95"
+          >
+            +
+          </button>
+        </div>
+        {panelDelta !== 0 && (
+          <p className="text-center text-xs text-muted-foreground">
+            Base calculada: {basePanelCount} placas ({panelDelta > 0 ? '+' : ''}{panelDelta} ajuste)
+            <button onClick={() => setPanelDelta(0)} className="ml-2 text-primary underline">Resetar</button>
+          </p>
+        )}
+      </section>
+
       {/* System Cards */}
       <section className="space-y-4 animate-fade-in-up" style={{ animationDelay: '500ms' }}>
-        <h2 className="text-2xl font-bold text-primary text-center">Sistemas Recomendados</h2>
+        <h2 className="text-2xl font-bold text-primary text-center">Sistemas Disponíveis</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {systemCards.map((card, idx) => {
             const meta = LINE_LABELS[card.line];
-            const isMiddle = idx === 1;
+            const panelPowerKwp = (card.panel?.power || 570) / 1000;
+            const maxP = card.maxPanels;
+            const remaining = card.panelsRemaining;
+            const limitColor = remaining <= 0 ? '#E84855' : remaining <= 2 ? '#E8B84B' : undefined;
             return (
-              <div key={card.line} className={`solar-card p-6 space-y-4 relative ${isMiddle ? 'ring-2 ring-secondary md:scale-105' : ''}`}>
-                {isMiddle && (
-                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 solar-badge bg-secondary text-secondary-foreground">
-                    Recomendado
-                  </span>
-                )}
+              <div key={card.line} className="solar-card p-6 space-y-4 relative">
                 <div className="text-center">
                   <h3 className="text-lg font-bold text-primary">{meta.title}</h3>
                   <p className="text-xs text-muted-foreground">{meta.sub}</p>
@@ -367,6 +408,13 @@ export default function CalculatorPage() {
 
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between"><span className="text-muted-foreground">Inversor</span><span className="font-medium">{card.inverter?.brand} {card.inverter?.model}</span></div>
+                  <div className="flex justify-between items-start">
+                    <span className="text-muted-foreground">Suporta até</span>
+                    <span className="font-medium text-right" style={limitColor ? { color: limitColor } : undefined}>
+                      {maxP} placas
+                      {remaining <= 0 && <span className="block text-xs">Limite atingido — inversor será atualizado na próxima placa</span>}
+                    </span>
+                  </div>
                   <div className="flex justify-between"><span className="text-muted-foreground">Placas</span><span className="font-medium">{card.panelCount}× {card.panel?.brand}</span></div>
                   <div className="flex justify-between"><span className="text-muted-foreground">Potência</span><span className="font-medium">{formatNumber(card.dimensioning.powerKwp)} kWp</span></div>
                   <div className="flex justify-between"><span className="text-muted-foreground">Geração/mês</span><span className="font-medium">{formatNumber(card.dimensioning.monthlyGeneration, 0)} kWh</span></div>
@@ -383,17 +431,6 @@ export default function CalculatorPage() {
                       <span className="font-medium">{formatCurrency(v)}</span>
                     </div>
                   ))}
-                </div>
-
-                {/* Adjust slider */}
-                <div className="space-y-2">
-                  <label className="text-xs font-medium text-muted-foreground">Ajustar placas: {card.panelCount}</label>
-                  <input type="range"
-                    min={-Math.max(0, systemCards[0].dimensioning.panelCount - 1)}
-                    max={10}
-                    value={adjustments[card.line]?.panelDelta || 0}
-                    onChange={e => setAdjustments(p => ({ ...p, [card.line]: { panelDelta: parseInt(e.target.value) } }))}
-                    className="w-full accent-primary" />
                 </div>
 
                 <button onClick={() => generateProposal(idx)}

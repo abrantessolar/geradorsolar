@@ -3,10 +3,14 @@ export interface ClientData {
   name: string;
   city: string;
   networkType: 'monofasica' | 'bifasica' | 'trifasica';
-  roofType: 'ceramica' | 'metalico' | 'fibrocimento' | 'laje' | 'solo';
   kwhPrice: number;
   seller: string;
 }
+
+export const UC_COLORS = [
+  '#4A5A2A', '#E8B84B', '#2E86AB', '#E84855', '#7B2D8B',
+  '#F4845F', '#3BB273', '#1B4F72', '#C0392B', '#717D7E',
+];
 
 export interface MonthlyConsumption {
   jan: number; feb: number; mar: number; apr: number;

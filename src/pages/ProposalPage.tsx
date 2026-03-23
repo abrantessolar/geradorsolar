@@ -1,10 +1,18 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useState, useMemo } from 'react';
 import { getProposals, saveProposal, getSettings, getSocialProofs } from '@/data/store';
-import { formatCurrency, formatNumber, calcInstallments } from '@/data/calculations';
-import { MONTH_LABELS, MONTH_KEYS, SEASONAL_FACTORS, INSTALLMENT_OPTIONS } from '@/data/types';
+import {
+  formatCurrency, formatNumber, calcInstallments, calcDimensioning,
+  findInverterForPanels, findPanel, calcTotalPrice, maxPanelsForInverter,
+  getInvertersList,
+} from '@/data/calculations';
+import { MONTH_LABELS, MONTH_KEYS, SEASONAL_FACTORS, INSTALLMENT_OPTIONS, UC_COLORS } from '@/data/types';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import { Printer, Share2, Edit, ArrowLeft, Sun, Zap, TrendingUp, Shield, X } from 'lucide-react';
+import { Printer, Share2, Edit, ArrowLeft, Sun, Zap, TrendingUp, Shield, X, ChevronUp, ChevronDown } from 'lucide-react';
+
+const LINES = ['acesso', 'excellence', 'premium'] as const;
+const LINE_NAMES: Record<string, string> = { acesso: 'ACESSO', excellence: 'EXCELLENCE', premium: 'PREMIUM' };
+const LINE_SUBS: Record<string, string> = { acesso: 'Equipamentos nacionais', excellence: 'Importados intermediários', premium: 'Top de linha' };
 
 export default function ProposalPage() {
   const { id } = useParams();
@@ -17,6 +25,55 @@ export default function ProposalPage() {
   const [cetValue, setCetValue] = useState('');
   const [lightbox, setLightbox] = useState<string | null>(null);
   const [videoModal, setVideoModal] = useState<string | null>(null);
+  const [panelDelta, setPanelDelta] = useState(0);
+
+  const basePanelCount = proposal?.selectedKit.panelCount ?? 0;
+  const finalPanels = Math.max(Math.max(1, basePanelCount - 2), basePanelCount + panelDelta);
+  const irradiation = settings.irradiation[proposal?.clientData.city || ''] || 5.0;
+
+  const lineCards = useMemo(() => {
+    if (!proposal) return [];
+    return LINES.map(line => {
+      const panel = findPanel(line);
+      const panelPowerKwp = (panel?.power || 570) / 1000;
+      const inverter = findInverterForPanels(line, finalPanels, panelPowerKwp);
+      const powerKwp = finalPanels * panelPowerKwp;
+      const totalPrice = calcTotalPrice(inverter, panel, finalPanels);
+      const dim = calcDimensioning(
+        proposal.consumption, proposal.equipment, proposal.clientData.networkType,
+        irradiation, proposal.clientData.kwhPrice, totalPrice, settings.systemLoss
+      );
+      const maxPanels = inverter ? maxPanelsForInverter(inverter.power, panelPowerKwp) : 0;
+      const panelsRemaining = maxPanels - finalPanels;
+      const installments = proposal.cetApplied
+        ? calcInstallments(totalPrice, proposal.cetApplied)
+        : calcInstallments(totalPrice);
+
+      return {
+        line, inverter, panel, panelCount: finalPanels, totalPrice, maxPanels, panelsRemaining,
+        installments,
+        dimensioning: { ...dim, panelCount: finalPanels, powerKwp },
+      };
+    });
+  }, [finalPanels, proposal, irradiation, settings.systemLoss]);
+
+  const chartData = useMemo(() => {
+    if (!proposal || lineCards.length === 0) return [];
+    const card = lineCards.find(c => c.line === proposal.selectedLine) || lineCards[0];
+    if (!card) return [];
+    return MONTH_KEYS.map((k, i) => {
+      const gen = card.dimensioning.powerKwp * irradiation * 30 * (1 - settings.systemLoss / 100) * SEASONAL_FACTORS[k];
+      const row: any = { month: MONTH_LABELS[i], geração: Math.round(gen) };
+      if (proposal.consumerUnits && proposal.consumerUnits.length > 1) {
+        proposal.consumerUnits.forEach((u, j) => {
+          row[`UC ${j + 1}`] = Math.round(u.averageKwh * SEASONAL_FACTORS[k]);
+        });
+      } else {
+        row['consumo'] = proposal.consumption[k];
+      }
+      return row;
+    });
+  }, [lineCards, proposal, irradiation, settings.systemLoss]);
 
   if (!proposal) {
     return (
@@ -29,17 +86,6 @@ export default function ProposalPage() {
     );
   }
 
-  const dim = proposal.dimensioning;
-  const kit = proposal.selectedKit;
-  const installments = proposal.cetApplied
-    ? calcInstallments(proposal.totalPrice, proposal.cetApplied)
-    : proposal.installmentValues;
-
-  const chartData = MONTH_KEYS.map((k, i) => {
-    const gen = dim.powerKwp * (settings.irradiation[proposal.clientData.city] || 5.0) * 30 * (1 - settings.systemLoss / 100) * SEASONAL_FACTORS[k];
-    return { month: MONTH_LABELS[i], geração: Math.round(gen), consumo: proposal.consumption[k] };
-  });
-
   const applyCet = () => {
     const cet = parseFloat(cetValue);
     if (cet > 0) {
@@ -49,8 +95,6 @@ export default function ProposalPage() {
       window.location.reload();
     }
   };
-
-  const LINE_NAMES: Record<string, string> = { acesso: 'ACESSO', excellence: 'EXCELLENCE', premium: 'PREMIUM' };
 
   return (
     <div className="min-h-screen bg-background">
@@ -75,7 +119,7 @@ export default function ProposalPage() {
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto py-8 px-4 space-y-12">
+      <div className="max-w-5xl mx-auto py-8 px-4 space-y-12">
         {/* COVER */}
         <section className="text-center space-y-6 py-16 relative overflow-hidden">
           <div className="absolute inset-0 opacity-5">
@@ -94,7 +138,7 @@ export default function ProposalPage() {
             </h1>
             <div className="mt-8 space-y-1">
               <p className="text-xl font-semibold">{proposal.clientData.name}</p>
-              <p className="text-muted-foreground">{formatNumber(dim.avgMonthlyKwh, 0)} kWh/mês</p>
+              <p className="text-muted-foreground">{formatNumber(lineCards[0].dimensioning.avgMonthlyKwh, 0)} kWh/mês</p>
               <p className="text-sm text-muted-foreground mt-4">
                 Representante: {proposal.clientData.seller}<br />
                 {settings.company.phone} • {settings.company.email}
@@ -103,26 +147,120 @@ export default function ProposalPage() {
           </div>
         </section>
 
-        {/* SPECS */}
+        {/* PANEL ADJUSTMENT */}
+        <section className="solar-card p-6 space-y-4">
+          <h2 className="text-xl font-bold text-primary text-center flex items-center justify-center gap-2">
+            <Zap className="w-5 h-5 text-secondary" /> Ajuste seu Sistema
+          </h2>
+          <div className="flex items-center justify-center gap-6">
+            <button
+              onClick={() => setPanelDelta(d => {
+                const next = basePanelCount + d - 1;
+                return next >= basePanelCount - 2 && next >= 1 ? d - 1 : d;
+              })}
+              disabled={finalPanels <= Math.max(1, basePanelCount - 2)}
+              className="w-12 h-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xl font-bold hover:bg-primary/90 disabled:opacity-40 transition-all active:scale-95"
+            >
+              −
+            </button>
+            <div className="text-center">
+              <p className="text-4xl font-bold text-primary">{finalPanels}</p>
+              <p className="text-sm text-muted-foreground">placas</p>
+            </div>
+            <button
+              onClick={() => setPanelDelta(d => d + 1)}
+              className="w-12 h-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xl font-bold hover:bg-primary/90 transition-all active:scale-95"
+            >
+              +
+            </button>
+          </div>
+          {panelDelta !== 0 && (
+            <p className="text-center text-xs text-muted-foreground">
+              Base: {basePanelCount} placas ({panelDelta > 0 ? '+' : ''}{panelDelta})
+              <button onClick={() => setPanelDelta(0)} className="ml-2 text-primary underline">Resetar</button>
+            </p>
+          )}
+        </section>
+
+        {/* 3 LINE CARDS */}
+        <section className="space-y-4">
+          <h2 className="text-2xl font-bold text-primary text-center flex items-center justify-center gap-2">
+            <Zap className="w-6 h-6 text-secondary" /> Compare as Linhas
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {lineCards.map(card => {
+              const maxP = card.maxPanels;
+              const remaining = card.panelsRemaining;
+              const limitColor = remaining <= 0 ? '#E84855' : remaining <= 2 ? '#E8B84B' : undefined;
+              const inverters = getInvertersList(card.line);
+              const currentIdx = inverters.findIndex(inv => inv.id === card.inverter?.id);
+
+              return (
+                <div key={card.line} className={`solar-card p-6 space-y-4 ${card.line === proposal.selectedLine ? 'ring-2 ring-primary' : ''}`}>
+                  <div className="text-center">
+                    <h3 className="text-lg font-bold text-primary">{LINE_NAMES[card.line]}</h3>
+                    <p className="text-xs text-muted-foreground">{LINE_SUBS[card.line]}</p>
+                  </div>
+
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between"><span className="text-muted-foreground">Inversor</span><span className="font-medium text-right">{card.inverter?.brand} {card.inverter?.model}</span></div>
+                    <div className="flex justify-between items-start">
+                      <span className="text-muted-foreground">Suporta até</span>
+                      <span className="font-medium text-right" style={limitColor ? { color: limitColor } : undefined}>
+                        {maxP} placas
+                        {remaining <= 0 && <span className="block text-xs">Limite atingido — inversor será atualizado na próxima placa</span>}
+                      </span>
+                    </div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">Placas</span><span className="font-medium">{card.panelCount}× {card.panel?.brand} {card.panel?.power}Wp</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">Potência</span><span className="font-medium">{formatNumber(card.dimensioning.powerKwp)} kWp</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">Geração/mês</span><span className="font-semibold text-primary">{formatNumber(card.dimensioning.monthlyGeneration, 0)} kWh</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">Excedente</span><span className="font-medium">{formatNumber(card.dimensioning.surplus, 0)} kWh</span></div>
+                  </div>
+
+                  <div className="text-center py-3 border-y border-border">
+                    <p className="text-2xl font-bold text-primary">{formatCurrency(card.totalPrice)}</p>
+                  </div>
+
+                  <div className="space-y-1 text-xs">
+                    {INSTALLMENT_OPTIONS.map(n => (
+                      <div key={n} className="flex justify-between">
+                        <span className="text-muted-foreground">{n}×</span>
+                        <span className="font-medium">{formatCurrency(card.installments[n])}</span>
+                      </div>
+                    ))}
+                    {proposal.cetApplied && <p className="text-xs text-muted-foreground mt-1">CET {proposal.cetApplied}% a.m.</p>}
+                  </div>
+
+                  {/* Inverter upgrade/downgrade buttons */}
+                  <div className="flex gap-2">
+                    <button
+                      disabled={currentIdx <= 0 || (currentIdx > 0 && maxPanelsForInverter(inverters[currentIdx - 1].power, (card.panel?.power || 570) / 1000) < card.panelCount)}
+                      onClick={() => {/* Inverter changes automatically via 1.5x rule; manual downgrade would require reducing panels */}}
+                      className="flex-1 text-xs py-2 rounded-lg border border-border text-muted-foreground hover:bg-muted/50 disabled:opacity-30 transition-all"
+                      title="O inversor ajusta automaticamente conforme o número de placas"
+                    >
+                      <ChevronDown className="w-3 h-3 inline mr-1" />Inversor menor
+                    </button>
+                    <button
+                      disabled={currentIdx >= inverters.length - 1}
+                      onClick={() => {/* Handled by increasing panels past limit */}}
+                      className="flex-1 text-xs py-2 rounded-lg border border-border text-muted-foreground hover:bg-muted/50 disabled:opacity-30 transition-all"
+                      title="Aumente placas para fazer upgrade automático do inversor"
+                    >
+                      Inversor maior<ChevronUp className="w-3 h-3 inline ml-1" />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+
+        {/* CHART */}
         <section className="solar-card p-8 space-y-6">
           <h2 className="text-2xl font-bold text-primary flex items-center gap-2">
-            <Zap className="w-6 h-6 text-secondary" /> Especificações do Sistema — {LINE_NAMES[proposal.selectedLine]}
+            <TrendingUp className="w-6 h-6 text-secondary" /> Geração vs Consumo — 12 Meses
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-            <div className="space-y-2">
-              <div className="flex justify-between p-3 bg-muted/50 rounded-lg"><span className="text-muted-foreground">Inversor</span><span className="font-medium">{kit.inverter?.brand} {kit.inverter?.model}</span></div>
-              <div className="flex justify-between p-3 bg-muted/50 rounded-lg"><span className="text-muted-foreground">Placas</span><span className="font-medium">{kit.panelCount}× {kit.panel?.brand} {kit.panel?.power}Wp</span></div>
-              <div className="flex justify-between p-3 bg-muted/50 rounded-lg"><span className="text-muted-foreground">Potência total</span><span className="font-medium">{formatNumber(dim.powerKwp)} kWp</span></div>
-              <div className="flex justify-between p-3 bg-muted/50 rounded-lg"><span className="text-muted-foreground">Estrutura</span><span className="font-medium">Compatível com telhado {proposal.clientData.roofType}</span></div>
-            </div>
-            <div className="space-y-2">
-              <div className="flex justify-between p-3 bg-muted/50 rounded-lg"><span className="text-muted-foreground">Geração mensal</span><span className="font-semibold text-primary">{formatNumber(dim.monthlyGeneration, 0)} kWh</span></div>
-              <div className="flex justify-between p-3 bg-muted/50 rounded-lg"><span className="text-muted-foreground">Consumo mensal</span><span className="font-medium">{formatNumber(dim.avgMonthlyKwh, 0)} kWh</span></div>
-              <div className="flex justify-between p-3 bg-muted/50 rounded-lg"><span className="text-muted-foreground">Excedente</span><span className="font-medium">{formatNumber(dim.surplus, 0)} kWh</span></div>
-              <div className="flex justify-between p-3 bg-muted/50 rounded-lg"><span className="text-muted-foreground">Análise 3D com drone</span><span className="font-medium">Inclusa</span></div>
-            </div>
-          </div>
-
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData}>
@@ -131,31 +269,17 @@ export default function ProposalPage() {
                 <Tooltip formatter={(v: number) => `${v} kWh`} />
                 <Legend />
                 <Bar dataKey="geração" fill="hsl(80,37%,26%)" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="consumo" fill="hsl(40,79%,60%)" radius={[4, 4, 0, 0]} />
+                {proposal.consumerUnits && proposal.consumerUnits.length > 1 ? (
+                  proposal.consumerUnits.map((u, j) => (
+                    <Bar key={u.id} dataKey={`UC ${j + 1}`} stackId="consumption"
+                      fill={UC_COLORS[j % UC_COLORS.length]} />
+                  ))
+                ) : (
+                  <Bar dataKey="consumo" stackId="consumption" fill="hsl(40,79%,60%)" radius={[0, 0, 0, 0]} />
+                )}
               </BarChart>
             </ResponsiveContainer>
           </div>
-        </section>
-
-        {/* INVESTMENT */}
-        <section className="solar-card p-8 space-y-6">
-          <h2 className="text-2xl font-bold text-primary flex items-center gap-2">
-            <TrendingUp className="w-6 h-6 text-secondary" /> Investimento
-          </h2>
-          <div className="text-center py-4">
-            <p className="text-sm text-muted-foreground">Valor total do sistema</p>
-            <p className="text-4xl font-bold text-primary">{formatCurrency(proposal.totalPrice)}</p>
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-            {INSTALLMENT_OPTIONS.map(n => (
-              <div key={n} className="text-center p-4 rounded-xl bg-muted/50 border border-border/50">
-                <p className="text-2xl font-bold text-primary">{n}×</p>
-                <p className="text-sm font-semibold">{formatCurrency(installments[n])}</p>
-                {proposal.cetApplied && <p className="text-xs text-muted-foreground mt-1">CET {proposal.cetApplied}% a.m.</p>}
-              </div>
-            ))}
-          </div>
-          <p className="text-xs text-muted-foreground text-center">Valores sujeitos à aprovação de crédito</p>
         </section>
 
         {/* FINANCIAL RETURN */}
@@ -163,12 +287,18 @@ export default function ProposalPage() {
           <h2 className="text-2xl font-bold text-primary flex items-center gap-2">
             <Shield className="w-6 h-6 text-secondary" /> Retorno Financeiro
           </h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="text-center p-4 rounded-xl bg-primary/5"><p className="text-xs text-muted-foreground">Economia mensal</p><p className="text-xl font-bold text-primary">{formatCurrency(dim.monthlySavings)}</p></div>
-            <div className="text-center p-4 rounded-xl bg-primary/5"><p className="text-xs text-muted-foreground">Payback</p><p className="text-xl font-bold text-primary">{formatNumber(dim.paybackYears)} anos</p></div>
-            <div className="text-center p-4 rounded-xl bg-primary/5"><p className="text-xs text-muted-foreground">Retorno 10 anos</p><p className="text-xl font-bold text-primary">{formatCurrency(dim.return10)}</p></div>
-            <div className="text-center p-4 rounded-xl bg-primary/5"><p className="text-xs text-muted-foreground">Retorno 25 anos</p><p className="text-xl font-bold text-primary">{formatCurrency(dim.return25)}</p></div>
-          </div>
+          {(() => {
+            const selectedCard = lineCards.find(c => c.line === proposal.selectedLine) || lineCards[0];
+            const dim = selectedCard.dimensioning;
+            return (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="text-center p-4 rounded-xl bg-primary/5"><p className="text-xs text-muted-foreground">Economia mensal</p><p className="text-xl font-bold text-primary">{formatCurrency(dim.monthlySavings)}</p></div>
+                <div className="text-center p-4 rounded-xl bg-primary/5"><p className="text-xs text-muted-foreground">Payback</p><p className="text-xl font-bold text-primary">{formatNumber(dim.paybackYears)} anos</p></div>
+                <div className="text-center p-4 rounded-xl bg-primary/5"><p className="text-xs text-muted-foreground">Retorno 10 anos</p><p className="text-xl font-bold text-primary">{formatCurrency(dim.return10)}</p></div>
+                <div className="text-center p-4 rounded-xl bg-primary/5"><p className="text-xs text-muted-foreground">Retorno 25 anos</p><p className="text-xl font-bold text-primary">{formatCurrency(dim.return25)}</p></div>
+              </div>
+            );
+          })()}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
             <div className="space-y-2">
