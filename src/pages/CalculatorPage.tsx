@@ -68,11 +68,13 @@ export default function CalculatorPage() {
       const dim = calcDimensioning(consumption, equipment, client.networkType, irradiation, client.kwhPrice, totalPrice, settings.systemLoss);
       const maxPanels = inverter ? maxPanelsForInverter(inverter.power, panelPowerKwp) : 0;
       const panelsRemaining = maxPanels - finalPanels;
+      const monthlyGeneration = powerKwp * irradiation * 30 * (1 - settings.systemLoss / 100);
+      const surplus = monthlyGeneration - dim.avgMonthlyKwh;
 
       return {
         line, inverter, panel, panelCount: finalPanels, totalPrice, maxPanels, panelsRemaining,
         installments: calcInstallments(totalPrice),
-        dimensioning: { ...dim, panelCount: finalPanels, powerKwp },
+        dimensioning: { ...dim, panelCount: finalPanels, powerKwp, monthlyGeneration, surplus },
       };
     });
   }, [consumption, equipment, client, irradiation, finalPanels, settings.systemLoss]);
