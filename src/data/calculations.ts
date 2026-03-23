@@ -73,8 +73,27 @@ export function findBestInverter(line: string, powerKwp: number): Kit | null {
     || kits.find(k => k.maxPower >= powerKwp) || kits[kits.length - 1] || null;
 }
 
+/** Find the smallest inverter that supports panelCount panels using the 1.5x rule */
+export function findInverterForPanels(line: string, panelCount: number, panelPowerKwp: number = 0.570): Kit | null {
+  const kits = getKits().filter(k => k.line === line && k.type === 'inversor' && k.active);
+  kits.sort((a, b) => a.power - b.power);
+  const totalPanelKwp = panelCount * panelPowerKwp;
+  // Smallest inverter where power * 1.5 >= totalPanelKwp
+  return kits.find(k => k.power * 1.5 >= totalPanelKwp) || kits[kits.length - 1] || null;
+}
+
+/** Max panels an inverter can support with 1.5x rule */
+export function maxPanelsForInverter(inverterKw: number, panelPowerKwp: number = 0.570): number {
+  return Math.floor((inverterKw * 1.5) / panelPowerKwp);
+}
+
 export function findPanel(line: string): Kit | null {
   return getKits().find(k => k.line === line && k.type === 'placa' && k.active) || null;
+}
+
+/** Get all inverters for a line, sorted by power ascending */
+export function getInvertersList(line: string): Kit[] {
+  return getKits().filter(k => k.line === line && k.type === 'inversor' && k.active).sort((a, b) => a.power - b.power);
 }
 
 export function getCaMaterialCost(inverterKw: number): number {
