@@ -368,7 +368,35 @@ export default function ProposalPage() {
           </div>
         </section>
 
-        {/* CASHFLOW */}
+        {/* EQUIPMENT */}
+        {proposal.equipment && proposal.equipment.length > 0 && (
+          <section className="solar-card p-8 space-y-4">
+            <h2 className="text-2xl font-bold text-primary flex items-center gap-2">
+              <Cpu className="w-6 h-6 text-secondary" /> Equipamentos Adicionais
+            </h2>
+            <div className="space-y-2">
+              {proposal.equipment.map((eq, idx) => (
+                <div key={eq.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50 text-sm">
+                  <span className="font-medium">{eq.label}</span>
+                  <div className="flex items-center gap-4 text-muted-foreground">
+                    {eq.unit === 'km' ? (
+                      <span>{eq.value} km/mês</span>
+                    ) : (
+                      <span>{eq.hoursPerDay}h/dia × {eq.daysPerMonth}d/mês</span>
+                    )}
+                    <span className="font-semibold text-primary">{formatNumber(calcEquipmentMonthly(eq), 0)} kWh/mês</span>
+                  </div>
+                </div>
+              ))}
+              <div className="flex justify-between pt-2 border-t border-border text-sm font-semibold">
+                <span>Total equipamentos</span>
+                <span className="text-primary">{formatNumber(proposal.equipment.reduce((s, e) => s + calcEquipmentMonthly(e), 0), 0)} kWh/mês</span>
+              </div>
+            </div>
+          </section>
+        )}
+
+
         <section className="solar-card p-8 space-y-6">
           <h2 className="text-2xl font-bold text-primary flex items-center gap-2">
             <Shield className="w-6 h-6 text-secondary" /> Fluxo de Caixa Comparativo
