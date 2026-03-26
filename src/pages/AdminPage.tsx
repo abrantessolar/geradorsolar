@@ -5,17 +5,67 @@ import {
   getPriceTable, savePriceTable,
 } from '@/data/store';
 import { formatCurrency } from '@/data/calculations';
-import { AdminSettings, Seller, IrradiationEntry, PriceTableEntry, SocialProof, BRAZILIAN_STATES, CA_MATERIAL_TABLE_DEFAULT } from '@/data/types';
-import { Lock, Users, DollarSign, Settings, MapPin, Building2, FileText, Image, LogOut, Plus, Trash2, Save, Eye, Wand2 } from 'lucide-react';
+import { AdminSettings, Seller, IrradiationEntry, PriceTableEntry, SocialProof, BRAZILIAN_STATES, CA_MATERIAL_TABLE_DEFAULT, LINE_NAMES } from '@/data/types';
+import { Lock, Users, DollarSign, Settings, MapPin, Building2, FileText, Image, LogOut, Plus, Trash2, Save, Eye, Wand2, AlertCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export default function AdminPage() {
   const [authed, setAuthed] = useState(isAdminLoggedIn());
   const [user, setUser] = useState('');
   const [pass, setPass] = useState('');
+  const [loginError, setLoginError] = useState('');
+  const [showForgot, setShowForgot] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotSent, setForgotSent] = useState(false);
   const [tab, setTab] = useState<'sellers' | 'prices' | 'pricing' | 'irradiation' | 'company' | 'proposals' | 'social'>('sellers');
 
+  const handleLogin = () => {
+    if (user === 'admin' && pass === 'solar2024') {
+      setAdminAuth(true);
+      setAuthed(true);
+      setLoginError('');
+    } else {
+      setLoginError('Usuário ou senha incorretos. Tente novamente.');
+    }
+  };
+
   if (!authed) {
+    if (showForgot) {
+      return (
+        <div className="max-w-md mx-auto mt-20 solar-card p-8 space-y-6 animate-fade-in-up">
+          <div className="text-center">
+            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+              <Lock className="w-8 h-8 text-primary" />
+            </div>
+            <h1 className="text-2xl font-bold text-primary">Redefinir Senha</h1>
+          </div>
+          {forgotSent ? (
+            <div className="text-center space-y-3">
+              <p className="text-sm text-muted-foreground">
+                Enviaremos um link de redefinição para seu e-mail cadastrado.
+              </p>
+              <button onClick={() => { setShowForgot(false); setForgotSent(false); }} className="solar-btn-outline text-sm">
+                Voltar ao login
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm font-medium mb-1">E-mail cadastrado</label>
+                <input className="solar-input" type="email" placeholder="seu@email.com" value={forgotEmail} onChange={e => setForgotEmail(e.target.value)} />
+              </div>
+              <button className="w-full solar-btn-primary" onClick={() => setForgotSent(true)}>
+                Enviar link de redefinição
+              </button>
+              <button onClick={() => setShowForgot(false)} className="w-full text-sm text-muted-foreground hover:text-foreground transition-colors">
+                Voltar ao login
+              </button>
+            </div>
+          )}
+        </div>
+      );
+    }
+
     return (
       <div className="max-w-md mx-auto mt-20 solar-card p-8 space-y-6 animate-fade-in-up">
         <div className="text-center">
@@ -26,13 +76,21 @@ export default function AdminPage() {
           <p className="text-sm text-muted-foreground">Acesso restrito</p>
         </div>
         <div className="space-y-3">
+          {loginError && (
+            <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
+              <AlertCircle className="w-4 h-4 flex-shrink-0" />
+              {loginError}
+            </div>
+          )}
           <input className="solar-input" placeholder="Usuário" value={user} onChange={e => setUser(e.target.value)} />
           <input className="solar-input" type="password" placeholder="Senha" value={pass}
             onChange={e => setPass(e.target.value)}
-            onKeyDown={e => { if (e.key === 'Enter' && user === 'admin' && pass === 'solar2024') { setAdminAuth(true); setAuthed(true); } }} />
-          <button className="w-full solar-btn-primary"
-            onClick={() => { if (user === 'admin' && pass === 'solar2024') { setAdminAuth(true); setAuthed(true); } }}>
+            onKeyDown={e => { if (e.key === 'Enter') handleLogin(); }} />
+          <button className="w-full solar-btn-primary" onClick={handleLogin}>
             Entrar
+          </button>
+          <button onClick={() => setShowForgot(true)} className="w-full text-sm text-primary hover:underline">
+            Esqueci minha senha
           </button>
         </div>
       </div>
@@ -165,7 +223,6 @@ function PriceTableTab() {
       const filled = newTable.filter(r => r[line] !== null && r[line]! > 0).map(r => ({ panels: r.panels, value: r[line]! }));
       if (filled.length < 2) return;
 
-      // Calculate increments, detect jumps (inverter changes)
       const increments: number[] = [];
       for (let i = 1; i < filled.length; i++) {
         const inc = (filled[i].value - filled[i - 1].value) / (filled[i].panels - filled[i - 1].panels);
@@ -173,11 +230,9 @@ function PriceTableTab() {
       }
       const avgInc = increments.reduce((a, b) => a + b, 0) / increments.length;
 
-      // Interpolate empty cells
       newTable.forEach((row, idx) => {
         if (row[line] !== null) return;
 
-        // Find nearest filled before and after
         const before = filled.filter(f => f.panels < row.panels).pop();
         const after = filled.find(f => f.panels > row.panels);
 
@@ -187,16 +242,13 @@ function PriceTableTab() {
           const pos = row.panels - before.panels;
           estimated = before.value + (after.value - before.value) * (pos / range);
         } else if (before) {
-          let inc = avgInc;
-          // For premium, add trunk cable jumps every 4 panels
           if (line === 'premium') {
             const microsBefore = Math.ceil(before.panels / 4);
             const microsNow = Math.ceil(row.panels / 4);
             const extraMicros = microsNow - microsBefore;
-            inc = avgInc;
-            estimated = before.value + (row.panels - before.panels) * inc + extraMicros * 300;
+            estimated = before.value + (row.panels - before.panels) * avgInc + extraMicros * 300;
           } else {
-            estimated = before.value + (row.panels - before.panels) * inc;
+            estimated = before.value + (row.panels - before.panels) * avgInc;
           }
         } else if (after) {
           estimated = after.value - (after.panels - row.panels) * avgInc;
@@ -233,9 +285,9 @@ function PriceTableTab() {
           <thead className="sticky top-0 bg-card z-10">
             <tr className="border-b border-border text-left text-muted-foreground">
               <th className="py-2 px-2 w-20">Nº Placas</th>
-              <th className="py-2 px-2">Custo Acesso (R$)</th>
-              <th className="py-2 px-2">Custo Excellence (R$)</th>
-              <th className="py-2 px-2">Custo Premium (R$)</th>
+              <th className="py-2 px-2">Custo {LINE_NAMES.acesso} (R$)</th>
+              <th className="py-2 px-2">Custo {LINE_NAMES.excellence} (R$)</th>
+              <th className="py-2 px-2">Custo {LINE_NAMES.premium} (R$)</th>
             </tr>
           </thead>
           <tbody>
@@ -276,6 +328,12 @@ function PricingTab() {
     setSettings(prev => ({ ...prev, caMaterialTable: table }));
   };
 
+  const updateCardRate = (idx: number, rate: number) => {
+    const rates = [...settings.creditCardRates];
+    rates[idx] = { ...rates[idx], rate };
+    setSettings(prev => ({ ...prev, creditCardRates: rates }));
+  };
+
   const handleSave = () => saveSettings(settings);
 
   return (
@@ -308,17 +366,14 @@ function PricingTab() {
           <div>
             <label className="block text-sm font-medium mb-1">Valor por placa (R$)</label>
             <input className="solar-input" type="number" value={settings.installationPricePerPanel} onChange={e => update('installationPricePerPanel', parseFloat(e.target.value) || 0)} />
-            <p className="text-xs text-muted-foreground mt-1">Padrão: R$ 100,00</p>
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">Homologação (R$)</label>
             <input className="solar-input" type="number" value={settings.homologationPrice} onChange={e => update('homologationPrice', parseFloat(e.target.value) || 0)} />
-            <p className="text-xs text-muted-foreground mt-1">Padrão: R$ 70,00</p>
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Cabo tronco Premium (R$ por micro adicional)</label>
+            <label className="block text-sm font-medium mb-1">Cabo tronco {LINE_NAMES.premium} (R$ por micro adicional)</label>
             <input className="solar-input" type="number" value={settings.trunkCablePrice} onChange={e => update('trunkCablePrice', parseFloat(e.target.value) || 0)} />
-            <p className="text-xs text-muted-foreground mt-1">Padrão: R$ 300,00</p>
           </div>
         </div>
       </div>
@@ -343,7 +398,32 @@ function PricingTab() {
             </tbody>
           </table>
         </div>
-        <p className="text-xs text-muted-foreground">Para Premium (micro inversores), o material CA usa a potência total dos micros somada.</p>
+      </div>
+
+      {/* Credit Card Rates */}
+      <div className="space-y-4">
+        <h3 className="font-semibold text-primary">Taxas do Cartão de Crédito (1× a 18×)</h3>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-border text-left text-muted-foreground">
+                <th className="py-2 px-2">Parcelas</th>
+                <th className="py-2 px-2">Taxa (%)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {settings.creditCardRates.map((row, i) => (
+                <tr key={row.installments} className="border-b border-border/50">
+                  <td className="py-1 px-2 font-medium text-muted-foreground">{row.installments}×</td>
+                  <td className="py-1 px-2">
+                    <input className="solar-input py-1 text-sm w-24" type="number" step="0.1" value={row.rate}
+                      onChange={e => updateCardRate(i, parseFloat(e.target.value) || 0)} />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

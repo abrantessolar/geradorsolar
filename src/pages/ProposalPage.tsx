@@ -4,15 +4,13 @@ import { getProposals, saveProposal, getSettings, getSocialProofs, lookupIrradia
 import {
   formatCurrency, formatNumber, calcInstallments, calcDimensioning,
   findInverterForPanels, findPanel, calcTotalPrice, maxPanelsForInverter,
-  getInvertersList, calcMicroInverterCount,
+  calcMicroInverterCount, calcCardInstallments, calcEquipmentMonthly,
 } from '@/data/calculations';
-import { MONTH_LABELS, MONTH_KEYS, SEASONAL_FACTORS, INSTALLMENT_OPTIONS, UC_COLORS } from '@/data/types';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import { Printer, Share2, Edit, ArrowLeft, Sun, Zap, TrendingUp, Shield, X, ChevronUp, ChevronDown } from 'lucide-react';
+import { MONTH_LABELS, MONTH_KEYS, SEASONAL_FACTORS, INSTALLMENT_OPTIONS, UC_COLORS, LINE_NAMES, LINE_SUBS } from '@/data/types';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, LineChart, Line, ReferenceLine } from 'recharts';
+import { Printer, Share2, Edit, ArrowLeft, Sun, Zap, TrendingUp, Shield, X } from 'lucide-react';
 
 const LINES = ['acesso', 'excellence', 'premium'] as const;
-const LINE_NAMES: Record<string, string> = { acesso: 'ACESSO', excellence: 'EXCELLENCE', premium: 'PREMIUM' };
-const LINE_SUBS: Record<string, string> = { acesso: 'Equipamentos nacionais', excellence: 'Importados intermediários', premium: 'Micro inversores — Top de linha' };
 
 export default function ProposalPage() {
   const { id } = useParams();
@@ -26,10 +24,23 @@ export default function ProposalPage() {
   const [lightbox, setLightbox] = useState<string | null>(null);
   const [videoModal, setVideoModal] = useState<string | null>(null);
   const [panelDelta, setPanelDelta] = useState(0);
+  const [cashflowInstallments, setCashflowInstallments] = useState(60);
+  const [paymentTab, setPaymentTab] = useState<'financing' | 'card'>('financing');
+  const [showComfort, setShowComfort] = useState(false);
 
   const basePanelCount = proposal?.selectedKit.panelCount ?? 0;
   const finalPanels = Math.max(Math.max(1, basePanelCount - 2), basePanelCount + panelDelta);
   const irradiation = proposal ? lookupIrradiation(proposal.clientData.state || 'MS', proposal.clientData.city).value : 5.0;
+
+  // Recommended minimum panels from dimensioning
+  const recommendedPanels = useMemo(() => {
+    if (!proposal) return 0;
+    const dim = calcDimensioning(
+      proposal.consumption, proposal.equipment, proposal.clientData.networkType,
+      irradiation, proposal.clientData.kwhPrice, 0, settings.systemLoss
+    );
+    return dim.panelCount;
+  }, [proposal, irradiation, settings.systemLoss]);
 
   const lineCards = useMemo(() => {
     if (!proposal) return [];
@@ -52,14 +63,15 @@ export default function ProposalPage() {
       const installments = proposal.cetApplied
         ? calcInstallments(totalPrice, proposal.cetApplied)
         : calcInstallments(totalPrice);
+      const cardInstallments = calcCardInstallments(totalPrice, settings.creditCardRates);
 
       return {
         line, inverter, panel, panelCount: finalPanels, totalPrice, maxPanels, panelsRemaining, microCount,
-        installments,
+        installments, cardInstallments,
         dimensioning: { ...dim, panelCount: finalPanels, powerKwp, monthlyGeneration, surplus },
       };
     });
-  }, [finalPanels, proposal, irradiation, settings.systemLoss]);
+  }, [finalPanels, proposal, irradiation, settings.systemLoss, settings.creditCardRates]);
 
   const chartData = useMemo(() => {
     if (!proposal || lineCards.length === 0) return [];
@@ -78,6 +90,58 @@ export default function ProposalPage() {
       return row;
     });
   }, [lineCards, proposal, irradiation, settings.systemLoss]);
+
+  // Cashflow data
+  const cashflowData = useMemo(() => {
+    if (!proposal || lineCards.length === 0) return [];
+    const selectedCard = lineCards.find(c => c.line === proposal.selectedLine) || lineCards[0];
+    if (!selectedCard) return [];
+
+    const monthlyBill = selectedCard.dimensioning.avgMonthlyKwh * proposal.clientData.kwhPrice;
+    const minFee = Math.max(80, monthlyBill * 0.15);
+    const monthlyInstallment = selectedCard.installments[cashflowInstallments] || selectedCard.totalPrice / cashflowInstallments;
+    const financingYears = cashflowInstallments / 12;
+
+    const eqMonthly = proposal.equipment.reduce((s, e) => s + calcEquipmentMonthly(e), 0) * proposal.clientData.kwhPrice;
+
+    const data: any[] = [];
+    let accWithout = 0;
+    let accWith = 0;
+    let accComfort = 0;
+
+    for (let year = 0; year <= 25; year++) {
+      const yearlyBill = monthlyBill * 12 * Math.pow(1.10, year);
+      accWithout += yearlyBill;
+
+      const yearlyWithSolar = year < financingYears
+        ? (monthlyInstallment + minFee) * 12
+        : minFee * 12;
+      accWith += yearlyWithSolar;
+
+      const yearlyComfort = year < financingYears
+        ? (monthlyInstallment + minFee + eqMonthly) * 12
+        : (minFee + eqMonthly) * 12;
+      accComfort += yearlyComfort;
+
+      data.push({
+        year: `${year}`,
+        semSolar: Math.round(accWithout),
+        comSolar: Math.round(accWith),
+        ...(showComfort ? { comConforto: Math.round(accComfort) } : {}),
+      });
+    }
+    return data;
+  }, [lineCards, proposal, cashflowInstallments, showComfort]);
+
+  const paybackYear = useMemo(() => {
+    for (let i = 1; i < cashflowData.length; i++) {
+      if (cashflowData[i]?.comSolar <= cashflowData[i]?.semSolar && cashflowData[i - 1]?.comSolar > cashflowData[i - 1]?.semSolar) {
+        return i;
+      }
+      if (cashflowData[i]?.semSolar >= cashflowData[i]?.comSolar) return i;
+    }
+    return null;
+  }, [cashflowData]);
 
   if (!proposal) {
     return (
@@ -99,6 +163,11 @@ export default function ProposalPage() {
       window.location.reload();
     }
   };
+
+  const selectedCard = lineCards.find(c => c.line === proposal.selectedLine) || lineCards[0];
+  const savings25 = cashflowData.length > 0
+    ? (cashflowData[cashflowData.length - 1]?.semSolar || 0) - (cashflowData[cashflowData.length - 1]?.comSolar || 0)
+    : 0;
 
   return (
     <div className="min-h-screen bg-background">
@@ -179,12 +248,12 @@ export default function ProposalPage() {
               +
             </button>
           </div>
-          {panelDelta !== 0 && (
-            <p className="text-center text-xs text-muted-foreground">
-              Base: {basePanelCount} placas ({panelDelta > 0 ? '+' : ''}{panelDelta})
+          <p className="text-center text-xs text-muted-foreground">
+            Mínimo recomendado: {recommendedPanels} placas
+            {panelDelta !== 0 && (
               <button onClick={() => setPanelDelta(0)} className="ml-2 text-primary underline">Resetar</button>
-            </p>
-          )}
+            )}
+          </p>
         </section>
 
         {/* 3 LINE CARDS */}
@@ -234,14 +303,38 @@ export default function ProposalPage() {
                     <p className="text-2xl font-bold text-primary">{formatCurrency(card.totalPrice)}</p>
                   </div>
 
-                  <div className="space-y-1 text-xs">
-                    {INSTALLMENT_OPTIONS.map(n => (
-                      <div key={n} className="flex justify-between">
-                        <span className="text-muted-foreground">{n}×</span>
-                        <span className="font-medium">{formatCurrency(card.installments[n])}</span>
+                  {/* Payment tabs */}
+                  <div className="space-y-2">
+                    <div className="flex gap-1">
+                      <button onClick={() => setPaymentTab('financing')}
+                        className={`flex-1 text-xs py-1 rounded ${paymentTab === 'financing' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
+                        Financiamento
+                      </button>
+                      <button onClick={() => setPaymentTab('card')}
+                        className={`flex-1 text-xs py-1 rounded ${paymentTab === 'card' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
+                        Cartão
+                      </button>
+                    </div>
+                    {paymentTab === 'financing' ? (
+                      <div className="space-y-1 text-xs">
+                        {INSTALLMENT_OPTIONS.map(n => (
+                          <div key={n} className="flex justify-between">
+                            <span className="text-muted-foreground">{n}×</span>
+                            <span className="font-medium">{formatCurrency(card.installments[n])}</span>
+                          </div>
+                        ))}
+                        {proposal.cetApplied && <p className="text-xs text-muted-foreground mt-1">CET {proposal.cetApplied}% a.m.</p>}
                       </div>
-                    ))}
-                    {proposal.cetApplied && <p className="text-xs text-muted-foreground mt-1">CET {proposal.cetApplied}% a.m.</p>}
+                    ) : (
+                      <div className="space-y-1 text-xs max-h-48 overflow-y-auto">
+                        {Object.entries(card.cardInstallments).map(([n, v]) => (
+                          <div key={n} className="flex justify-between">
+                            <span className="text-muted-foreground">{n}×</span>
+                            <span className="font-medium">{formatCurrency(v.perMonth)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               );
@@ -275,42 +368,61 @@ export default function ProposalPage() {
           </div>
         </section>
 
-        {/* FINANCIAL RETURN */}
+        {/* CASHFLOW */}
         <section className="solar-card p-8 space-y-6">
           <h2 className="text-2xl font-bold text-primary flex items-center gap-2">
-            <Shield className="w-6 h-6 text-secondary" /> Retorno Financeiro
+            <Shield className="w-6 h-6 text-secondary" /> Fluxo de Caixa Comparativo
           </h2>
-          {(() => {
-            const selectedCard = lineCards.find(c => c.line === proposal.selectedLine) || lineCards[0];
-            if (!selectedCard) return null;
-            const dim = selectedCard.dimensioning;
-            return (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="text-center p-4 rounded-xl bg-primary/5"><p className="text-xs text-muted-foreground">Economia mensal</p><p className="text-xl font-bold text-primary">{formatCurrency(dim.monthlySavings)}</p></div>
-                <div className="text-center p-4 rounded-xl bg-primary/5"><p className="text-xs text-muted-foreground">Payback</p><p className="text-xl font-bold text-primary">{formatNumber(dim.paybackYears)} anos</p></div>
-                <div className="text-center p-4 rounded-xl bg-primary/5"><p className="text-xs text-muted-foreground">Retorno 10 anos</p><p className="text-xl font-bold text-primary">{formatCurrency(dim.return10)}</p></div>
-                <div className="text-center p-4 rounded-xl bg-primary/5"><p className="text-xs text-muted-foreground">Retorno 25 anos</p><p className="text-xl font-bold text-primary">{formatCurrency(dim.return25)}</p></div>
-              </div>
-            );
-          })()}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
-            <div className="space-y-2">
-              <h3 className="font-semibold text-primary">Documentos necessários</h3>
-              <ul className="space-y-1 text-muted-foreground list-disc list-inside">
-                <li>Conta de energia recente</li>
-                <li>Documento de identidade</li>
-                <li>Comprovante de residência</li>
-                <li>Comprovante de renda (se financiamento)</li>
-              </ul>
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="flex items-center gap-2">
+              <label className="text-sm font-medium">Parcelas:</label>
+              <div className="flex gap-1">
+                {INSTALLMENT_OPTIONS.map(n => (
+                  <button key={n} onClick={() => setCashflowInstallments(n)}
+                    className={`px-3 py-1 rounded text-sm font-medium transition-colors ${cashflowInstallments === n ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/70'}`}>
+                    {n}×
+                  </button>
+                ))}
+              </div>
             </div>
-            <div className="space-y-2">
-              <h3 className="font-semibold text-primary">Prazos</h3>
-              <ul className="space-y-1 text-muted-foreground">
-                <li>📦 Instalação: até {settings.installationDays} dias úteis</li>
-                <li>📋 Homologação: +{settings.homologationDays} dias úteis</li>
-                <li>💳 Pagamento à vista ou cartão 12× (taxa 1,1% a.m.)</li>
-              </ul>
+            <button onClick={() => setShowComfort(v => !v)}
+              className={`text-sm px-3 py-1 rounded font-medium transition-colors ${showComfort ? 'bg-secondary text-secondary-foreground' : 'solar-btn-outline'}`}>
+              {showComfort ? '✓ Conforto Planejado' : 'Comparar com Conforto Planejado'}
+            </button>
+          </div>
+
+          <div className="h-80">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={cashflowData} margin={{ top: 10, right: 20, left: 10, bottom: 0 }}>
+                <XAxis dataKey="year" tick={{ fontSize: 12 }} label={{ value: 'Anos', position: 'insideBottom', offset: -5 }} />
+                <YAxis tick={{ fontSize: 10 }} tickFormatter={(v: number) => `R$${(v / 1000).toFixed(0)}k`} />
+                <Tooltip formatter={(v: number) => formatCurrency(v)} />
+                <Legend />
+                {paybackYear && <ReferenceLine x={`${paybackYear}`} stroke="#4A5A2A" strokeDasharray="3 3" label={{ value: 'Payback', fill: '#4A5A2A', fontSize: 11 }} />}
+                <Line type="monotone" dataKey="semSolar" name="Sem Solar" stroke="#E84855" strokeWidth={2.5} dot={false} />
+                <Line type="monotone" dataKey="comSolar" name="Com Solar" stroke="#4A5A2A" strokeWidth={2.5} dot={false} />
+                {showComfort && <Line type="monotone" dataKey="comConforto" name="Com Conforto" stroke="#2E86AB" strokeWidth={2} dot={false} strokeDasharray="5 5" />}
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="text-center p-4 rounded-xl bg-primary/5">
+              <p className="text-xs text-muted-foreground">Economia mensal</p>
+              <p className="text-xl font-bold text-primary">{selectedCard ? formatCurrency(selectedCard.dimensioning.monthlySavings) : '—'}</p>
+            </div>
+            <div className="text-center p-4 rounded-xl bg-primary/5">
+              <p className="text-xs text-muted-foreground">Payback</p>
+              <p className="text-xl font-bold text-primary">{selectedCard ? `${formatNumber(selectedCard.dimensioning.paybackYears)} anos` : '—'}</p>
+            </div>
+            <div className="text-center p-4 rounded-xl bg-primary/5">
+              <p className="text-xs text-muted-foreground">Retorno 10 anos</p>
+              <p className="text-xl font-bold text-primary">{selectedCard ? formatCurrency(selectedCard.dimensioning.return10) : '—'}</p>
+            </div>
+            <div className="text-center p-4 rounded-xl bg-primary/5">
+              <p className="text-xs text-muted-foreground">Economia em 25 anos</p>
+              <p className="text-xl font-bold text-primary">{formatCurrency(savings25)}</p>
             </div>
           </div>
         </section>

@@ -23,7 +23,7 @@ export interface ClientData {
 }
 
 export const UC_COLORS = [
-  '#4A5A2A', '#E8B84B', '#2E86AB', '#E84855', '#7B2D8B',
+  '#E8B84B', '#2E86AB', '#E84855', '#7B2D8B',
   '#F4845F', '#3BB273', '#1B4F72', '#C0392B', '#717D7E',
 ];
 
@@ -39,6 +39,7 @@ export interface ConsumerUnit {
   id: string;
   name: string;
   averageKwh: number;
+  monthlyValues?: MonthlyConsumption;
 }
 
 export interface EquipmentItem {
@@ -50,6 +51,7 @@ export interface EquipmentItem {
   hoursPerDay: number;
   unit: 'day' | 'use' | 'km';
   value: number;
+  powerKw: number;
 }
 
 export interface Kit {
@@ -79,6 +81,7 @@ export interface AdminSettings {
   homologationPrice: number;
   trunkCablePrice: number;
   caMaterialTable: { maxKw: number; cost: number }[];
+  creditCardRates: { installments: number; rate: number }[];
   company: {
     name: string; cnpj: string; phone: string; email: string; site: string; social: string;
   };
@@ -146,21 +149,69 @@ export const AVAILABILITY_FEE: Record<string, number> = {
   monofasica: 30, bifasica: 50, trifasica: 100,
 };
 
-export const EQUIPMENT_CATALOG = [
-  { type: 'ac_10k', label: 'Ar-condicionado até 10.000 BTU', dailyKwh: 4.74, unit: 'day' as const },
-  { type: 'ac_15k', label: 'Ar-condicionado 10.001–15.000 BTU', dailyKwh: 6.46, unit: 'day' as const },
-  { type: 'ac_20k', label: 'Ar-condicionado 15.001–20.000 BTU', dailyKwh: 9.79, unit: 'day' as const },
-  { type: 'ac_30k', label: 'Ar-condicionado 20.001–30.000 BTU', dailyKwh: 14.64, unit: 'day' as const },
-  { type: 'ac_30kp', label: 'Ar-condicionado acima 30.000 BTU', dailyKwh: 22.64, unit: 'day' as const },
-  { type: 'freezer_s', label: 'Freezer pequeno', dailyKwh: 1.17, unit: 'day' as const },
-  { type: 'freezer_m', label: 'Freezer médio', dailyKwh: 1.67, unit: 'day' as const },
-  { type: 'freezer_l', label: 'Freezer grande', dailyKwh: 2.33, unit: 'day' as const },
-  { type: 'ev', label: 'Veículo elétrico', dailyKwh: 0.20, unit: 'km' as const },
-  { type: 'fridge', label: 'Geladeira 2 portas', dailyKwh: 0.53, unit: 'day' as const },
-  { type: 'washer', label: 'Lavadora de roupas', dailyKwh: 0.60, unit: 'use' as const },
-  { type: 'shower', label: 'Chuveiro elétrico', dailyKwh: 5.40, unit: 'day' as const },
-  { type: 'pump', label: 'Bomba d\'água 1/2 cv', dailyKwh: 0.48, unit: 'use' as const },
-  { type: 'notebook', label: 'Notebook', dailyKwh: 0.06, unit: 'day' as const },
+export const LINE_NAMES: Record<string, string> = {
+  acesso: 'TLS Essencial',
+  excellence: 'TLS Plus',
+  premium: 'TLS Prime Micro',
+};
+
+export const LINE_SUBS: Record<string, string> = {
+  acesso: 'Equipamentos nacionais',
+  excellence: 'Importados intermediários',
+  premium: 'Micro inversores — Top de linha',
+};
+
+export interface EquipmentCatalogItem {
+  type: string;
+  label: string;
+  category: string;
+  powerKw: number;
+  defaultHoursPerDay: number;
+  defaultDaysPerMonth: number;
+  unit: 'day' | 'use' | 'km';
+}
+
+export const EQUIPMENT_CATALOG: EquipmentCatalogItem[] = [
+  // AR-CONDICIONADO
+  { type: 'ac_9k_inv', label: 'Ar 9.000 BTU Inverter', category: 'Ar-condicionado', powerKw: 0.86, defaultHoursPerDay: 8, defaultDaysPerMonth: 30, unit: 'day' },
+  { type: 'ac_9k_trad', label: 'Ar 9.000 BTU Tradicional', category: 'Ar-condicionado', powerKw: 1.05, defaultHoursPerDay: 8, defaultDaysPerMonth: 30, unit: 'day' },
+  { type: 'ac_12k_inv', label: 'Ar 12.000 BTU Inverter', category: 'Ar-condicionado', powerKw: 1.10, defaultHoursPerDay: 8, defaultDaysPerMonth: 30, unit: 'day' },
+  { type: 'ac_12k_trad', label: 'Ar 12.000 BTU Tradicional', category: 'Ar-condicionado', powerKw: 1.35, defaultHoursPerDay: 8, defaultDaysPerMonth: 30, unit: 'day' },
+  { type: 'ac_18k_inv', label: 'Ar 18.000 BTU Inverter', category: 'Ar-condicionado', powerKw: 1.60, defaultHoursPerDay: 8, defaultDaysPerMonth: 30, unit: 'day' },
+  { type: 'ac_18k_trad', label: 'Ar 18.000 BTU Tradicional', category: 'Ar-condicionado', powerKw: 2.05, defaultHoursPerDay: 8, defaultDaysPerMonth: 30, unit: 'day' },
+  { type: 'ac_24k_inv', label: 'Ar 24.000 BTU Inverter', category: 'Ar-condicionado', powerKw: 2.00, defaultHoursPerDay: 8, defaultDaysPerMonth: 30, unit: 'day' },
+  { type: 'ac_24k_trad', label: 'Ar 24.000 BTU Tradicional', category: 'Ar-condicionado', powerKw: 2.80, defaultHoursPerDay: 8, defaultDaysPerMonth: 30, unit: 'day' },
+  { type: 'ac_30k_inv', label: 'Ar 30.000 BTU Inverter', category: 'Ar-condicionado', powerKw: 2.80, defaultHoursPerDay: 8, defaultDaysPerMonth: 30, unit: 'day' },
+  { type: 'ac_30k_trad', label: 'Ar 30.000 BTU Tradicional', category: 'Ar-condicionado', powerKw: 3.80, defaultHoursPerDay: 8, defaultDaysPerMonth: 30, unit: 'day' },
+  { type: 'ac_36k_inv', label: 'Ar 36.000 BTU Inverter', category: 'Ar-condicionado', powerKw: 3.30, defaultHoursPerDay: 8, defaultDaysPerMonth: 30, unit: 'day' },
+  { type: 'ac_36k_trad', label: 'Ar 36.000 BTU Tradicional', category: 'Ar-condicionado', powerKw: 4.40, defaultHoursPerDay: 8, defaultDaysPerMonth: 30, unit: 'day' },
+  { type: 'ac_48k_inv', label: 'Ar 48.000 BTU Inverter', category: 'Ar-condicionado', powerKw: 4.20, defaultHoursPerDay: 8, defaultDaysPerMonth: 30, unit: 'day' },
+  { type: 'ac_48k_trad', label: 'Ar 48.000 BTU Tradicional', category: 'Ar-condicionado', powerKw: 5.80, defaultHoursPerDay: 8, defaultDaysPerMonth: 30, unit: 'day' },
+  { type: 'ac_60k_inv', label: 'Ar 60.000 BTU Inverter', category: 'Ar-condicionado', powerKw: 5.20, defaultHoursPerDay: 8, defaultDaysPerMonth: 30, unit: 'day' },
+  { type: 'ac_60k_trad', label: 'Ar 60.000 BTU Tradicional', category: 'Ar-condicionado', powerKw: 7.20, defaultHoursPerDay: 8, defaultDaysPerMonth: 30, unit: 'day' },
+  // COZINHA
+  { type: 'airfryer', label: 'Air Fryer', category: 'Cozinha', powerKw: 1.5, defaultHoursPerDay: 0.5, defaultDaysPerMonth: 25, unit: 'day' },
+  { type: 'forno_embutir', label: 'Forno de embutir elétrico', category: 'Cozinha', powerKw: 2.5, defaultHoursPerDay: 1, defaultDaysPerMonth: 20, unit: 'day' },
+  { type: 'fogao_inducao', label: 'Fogão de indução', category: 'Cozinha', powerKw: 3.5, defaultHoursPerDay: 1.5, defaultDaysPerMonth: 25, unit: 'day' },
+  // REFRIGERAÇÃO
+  { type: 'geladeira_1p', label: 'Geladeira pequena 1 porta', category: 'Refrigeração', powerKw: 0.10, defaultHoursPerDay: 24, defaultDaysPerMonth: 30, unit: 'day' },
+  { type: 'geladeira_2p', label: 'Geladeira grande 2 portas', category: 'Refrigeração', powerKw: 0.17, defaultHoursPerDay: 24, defaultDaysPerMonth: 30, unit: 'day' },
+  { type: 'freezer_1p', label: 'Freezer horizontal 1 porta', category: 'Refrigeração', powerKw: 0.12, defaultHoursPerDay: 24, defaultDaysPerMonth: 30, unit: 'day' },
+  { type: 'freezer_2p', label: 'Freezer horizontal 2 portas', category: 'Refrigeração', powerKw: 0.20, defaultHoursPerDay: 24, defaultDaysPerMonth: 30, unit: 'day' },
+  { type: 'cervejeira', label: 'Cervejeira', category: 'Refrigeração', powerKw: 0.09, defaultHoursPerDay: 24, defaultDaysPerMonth: 30, unit: 'day' },
+  { type: 'adega', label: 'Adega climatizada', category: 'Refrigeração', powerKw: 0.11, defaultHoursPerDay: 24, defaultDaysPerMonth: 30, unit: 'day' },
+  // LAVANDERIA
+  { type: 'secadora', label: 'Secadora de roupas', category: 'Lavanderia', powerKw: 3.0, defaultHoursPerDay: 1, defaultDaysPerMonth: 15, unit: 'day' },
+  { type: 'lava_seca', label: 'Lava e Seca', category: 'Lavanderia', powerKw: 2.5, defaultHoursPerDay: 1, defaultDaysPerMonth: 15, unit: 'day' },
+  // PISCINA
+  { type: 'bomba_1_4cv', label: 'Bomba de piscina 1/4 CV', category: 'Piscina', powerKw: 0.18, defaultHoursPerDay: 6, defaultDaysPerMonth: 30, unit: 'day' },
+  { type: 'bomba_1_3cv', label: 'Bomba de piscina 1/3 CV', category: 'Piscina', powerKw: 0.25, defaultHoursPerDay: 6, defaultDaysPerMonth: 30, unit: 'day' },
+  { type: 'bomba_1_2cv', label: 'Bomba de piscina 1/2 CV', category: 'Piscina', powerKw: 0.37, defaultHoursPerDay: 8, defaultDaysPerMonth: 30, unit: 'day' },
+  { type: 'bomba_3_4cv', label: 'Bomba de piscina 3/4 CV', category: 'Piscina', powerKw: 0.55, defaultHoursPerDay: 8, defaultDaysPerMonth: 30, unit: 'day' },
+  { type: 'aquec_15k', label: 'Aquecedor de piscina 15.000L', category: 'Piscina', powerKw: 6.0, defaultHoursPerDay: 4, defaultDaysPerMonth: 20, unit: 'day' },
+  { type: 'aquec_25k', label: 'Aquecedor de piscina 25.000L', category: 'Piscina', powerKw: 9.0, defaultHoursPerDay: 4, defaultDaysPerMonth: 20, unit: 'day' },
+  // VEÍCULO ELÉTRICO
+  { type: 'ev', label: 'Veículo elétrico', category: 'Veículo Elétrico', powerKw: 0.20, defaultHoursPerDay: 0, defaultDaysPerMonth: 30, unit: 'km' },
 ];
 
 export const CA_MATERIAL_TABLE_DEFAULT = [
@@ -175,4 +226,25 @@ export const INSTALLMENT_OPTIONS = [72, 60, 48, 36, 24];
 export const BRAZILIAN_STATES = [
   'AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA',
   'PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO',
+];
+
+export const DEFAULT_CARD_RATES = [
+  { installments: 1, rate: 3.20 },
+  { installments: 2, rate: 4.30 },
+  { installments: 3, rate: 5.40 },
+  { installments: 4, rate: 6.50 },
+  { installments: 5, rate: 7.60 },
+  { installments: 6, rate: 8.70 },
+  { installments: 7, rate: 9.80 },
+  { installments: 8, rate: 10.90 },
+  { installments: 9, rate: 12.00 },
+  { installments: 10, rate: 13.10 },
+  { installments: 11, rate: 14.20 },
+  { installments: 12, rate: 15.30 },
+  { installments: 13, rate: 16.40 },
+  { installments: 14, rate: 17.50 },
+  { installments: 15, rate: 18.60 },
+  { installments: 16, rate: 19.70 },
+  { installments: 17, rate: 20.80 },
+  { installments: 18, rate: 21.90 },
 ];
