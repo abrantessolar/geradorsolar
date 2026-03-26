@@ -1,4 +1,4 @@
-import { AdminSettings, Kit, Proposal, SocialProof, PriceTableEntry, CA_MATERIAL_TABLE_DEFAULT } from './types';
+import { AdminSettings, Kit, Proposal, SocialProof, PriceTableEntry, CA_MATERIAL_TABLE_DEFAULT, DEFAULT_CARD_RATES } from './types';
 
 const STORAGE_KEYS = {
   kits: 'tls_kits',
@@ -26,6 +26,7 @@ const DEFAULT_SETTINGS: AdminSettings = {
   homologationPrice: 70,
   trunkCablePrice: 300,
   caMaterialTable: CA_MATERIAL_TABLE_DEFAULT,
+  creditCardRates: DEFAULT_CARD_RATES,
   company: {
     name: 'Três Lagoas Solar - Energia Limpa',
     cnpj: '00.000.000/0001-00',
@@ -79,14 +80,13 @@ export function saveKits(kits: Kit[]) { save(STORAGE_KEYS.kits, kits); }
 
 export function getSettings(): AdminSettings {
   const s = load(STORAGE_KEYS.settings, DEFAULT_SETTINGS);
-  // Migration: ensure new fields exist
   if (!s.irradiationEntries) s.irradiationEntries = DEFAULT_SETTINGS.irradiationEntries;
   if (!s.caMaterialTable) s.caMaterialTable = DEFAULT_SETTINGS.caMaterialTable;
+  if (!s.creditCardRates) s.creditCardRates = DEFAULT_CARD_RATES;
   if (s.installationPricePerPanel === undefined) s.installationPricePerPanel = 100;
   if (s.homologationPrice === undefined) s.homologationPrice = 70;
   if (s.trunkCablePrice === undefined) s.trunkCablePrice = 300;
   if (s.homologationDays === undefined) s.homologationDays = 10;
-  // Migrate old sellers format (string[])
   if (s.sellers && s.sellers.length > 0 && typeof s.sellers[0] === 'string') {
     s.sellers = (s.sellers as unknown as string[]).map((name, i) => ({
       id: String(i + 1), name, phone: '', active: true,

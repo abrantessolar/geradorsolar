@@ -23,9 +23,8 @@ export function estimateFullConsumption(partial: Partial<MonthlyConsumption>): M
 }
 
 export function calcEquipmentMonthly(eq: EquipmentItem): number {
-  if (eq.unit === 'km') return eq.dailyKwh * eq.value;
-  if (eq.unit === 'use') return eq.dailyKwh * eq.value * eq.daysPerMonth;
-  return eq.dailyKwh * (eq.hoursPerDay / 24) * eq.daysPerMonth;
+  if (eq.unit === 'km') return (eq.powerKw || eq.dailyKwh) * eq.value;
+  return (eq.powerKw || eq.dailyKwh) * eq.hoursPerDay * eq.daysPerMonth;
 }
 
 export function calcDimensioning(
@@ -73,10 +72,8 @@ export function findBestInverter(line: string, powerKwp: number): Kit | null {
     || kits.find(k => k.maxPower >= powerKwp) || kits[kits.length - 1] || null;
 }
 
-/** Find the smallest inverter that supports panelCount panels using the 1.5x rule */
 export function findInverterForPanels(line: string, panelCount: number, panelPowerKwp: number = 0.570): Kit | null {
   if (line === 'premium') {
-    // Premium uses micro inverters - return the single micro inverter
     const micros = getKits().filter(k => k.line === 'premium' && k.type === 'inversor' && k.active);
     return micros[0] || null;
   }
@@ -86,17 +83,14 @@ export function findInverterForPanels(line: string, panelCount: number, panelPow
   return kits.find(k => k.power * 1.5 >= totalPanelKwp) || kits[kits.length - 1] || null;
 }
 
-/** Max panels an inverter can support with 1.5x rule */
 export function maxPanelsForInverter(inverterKw: number, panelPowerKwp: number = 0.570): number {
   return Math.floor((inverterKw * 1.5) / panelPowerKwp);
 }
 
-/** Premium: how many micro inverters needed (1 micro per 4 panels) */
 export function calcMicroInverterCount(panelCount: number): number {
   return Math.ceil(panelCount / 4);
 }
 
-/** Premium: trunk cable cost (R$300 per additional micro beyond the first) */
 export function calcTrunkCableCost(panelCount: number): number {
   const settings = getSettings();
   const micros = calcMicroInverterCount(panelCount);
@@ -156,6 +150,15 @@ export function calcInstallments(totalPrice: number, cetMonthly?: number | null)
     } else {
       result[n] = totalPrice / n;
     }
+  });
+  return result;
+}
+
+export function calcCardInstallments(totalPrice: number, rates: { installments: number; rate: number }[]): Record<number, { total: number; perMonth: number }> {
+  const result: Record<number, { total: number; perMonth: number }> = {};
+  rates.forEach(r => {
+    const total = totalPrice * (1 + r.rate / 100);
+    result[r.installments] = { total, perMonth: total / r.installments };
   });
   return result;
 }
