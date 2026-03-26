@@ -204,10 +204,10 @@ export const EQUIPMENT_CATALOG: EquipmentCatalogItem[] = [
   { type: 'secadora', label: 'Secadora de roupas', category: 'Lavanderia', powerKw: 3.0, defaultHoursPerDay: 1, defaultDaysPerMonth: 15, unit: 'day' },
   { type: 'lava_seca', label: 'Lava e Seca', category: 'Lavanderia', powerKw: 2.5, defaultHoursPerDay: 1, defaultDaysPerMonth: 15, unit: 'day' },
   // PISCINA
-  { type: 'bomba_1_4cv', label: 'Bomba de piscina 1/4 CV', category: 'Piscina', powerKw: 0.18, defaultHoursPerDay: 6, defaultDaysPerMonth: 30, unit: 'day' },
-  { type: 'bomba_1_3cv', label: 'Bomba de piscina 1/3 CV', category: 'Piscina', powerKw: 0.25, defaultHoursPerDay: 6, defaultDaysPerMonth: 30, unit: 'day' },
-  { type: 'bomba_1_2cv', label: 'Bomba de piscina 1/2 CV', category: 'Piscina', powerKw: 0.37, defaultHoursPerDay: 8, defaultDaysPerMonth: 30, unit: 'day' },
-  { type: 'bomba_3_4cv', label: 'Bomba de piscina 3/4 CV', category: 'Piscina', powerKw: 0.55, defaultHoursPerDay: 8, defaultDaysPerMonth: 30, unit: 'day' },
+  { type: 'bomba_1_4cv', label: 'Bomba de piscina 1/4 CV', category: 'Piscina', powerKw: 0.18, defaultHoursPerDay: 1, defaultDaysPerMonth: 30, unit: 'day' },
+  { type: 'bomba_1_3cv', label: 'Bomba de piscina 1/3 CV', category: 'Piscina', powerKw: 0.25, defaultHoursPerDay: 1, defaultDaysPerMonth: 30, unit: 'day' },
+  { type: 'bomba_1_2cv', label: 'Bomba de piscina 1/2 CV', category: 'Piscina', powerKw: 0.37, defaultHoursPerDay: 1, defaultDaysPerMonth: 30, unit: 'day' },
+  { type: 'bomba_3_4cv', label: 'Bomba de piscina 3/4 CV', category: 'Piscina', powerKw: 0.55, defaultHoursPerDay: 1, defaultDaysPerMonth: 30, unit: 'day' },
   { type: 'aquec_15k', label: 'Aquecedor de piscina 15.000L', category: 'Piscina', powerKw: 6.0, defaultHoursPerDay: 4, defaultDaysPerMonth: 20, unit: 'day' },
   { type: 'aquec_25k', label: 'Aquecedor de piscina 25.000L', category: 'Piscina', powerKw: 9.0, defaultHoursPerDay: 4, defaultDaysPerMonth: 20, unit: 'day' },
   // VEÍCULO ELÉTRICO

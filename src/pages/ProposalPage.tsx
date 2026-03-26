@@ -8,7 +8,9 @@ import {
 } from '@/data/calculations';
 import { MONTH_LABELS, MONTH_KEYS, SEASONAL_FACTORS, INSTALLMENT_OPTIONS, UC_COLORS, LINE_NAMES, LINE_SUBS } from '@/data/types';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, LineChart, Line, ReferenceLine } from 'recharts';
-import { Printer, Share2, Edit, ArrowLeft, Sun, Zap, TrendingUp, Shield, X } from 'lucide-react';
+import { Printer, Share2, Edit, ArrowLeft, Sun, Zap, TrendingUp, Shield, X, Cpu } from 'lucide-react';
+import { calcEquipmentMonthly } from '@/data/calculations';
+import logo from '@/assets/logo.png';
 
 const LINES = ['acesso', 'excellence', 'premium'] as const;
 
