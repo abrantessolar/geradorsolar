@@ -167,7 +167,7 @@ export default function ProposalPage() {
   };
 
   const selectedCard = lineCards.find(c => c.line === proposal.selectedLine) || lineCards[0];
-  const savings25 = cashflowData.length > 0
+  const savings15 = cashflowData.length > 0
     ? (cashflowData[cashflowData.length - 1]?.semSolar || 0) - (cashflowData[cashflowData.length - 1]?.comSolar || 0)
     : 0;
 
@@ -204,9 +204,7 @@ export default function ProposalPage() {
             ))}
           </div>
           <div className="relative z-10">
-            <div className="w-20 h-20 rounded-full bg-primary flex items-center justify-center mx-auto mb-6">
-              <Sun className="w-12 h-12 text-secondary" />
-            </div>
+            <img src={logo} alt="Três Lagoas Solar" className="h-24 mx-auto mb-6" />
             <p className="text-sm uppercase tracking-widest text-muted-foreground mb-2">{settings.company.name}</p>
             <h1 className="text-4xl md:text-5xl font-bold text-primary text-balance" style={{ lineHeight: '1.1' }}>
               Meu Projeto de<br />Energia Solar Fotovoltaica
@@ -377,21 +375,33 @@ export default function ProposalPage() {
           </h2>
 
           <div className="flex flex-wrap items-center gap-4">
-            <div className="flex items-center gap-2">
-              <label className="text-sm font-medium">Parcelas:</label>
-              <div className="flex gap-1">
-                {INSTALLMENT_OPTIONS.map(n => (
-                  <button key={n} onClick={() => setCashflowInstallments(n)}
-                    className={`px-3 py-1 rounded text-sm font-medium transition-colors ${cashflowInstallments === n ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/70'}`}>
-                    {n}×
-                  </button>
-                ))}
-              </div>
+            <div className="flex gap-1">
+              <button onClick={() => setCashflowMode('financing')}
+                className={`px-3 py-1 rounded text-sm font-medium transition-colors ${cashflowMode === 'financing' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/70'}`}>
+                Financiamento
+              </button>
+              <button onClick={() => setCashflowMode('card')}
+                className={`px-3 py-1 rounded text-sm font-medium transition-colors ${cashflowMode === 'card' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/70'}`}>
+                Cartão
+              </button>
+              <button onClick={() => setCashflowMode('cash')}
+                className={`px-3 py-1 rounded text-sm font-medium transition-colors ${cashflowMode === 'cash' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/70'}`}>
+                À Vista
+              </button>
             </div>
-            <button onClick={() => setShowComfort(v => !v)}
-              className={`text-sm px-3 py-1 rounded font-medium transition-colors ${showComfort ? 'bg-secondary text-secondary-foreground' : 'solar-btn-outline'}`}>
-              {showComfort ? '✓ Conforto Planejado' : 'Comparar com Conforto Planejado'}
-            </button>
+            {cashflowMode === 'financing' && (
+              <div className="flex items-center gap-2">
+                <label className="text-sm font-medium">Parcelas:</label>
+                <div className="flex gap-1">
+                  {INSTALLMENT_OPTIONS.map(n => (
+                    <button key={n} onClick={() => setCashflowInstallments(n)}
+                      className={`px-3 py-1 rounded text-sm font-medium transition-colors ${cashflowInstallments === n ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/70'}`}>
+                      {n}×
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="h-80">
@@ -404,12 +414,11 @@ export default function ProposalPage() {
                 {paybackYear && <ReferenceLine x={`${paybackYear}`} stroke="#4A5A2A" strokeDasharray="3 3" label={{ value: 'Payback', fill: '#4A5A2A', fontSize: 11 }} />}
                 <Line type="monotone" dataKey="semSolar" name="Sem Solar" stroke="#E84855" strokeWidth={2.5} dot={false} />
                 <Line type="monotone" dataKey="comSolar" name="Com Solar" stroke="#4A5A2A" strokeWidth={2.5} dot={false} />
-                {showComfort && <Line type="monotone" dataKey="comConforto" name="Com Conforto" stroke="#2E86AB" strokeWidth={2} dot={false} strokeDasharray="5 5" />}
               </LineChart>
             </ResponsiveContainer>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             <div className="text-center p-4 rounded-xl bg-primary/5">
               <p className="text-xs text-muted-foreground">Economia mensal</p>
               <p className="text-xl font-bold text-primary">{selectedCard ? formatCurrency(selectedCard.dimensioning.monthlySavings) : '—'}</p>
@@ -419,12 +428,8 @@ export default function ProposalPage() {
               <p className="text-xl font-bold text-primary">{selectedCard ? `${formatNumber(selectedCard.dimensioning.paybackYears)} anos` : '—'}</p>
             </div>
             <div className="text-center p-4 rounded-xl bg-primary/5">
-              <p className="text-xs text-muted-foreground">Retorno 10 anos</p>
-              <p className="text-xl font-bold text-primary">{selectedCard ? formatCurrency(selectedCard.dimensioning.return10) : '—'}</p>
-            </div>
-            <div className="text-center p-4 rounded-xl bg-primary/5">
-              <p className="text-xs text-muted-foreground">Economia em 25 anos</p>
-              <p className="text-xl font-bold text-primary">{formatCurrency(savings25)}</p>
+              <p className="text-xs text-muted-foreground">Economia em 15 anos</p>
+              <p className="text-xl font-bold text-primary">{formatCurrency(savings15)}</p>
             </div>
           </div>
         </section>
