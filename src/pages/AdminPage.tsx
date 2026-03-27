@@ -199,7 +199,7 @@ function SellersTab() {
     setSettings(prev => ({ ...prev, sellers: prev.sellers.filter((_, i) => i !== idx) }));
   };
 
-  const handleSave = () => saveSettings(settings);
+  const handleSave = () => { saveSettings(settings); saveSettingsDB(settings); saveVendedoresDB(settings.sellers); };
 
   return (
     <div className="solar-card p-6 space-y-4">
