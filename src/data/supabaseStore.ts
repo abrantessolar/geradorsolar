@@ -109,7 +109,7 @@ export async function savePropostaDB(proposal: Proposal, criadorUserId?: string)
     await supabase.from('propostas').update(row).eq('id', proposal.id);
     return proposal.id;
   } else {
-    const { data } = await supabase.from('propostas').insert(row).select('id').single();
+    const { data } = await supabase.from('propostas').insert(row as any).select('id').single();
     return data?.id || proposal.id;
   }
 }
