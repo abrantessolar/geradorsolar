@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import {
   getSettings, saveSettings, getKits, saveKits, getProposals,
   getSocialProofs, saveSocialProofs, isAdminLoggedIn, setAdminAuth,
@@ -6,7 +6,8 @@ import {
 } from '@/data/store';
 import { formatCurrency } from '@/data/calculations';
 import { AdminSettings, Seller, IrradiationEntry, PriceTableEntry, SocialProof, BRAZILIAN_STATES, CA_MATERIAL_TABLE_DEFAULT, LINE_NAMES } from '@/data/types';
-import { Lock, Users, DollarSign, Settings, MapPin, Building2, FileText, Image, LogOut, Plus, Trash2, Save, Eye, Wand2, AlertCircle } from 'lucide-react';
+import type { Distributor } from '@/data/types';
+import { Lock, Users, DollarSign, Settings, MapPin, Building2, FileText, Image, LogOut, Plus, Trash2, Save, Eye, Wand2, AlertCircle, Upload, Check } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export default function AdminPage() {
@@ -433,6 +434,8 @@ function PricingTab() {
 function IrradiationTab() {
   const [settings, setSettings] = useState(getSettings());
   const entries = settings.irradiationEntries;
+  const [importMsg, setImportMsg] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const updateEntry = (idx: number, field: keyof IrradiationEntry, value: any) => {
     const updated = [...entries];
@@ -449,20 +452,60 @@ function IrradiationTab() {
     setSettings(prev => ({ ...prev, irradiationEntries: prev.irradiationEntries.filter((_, i) => i !== idx) }));
   };
 
+  const handleImportJSON = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImportMsg('Importando...');
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const data = JSON.parse(ev.target?.result as string);
+        if (!Array.isArray(data)) throw new Error('Formato inválido');
+        const newEntries: IrradiationEntry[] = data.map((item: any, i: number) => ({
+          id: `imp_${Date.now()}_${i}`,
+          state: item.uf || item.state || 'MS',
+          city: item.cidade || item.city || '',
+          value: Array.isArray(item.irr) ? item.irr.reduce((a: number, b: number) => a + b, 0) / 12 : (item.value || 5.0),
+        }));
+        setSettings(prev => ({ ...prev, irradiationEntries: [...prev.irradiationEntries, ...newEntries] }));
+        setImportMsg(`${newEntries.length} cidades importadas com sucesso!`);
+        setTimeout(() => setImportMsg(''), 4000);
+      } catch {
+        setImportMsg('Erro ao importar arquivo. Verifique o formato JSON.');
+        setTimeout(() => setImportMsg(''), 4000);
+      }
+    };
+    reader.readAsText(file);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
   const handleSave = () => saveSettings(settings);
 
   return (
     <div className="solar-card p-6 space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <h2 className="text-lg font-bold text-primary">Irradiação por Cidade</h2>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
+          <input type="file" accept=".json" ref={fileInputRef} className="hidden" onChange={handleImportJSON} />
+          <button onClick={() => fileInputRef.current?.click()} className="solar-btn-outline text-sm py-2 px-3 flex items-center gap-1">
+            <Upload className="w-4 h-4" /> Importar base completa (JSON)
+          </button>
           <button onClick={add} className="solar-btn-outline text-sm py-2 px-3 flex items-center gap-1"><Plus className="w-4 h-4" /> Nova cidade</button>
           <button onClick={handleSave} className="solar-btn-primary text-sm py-2 px-3 flex items-center gap-1"><Save className="w-4 h-4" /> Salvar</button>
         </div>
       </div>
-      <div className="overflow-x-auto">
+      {importMsg && (
+        <div className={`flex items-center gap-2 p-3 rounded-lg text-sm ${importMsg.includes('sucesso') ? 'bg-green-100 text-green-800' : importMsg.includes('Erro') ? 'bg-destructive/10 text-destructive' : 'bg-muted text-muted-foreground'}`}>
+          {importMsg.includes('sucesso') ? <Check className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
+          {importMsg}
+        </div>
+      )}
+      <p className="text-xs text-muted-foreground">
+        Base CRESESB com 98 cidades já incluída no sistema. Aqui você pode adicionar cidades extras ou importar a base completa de 5.509 cidades via JSON.
+      </p>
+      <div className="overflow-x-auto max-h-[500px] overflow-y-auto">
         <table className="w-full text-sm">
-          <thead>
+          <thead className="sticky top-0 bg-card z-10">
             <tr className="border-b border-border text-left text-muted-foreground">
               <th className="py-2 px-2">Estado (UF)</th>
               <th className="py-2 px-2">Cidade</th>
@@ -495,6 +538,21 @@ function CompanyTab() {
   const [settings, setSettings] = useState(getSettings());
   const updateCompany = (field: string, value: string) => setSettings(prev => ({ ...prev, company: { ...prev.company, [field]: value } }));
   const update = (field: string, value: any) => setSettings((prev: AdminSettings) => ({ ...prev, [field]: value }));
+
+  const updateDistributor = (idx: number, field: keyof Distributor, value: any) => {
+    const dists = [...(settings.distributors || [])];
+    dists[idx] = { ...dists[idx], [field]: field === 'kwhPrice' ? (parseFloat(value) || 0) : value };
+    setSettings(prev => ({ ...prev, distributors: dists }));
+  };
+
+  const addDistributor = () => {
+    setSettings(prev => ({ ...prev, distributors: [...(prev.distributors || []), { name: '', kwhPrice: 0.85 }] }));
+  };
+
+  const removeDistributor = (idx: number) => {
+    setSettings(prev => ({ ...prev, distributors: (prev.distributors || []).filter((_, i) => i !== idx) }));
+  };
+
   const handleSave = () => saveSettings(settings);
 
   const COMPANY_FIELDS = [
@@ -535,6 +593,34 @@ function CompanyTab() {
           <label className="block text-sm font-medium mb-1">Prazo homologação (dias)</label>
           <input className="solar-input" type="number" value={settings.homologationDays} onChange={e => update('homologationDays', parseInt(e.target.value) || 0)} />
         </div>
+      </div>
+
+      {/* Distributor Tariffs */}
+      <div className="space-y-4 border-t border-border pt-6">
+        <h3 className="font-semibold text-primary">Tarifas por Distribuidora</h3>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-border text-left text-muted-foreground">
+                <th className="py-2 px-2">Distribuidora</th>
+                <th className="py-2 px-2">Valor kWh (R$)</th>
+                <th className="py-2 px-2">Padrão</th>
+                <th className="py-2 px-2"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {(settings.distributors || []).map((d, i) => (
+                <tr key={i} className="border-b border-border/50 hover:bg-muted/30">
+                  <td className="py-2 px-2"><input className="solar-input py-1 text-sm" value={d.name} onChange={e => updateDistributor(i, 'name', e.target.value)} /></td>
+                  <td className="py-2 px-2"><input className="solar-input py-1 text-sm w-24" type="number" step="0.01" value={d.kwhPrice} onChange={e => updateDistributor(i, 'kwhPrice', e.target.value)} /></td>
+                  <td className="py-2 px-2"><input type="radio" name="defaultDist" checked={settings.defaultDistributor === d.name} onChange={() => setSettings(prev => ({ ...prev, defaultDistributor: d.name }))} className="accent-primary" /></td>
+                  <td className="py-2 px-2"><button onClick={() => removeDistributor(i)} className="text-destructive hover:text-destructive/80"><Trash2 className="w-4 h-4" /></button></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <button onClick={addDistributor} className="solar-btn-outline text-sm py-2 px-3 flex items-center gap-1"><Plus className="w-4 h-4" /> Nova distribuidora</button>
       </div>
     </div>
   );
