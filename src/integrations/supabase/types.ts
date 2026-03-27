@@ -166,6 +166,7 @@ export type Database = {
           uf: string | null
           valor_total: number | null
           vendedor_id: string | null
+          visualizado_em: string | null
         }
         Insert: {
           atualizado_em?: string
@@ -183,6 +184,7 @@ export type Database = {
           uf?: string | null
           valor_total?: number | null
           vendedor_id?: string | null
+          visualizado_em?: string | null
         }
         Update: {
           atualizado_em?: string
@@ -200,6 +202,7 @@ export type Database = {
           uf?: string | null
           valor_total?: number | null
           vendedor_id?: string | null
+          visualizado_em?: string | null
         }
         Relationships: [
           {
