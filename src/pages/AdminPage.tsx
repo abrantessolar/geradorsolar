@@ -12,162 +12,52 @@ import {
 import { formatCurrency } from '@/data/calculations';
 import { AdminSettings, Seller, IrradiationEntry, PriceTableEntry, SocialProof, BRAZILIAN_STATES, CA_MATERIAL_TABLE_DEFAULT, LINE_NAMES } from '@/data/types';
 import type { Distributor } from '@/data/types';
-import { Lock, Users, DollarSign, Settings, MapPin, Building2, FileText, Image, LogOut, Plus, Trash2, Save, Eye, Wand2, AlertCircle, Upload, Check } from 'lucide-react';
+import { Users, DollarSign, Settings, MapPin, Building2, FileText, Image, Plus, Trash2, Save, Eye, EyeOff, Wand2, AlertCircle, Upload, Check, UserPlus, Shield, Edit2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function AdminPage() {
-  const [authed, setAuthed] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState('');
-  const [pass, setPass] = useState('');
-  const [loginError, setLoginError] = useState('');
-  const [showForgot, setShowForgot] = useState(false);
-  const [forgotEmail, setForgotEmail] = useState('');
-  const [forgotSent, setForgotSent] = useState(false);
-  const [tab, setTab] = useState<'sellers' | 'prices' | 'pricing' | 'irradiation' | 'company' | 'proposals' | 'social'>('sellers');
+  const { user: authUser } = useAuth();
+  const role = authUser?.role || 'vendedor';
 
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      setAuthed(!!session);
-      setLoading(false);
-    });
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setAuthed(!!session);
-      setLoading(false);
-    });
-    return () => subscription.unsubscribe();
-  }, []);
+  type TabKey = 'users' | 'sellers' | 'prices' | 'pricing' | 'irradiation' | 'company' | 'proposals' | 'social';
 
-  const handleLogin = async () => {
-    setLoginError('');
-    const { error } = await supabase.auth.signInWithPassword({
-      email: user,
-      password: pass,
-    });
-    if (error) {
-      setLoginError('Usuário ou senha incorretos. Tente novamente.');
-    }
-  };
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    setAuthed(false);
-  };
-
-  const handleForgotPassword = async () => {
-    if (!forgotEmail) return;
-    const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
-      redirectTo: `${window.location.origin}/reset-password`,
-    });
-    if (!error) {
-      setForgotSent(true);
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
-
-  if (!authed) {
-    if (showForgot) {
-      return (
-        <div className="max-w-md mx-auto mt-20 solar-card p-8 space-y-6 animate-fade-in-up">
-          <div className="text-center">
-            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-              <Lock className="w-8 h-8 text-primary" />
-            </div>
-            <h1 className="text-2xl font-bold text-primary">Redefinir Senha</h1>
-          </div>
-          {forgotSent ? (
-            <div className="text-center space-y-3">
-              <p className="text-sm text-muted-foreground">
-                Enviaremos um link de redefinição para seu e-mail cadastrado.
-              </p>
-              <button onClick={() => { setShowForgot(false); setForgotSent(false); }} className="solar-btn-outline text-sm">
-                Voltar ao login
-              </button>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              <div>
-                <label className="block text-sm font-medium mb-1">E-mail cadastrado</label>
-                <input className="solar-input" type="email" placeholder="seu@email.com" value={forgotEmail} onChange={e => setForgotEmail(e.target.value)} />
-              </div>
-              <button className="w-full solar-btn-primary" onClick={handleForgotPassword}>
-                Enviar link de redefinição
-              </button>
-              <button onClick={() => setShowForgot(false)} className="w-full text-sm text-muted-foreground hover:text-foreground transition-colors">
-                Voltar ao login
-              </button>
-            </div>
-          )}
-        </div>
-      );
-    }
-
-    return (
-      <div className="max-w-md mx-auto mt-20 solar-card p-8 space-y-6 animate-fade-in-up">
-        <div className="text-center">
-          <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-            <Lock className="w-8 h-8 text-primary" />
-          </div>
-          <h1 className="text-2xl font-bold text-primary">Painel Admin</h1>
-          <p className="text-sm text-muted-foreground">Acesso restrito</p>
-        </div>
-        <div className="space-y-3">
-          {loginError && (
-            <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
-              <AlertCircle className="w-4 h-4 flex-shrink-0" />
-              {loginError}
-            </div>
-          )}
-          <input className="solar-input" placeholder="Usuário" value={user} onChange={e => setUser(e.target.value)} />
-          <input className="solar-input" type="password" placeholder="Senha" value={pass}
-            onChange={e => setPass(e.target.value)}
-            onKeyDown={e => { if (e.key === 'Enter') handleLogin(); }} />
-          <button className="w-full solar-btn-primary" onClick={handleLogin}>
-            Entrar
-          </button>
-          <button onClick={() => setShowForgot(true)} className="w-full text-sm text-primary hover:underline">
-            Esqueci minha senha
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  const TABS = [
-    { key: 'sellers' as const, label: 'Vendedores', icon: Users },
-    { key: 'prices' as const, label: 'Tabela de Preços', icon: DollarSign },
-    { key: 'pricing' as const, label: 'Precificação', icon: Settings },
-    { key: 'irradiation' as const, label: 'Irradiação', icon: MapPin },
-    { key: 'company' as const, label: 'Empresa', icon: Building2 },
-    { key: 'proposals' as const, label: 'Propostas', icon: FileText },
-    { key: 'social' as const, label: 'Provas Sociais', icon: Image },
+  const ALL_TABS: { key: TabKey; label: string; icon: any; roles: string[] }[] = [
+    { key: 'users', label: 'Usuários', icon: Shield, roles: ['admin'] },
+    { key: 'sellers', label: 'Vendedores', icon: Users, roles: ['admin'] },
+    { key: 'prices', label: 'Tabela de Preços', icon: DollarSign, roles: ['admin'] },
+    { key: 'pricing', label: 'Precificação', icon: Settings, roles: ['admin'] },
+    { key: 'irradiation', label: 'Irradiação', icon: MapPin, roles: ['admin', 'orcamentista'] },
+    { key: 'company', label: 'Empresa', icon: Building2, roles: ['admin'] },
+    { key: 'proposals', label: 'Propostas', icon: FileText, roles: ['admin', 'orcamentista', 'vendedor'] },
+    { key: 'social', label: 'Provas Sociais', icon: Image, roles: ['admin'] },
   ];
+
+  const visibleTabs = ALL_TABS.filter(t => t.roles.includes(role));
+  const defaultTab: TabKey = role === 'admin' ? 'users' : 'proposals';
+  const [tab, setTab] = useState<TabKey>(defaultTab);
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-primary">Painel Administrativo</h1>
-        <button onClick={handleLogout} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-destructive transition-colors">
-          <LogOut className="w-4 h-4" /> Sair
-        </button>
+        <h1 className="text-2xl font-bold text-primary">
+          {role === 'admin' ? 'Painel Administrativo' : role === 'orcamentista' ? 'Painel' : 'Minhas Propostas'}
+        </h1>
+        <p className="text-sm text-muted-foreground">{authUser?.nome}</p>
       </div>
 
-      <div className="flex gap-2 flex-wrap">
-        {TABS.map(t => (
-          <button key={t.key} onClick={() => setTab(t.key)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${tab === t.key ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/70'}`}>
-            <t.icon className="w-4 h-4" /> {t.label}
-          </button>
-        ))}
-      </div>
+      {visibleTabs.length > 1 && (
+        <div className="flex gap-2 flex-wrap">
+          {visibleTabs.map(t => (
+            <button key={t.key} onClick={() => setTab(t.key)}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${tab === t.key ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/70'}`}>
+              <t.icon className="w-4 h-4" /> {t.label}
+            </button>
+          ))}
+        </div>
+      )}
 
+      {tab === 'users' && role === 'admin' && <UsersTab />}
       {tab === 'sellers' && <SellersTab />}
       {tab === 'prices' && <PriceTableTab />}
       {tab === 'pricing' && <PricingTab />}
@@ -776,6 +666,196 @@ function SocialTab() {
           </div>
         ))}
         {proofs.length === 0 && <p className="text-sm text-muted-foreground py-4 text-center">Nenhuma prova social cadastrada.</p>}
+      </div>
+    </div>
+  );
+}
+
+/* ─── ABA: GESTÃO DE USUÁRIOS ─── */
+function UsersTab() {
+  const [users, setUsers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [editUser, setEditUser] = useState<any>(null);
+  const [form, setForm] = useState({ nome: '', email: '', role: 'vendedor', password: '', confirmPassword: '' });
+  const [showPw, setShowPw] = useState<Record<string, boolean>>({});
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  const callApi = async (body: any) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/manage-users`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session?.access_token}`,
+        'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+      },
+      body: JSON.stringify(body),
+    });
+    return res.json();
+  };
+
+  const loadUsers = async () => {
+    const data = await callApi({ action: 'list' });
+    setUsers(data.users || []);
+    setLoading(false);
+  };
+
+  useEffect(() => { loadUsers(); }, []);
+
+  const handleSave = async () => {
+    if (!form.nome || !form.email) { setError('Preencha nome e e-mail.'); return; }
+    if (!editUser && !form.password) { setError('Defina uma senha.'); return; }
+    if (!editUser && form.password.length < 6) { setError('Senha mínima: 6 caracteres.'); return; }
+    if (!editUser && form.password !== form.confirmPassword) { setError('Senhas não coincidem.'); return; }
+
+    setSaving(true);
+    setError('');
+
+    const body = editUser
+      ? { action: 'update', profile_id: editUser.id, nome: form.nome, email: form.email, role: form.role, ...(form.password ? { password: form.password } : {}) }
+      : { action: 'create', nome: form.nome, email: form.email, role: form.role, password: form.password };
+
+    const res = await callApi(body);
+    if (res.error) { setError(res.error); setSaving(false); return; }
+
+    await loadUsers();
+    resetForm();
+    setSaving(false);
+  };
+
+  const toggleActive = async (u: any) => {
+    await callApi({ action: 'update', profile_id: u.id, ativo: !u.ativo });
+    await loadUsers();
+  };
+
+  const startEdit = (u: any) => {
+    setEditUser(u);
+    setForm({ nome: u.nome, email: u.email, role: u.role, password: '', confirmPassword: '' });
+    setShowForm(true);
+    setError('');
+  };
+
+  const resetForm = () => {
+    setShowForm(false);
+    setEditUser(null);
+    setForm({ nome: '', email: '', role: 'vendedor', password: '', confirmPassword: '' });
+    setError('');
+  };
+
+  const ROLE_LABELS: Record<string, string> = { admin: 'Administrador', orcamentista: 'Orçamentista', vendedor: 'Vendedor' };
+
+  if (loading) return <div className="solar-card p-6 text-center"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto"></div></div>;
+
+  return (
+    <div className="solar-card p-6 space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-bold text-primary">Gestão de Usuários</h2>
+        <button onClick={() => { resetForm(); setShowForm(true); }} className="solar-btn-primary text-sm py-2 px-3 flex items-center gap-1">
+          <UserPlus className="w-4 h-4" /> Novo Usuário
+        </button>
+      </div>
+
+      {showForm && (
+        <div className="p-4 rounded-lg border border-border bg-muted/30 space-y-3">
+          <h3 className="font-semibold text-primary">{editUser ? 'Editar Usuário' : 'Novo Usuário'}</h3>
+          {error && (
+            <div className="flex items-center gap-2 p-2 rounded bg-destructive/10 text-destructive text-sm">
+              <AlertCircle className="w-4 h-4" />{error}
+            </div>
+          )}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium mb-1">Nome completo</label>
+              <input className="solar-input text-sm" value={form.nome} onChange={e => setForm(f => ({ ...f, nome: e.target.value }))} />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">E-mail</label>
+              <input className="solar-input text-sm" type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Nível de permissão</label>
+              <select className="solar-input text-sm" value={form.role} onChange={e => setForm(f => ({ ...f, role: e.target.value }))}>
+                <option value="admin">Administrador</option>
+                <option value="orcamentista">Orçamentista</option>
+                <option value="vendedor">Vendedor</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">{editUser ? 'Nova senha (vazio = manter)' : 'Senha'}</label>
+              <input className="solar-input text-sm" type="password" value={form.password} onChange={e => setForm(f => ({ ...f, password: e.target.value }))} />
+            </div>
+            {!editUser && (
+              <div>
+                <label className="block text-sm font-medium mb-1">Confirmar senha</label>
+                <input className="solar-input text-sm" type="password" value={form.confirmPassword} onChange={e => setForm(f => ({ ...f, confirmPassword: e.target.value }))} />
+              </div>
+            )}
+          </div>
+          <div className="flex gap-2">
+            <button onClick={handleSave} disabled={saving} className="solar-btn-primary text-sm py-2 px-4">
+              {saving ? 'Salvando...' : editUser ? 'Atualizar' : 'Cadastrar'}
+            </button>
+            <button onClick={resetForm} className="solar-btn-outline text-sm py-2 px-4">Cancelar</button>
+          </div>
+        </div>
+      )}
+
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-border text-left text-muted-foreground">
+              <th className="py-2 px-2">Nome</th>
+              <th className="py-2 px-2">E-mail</th>
+              <th className="py-2 px-2">Nível</th>
+              <th className="py-2 px-2">Senha</th>
+              <th className="py-2 px-2">Status</th>
+              <th className="py-2 px-2">Último acesso</th>
+              <th className="py-2 px-2">Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            {users.map(u => (
+              <tr key={u.id} className="border-b border-border/50 hover:bg-muted/30">
+                <td className="py-2 px-2 font-medium">{u.nome}</td>
+                <td className="py-2 px-2">{u.email}</td>
+                <td className="py-2 px-2">
+                  <span className={`solar-badge text-xs ${u.role === 'admin' ? 'bg-primary/10 text-primary' : u.role === 'orcamentista' ? 'bg-secondary/20 text-secondary-foreground' : 'bg-muted text-muted-foreground'}`}>
+                    {ROLE_LABELS[u.role] || u.role}
+                  </span>
+                </td>
+                <td className="py-2 px-2">
+                  <div className="flex items-center gap-1">
+                    <span className="font-mono text-xs">{showPw[u.id] ? (u.senha_visivel || '***') : '••••••'}</span>
+                    <button onClick={() => setShowPw(p => ({ ...p, [u.id]: !p[u.id] }))} className="text-muted-foreground hover:text-foreground">
+                      {showPw[u.id] ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                    </button>
+                  </div>
+                </td>
+                <td className="py-2 px-2">
+                  <span className={`solar-badge text-xs ${u.ativo ? 'bg-green-100 text-green-800' : 'bg-destructive/10 text-destructive'}`}>
+                    {u.ativo ? 'Ativo' : 'Inativo'}
+                  </span>
+                </td>
+                <td className="py-2 px-2 text-xs text-muted-foreground">
+                  {u.ultimo_acesso ? new Date(u.ultimo_acesso).toLocaleString('pt-BR') : 'Nunca'}
+                </td>
+                <td className="py-2 px-2">
+                  <div className="flex gap-1">
+                    <button onClick={() => startEdit(u)} className="p-1 rounded hover:bg-muted text-primary" title="Editar"><Edit2 className="w-4 h-4" /></button>
+                    <button onClick={() => toggleActive(u)} className={`p-1 rounded hover:bg-muted ${u.ativo ? 'text-destructive' : 'text-green-600'}`} title={u.ativo ? 'Desativar' : 'Ativar'}>
+                      {u.ativo ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+            {users.length === 0 && (
+              <tr><td colSpan={7} className="py-8 text-center text-muted-foreground">Nenhum usuário cadastrado.</td></tr>
+            )}
+          </tbody>
+        </table>
       </div>
     </div>
   );
