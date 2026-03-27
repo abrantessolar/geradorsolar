@@ -31,7 +31,7 @@ export default function ProposalPage() {
   const [cashflowMode, setCashflowMode] = useState<'financing' | 'card' | 'cash'>('financing');
   const [cashflowLine, setCashflowLine] = useState<string>(proposal?.selectedLine || 'acesso');
   const [cashflowPeriod, setCashflowPeriod] = useState(15);
-  const [showMonths, setShowMonths] = useState(false);
+  
 
   const basePanelCount = proposal?.selectedKit.panelCount ?? 0;
   const finalPanels = Math.max(Math.max(1, basePanelCount - 2), basePanelCount + panelDelta);
@@ -107,69 +107,39 @@ export default function ProposalPage() {
 
     const monthlyBill = selectedCard.dimensioning.avgMonthlyKwh * proposal.clientData.kwhPrice;
     const minFee = Math.max(80, monthlyBill * 0.15);
-    const totalPeriod = showMonths ? cashflowPeriod * 12 : cashflowPeriod;
-
     const data: any[] = [];
     let accWithout = 0;
     let accWith = 0;
 
-    if (showMonths && cashflowPeriod <= 5) {
-      for (let m = 0; m <= totalPeriod; m++) {
-        const year = m / 12;
-        const monthlyBillAdj = (monthlyBill / 12) * Math.pow(1.10, year) * 12 / 12;
-        accWithout += monthlyBillAdj;
+    for (let year = 0; year <= cashflowPeriod; year++) {
+      const yearlyBill = monthlyBill * 12 * Math.pow(1.10, year);
+      accWithout += yearlyBill;
 
-        let monthlyWithSolar: number;
-        if (cashflowMode === 'cash') {
-          monthlyWithSolar = m === 0 ? selectedCard.totalPrice + minFee : minFee;
-        } else if (cashflowMode === 'card') {
-          const bestCard = Object.values(selectedCard.cardInstallments).pop();
-          const cardMonthly = bestCard ? bestCard.perMonth : selectedCard.totalPrice / 12;
-          const cardMonths = bestCard ? Number(Object.keys(selectedCard.cardInstallments).pop()) : 12;
-          monthlyWithSolar = m < cardMonths ? cardMonthly + minFee : minFee;
-        } else {
-          const monthlyInstallment = selectedCard.installments[cashflowInstallments] || selectedCard.totalPrice / cashflowInstallments;
-          monthlyWithSolar = m < cashflowInstallments ? monthlyInstallment + minFee : minFee;
-        }
-        accWith += monthlyWithSolar;
-
-        data.push({
-          year: `${m}`,
-          semSolar: Math.round(accWithout),
-          comSolar: Math.round(accWith),
-        });
+      let yearlyWithSolar: number;
+      if (cashflowMode === 'cash') {
+        yearlyWithSolar = year === 0 ? selectedCard.totalPrice + minFee * 12 : minFee * 12;
+      } else if (cashflowMode === 'card') {
+        const bestCard = Object.values(selectedCard.cardInstallments).pop();
+        const cardMonthly = bestCard ? bestCard.perMonth : selectedCard.totalPrice / 12;
+        const cardMonths = bestCard ? Number(Object.keys(selectedCard.cardInstallments).pop()) : 12;
+        yearlyWithSolar = year === 0 ? (cardMonthly * Math.min(cardMonths, 12) + minFee * 12) : (year * 12 < cardMonths ? (cardMonthly * 12 + minFee * 12) : minFee * 12);
+      } else {
+        const monthlyInstallment = selectedCard.installments[cashflowInstallments] || selectedCard.totalPrice / cashflowInstallments;
+        const financingYears = cashflowInstallments / 12;
+        yearlyWithSolar = year < financingYears
+          ? (monthlyInstallment + minFee) * 12
+          : minFee * 12;
       }
-    } else {
-      for (let year = 0; year <= cashflowPeriod; year++) {
-        const yearlyBill = monthlyBill * 12 * Math.pow(1.10, year);
-        accWithout += yearlyBill;
+      accWith += yearlyWithSolar;
 
-        let yearlyWithSolar: number;
-        if (cashflowMode === 'cash') {
-          yearlyWithSolar = year === 0 ? selectedCard.totalPrice + minFee * 12 : minFee * 12;
-        } else if (cashflowMode === 'card') {
-          const bestCard = Object.values(selectedCard.cardInstallments).pop();
-          const cardMonthly = bestCard ? bestCard.perMonth : selectedCard.totalPrice / 12;
-          const cardMonths = bestCard ? Number(Object.keys(selectedCard.cardInstallments).pop()) : 12;
-          yearlyWithSolar = year === 0 ? (cardMonthly * Math.min(cardMonths, 12) + minFee * 12) : (year * 12 < cardMonths ? (cardMonthly * 12 + minFee * 12) : minFee * 12);
-        } else {
-          const monthlyInstallment = selectedCard.installments[cashflowInstallments] || selectedCard.totalPrice / cashflowInstallments;
-          const financingYears = cashflowInstallments / 12;
-          yearlyWithSolar = year < financingYears
-            ? (monthlyInstallment + minFee) * 12
-            : minFee * 12;
-        }
-        accWith += yearlyWithSolar;
-
-        data.push({
-          year: `${year}`,
-          semSolar: Math.round(accWithout),
-          comSolar: Math.round(accWith),
-        });
-      }
+      data.push({
+        year: `${year}`,
+        semSolar: Math.round(accWithout),
+        comSolar: Math.round(accWith),
+      });
     }
     return data;
-  }, [lineCards, proposal, cashflowInstallments, cashflowMode, cashflowLine, cashflowPeriod, showMonths]);
+  }, [lineCards, proposal, cashflowInstallments, cashflowMode, cashflowLine, cashflowPeriod]);
 
   const paybackYear = useMemo(() => {
     for (let i = 1; i < cashflowData.length; i++) {
@@ -488,36 +458,19 @@ export default function ProposalPage() {
               <label className="text-sm font-medium">Período:</label>
               <div className="flex gap-1">
                 {PERIOD_OPTIONS.map(p => (
-                  <button key={p} onClick={() => { setCashflowPeriod(p); if (p > 5) setShowMonths(false); }}
+                  <button key={p} onClick={() => setCashflowPeriod(p)}
                     className={`px-3 py-1 rounded text-sm font-medium transition-colors ${cashflowPeriod === p ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/70'}`}>
                     {p} anos
                   </button>
                 ))}
               </div>
             </div>
-            <div className="relative group">
-              <button
-                onClick={() => cashflowPeriod <= 5 && setShowMonths(!showMonths)}
-                disabled={cashflowPeriod > 5}
-                className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
-                  showMonths && cashflowPeriod <= 5 ? 'bg-primary text-primary-foreground' :
-                  cashflowPeriod <= 5 ? 'bg-muted text-muted-foreground hover:bg-muted/70' :
-                  'bg-muted/50 text-muted-foreground/50 cursor-not-allowed'
-                }`}>
-                Ver em meses
-              </button>
-              {cashflowPeriod > 5 && (
-                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 bg-foreground text-background text-xs rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                  Disponível apenas para análises de até 5 anos
-                </div>
-              )}
-            </div>
           </div>
 
           <div className="h-80">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={cashflowData} margin={{ top: 10, right: 20, left: 10, bottom: 0 }}>
-                <XAxis dataKey="year" tick={{ fontSize: 12 }} label={{ value: showMonths ? 'Meses' : 'Anos', position: 'insideBottom', offset: -5 }} />
+                <XAxis dataKey="year" tick={{ fontSize: 12 }} label={{ value: 'Anos', position: 'insideBottom', offset: -5 }} />
                 <YAxis tick={{ fontSize: 10 }} tickFormatter={(v: number) => `R$${(v / 1000).toFixed(0)}k`} />
                 <Tooltip formatter={(v: number) => formatCurrency(v)} />
                 <Legend />
