@@ -1,9 +1,10 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import {
   getSettings, saveSettings, getKits, saveKits, getProposals,
-  getSocialProofs, saveSocialProofs, isAdminLoggedIn, setAdminAuth,
+  getSocialProofs, saveSocialProofs,
   getPriceTable, savePriceTable,
 } from '@/data/store';
+import { supabase } from '@/integrations/supabase/client';
 import { formatCurrency } from '@/data/calculations';
 import { AdminSettings, Seller, IrradiationEntry, PriceTableEntry, SocialProof, BRAZILIAN_STATES, CA_MATERIAL_TABLE_DEFAULT, LINE_NAMES } from '@/data/types';
 import type { Distributor } from '@/data/types';
@@ -11,7 +12,8 @@ import { Lock, Users, DollarSign, Settings, MapPin, Building2, FileText, Image, 
 import { useNavigate } from 'react-router-dom';
 
 export default function AdminPage() {
-  const [authed, setAuthed] = useState(isAdminLoggedIn());
+  const [authed, setAuthed] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [user, setUser] = useState('');
   const [pass, setPass] = useState('');
   const [loginError, setLoginError] = useState('');
@@ -20,15 +22,51 @@ export default function AdminPage() {
   const [forgotSent, setForgotSent] = useState(false);
   const [tab, setTab] = useState<'sellers' | 'prices' | 'pricing' | 'irradiation' | 'company' | 'proposals' | 'social'>('sellers');
 
-  const handleLogin = () => {
-    if (user === 'admin' && pass === 'solar2024') {
-      setAdminAuth(true);
-      setAuthed(true);
-      setLoginError('');
-    } else {
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setAuthed(!!session);
+      setLoading(false);
+    });
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setAuthed(!!session);
+      setLoading(false);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const handleLogin = async () => {
+    setLoginError('');
+    const { error } = await supabase.auth.signInWithPassword({
+      email: user,
+      password: pass,
+    });
+    if (error) {
       setLoginError('Usuário ou senha incorretos. Tente novamente.');
     }
   };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setAuthed(false);
+  };
+
+  const handleForgotPassword = async () => {
+    if (!forgotEmail) return;
+    const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    if (!error) {
+      setForgotSent(true);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   if (!authed) {
     if (showForgot) {
@@ -55,7 +93,7 @@ export default function AdminPage() {
                 <label className="block text-sm font-medium mb-1">E-mail cadastrado</label>
                 <input className="solar-input" type="email" placeholder="seu@email.com" value={forgotEmail} onChange={e => setForgotEmail(e.target.value)} />
               </div>
-              <button className="w-full solar-btn-primary" onClick={() => setForgotSent(true)}>
+              <button className="w-full solar-btn-primary" onClick={handleForgotPassword}>
                 Enviar link de redefinição
               </button>
               <button onClick={() => setShowForgot(false)} className="w-full text-sm text-muted-foreground hover:text-foreground transition-colors">
@@ -112,7 +150,7 @@ export default function AdminPage() {
     <div className="max-w-6xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-primary">Painel Administrativo</h1>
-        <button onClick={() => { setAdminAuth(false); setAuthed(false); }} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-destructive transition-colors">
+        <button onClick={handleLogout} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-destructive transition-colors">
           <LogOut className="w-4 h-4" /> Sair
         </button>
       </div>
