@@ -310,7 +310,7 @@ function PriceTableTab() {
     setTable(newTable);
   };
 
-  const handleSave = () => savePriceTable(table);
+  const handleSave = () => { savePriceTable(table); savePriceTableDB(table); };
 
   return (
     <div className="solar-card p-6 space-y-4">
@@ -379,8 +379,7 @@ function PricingTab() {
     setSettings(prev => ({ ...prev, creditCardRates: rates }));
   };
 
-  const handleSave = () => saveSettings(settings);
-
+  const handleSave = () => { saveSettings(settings); saveSettingsDB(settings); };
   return (
     <div className="solar-card p-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -523,8 +522,7 @@ function IrradiationTab() {
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  const handleSave = () => saveSettings(settings);
-
+  const handleSave = () => { saveSettings(settings); saveSettingsDB(settings); };
   return (
     <div className="solar-card p-6 space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-2">
@@ -597,7 +595,7 @@ function CompanyTab() {
     setSettings(prev => ({ ...prev, distributors: (prev.distributors || []).filter((_, i) => i !== idx) }));
   };
 
-  const handleSave = () => saveSettings(settings);
+  const handleSave = () => { saveSettings(settings); saveSettingsDB(settings); saveDistribuidorasDB(settings.distributors || [], settings.defaultDistributor || ''); };
 
   const COMPANY_FIELDS = [
     { key: 'name', label: 'Nome da empresa' },
@@ -737,7 +735,7 @@ function SocialTab() {
     setProofs(prev => prev.map(p => p.id === id ? { ...p, [field]: value } : p));
   };
 
-  const handleSave = () => saveSocialProofs(proofs);
+  const handleSave = () => { saveSocialProofs(proofs); saveSocialProofsDB(proofs); };
 
   return (
     <div className="solar-card p-6 space-y-4">
