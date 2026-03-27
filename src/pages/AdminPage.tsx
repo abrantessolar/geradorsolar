@@ -500,10 +500,15 @@ function IrradiationTab() {
     if (!file) return;
     setImportMsg('Importando...');
     const reader = new FileReader();
-    reader.onload = (ev) => {
+    reader.onload = async (ev) => {
       try {
         const data = JSON.parse(ev.target?.result as string);
         if (!Array.isArray(data)) throw new Error('Formato inválido');
+        
+        // Save to Supabase DB
+        await importCidadesIrradianciaDB(data);
+        
+        // Also update local entries
         const newEntries: IrradiationEntry[] = data.map((item: any, i: number) => ({
           id: `imp_${Date.now()}_${i}`,
           state: item.uf || item.state || 'MS',
@@ -511,7 +516,7 @@ function IrradiationTab() {
           value: Array.isArray(item.irr) ? item.irr.reduce((a: number, b: number) => a + b, 0) / 12 : (item.value || 5.0),
         }));
         setSettings(prev => ({ ...prev, irradiationEntries: [...prev.irradiationEntries, ...newEntries] }));
-        setImportMsg(`${newEntries.length} cidades importadas com sucesso!`);
+        setImportMsg(`${newEntries.length} cidades importadas no banco de dados com sucesso!`);
         setTimeout(() => setImportMsg(''), 4000);
       } catch {
         setImportMsg('Erro ao importar arquivo. Verifique o formato JSON.');
