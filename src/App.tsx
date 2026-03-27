@@ -7,6 +7,7 @@ import Layout from "@/components/Layout";
 import CalculatorPage from "@/pages/CalculatorPage";
 import AdminPage from "@/pages/AdminPage";
 import ProposalPage from "@/pages/ProposalPage";
+import ResetPasswordPage from "@/pages/ResetPasswordPage";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
