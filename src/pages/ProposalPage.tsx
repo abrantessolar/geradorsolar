@@ -31,7 +31,7 @@ export default function ProposalPage() {
   const [cashflowMode, setCashflowMode] = useState<'financing' | 'card' | 'cash'>('financing');
   const [cashflowLine, setCashflowLine] = useState<string>(proposal?.selectedLine || 'acesso');
   const [cashflowPeriod, setCashflowPeriod] = useState(15);
-  const [showMonths, setShowMonths] = useState(false);
+  
 
   const basePanelCount = proposal?.selectedKit.panelCount ?? 0;
   const finalPanels = Math.max(Math.max(1, basePanelCount - 2), basePanelCount + panelDelta);
@@ -107,69 +107,39 @@ export default function ProposalPage() {
 
     const monthlyBill = selectedCard.dimensioning.avgMonthlyKwh * proposal.clientData.kwhPrice;
     const minFee = Math.max(80, monthlyBill * 0.15);
-    const totalPeriod = showMonths ? cashflowPeriod * 12 : cashflowPeriod;
-
     const data: any[] = [];
     let accWithout = 0;
     let accWith = 0;
 
-    if (showMonths && cashflowPeriod <= 5) {
-      for (let m = 0; m <= totalPeriod; m++) {
-        const year = m / 12;
-        const monthlyBillAdj = (monthlyBill / 12) * Math.pow(1.10, year) * 12 / 12;
-        accWithout += monthlyBillAdj;
+    for (let year = 0; year <= cashflowPeriod; year++) {
+      const yearlyBill = monthlyBill * 12 * Math.pow(1.10, year);
+      accWithout += yearlyBill;
 
-        let monthlyWithSolar: number;
-        if (cashflowMode === 'cash') {
-          monthlyWithSolar = m === 0 ? selectedCard.totalPrice + minFee : minFee;
-        } else if (cashflowMode === 'card') {
-          const bestCard = Object.values(selectedCard.cardInstallments).pop();
-          const cardMonthly = bestCard ? bestCard.perMonth : selectedCard.totalPrice / 12;
-          const cardMonths = bestCard ? Number(Object.keys(selectedCard.cardInstallments).pop()) : 12;
-          monthlyWithSolar = m < cardMonths ? cardMonthly + minFee : minFee;
-        } else {
-          const monthlyInstallment = selectedCard.installments[cashflowInstallments] || selectedCard.totalPrice / cashflowInstallments;
-          monthlyWithSolar = m < cashflowInstallments ? monthlyInstallment + minFee : minFee;
-        }
-        accWith += monthlyWithSolar;
-
-        data.push({
-          year: `${m}`,
-          semSolar: Math.round(accWithout),
-          comSolar: Math.round(accWith),
-        });
+      let yearlyWithSolar: number;
+      if (cashflowMode === 'cash') {
+        yearlyWithSolar = year === 0 ? selectedCard.totalPrice + minFee * 12 : minFee * 12;
+      } else if (cashflowMode === 'card') {
+        const bestCard = Object.values(selectedCard.cardInstallments).pop();
+        const cardMonthly = bestCard ? bestCard.perMonth : selectedCard.totalPrice / 12;
+        const cardMonths = bestCard ? Number(Object.keys(selectedCard.cardInstallments).pop()) : 12;
+        yearlyWithSolar = year === 0 ? (cardMonthly * Math.min(cardMonths, 12) + minFee * 12) : (year * 12 < cardMonths ? (cardMonthly * 12 + minFee * 12) : minFee * 12);
+      } else {
+        const monthlyInstallment = selectedCard.installments[cashflowInstallments] || selectedCard.totalPrice / cashflowInstallments;
+        const financingYears = cashflowInstallments / 12;
+        yearlyWithSolar = year < financingYears
+          ? (monthlyInstallment + minFee) * 12
+          : minFee * 12;
       }
-    } else {
-      for (let year = 0; year <= cashflowPeriod; year++) {
-        const yearlyBill = monthlyBill * 12 * Math.pow(1.10, year);
-        accWithout += yearlyBill;
+      accWith += yearlyWithSolar;
 
-        let yearlyWithSolar: number;
-        if (cashflowMode === 'cash') {
-          yearlyWithSolar = year === 0 ? selectedCard.totalPrice + minFee * 12 : minFee * 12;
-        } else if (cashflowMode === 'card') {
-          const bestCard = Object.values(selectedCard.cardInstallments).pop();
-          const cardMonthly = bestCard ? bestCard.perMonth : selectedCard.totalPrice / 12;
-          const cardMonths = bestCard ? Number(Object.keys(selectedCard.cardInstallments).pop()) : 12;
-          yearlyWithSolar = year === 0 ? (cardMonthly * Math.min(cardMonths, 12) + minFee * 12) : (year * 12 < cardMonths ? (cardMonthly * 12 + minFee * 12) : minFee * 12);
-        } else {
-          const monthlyInstallment = selectedCard.installments[cashflowInstallments] || selectedCard.totalPrice / cashflowInstallments;
-          const financingYears = cashflowInstallments / 12;
-          yearlyWithSolar = year < financingYears
-            ? (monthlyInstallment + minFee) * 12
-            : minFee * 12;
-        }
-        accWith += yearlyWithSolar;
-
-        data.push({
-          year: `${year}`,
-          semSolar: Math.round(accWithout),
-          comSolar: Math.round(accWith),
-        });
-      }
+      data.push({
+        year: `${year}`,
+        semSolar: Math.round(accWithout),
+        comSolar: Math.round(accWith),
+      });
     }
     return data;
-  }, [lineCards, proposal, cashflowInstallments, cashflowMode, cashflowLine, cashflowPeriod, showMonths]);
+  }, [lineCards, proposal, cashflowInstallments, cashflowMode, cashflowLine, cashflowPeriod]);
 
   const paybackYear = useMemo(() => {
     for (let i = 1; i < cashflowData.length; i++) {
