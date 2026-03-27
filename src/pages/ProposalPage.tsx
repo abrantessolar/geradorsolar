@@ -18,10 +18,29 @@ const PERIOD_OPTIONS = [5, 10, 15, 20, 25];
 export default function ProposalPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const proposals = getProposals();
-  const proposal = proposals.find(p => p.id === id);
+  const [proposal, setProposal] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
   const settings = getSettings();
   const socialProofs = getSocialProofs().filter(s => s.active);
+
+  useEffect(() => {
+    async function loadProposal() {
+      // Try Supabase first
+      const dbProposal = await getPropostaByIdDB(id || '');
+      if (dbProposal) {
+        setProposal(dbProposal);
+        // Mark as viewed
+        markPropostaViewedDB(id || '');
+      } else {
+        // Fallback to localStorage
+        const proposals = getProposals();
+        const localProposal = proposals.find(p => p.id === id);
+        setProposal(localProposal || null);
+      }
+      setLoading(false);
+    }
+    loadProposal();
+  }, [id]);
   const [cetModal, setCetModal] = useState(false);
   const [cetValue, setCetValue] = useState('');
   const [lightbox, setLightbox] = useState<string | null>(null);
