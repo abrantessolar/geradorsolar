@@ -495,23 +495,6 @@ export default function ProposalPage() {
                 ))}
               </div>
             </div>
-            <div className="relative group">
-              <button
-                onClick={() => cashflowPeriod <= 5 && setShowMonths(!showMonths)}
-                disabled={cashflowPeriod > 5}
-                className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
-                  showMonths && cashflowPeriod <= 5 ? 'bg-primary text-primary-foreground' :
-                  cashflowPeriod <= 5 ? 'bg-muted text-muted-foreground hover:bg-muted/70' :
-                  'bg-muted/50 text-muted-foreground/50 cursor-not-allowed'
-                }`}>
-                Ver em meses
-              </button>
-              {cashflowPeriod > 5 && (
-                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 bg-foreground text-background text-xs rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                  Disponível apenas para análises de até 5 anos
-                </div>
-              )}
-            </div>
           </div>
 
           <div className="h-80">
