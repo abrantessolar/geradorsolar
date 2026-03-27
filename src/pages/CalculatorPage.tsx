@@ -14,6 +14,7 @@ import {
   formatCurrency, formatNumber, maxPanelsForInverter, calcMicroInverterCount,
 } from '@/data/calculations';
 import { getSettings, saveProposal, lookupIrradiation } from '@/data/store';
+import { savePropostaDB } from '@/data/supabaseStore';
 import { searchCidades } from '@/data/irradiancia';
 import type { Proposal } from '@/data/types';
 
@@ -212,8 +213,8 @@ export default function CalculatorPage() {
         }));
 
     const proposal: Proposal = {
-      id: Date.now().toString(36),
-      clientData: { ...client, id: Date.now().toString() },
+      id: crypto.randomUUID(),
+      clientData: { ...client, id: crypto.randomUUID() },
       consumption, consumerUnits: consumerUnitsForProposal, equipment,
       selectedLine: card.line,
       selectedKit: { inverter: card.inverter, panel: card.panel, panelCount: card.panelCount },
@@ -224,8 +225,13 @@ export default function CalculatorPage() {
       createdAt: new Date().toISOString(),
       dimensioning: card.dimensioning,
     };
+    // Save to localStorage (fallback) and Supabase
     saveProposal(proposal);
-    navigate(`/proposta/${proposal.id}`);
+    savePropostaDB(proposal).then(dbId => {
+      navigate(`/proposta/${dbId}`);
+    }).catch(() => {
+      navigate(`/proposta/${proposal.id}`);
+    });
   };
 
   return (
