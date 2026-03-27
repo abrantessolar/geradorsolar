@@ -23,6 +23,7 @@ const App = () => (
             <Route path="/" element={<CalculatorPage />} />
             <Route path="/admin" element={<AdminPage />} />
             <Route path="/proposta/:id" element={<ProposalPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Layout>
