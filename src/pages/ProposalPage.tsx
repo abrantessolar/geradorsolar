@@ -405,17 +405,18 @@ export default function ProposalPage() {
         )}
 
         {/* CASH FLOW */}
-        <section className="solar-card p-8 space-y-6">
-          <h2 className="text-2xl font-bold text-primary flex items-center gap-2">
-            <Shield className="w-6 h-6 text-secondary" /> Fluxo de Caixa Comparativo
+        <section className="solar-card p-4 sm:p-8 space-y-4 sm:space-y-6">
+          <h2 className="text-lg sm:text-2xl font-bold text-primary flex items-center gap-2">
+            <Shield className="w-5 h-5 sm:w-6 sm:h-6 text-secondary" /> Fluxo de Caixa Comparativo
           </h2>
 
           {/* Line selector */}
-          <div className="flex flex-wrap items-center gap-4">
-            <div className="flex gap-1">
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-muted-foreground">Linha</label>
+            <div className="grid grid-cols-3 gap-1">
               {LINES.map(line => (
                 <button key={line} onClick={() => setCashflowLine(line)}
-                  className={`px-3 py-1 rounded text-sm font-medium transition-colors ${cashflowLine === line ? 'bg-secondary text-secondary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/70'}`}>
+                  className={`px-2 py-2 rounded text-xs sm:text-sm font-medium transition-colors text-center ${cashflowLine === line ? 'bg-secondary text-secondary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/70'}`}>
                   {LINE_NAMES[line]}
                 </button>
               ))}
@@ -423,28 +424,29 @@ export default function ProposalPage() {
           </div>
 
           {/* Mode selector */}
-          <div className="flex flex-wrap items-center gap-4">
-            <div className="flex gap-1">
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-muted-foreground">Pagamento</label>
+            <div className="grid grid-cols-3 gap-1">
               <button onClick={() => setCashflowMode('financing')}
-                className={`px-3 py-1 rounded text-sm font-medium transition-colors ${cashflowMode === 'financing' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/70'}`}>
-                Financiamento
+                className={`px-2 py-2 rounded text-xs sm:text-sm font-medium transition-colors ${cashflowMode === 'financing' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/70'}`}>
+                Financiam.
               </button>
               <button onClick={() => setCashflowMode('card')}
-                className={`px-3 py-1 rounded text-sm font-medium transition-colors ${cashflowMode === 'card' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/70'}`}>
+                className={`px-2 py-2 rounded text-xs sm:text-sm font-medium transition-colors ${cashflowMode === 'card' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/70'}`}>
                 Cartão
               </button>
               <button onClick={() => setCashflowMode('cash')}
-                className={`px-3 py-1 rounded text-sm font-medium transition-colors ${cashflowMode === 'cash' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/70'}`}>
+                className={`px-2 py-2 rounded text-xs sm:text-sm font-medium transition-colors ${cashflowMode === 'cash' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/70'}`}>
                 À Vista
               </button>
             </div>
             {cashflowMode === 'financing' && (
-              <div className="flex items-center gap-2">
-                <label className="text-sm font-medium">Parcelas:</label>
-                <div className="flex gap-1">
+              <div className="mt-2 space-y-1">
+                <label className="text-xs font-medium text-muted-foreground">Parcelas</label>
+                <div className="flex flex-wrap gap-1">
                   {INSTALLMENT_OPTIONS.map(n => (
                     <button key={n} onClick={() => setCashflowInstallments(n)}
-                      className={`px-3 py-1 rounded text-sm font-medium transition-colors ${cashflowInstallments === n ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/70'}`}>
+                      className={`px-3 py-1.5 rounded text-xs sm:text-sm font-medium transition-colors ${cashflowInstallments === n ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/70'}`}>
                       {n}×
                     </button>
                   ))}
@@ -454,46 +456,44 @@ export default function ProposalPage() {
           </div>
 
           {/* Period selector */}
-          <div className="flex flex-wrap items-center gap-4">
-            <div className="flex items-center gap-2">
-              <label className="text-sm font-medium">Período:</label>
-              <div className="flex gap-1">
-                {PERIOD_OPTIONS.map(p => (
-                  <button key={p} onClick={() => setCashflowPeriod(p)}
-                    className={`px-3 py-1 rounded text-sm font-medium transition-colors ${cashflowPeriod === p ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/70'}`}>
-                    {p} anos
-                  </button>
-                ))}
-              </div>
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-muted-foreground">Período</label>
+            <div className="flex flex-wrap gap-1">
+              {PERIOD_OPTIONS.map(p => (
+                <button key={p} onClick={() => setCashflowPeriod(p)}
+                  className={`px-3 py-1.5 rounded text-xs sm:text-sm font-medium transition-colors ${cashflowPeriod === p ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/70'}`}>
+                  {p}a
+                </button>
+              ))}
             </div>
           </div>
 
-          <div className="h-80">
+          <div className="h-64 sm:h-80 -mx-2 sm:mx-0">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={cashflowData} margin={{ top: 10, right: 20, left: 10, bottom: 0 }}>
-                <XAxis dataKey="year" tick={{ fontSize: 12 }} label={{ value: 'Anos', position: 'insideBottom', offset: -5 }} />
-                <YAxis tick={{ fontSize: 10 }} tickFormatter={(v: number) => `R$${(v / 1000).toFixed(0)}k`} />
+              <LineChart data={cashflowData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+                <XAxis dataKey="year" tick={{ fontSize: 10 }} label={{ value: 'Anos', position: 'insideBottom', offset: -5, fontSize: 10 }} />
+                <YAxis tick={{ fontSize: 9 }} tickFormatter={(v: number) => `R$${(v / 1000).toFixed(0)}k`} width={55} />
                 <Tooltip formatter={(v: number) => formatCurrency(v)} />
-                <Legend />
-                {paybackYear && <ReferenceLine x={`${paybackYear}`} stroke="#4A5A2A" strokeDasharray="3 3" label={{ value: 'Payback', fill: '#4A5A2A', fontSize: 11 }} />}
-                <Line type="monotone" dataKey="semSolar" name="Sem Solar" stroke="#E84855" strokeWidth={2.5} dot={false} />
-                <Line type="monotone" dataKey="comSolar" name="Com Solar" stroke="#4A5A2A" strokeWidth={2.5} dot={false} />
+                <Legend wrapperStyle={{ fontSize: '11px' }} />
+                {paybackYear && <ReferenceLine x={`${paybackYear}`} stroke="#4A5A2A" strokeDasharray="3 3" label={{ value: 'Payback', fill: '#4A5A2A', fontSize: 10 }} />}
+                <Line type="monotone" dataKey="semSolar" name="Sem Solar" stroke="#E84855" strokeWidth={2} dot={false} />
+                <Line type="monotone" dataKey="comSolar" name="Com Solar" stroke="#4A5A2A" strokeWidth={2} dot={false} />
               </LineChart>
             </ResponsiveContainer>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            <div className="text-center p-4 rounded-xl bg-primary/5">
-              <p className="text-xs text-muted-foreground">Economia mensal</p>
-              <p className="text-xl font-bold text-primary">{cashflowCard ? formatCurrency(cashflowCard.dimensioning.monthlySavings) : '—'}</p>
+          <div className="grid grid-cols-3 gap-2 sm:gap-4">
+            <div className="text-center p-2 sm:p-4 rounded-xl bg-primary/5">
+              <p className="text-[10px] sm:text-xs text-muted-foreground">Economia mensal</p>
+              <p className="text-sm sm:text-xl font-bold text-primary">{cashflowCard ? formatCurrency(cashflowCard.dimensioning.monthlySavings) : '—'}</p>
             </div>
-            <div className="text-center p-4 rounded-xl bg-primary/5">
-              <p className="text-xs text-muted-foreground">Payback</p>
-              <p className="text-xl font-bold text-primary">{cashflowCard ? `${formatNumber(cashflowCard.dimensioning.paybackYears)} anos` : '—'}</p>
+            <div className="text-center p-2 sm:p-4 rounded-xl bg-primary/5">
+              <p className="text-[10px] sm:text-xs text-muted-foreground">Payback</p>
+              <p className="text-sm sm:text-xl font-bold text-primary">{cashflowCard ? `${formatNumber(cashflowCard.dimensioning.paybackYears)} anos` : '—'}</p>
             </div>
-            <div className="text-center p-4 rounded-xl bg-primary/5">
-              <p className="text-xs text-muted-foreground">Economia em {cashflowPeriod} anos</p>
-              <p className="text-xl font-bold text-primary">{formatCurrency(savingsEnd)}</p>
+            <div className="text-center p-2 sm:p-4 rounded-xl bg-primary/5">
+              <p className="text-[10px] sm:text-xs text-muted-foreground">Economia {cashflowPeriod}a</p>
+              <p className="text-sm sm:text-xl font-bold text-primary">{formatCurrency(savingsEnd)}</p>
             </div>
           </div>
         </section>
