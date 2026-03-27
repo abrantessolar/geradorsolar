@@ -458,7 +458,7 @@ export default function ProposalPage() {
               <label className="text-sm font-medium">Período:</label>
               <div className="flex gap-1">
                 {PERIOD_OPTIONS.map(p => (
-                  <button key={p} onClick={() => { setCashflowPeriod(p); if (p > 5) setShowMonths(false); }}
+                  <button key={p} onClick={() => setCashflowPeriod(p)}
                     className={`px-3 py-1 rounded text-sm font-medium transition-colors ${cashflowPeriod === p ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/70'}`}>
                     {p} anos
                   </button>
@@ -470,7 +470,7 @@ export default function ProposalPage() {
           <div className="h-80">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={cashflowData} margin={{ top: 10, right: 20, left: 10, bottom: 0 }}>
-                <XAxis dataKey="year" tick={{ fontSize: 12 }} label={{ value: showMonths ? 'Meses' : 'Anos', position: 'insideBottom', offset: -5 }} />
+                <XAxis dataKey="year" tick={{ fontSize: 12 }} label={{ value: 'Anos', position: 'insideBottom', offset: -5 }} />
                 <YAxis tick={{ fontSize: 10 }} tickFormatter={(v: number) => `R$${(v / 1000).toFixed(0)}k`} />
                 <Tooltip formatter={(v: number) => formatCurrency(v)} />
                 <Legend />
