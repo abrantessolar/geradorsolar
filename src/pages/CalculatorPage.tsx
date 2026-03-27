@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Minus, ChevronDown, ChevronUp, Zap, Sun, TrendingUp, ArrowRight, AlertTriangle } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
@@ -14,6 +14,7 @@ import {
   formatCurrency, formatNumber, maxPanelsForInverter, calcMicroInverterCount,
 } from '@/data/calculations';
 import { getSettings, saveProposal, lookupIrradiation } from '@/data/store';
+import { searchCidades } from '@/data/irradiancia';
 import type { Proposal } from '@/data/types';
 
 const EQUIPMENT_COLORS = [
@@ -40,9 +41,12 @@ export default function CalculatorPage() {
   const navigate = useNavigate();
   const activeSellers = settings.sellers.filter(s => s.active);
 
+  const defaultDist = settings.distributors?.find(d => d.name === settings.defaultDistributor);
+  const [selectedDistributor, setSelectedDistributor] = useState(settings.defaultDistributor || 'ELEKTRO');
+
   const [client, setClient] = useState<ClientData>({
     id: '', name: '', state: 'MS', city: 'Três Lagoas', networkType: 'bifasica',
-    kwhPrice: 0.85, seller: activeSellers[0]?.name || '',
+    kwhPrice: defaultDist?.kwhPrice || 0.85, seller: activeSellers[0]?.name || '',
   });
 
   const [mode, setMode] = useState<ConsumptionMode>('average');
@@ -53,6 +57,31 @@ export default function CalculatorPage() {
   const [equipment, setEquipment] = useState<EquipmentItem[]>([]);
   const [eqOpen, setEqOpen] = useState(false);
   const [panelDelta, setPanelDelta] = useState(0);
+
+  // City autocomplete
+  const [citySuggestions, setCitySuggestions] = useState<{ cidade: string; uf: string }[]>([]);
+  const [showCitySuggestions, setShowCitySuggestions] = useState(false);
+  const cityRef = useRef<HTMLDivElement>(null);
+
+  const handleCityChange = (value: string) => {
+    setClient(p => ({ ...p, city: value }));
+    const results = searchCidades(value);
+    setCitySuggestions(results);
+    setShowCitySuggestions(results.length > 0);
+  };
+
+  const selectCity = (cidade: string, uf: string) => {
+    setClient(p => ({ ...p, city: cidade, state: uf }));
+    setShowCitySuggestions(false);
+  };
+
+  const handleDistributorChange = (name: string) => {
+    setSelectedDistributor(name);
+    const dist = settings.distributors?.find(d => d.name === name);
+    if (dist) {
+      setClient(p => ({ ...p, kwhPrice: dist.kwhPrice }));
+    }
+  };
 
   const totalAverage = units.reduce((s, u) => s + u.averageKwh, 0);
 
@@ -78,6 +107,7 @@ export default function CalculatorPage() {
 
   const irradiationLookup = lookupIrradiation(client.state, client.city);
   const irradiation = irradiationLookup.value;
+  const monthlyIrr = irradiationLookup.monthly;
 
   const basePanelCount = useMemo(() => {
     const baseDim = calcDimensioning(consumption, equipment, client.networkType, irradiation, client.kwhPrice, 0, settings.systemLoss);
@@ -115,7 +145,9 @@ export default function CalculatorPage() {
     const baseDim = systemCards[0]?.dimensioning;
     if (!baseDim) return [];
     return MONTH_KEYS.map((k, i) => {
-      const gen = baseDim.powerKwp * irradiation * 30 * (1 - settings.systemLoss / 100) * SEASONAL_FACTORS[k];
+      // Use monthly irradiance if available
+      const irrMonth = monthlyIrr ? monthlyIrr[i] : irradiation * SEASONAL_FACTORS[k];
+      const gen = baseDim.powerKwp * irrMonth * 30 * (1 - settings.systemLoss / 100);
       const row: any = { month: MONTH_LABELS[i], geração: Math.round(gen) };
       if (mode === 'average') {
         if (units.length > 1) {
@@ -139,7 +171,7 @@ export default function CalculatorPage() {
       });
       return row;
     });
-  }, [consumption, equipment, systemCards, irradiation, settings.systemLoss, units, mode, monthlyUnits, combinedMonthly, totalAverage]);
+  }, [consumption, equipment, systemCards, irradiation, monthlyIrr, settings.systemLoss, units, mode, monthlyUnits, combinedMonthly, totalAverage]);
 
   const handleEstimate = (unitIdx: number) => {
     setMonthlyUnits(prev => prev.map((mu, i) => {
@@ -227,13 +259,27 @@ export default function CalculatorPage() {
               {BRAZILIAN_STATES.map(uf => <option key={uf} value={uf}>{uf}</option>)}
             </select>
           </div>
-          <div>
+          <div className="relative" ref={cityRef}>
             <label className="block text-sm font-medium mb-1">Cidade</label>
-            <input className="solar-input" value={client.city} onChange={e => setClient(p => ({ ...p, city: e.target.value }))} />
+            <input className="solar-input" value={client.city}
+              onChange={e => handleCityChange(e.target.value)}
+              onFocus={() => { if (citySuggestions.length > 0) setShowCitySuggestions(true); }}
+              onBlur={() => setTimeout(() => setShowCitySuggestions(false), 200)}
+            />
+            {showCitySuggestions && citySuggestions.length > 0 && (
+              <div className="absolute z-20 w-full mt-1 bg-card border border-border rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                {citySuggestions.map((s, i) => (
+                  <button key={i} className="w-full text-left px-3 py-2 text-sm hover:bg-muted transition-colors"
+                    onMouseDown={() => selectCity(s.cidade, s.uf)}>
+                    {s.cidade} — {s.uf}
+                  </button>
+                ))}
+              </div>
+            )}
             {!irradiationLookup.found && client.city && (
               <p className="text-xs mt-1 flex items-center gap-1" style={{ color: '#E8B84B' }}>
                 <AlertTriangle className="w-3 h-3" />
-                Irradiação não cadastrada. Usando valor padrão (Três Lagoas — MS).
+                Cidade não encontrada. Usando irradiância de Três Lagoas — MS.
               </p>
             )}
           </div>
@@ -243,6 +289,15 @@ export default function CalculatorPage() {
               <option value="monofasica">Monofásica</option>
               <option value="bifasica">Bifásica</option>
               <option value="trifasica">Trifásica</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Distribuidora</label>
+            <select className="solar-input" value={selectedDistributor}
+              onChange={e => handleDistributorChange(e.target.value)}>
+              {(settings.distributors || []).map(d => (
+                <option key={d.name} value={d.name}>{d.name}</option>
+              ))}
             </select>
           </div>
           <div>
