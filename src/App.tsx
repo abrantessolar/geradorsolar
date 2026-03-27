@@ -42,7 +42,7 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter>
+      <BrowserRouter basename="/geradordepropostas">
         <AuthProvider>
           <Layout>
             <Routes>
