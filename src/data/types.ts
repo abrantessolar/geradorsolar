@@ -68,6 +68,11 @@ export interface Kit {
   active: boolean;
 }
 
+export interface Distributor {
+  name: string;
+  kwhPrice: number;
+}
+
 export interface AdminSettings {
   profitMargin: number;
   defaultCET: number;
@@ -82,6 +87,8 @@ export interface AdminSettings {
   trunkCablePrice: number;
   caMaterialTable: { maxKw: number; cost: number }[];
   creditCardRates: { installments: number; rate: number }[];
+  distributors: Distributor[];
+  defaultDistributor: string;
   company: {
     name: string; cnpj: string; phone: string; email: string; site: string; social: string;
   };
