@@ -434,6 +434,8 @@ function PricingTab() {
 function IrradiationTab() {
   const [settings, setSettings] = useState(getSettings());
   const entries = settings.irradiationEntries;
+  const [importMsg, setImportMsg] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const updateEntry = (idx: number, field: keyof IrradiationEntry, value: any) => {
     const updated = [...entries];
@@ -450,20 +452,60 @@ function IrradiationTab() {
     setSettings(prev => ({ ...prev, irradiationEntries: prev.irradiationEntries.filter((_, i) => i !== idx) }));
   };
 
+  const handleImportJSON = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImportMsg('Importando...');
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const data = JSON.parse(ev.target?.result as string);
+        if (!Array.isArray(data)) throw new Error('Formato inválido');
+        const newEntries: IrradiationEntry[] = data.map((item: any, i: number) => ({
+          id: `imp_${Date.now()}_${i}`,
+          state: item.uf || item.state || 'MS',
+          city: item.cidade || item.city || '',
+          value: Array.isArray(item.irr) ? item.irr.reduce((a: number, b: number) => a + b, 0) / 12 : (item.value || 5.0),
+        }));
+        setSettings(prev => ({ ...prev, irradiationEntries: [...prev.irradiationEntries, ...newEntries] }));
+        setImportMsg(`${newEntries.length} cidades importadas com sucesso!`);
+        setTimeout(() => setImportMsg(''), 4000);
+      } catch {
+        setImportMsg('Erro ao importar arquivo. Verifique o formato JSON.');
+        setTimeout(() => setImportMsg(''), 4000);
+      }
+    };
+    reader.readAsText(file);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
   const handleSave = () => saveSettings(settings);
 
   return (
     <div className="solar-card p-6 space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <h2 className="text-lg font-bold text-primary">Irradiação por Cidade</h2>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
+          <input type="file" accept=".json" ref={fileInputRef} className="hidden" onChange={handleImportJSON} />
+          <button onClick={() => fileInputRef.current?.click()} className="solar-btn-outline text-sm py-2 px-3 flex items-center gap-1">
+            <Upload className="w-4 h-4" /> Importar base completa (JSON)
+          </button>
           <button onClick={add} className="solar-btn-outline text-sm py-2 px-3 flex items-center gap-1"><Plus className="w-4 h-4" /> Nova cidade</button>
           <button onClick={handleSave} className="solar-btn-primary text-sm py-2 px-3 flex items-center gap-1"><Save className="w-4 h-4" /> Salvar</button>
         </div>
       </div>
-      <div className="overflow-x-auto">
+      {importMsg && (
+        <div className={`flex items-center gap-2 p-3 rounded-lg text-sm ${importMsg.includes('sucesso') ? 'bg-green-100 text-green-800' : importMsg.includes('Erro') ? 'bg-destructive/10 text-destructive' : 'bg-muted text-muted-foreground'}`}>
+          {importMsg.includes('sucesso') ? <Check className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
+          {importMsg}
+        </div>
+      )}
+      <p className="text-xs text-muted-foreground">
+        Base CRESESB com 98 cidades já incluída no sistema. Aqui você pode adicionar cidades extras ou importar a base completa de 5.509 cidades via JSON.
+      </p>
+      <div className="overflow-x-auto max-h-[500px] overflow-y-auto">
         <table className="w-full text-sm">
-          <thead>
+          <thead className="sticky top-0 bg-card z-10">
             <tr className="border-b border-border text-left text-muted-foreground">
               <th className="py-2 px-2">Estado (UF)</th>
               <th className="py-2 px-2">Cidade</th>
