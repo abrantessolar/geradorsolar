@@ -150,7 +150,7 @@ export default function AdminPage() {
     <div className="max-w-6xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-primary">Painel Administrativo</h1>
-        <button onClick={() => { setAdminAuth(false); setAuthed(false); }} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-destructive transition-colors">
+        <button onClick={handleLogout} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-destructive transition-colors">
           <LogOut className="w-4 h-4" /> Sair
         </button>
       </div>
