@@ -93,7 +93,7 @@ export default function AdminPage() {
                 <label className="block text-sm font-medium mb-1">E-mail cadastrado</label>
                 <input className="solar-input" type="email" placeholder="seu@email.com" value={forgotEmail} onChange={e => setForgotEmail(e.target.value)} />
               </div>
-              <button className="w-full solar-btn-primary" onClick={() => setForgotSent(true)}>
+              <button className="w-full solar-btn-primary" onClick={handleForgotPassword}>
                 Enviar link de redefinição
               </button>
               <button onClick={() => setShowForgot(false)} className="w-full text-sm text-muted-foreground hover:text-foreground transition-colors">
