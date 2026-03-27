@@ -9,7 +9,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const { user, signOut } = useAuth();
 
   const isProposal = location.pathname.startsWith('/proposta/');
-  const isLogin = location.pathname === '/login';
+  const isLogin = location.pathname === '/login' || location.pathname === '/';
   const isReset = location.pathname === '/reset-password';
 
   if (isProposal || isLogin || isReset) return <>{children}</>;
