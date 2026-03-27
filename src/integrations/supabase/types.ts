@@ -157,6 +157,7 @@ export type Database = {
           cliente: string
           consumo_mensal: number | null
           criado_em: string
+          criador_user_id: string | null
           dados_completos: Json | null
           id: string
           linha: string | null
@@ -175,6 +176,7 @@ export type Database = {
           cliente: string
           consumo_mensal?: number | null
           criado_em?: string
+          criador_user_id?: string | null
           dados_completos?: Json | null
           id?: string
           linha?: string | null
@@ -193,6 +195,7 @@ export type Database = {
           cliente?: string
           consumo_mensal?: number | null
           criado_em?: string
+          criador_user_id?: string | null
           dados_completos?: Json | null
           id?: string
           linha?: string | null
@@ -213,6 +216,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_profiles: {
+        Row: {
+          ativo: boolean
+          criado_em: string
+          email: string
+          id: string
+          nome: string
+          role: string
+          senha_visivel: string | null
+          ultimo_acesso: string | null
+          user_id: string
+        }
+        Insert: {
+          ativo?: boolean
+          criado_em?: string
+          email: string
+          id?: string
+          nome: string
+          role?: string
+          senha_visivel?: string | null
+          ultimo_acesso?: string | null
+          user_id: string
+        }
+        Update: {
+          ativo?: boolean
+          criado_em?: string
+          email?: string
+          id?: string
+          nome?: string
+          role?: string
+          senha_visivel?: string | null
+          ultimo_acesso?: string | null
+          user_id?: string
+        }
+        Relationships: []
       }
       vendedores: {
         Row: {
@@ -246,7 +285,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      is_admin: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
       [_ in never]: never

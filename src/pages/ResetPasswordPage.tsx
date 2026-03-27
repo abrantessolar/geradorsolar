@@ -35,7 +35,7 @@ export default function ResetPasswordPage() {
       setError('Erro ao redefinir senha. Tente novamente.');
     } else {
       setSuccess(true);
-      setTimeout(() => navigate('/admin'), 2000);
+      setTimeout(() => navigate('/login'), 2000);
     }
     setLoading(false);
   };
