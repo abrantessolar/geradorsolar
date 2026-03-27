@@ -33,7 +33,7 @@ export default function LoginPage() {
   const handleForgot = async () => {
     if (!forgotEmail) return;
     await supabase.auth.resetPasswordForEmail(forgotEmail, {
-      redirectTo: `${window.location.origin}/reset-password`,
+      redirectTo: `${window.location.origin}/geradordepropostas/reset-password`,
     });
     setForgotSent(true);
   };
