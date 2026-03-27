@@ -1,4 +1,5 @@
 import { AdminSettings, Kit, Proposal, SocialProof, PriceTableEntry, CA_MATERIAL_TABLE_DEFAULT, DEFAULT_CARD_RATES } from './types';
+import { getMonthlyIrradiance, getDefaultIrradiance, getAverageIrradiance } from './irradiancia';
 
 const STORAGE_KEYS = {
   kits: 'tls_kits',
@@ -8,6 +9,14 @@ const STORAGE_KEYS = {
   adminAuth: 'tls_admin_auth',
   priceTable: 'tls_price_table',
 };
+
+const DEFAULT_DISTRIBUTORS = [
+  { name: 'ELEKTRO', kwhPrice: 0.85 },
+  { name: 'ENERGISA', kwhPrice: 0.92 },
+  { name: 'CPFL', kwhPrice: 0.88 },
+  { name: 'COPEL', kwhPrice: 0.80 },
+  { name: 'OUTROS', kwhPrice: 0.85 },
+];
 
 const DEFAULT_SETTINGS: AdminSettings = {
   profitMargin: 30,
@@ -27,6 +36,8 @@ const DEFAULT_SETTINGS: AdminSettings = {
   trunkCablePrice: 300,
   caMaterialTable: CA_MATERIAL_TABLE_DEFAULT,
   creditCardRates: DEFAULT_CARD_RATES,
+  distributors: DEFAULT_DISTRIBUTORS,
+  defaultDistributor: 'ELEKTRO',
   company: {
     name: 'Três Lagoas Solar - Energia Limpa',
     cnpj: '00.000.000/0001-00',
@@ -83,6 +94,8 @@ export function getSettings(): AdminSettings {
   if (!s.irradiationEntries) s.irradiationEntries = DEFAULT_SETTINGS.irradiationEntries;
   if (!s.caMaterialTable) s.caMaterialTable = DEFAULT_SETTINGS.caMaterialTable;
   if (!s.creditCardRates) s.creditCardRates = DEFAULT_CARD_RATES;
+  if (!s.distributors) s.distributors = DEFAULT_DISTRIBUTORS;
+  if (!s.defaultDistributor) s.defaultDistributor = 'ELEKTRO';
   if (s.installationPricePerPanel === undefined) s.installationPricePerPanel = 100;
   if (s.homologationPrice === undefined) s.homologationPrice = 70;
   if (s.trunkCablePrice === undefined) s.trunkCablePrice = 300;
@@ -114,10 +127,21 @@ export function saveSocialProofs(s: SocialProof[]) { save(STORAGE_KEYS.socialPro
 export function isAdminLoggedIn(): boolean { return load(STORAGE_KEYS.adminAuth, false); }
 export function setAdminAuth(v: boolean) { save(STORAGE_KEYS.adminAuth, v); }
 
-export function lookupIrradiation(state: string, city: string): { value: number; found: boolean } {
+export function lookupIrradiation(state: string, city: string): { value: number; found: boolean; monthly: number[] | null } {
+  // First try CRESESB database
+  const monthly = getMonthlyIrradiance(city, state);
+  if (monthly) {
+    return { value: getAverageIrradiance(monthly), found: true, monthly };
+  }
+
+  // Then try admin entries
   const settings = getSettings();
   const entry = settings.irradiationEntries.find(
     e => e.state === state && e.city.toLowerCase() === city.toLowerCase()
   );
-  return entry ? { value: entry.value, found: true } : { value: 5.0, found: false };
+  if (entry) return { value: entry.value, found: true, monthly: null };
+
+  // Default to Três Lagoas
+  const defaultMonthly = getDefaultIrradiance();
+  return { value: getAverageIrradiance(defaultMonthly), found: false, monthly: defaultMonthly };
 }
