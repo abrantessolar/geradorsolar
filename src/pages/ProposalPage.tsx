@@ -1,6 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { getProposals, saveProposal, getSettings, getSocialProofs, lookupIrradiation } from '@/data/store';
+import { getPropostaByIdDB, markPropostaViewedDB } from '@/data/supabaseStore';
 import {
   formatCurrency, formatNumber, calcInstallments, calcDimensioning,
   findInverterForPanels, findPanel, calcTotalPrice, maxPanelsForInverter,
