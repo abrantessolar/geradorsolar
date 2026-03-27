@@ -138,8 +138,11 @@ function PriceTableTab() {
       excellence: null,
       premium: null,
       estimated: {},
+      equipInfo: {},
     }));
   const [table, setTable] = useState<PriceTableEntry[]>(initial);
+  const [fillModal, setFillModal] = useState<{ line: string; field: string } | null>(null);
+  const [fillValue, setFillValue] = useState('');
 
   const updateCell = (idx: number, field: 'acesso' | 'excellence' | 'premium', value: string) => {
     const num = value === '' ? null : parseFloat(value);
@@ -148,6 +151,35 @@ function PriceTableTab() {
       [field]: num,
       estimated: { ...row.estimated, [field]: false },
     } : row));
+  };
+
+  const updateEquipField = (idx: number, line: string, field: string, value: string) => {
+    setTable(prev => prev.map((row, i) => {
+      if (i !== idx) return row;
+      const info = { ...(row.equipInfo?.[line] || {}) };
+      (info as any)[field] = value;
+      return { ...row, equipInfo: { ...row.equipInfo, [line]: info } };
+    }));
+  };
+
+  const handleFillColumn = () => {
+    if (!fillModal || !fillValue) return;
+    const { line, field } = fillModal;
+    const filledCount = table.filter(r => r.equipInfo?.[line]?.[field as keyof import('@/data/types').LineEquipmentInfo]).length;
+
+    if (filledCount > 0 && !window.confirm(`${filledCount} células já preenchidas serão substituídas. Confirmar?`)) {
+      setFillModal(null);
+      setFillValue('');
+      return;
+    }
+
+    setTable(prev => prev.map(row => {
+      const info = { ...(row.equipInfo?.[line] || {}) };
+      (info as any)[field] = fillValue;
+      return { ...row, equipInfo: { ...row.equipInfo, [line]: info } };
+    }));
+    setFillModal(null);
+    setFillValue('');
   };
 
   const generateEstimates = () => {
@@ -202,6 +234,15 @@ function PriceTableTab() {
 
   const handleSave = () => { savePriceTable(table); savePriceTableDB(table); };
 
+  const EQUIP_FIELDS = [
+    { key: 'marcaInversor', label: 'Marca Inversor' },
+    { key: 'potenciaInversor', label: 'Pot. Inversor' },
+    { key: 'marcaPlaca', label: 'Marca Placa' },
+    { key: 'potenciaPlaca', label: 'Pot. Placa' },
+  ];
+
+  const lineKeys = ['acesso', 'excellence', 'premium'] as const;
+
   return (
     <div className="solar-card p-6 space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-2">
@@ -215,39 +256,74 @@ function PriceTableTab() {
           </button>
         </div>
       </div>
-      <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
-        <table className="w-full text-sm">
-          <thead className="sticky top-0 bg-card z-10">
-            <tr className="border-b border-border text-left text-muted-foreground">
-              <th className="py-2 px-2 w-20">Nº Placas</th>
-              <th className="py-2 px-2">Custo {LINE_NAMES.acesso} (R$)</th>
-              <th className="py-2 px-2">Custo {LINE_NAMES.excellence} (R$)</th>
-              <th className="py-2 px-2">Custo {LINE_NAMES.premium} (R$)</th>
-            </tr>
-          </thead>
-          <tbody>
-            {table.map((row, idx) => (
-              <tr key={row.panels} className="border-b border-border/50 hover:bg-muted/30">
-                <td className="py-1 px-2 font-medium text-muted-foreground">{row.panels}</td>
-                {(['acesso', 'excellence', 'premium'] as const).map(line => {
+
+      {/* Fill column modal */}
+      {fillModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setFillModal(null)}>
+          <div className="bg-card rounded-xl p-6 w-80 space-y-4" onClick={e => e.stopPropagation()}>
+            <h3 className="font-bold text-primary">Preencher coluna inteira</h3>
+            <p className="text-sm text-muted-foreground">
+              {EQUIP_FIELDS.find(f => f.key === fillModal.field)?.label} — {LINE_NAMES[fillModal.line]}
+            </p>
+            <input className="solar-input" placeholder="Ex: SOLIS ou 570 Wp" value={fillValue} onChange={e => setFillValue(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') handleFillColumn(); }} autoFocus />
+            <div className="flex gap-2">
+              <button onClick={() => setFillModal(null)} className="flex-1 solar-btn-outline text-sm py-2">Cancelar</button>
+              <button onClick={handleFillColumn} className="flex-1 solar-btn-primary text-sm py-2">Confirmar</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {lineKeys.map(line => (
+        <div key={line} className="space-y-2">
+          <h3 className="font-semibold text-primary">{LINE_NAMES[line]}</h3>
+          <div className="overflow-x-auto max-h-[400px] overflow-y-auto">
+            <table className="w-full text-sm">
+              <thead className="sticky top-0 bg-card z-10">
+                <tr className="border-b border-border text-left text-muted-foreground">
+                  <th className="py-2 px-2 w-16">Placas</th>
+                  <th className="py-2 px-2">Custo (R$)</th>
+                  {EQUIP_FIELDS.map(f => (
+                    <th key={f.key} className="py-2 px-1">
+                      <div className="flex items-center gap-1">
+                        <span className="text-xs">{f.label}</span>
+                        <button
+                          onClick={() => { setFillModal({ line, field: f.key }); setFillValue(''); }}
+                          className="text-primary hover:text-primary/80 text-xs" title="Preencher tudo">↓</button>
+                      </div>
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {table.map((row, idx) => {
                   const isEstimated = row.estimated?.[line];
                   return (
-                    <td key={line} className="py-1 px-2">
-                      <input
-                        className={`solar-input py-1 text-sm w-32 ${isEstimated ? 'italic text-muted-foreground' : ''}`}
-                        type="number"
-                        value={row[line] ?? ''}
-                        placeholder="—"
-                        onChange={e => updateCell(idx, line, e.target.value)}
-                      />
-                    </td>
+                    <tr key={row.panels} className="border-b border-border/50 hover:bg-muted/30">
+                      <td className="py-1 px-2 font-medium text-muted-foreground">{row.panels}</td>
+                      <td className="py-1 px-2">
+                        <input
+                          className={`solar-input py-1 text-sm w-28 ${isEstimated ? 'italic text-muted-foreground' : ''}`}
+                          type="number" value={row[line] ?? ''} placeholder="—"
+                          onChange={e => updateCell(idx, line, e.target.value)} />
+                      </td>
+                      {EQUIP_FIELDS.map(f => (
+                        <td key={f.key} className="py-1 px-1">
+                          <input className="solar-input py-1 text-sm w-24"
+                            value={row.equipInfo?.[line]?.[f.key as keyof import('@/data/types').LineEquipmentInfo] || ''}
+                            placeholder="—"
+                            onChange={e => updateEquipField(idx, line, f.key, e.target.value)} />
+                        </td>
+                      ))}
+                    </tr>
                   );
                 })}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
