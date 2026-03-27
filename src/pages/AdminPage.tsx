@@ -5,6 +5,10 @@ import {
   getPriceTable, savePriceTable,
 } from '@/data/store';
 import { supabase } from '@/integrations/supabase/client';
+import {
+  saveSettingsDB, saveVendedoresDB, savePriceTableDB, saveSocialProofsDB,
+  saveDistribuidorasDB, importCidadesIrradianciaDB, getPropostasDB,
+} from '@/data/supabaseStore';
 import { formatCurrency } from '@/data/calculations';
 import { AdminSettings, Seller, IrradiationEntry, PriceTableEntry, SocialProof, BRAZILIAN_STATES, CA_MATERIAL_TABLE_DEFAULT, LINE_NAMES } from '@/data/types';
 import type { Distributor } from '@/data/types';
