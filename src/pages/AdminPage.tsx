@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import {
   getSettings, saveSettings, getKits, saveKits, getProposals,
   getSocialProofs, saveSocialProofs, isAdminLoggedIn, setAdminAuth,
@@ -6,7 +6,8 @@ import {
 } from '@/data/store';
 import { formatCurrency } from '@/data/calculations';
 import { AdminSettings, Seller, IrradiationEntry, PriceTableEntry, SocialProof, BRAZILIAN_STATES, CA_MATERIAL_TABLE_DEFAULT, LINE_NAMES } from '@/data/types';
-import { Lock, Users, DollarSign, Settings, MapPin, Building2, FileText, Image, LogOut, Plus, Trash2, Save, Eye, Wand2, AlertCircle } from 'lucide-react';
+import type { Distributor } from '@/data/types';
+import { Lock, Users, DollarSign, Settings, MapPin, Building2, FileText, Image, LogOut, Plus, Trash2, Save, Eye, Wand2, AlertCircle, Upload, Check } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export default function AdminPage() {
