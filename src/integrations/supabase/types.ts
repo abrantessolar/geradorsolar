@@ -14,7 +14,230 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      cidades_irradiancia: {
+        Row: {
+          abr: number | null
+          ago: number | null
+          cidade: string
+          dez: number | null
+          fev: number | null
+          id: string
+          jan: number | null
+          jul: number | null
+          jun: number | null
+          mai: number | null
+          mar: number | null
+          nov: number | null
+          out_: number | null
+          set_: number | null
+          uf: string
+        }
+        Insert: {
+          abr?: number | null
+          ago?: number | null
+          cidade: string
+          dez?: number | null
+          fev?: number | null
+          id?: string
+          jan?: number | null
+          jul?: number | null
+          jun?: number | null
+          mai?: number | null
+          mar?: number | null
+          nov?: number | null
+          out_?: number | null
+          set_?: number | null
+          uf: string
+        }
+        Update: {
+          abr?: number | null
+          ago?: number | null
+          cidade?: string
+          dez?: number | null
+          fev?: number | null
+          id?: string
+          jan?: number | null
+          jul?: number | null
+          jun?: number | null
+          mai?: number | null
+          mar?: number | null
+          nov?: number | null
+          out_?: number | null
+          set_?: number | null
+          uf?: string
+        }
+        Relationships: []
+      }
+      configuracoes: {
+        Row: {
+          chave: string
+          id: string
+          valor: Json
+        }
+        Insert: {
+          chave: string
+          id?: string
+          valor?: Json
+        }
+        Update: {
+          chave?: string
+          id?: string
+          valor?: Json
+        }
+        Relationships: []
+      }
+      distribuidoras: {
+        Row: {
+          id: string
+          nome: string
+          padrao: boolean
+          valor_kwh: number
+        }
+        Insert: {
+          id?: string
+          nome: string
+          padrao?: boolean
+          valor_kwh?: number
+        }
+        Update: {
+          id?: string
+          nome?: string
+          padrao?: boolean
+          valor_kwh?: number
+        }
+        Relationships: []
+      }
+      equipamentos_kits: {
+        Row: {
+          ativo: boolean
+          garantia: number | null
+          id: string
+          linha: string
+          marca: string | null
+          modelo: string | null
+          potencia: number | null
+          potencia_max: number | null
+          potencia_min: number | null
+          preco_custo: number | null
+          tipo: string
+        }
+        Insert: {
+          ativo?: boolean
+          garantia?: number | null
+          id?: string
+          linha: string
+          marca?: string | null
+          modelo?: string | null
+          potencia?: number | null
+          potencia_max?: number | null
+          potencia_min?: number | null
+          preco_custo?: number | null
+          tipo?: string
+        }
+        Update: {
+          ativo?: boolean
+          garantia?: number | null
+          id?: string
+          linha?: string
+          marca?: string | null
+          modelo?: string | null
+          potencia?: number | null
+          potencia_max?: number | null
+          potencia_min?: number | null
+          preco_custo?: number | null
+          tipo?: string
+        }
+        Relationships: []
+      }
+      propostas: {
+        Row: {
+          atualizado_em: string
+          cet: number | null
+          cidade: string | null
+          cliente: string
+          consumo_mensal: number | null
+          criado_em: string
+          dados_completos: Json | null
+          id: string
+          linha: string | null
+          num_placas: number | null
+          potencia_kwp: number | null
+          status: string
+          uf: string | null
+          valor_total: number | null
+          vendedor_id: string | null
+        }
+        Insert: {
+          atualizado_em?: string
+          cet?: number | null
+          cidade?: string | null
+          cliente: string
+          consumo_mensal?: number | null
+          criado_em?: string
+          dados_completos?: Json | null
+          id?: string
+          linha?: string | null
+          num_placas?: number | null
+          potencia_kwp?: number | null
+          status?: string
+          uf?: string | null
+          valor_total?: number | null
+          vendedor_id?: string | null
+        }
+        Update: {
+          atualizado_em?: string
+          cet?: number | null
+          cidade?: string | null
+          cliente?: string
+          consumo_mensal?: number | null
+          criado_em?: string
+          dados_completos?: Json | null
+          id?: string
+          linha?: string | null
+          num_placas?: number | null
+          potencia_kwp?: number | null
+          status?: string
+          uf?: string | null
+          valor_total?: number | null
+          vendedor_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "propostas_vendedor_id_fkey"
+            columns: ["vendedor_id"]
+            isOneToOne: false
+            referencedRelation: "vendedores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vendedores: {
+        Row: {
+          ativo: boolean
+          criado_em: string
+          email: string | null
+          id: string
+          nome: string
+          telefone: string | null
+        }
+        Insert: {
+          ativo?: boolean
+          criado_em?: string
+          email?: string | null
+          id?: string
+          nome: string
+          telefone?: string | null
+        }
+        Update: {
+          ativo?: boolean
+          criado_em?: string
+          email?: string | null
+          id?: string
+          nome?: string
+          telefone?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
