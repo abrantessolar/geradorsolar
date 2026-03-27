@@ -149,7 +149,7 @@ function SellersTab() {
   };
 
   const add = () => {
-    const newSeller: Seller = { id: Date.now().toString(), name: '', phone: '', active: true };
+    const newSeller: Seller = { id: Date.now().toString(), name: '', phone: '', email: '', active: true };
     setSettings(prev => ({ ...prev, sellers: [...prev.sellers, newSeller] }));
   };
 
@@ -174,6 +174,7 @@ function SellersTab() {
             <tr className="border-b border-border text-left text-muted-foreground">
               <th className="py-2 px-2">Nome completo</th>
               <th className="py-2 px-2">Telefone</th>
+              <th className="py-2 px-2">E-mail</th>
               <th className="py-2 px-2">Ativo</th>
               <th className="py-2 px-2"></th>
             </tr>
@@ -183,6 +184,7 @@ function SellersTab() {
               <tr key={s.id} className="border-b border-border/50 hover:bg-muted/30">
                 <td className="py-2 px-2"><input className="solar-input py-1 text-sm" value={s.name} onChange={e => update(i, 'name', e.target.value)} /></td>
                 <td className="py-2 px-2"><input className="solar-input py-1 text-sm w-40" value={s.phone} onChange={e => update(i, 'phone', e.target.value)} /></td>
+                <td className="py-2 px-2"><input className="solar-input py-1 text-sm w-48" value={s.email || ''} onChange={e => update(i, 'email', e.target.value)} placeholder="email@exemplo.com" /></td>
                 <td className="py-2 px-2"><input type="checkbox" checked={s.active} onChange={e => update(i, 'active', e.target.checked)} className="accent-primary" /></td>
                 <td className="py-2 px-2"><button onClick={() => remove(i)} className="text-destructive hover:text-destructive/80"><Trash2 className="w-4 h-4" /></button></td>
               </tr>
