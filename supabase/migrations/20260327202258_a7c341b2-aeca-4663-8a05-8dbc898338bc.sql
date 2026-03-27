@@ -1,0 +1,1 @@
+ALTER TABLE public.propostas ADD COLUMN visualizado_em TIMESTAMP WITH TIME ZONE;

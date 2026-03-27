@@ -5,6 +5,10 @@ import {
   getPriceTable, savePriceTable,
 } from '@/data/store';
 import { supabase } from '@/integrations/supabase/client';
+import {
+  saveSettingsDB, saveVendedoresDB, savePriceTableDB, saveSocialProofsDB,
+  saveDistribuidorasDB, importCidadesIrradianciaDB, getPropostasDB,
+} from '@/data/supabaseStore';
 import { formatCurrency } from '@/data/calculations';
 import { AdminSettings, Seller, IrradiationEntry, PriceTableEntry, SocialProof, BRAZILIAN_STATES, CA_MATERIAL_TABLE_DEFAULT, LINE_NAMES } from '@/data/types';
 import type { Distributor } from '@/data/types';
@@ -195,7 +199,7 @@ function SellersTab() {
     setSettings(prev => ({ ...prev, sellers: prev.sellers.filter((_, i) => i !== idx) }));
   };
 
-  const handleSave = () => saveSettings(settings);
+  const handleSave = () => { saveSettings(settings); saveSettingsDB(settings); saveVendedoresDB(settings.sellers); };
 
   return (
     <div className="solar-card p-6 space-y-4">
@@ -306,7 +310,7 @@ function PriceTableTab() {
     setTable(newTable);
   };
 
-  const handleSave = () => savePriceTable(table);
+  const handleSave = () => { savePriceTable(table); savePriceTableDB(table); };
 
   return (
     <div className="solar-card p-6 space-y-4">
@@ -375,8 +379,7 @@ function PricingTab() {
     setSettings(prev => ({ ...prev, creditCardRates: rates }));
   };
 
-  const handleSave = () => saveSettings(settings);
-
+  const handleSave = () => { saveSettings(settings); saveSettingsDB(settings); };
   return (
     <div className="solar-card p-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -497,10 +500,15 @@ function IrradiationTab() {
     if (!file) return;
     setImportMsg('Importando...');
     const reader = new FileReader();
-    reader.onload = (ev) => {
+    reader.onload = async (ev) => {
       try {
         const data = JSON.parse(ev.target?.result as string);
         if (!Array.isArray(data)) throw new Error('Formato inválido');
+        
+        // Save to Supabase DB
+        await importCidadesIrradianciaDB(data);
+        
+        // Also update local entries
         const newEntries: IrradiationEntry[] = data.map((item: any, i: number) => ({
           id: `imp_${Date.now()}_${i}`,
           state: item.uf || item.state || 'MS',
@@ -508,7 +516,7 @@ function IrradiationTab() {
           value: Array.isArray(item.irr) ? item.irr.reduce((a: number, b: number) => a + b, 0) / 12 : (item.value || 5.0),
         }));
         setSettings(prev => ({ ...prev, irradiationEntries: [...prev.irradiationEntries, ...newEntries] }));
-        setImportMsg(`${newEntries.length} cidades importadas com sucesso!`);
+        setImportMsg(`${newEntries.length} cidades importadas no banco de dados com sucesso!`);
         setTimeout(() => setImportMsg(''), 4000);
       } catch {
         setImportMsg('Erro ao importar arquivo. Verifique o formato JSON.');
@@ -519,8 +527,7 @@ function IrradiationTab() {
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  const handleSave = () => saveSettings(settings);
-
+  const handleSave = () => { saveSettings(settings); saveSettingsDB(settings); };
   return (
     <div className="solar-card p-6 space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-2">
@@ -593,7 +600,7 @@ function CompanyTab() {
     setSettings(prev => ({ ...prev, distributors: (prev.distributors || []).filter((_, i) => i !== idx) }));
   };
 
-  const handleSave = () => saveSettings(settings);
+  const handleSave = () => { saveSettings(settings); saveSettingsDB(settings); saveDistribuidorasDB(settings.distributors || [], settings.defaultDistributor || ''); };
 
   const COMPANY_FIELDS = [
     { key: 'name', label: 'Nome da empresa' },
@@ -668,8 +675,20 @@ function CompanyTab() {
 
 /* ─── PROPOSTAS ─── */
 function ProposalsTab() {
-  const proposals = getProposals();
+  const [proposals, setProposals] = useState<any[]>([]);
+  const [loadingProposals, setLoadingProposals] = useState(true);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    getPropostasDB().then(data => {
+      if (data.length > 0) {
+        setProposals(data);
+      } else {
+        setProposals(getProposals());
+      }
+      setLoadingProposals(false);
+    });
+  }, []);
 
   const STATUS_LABELS: Record<string, string> = {
     enviada: 'Enviada', visualizada: 'Visualizada', aprovada: 'Aprovada',
@@ -733,7 +752,7 @@ function SocialTab() {
     setProofs(prev => prev.map(p => p.id === id ? { ...p, [field]: value } : p));
   };
 
-  const handleSave = () => saveSocialProofs(proofs);
+  const handleSave = () => { saveSocialProofs(proofs); saveSocialProofsDB(proofs); };
 
   return (
     <div className="solar-card p-6 space-y-4">

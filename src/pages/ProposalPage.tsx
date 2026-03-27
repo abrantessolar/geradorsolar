@@ -1,6 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { getProposals, saveProposal, getSettings, getSocialProofs, lookupIrradiation } from '@/data/store';
+import { getPropostaByIdDB, markPropostaViewedDB } from '@/data/supabaseStore';
 import {
   formatCurrency, formatNumber, calcInstallments, calcDimensioning,
   findInverterForPanels, findPanel, calcTotalPrice, maxPanelsForInverter,
@@ -17,10 +18,29 @@ const PERIOD_OPTIONS = [5, 10, 15, 20, 25];
 export default function ProposalPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const proposals = getProposals();
-  const proposal = proposals.find(p => p.id === id);
+  const [proposal, setProposal] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
   const settings = getSettings();
   const socialProofs = getSocialProofs().filter(s => s.active);
+
+  useEffect(() => {
+    async function loadProposal() {
+      // Try Supabase first
+      const dbProposal = await getPropostaByIdDB(id || '');
+      if (dbProposal) {
+        setProposal(dbProposal);
+        // Mark as viewed
+        markPropostaViewedDB(id || '');
+      } else {
+        // Fallback to localStorage
+        const proposals = getProposals();
+        const localProposal = proposals.find(p => p.id === id);
+        setProposal(localProposal || null);
+      }
+      setLoading(false);
+    }
+    loadProposal();
+  }, [id]);
   const [cetModal, setCetModal] = useState(false);
   const [cetValue, setCetValue] = useState('');
   const [lightbox, setLightbox] = useState<string | null>(null);
@@ -150,6 +170,14 @@ export default function ProposalPage() {
     }
     return null;
   }, [cashflowData]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   if (!proposal) {
     return (
