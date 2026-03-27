@@ -675,8 +675,20 @@ function CompanyTab() {
 
 /* ─── PROPOSTAS ─── */
 function ProposalsTab() {
-  const proposals = getProposals();
+  const [proposals, setProposals] = useState<any[]>([]);
+  const [loadingProposals, setLoadingProposals] = useState(true);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    getPropostasDB().then(data => {
+      if (data.length > 0) {
+        setProposals(data);
+      } else {
+        setProposals(getProposals());
+      }
+      setLoadingProposals(false);
+    });
+  }, []);
 
   const STATUS_LABELS: Record<string, string> = {
     enviada: 'Enviada', visualizada: 'Visualizada', aprovada: 'Aprovada',
