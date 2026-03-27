@@ -222,6 +222,7 @@ export default function ProposalPage() {
               <p className="text-muted-foreground">{formatNumber(lineCards[0]?.dimensioning.avgMonthlyKwh || 0, 0)} kWh/mês</p>
               <p className="text-sm text-muted-foreground mt-4">
                 Representante: {proposal.clientData.seller}<br />
+                {(() => { const sel = settings.sellers?.find(s => s.name === proposal.clientData.seller); return sel?.email ? <>{sel.email}<br /></> : null; })()}
                 {settings.company.phone} • {settings.company.email}
               </p>
             </div>

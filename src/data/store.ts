@@ -47,9 +47,9 @@ const DEFAULT_SETTINGS: AdminSettings = {
     social: '@treslagoassolar',
   },
   sellers: [
-    { id: '1', name: 'Carlos Silva', phone: '(67) 99999-0001', active: true },
-    { id: '2', name: 'Ana Souza', phone: '(67) 99999-0002', active: true },
-    { id: '3', name: 'Pedro Santos', phone: '(67) 99999-0003', active: true },
+    { id: '1', name: 'Carlos Silva', phone: '(67) 99999-0001', email: '', active: true },
+    { id: '2', name: 'Ana Souza', phone: '(67) 99999-0002', email: '', active: true },
+    { id: '3', name: 'Pedro Santos', phone: '(67) 99999-0003', email: '', active: true },
   ],
 };
 
@@ -102,7 +102,7 @@ export function getSettings(): AdminSettings {
   if (s.homologationDays === undefined) s.homologationDays = 10;
   if (s.sellers && s.sellers.length > 0 && typeof s.sellers[0] === 'string') {
     s.sellers = (s.sellers as unknown as string[]).map((name, i) => ({
-      id: String(i + 1), name, phone: '', active: true,
+      id: String(i + 1), name, phone: '', email: '', active: true,
     }));
   }
   return s;
