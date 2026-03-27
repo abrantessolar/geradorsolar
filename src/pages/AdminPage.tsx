@@ -538,6 +538,21 @@ function CompanyTab() {
   const [settings, setSettings] = useState(getSettings());
   const updateCompany = (field: string, value: string) => setSettings(prev => ({ ...prev, company: { ...prev.company, [field]: value } }));
   const update = (field: string, value: any) => setSettings((prev: AdminSettings) => ({ ...prev, [field]: value }));
+
+  const updateDistributor = (idx: number, field: keyof Distributor, value: any) => {
+    const dists = [...(settings.distributors || [])];
+    dists[idx] = { ...dists[idx], [field]: field === 'kwhPrice' ? (parseFloat(value) || 0) : value };
+    setSettings(prev => ({ ...prev, distributors: dists }));
+  };
+
+  const addDistributor = () => {
+    setSettings(prev => ({ ...prev, distributors: [...(prev.distributors || []), { name: '', kwhPrice: 0.85 }] }));
+  };
+
+  const removeDistributor = (idx: number) => {
+    setSettings(prev => ({ ...prev, distributors: (prev.distributors || []).filter((_, i) => i !== idx) }));
+  };
+
   const handleSave = () => saveSettings(settings);
 
   const COMPANY_FIELDS = [
@@ -578,6 +593,34 @@ function CompanyTab() {
           <label className="block text-sm font-medium mb-1">Prazo homologação (dias)</label>
           <input className="solar-input" type="number" value={settings.homologationDays} onChange={e => update('homologationDays', parseInt(e.target.value) || 0)} />
         </div>
+      </div>
+
+      {/* Distributor Tariffs */}
+      <div className="space-y-4 border-t border-border pt-6">
+        <h3 className="font-semibold text-primary">Tarifas por Distribuidora</h3>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-border text-left text-muted-foreground">
+                <th className="py-2 px-2">Distribuidora</th>
+                <th className="py-2 px-2">Valor kWh (R$)</th>
+                <th className="py-2 px-2">Padrão</th>
+                <th className="py-2 px-2"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {(settings.distributors || []).map((d, i) => (
+                <tr key={i} className="border-b border-border/50 hover:bg-muted/30">
+                  <td className="py-2 px-2"><input className="solar-input py-1 text-sm" value={d.name} onChange={e => updateDistributor(i, 'name', e.target.value)} /></td>
+                  <td className="py-2 px-2"><input className="solar-input py-1 text-sm w-24" type="number" step="0.01" value={d.kwhPrice} onChange={e => updateDistributor(i, 'kwhPrice', e.target.value)} /></td>
+                  <td className="py-2 px-2"><input type="radio" name="defaultDist" checked={settings.defaultDistributor === d.name} onChange={() => setSettings(prev => ({ ...prev, defaultDistributor: d.name }))} className="accent-primary" /></td>
+                  <td className="py-2 px-2"><button onClick={() => removeDistributor(i)} className="text-destructive hover:text-destructive/80"><Trash2 className="w-4 h-4" /></button></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <button onClick={addDistributor} className="solar-btn-outline text-sm py-2 px-3 flex items-center gap-1"><Plus className="w-4 h-4" /> Nova distribuidora</button>
       </div>
     </div>
   );
