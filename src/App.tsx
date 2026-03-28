@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import Layout from "@/components/Layout";
+import SeoNoIndex from "@/components/SeoNoIndex";
 import LandingPage from "@/pages/LandingPage";
 import LoginPage from "@/pages/LoginPage";
 import CalculatorPage from "@/pages/CalculatorPage";
@@ -64,16 +65,16 @@ const App = () => (
           <Routes>
             <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<AuthRedirect />} />
-            <Route path="/proposta/:id" element={<ProposalPage />} />
-            <Route path="/reset-password" element={<ResetPasswordPage />} />
+            <Route path="/proposta/:id" element={<><SeoNoIndex /><ProposalPage /></>} />
+            <Route path="/reset-password" element={<><SeoNoIndex /><ResetPasswordPage /></>} />
             <Route path="/orcamentos" element={
               <ProtectedRoute>
-                <Layout><CalculatorPage /></Layout>
+                <SeoNoIndex /><Layout><CalculatorPage /></Layout>
               </ProtectedRoute>
             } />
             <Route path="/admin" element={
               <ProtectedRoute allowedRoles={['admin', 'orcamentista']}>
-                <Layout><AdminPage /></Layout>
+                <SeoNoIndex /><Layout><AdminPage /></Layout>
               </ProtectedRoute>
             } />
             <Route path="*" element={<NotFound />} />

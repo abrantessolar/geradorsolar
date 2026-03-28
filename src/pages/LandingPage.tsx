@@ -12,6 +12,7 @@ const SOLUTIONS = [
   {
     title: 'SISTEMAS RESIDENCIAIS',
     image: 'https://static.wixstatic.com/media/c2ae0d_22207624d8e94b8c924339ec7f85d44c~mv2.png',
+    alt: 'Instalação de painéis solares residencial em Três Lagoas',
     text: 'Nossos sistemas solares residenciais são projetados para fornecer energia limpa e renovável para residências de todos os tamanhos, reduzindo a dependência da rede elétrica convencional.',
     btn: 'Solicitar Orçamento',
     link: 'https://wa.me/5567996448995?text=Vim pelo site e gostaria de um orçamento',
@@ -20,6 +21,7 @@ const SOLUTIONS = [
   {
     title: 'SISTEMAS COMERCIAIS',
     image: 'https://static.wixstatic.com/media/c2ae0d_a5032014b84c4287889fcf5fe1522b78~mv2.jpg',
+    alt: 'Sistema solar comercial Três Lagoas Solar',
     text: 'Ajudamos empresas a adotar soluções de energia solar personalizadas, visando reduzir custos operacionais e diminuir a pegada de carbono.',
     btn: 'Fale Conosco',
     link: 'https://wa.me/5567996448995?text=Vim pelo site e gostaria de um orçamento',
@@ -28,6 +30,7 @@ const SOLUTIONS = [
   {
     title: 'SISTEMAS AGRÍCOLAS',
     image: 'https://static.wixstatic.com/media/c2ae0d_00abcb22b6d74820b004da41552f658c~mv2.png',
+    alt: 'Energia solar rural Mato Grosso do Sul',
     text: 'Nossos sistemas solares são adaptados para atender às necessidades energéticas de propriedades rurais, proporcionando autonomia e eficiência energética. Conciliamos energia solar com rede e geradores à diesel!',
     btn: 'Agro Atendimento',
     link: 'https://wa.me/5567996448995?text=Gostaria de um AgroAtendimento',
@@ -35,6 +38,7 @@ const SOLUTIONS = [
   },
 ];
 
+const PARTNER_NAMES = ['Parceiro fabricante de inversores solares', 'Parceiro distribuidor de equipamentos solares', 'Parceiro financiamento energia solar'];
 const PARTNERS = [
   'https://static.wixstatic.com/media/c2ae0d_e25309823c3f4aaa8742595e14b12485~mv2.png',
   'https://static.wixstatic.com/media/c2ae0d_b930ee5eefab44e8ad6967703ce7b914~mv2.png',
@@ -106,8 +110,8 @@ export default function LandingPage() {
               <span className="text-sm font-semibold">Energia Solar em Três Lagoas e Região</span>
             </div>
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-black text-white leading-tight mb-6 tracking-tight">
-              ENERGIA SOLAR<br />
-              <span className="text-secondary">EFICIENTE</span> E SUSTENTÁVEL
+              ENERGIA SOLAR EM<br />
+              <span className="text-secondary">TRÊS LAGOAS</span>/MS
             </h1>
             <p className="text-lg md:text-xl text-white/80 max-w-2xl mx-auto mb-10">
               Soluções em energia solar para residências, comércios e propriedades rurais em Três Lagoas e região.
@@ -154,7 +158,7 @@ export default function LandingPage() {
               <span className="inline-block px-4 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold uppercase tracking-widest mb-4">
                 Quem somos
               </span>
-              <h2 className="text-3xl md:text-4xl font-black text-primary mb-6">NOSSA MISSÃO</h2>
+              <h2 className="text-3xl md:text-4xl font-black text-primary mb-6">Nossa Missão</h2>
               <p className="text-foreground/70 leading-relaxed text-lg">
                 Estamos comprometidos em revolucionar a forma como as pessoas utilizam a energia através de soluções inovadoras e sustentáveis. Nosso foco está em oferecer tecnologia de ponta e serviços que permitam aos nossos clientes gerar e consumir energia de forma mais eficiente e amigável ao meio ambiente.
               </p>
@@ -178,7 +182,7 @@ export default function LandingPage() {
             <div className="relative">
               <img
                 src={MISSION_IMG}
-                alt="Painel solar em telhado"
+                alt="Instalação de painéis solares residencial em Três Lagoas"
                 className="rounded-2xl shadow-2xl w-full object-cover aspect-[4/3]"
                 loading="lazy"
               />
@@ -197,7 +201,7 @@ export default function LandingPage() {
             <span className="inline-block px-4 py-1 rounded-full bg-secondary/10 text-secondary text-xs font-bold uppercase tracking-widest mb-4">
               O que fazemos
             </span>
-            <h2 className="text-3xl md:text-4xl font-black text-primary mb-4">NOSSAS SOLUÇÕES</h2>
+            <h2 className="text-3xl md:text-4xl font-black text-primary mb-4">Soluções em Energia Solar</h2>
             <p className="text-foreground/60 max-w-2xl mx-auto text-lg">
               Oferecemos uma ampla gama de produtos e serviços voltados para energia solar
             </p>
@@ -214,7 +218,7 @@ export default function LandingPage() {
                 className="group solar-card overflow-hidden"
               >
                 <div className="relative h-56 overflow-hidden">
-                  <img src={sol.image} alt={sol.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />
+                  <img src={sol.image} alt={sol.alt} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                   <div className="absolute bottom-4 left-4 flex items-center gap-2">
                     <div className="w-10 h-10 rounded-lg bg-secondary flex items-center justify-center">
@@ -251,7 +255,7 @@ export default function LandingPage() {
               <motion.img
                 key={i}
                 src={p}
-                alt={`Parceiro ${i + 1}`}
+                alt={PARTNER_NAMES[i]}
                 className="h-16 md:h-20 w-auto object-contain grayscale hover:grayscale-0 transition-all duration-300"
                 loading="lazy"
                 initial={{ opacity: 0, scale: 0.8 }}
@@ -271,7 +275,7 @@ export default function LandingPage() {
             <span className="inline-block px-4 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold uppercase tracking-widest mb-4">
               Portfólio
             </span>
-            <h2 className="text-3xl md:text-4xl font-black text-primary">ALGUNS DOS NOSSOS PROJETOS</h2>
+            <h2 className="text-3xl md:text-4xl font-black text-primary">Nossos Projetos</h2>
           </motion.div>
 
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
@@ -285,7 +289,7 @@ export default function LandingPage() {
                 className="relative aspect-square overflow-hidden rounded-xl cursor-pointer group"
                 onClick={() => setLightboxImg(img)}
               >
-                <img src={img} alt={`Projeto ${i + 1}`} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" loading="lazy" />
+                <img src={img} alt={`Projeto de energia solar ${i + 1} em Três Lagoas MS`} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" loading="lazy" />
                 <div className="absolute inset-0 bg-primary/0 group-hover:bg-primary/30 transition-colors duration-300 flex items-center justify-center">
                   <Zap className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 </div>
@@ -301,7 +305,7 @@ export default function LandingPage() {
           <button className="absolute top-4 right-4 text-white/80 hover:text-white" onClick={() => setLightboxImg(null)}>
             <X className="w-8 h-8" />
           </button>
-          <img src={lightboxImg} alt="Projeto" className="max-w-full max-h-[90vh] object-contain rounded-lg" />
+          <img src={lightboxImg} alt="Projeto de energia solar Três Lagoas Solar" className="max-w-full max-h-[90vh] object-contain rounded-lg" />
         </div>
       )}
 
@@ -336,7 +340,7 @@ export default function LandingPage() {
         <div className="container">
           <div className="grid md:grid-cols-3 gap-12">
             <div>
-              <img src={LOGO_URL} alt="Três Lagoas Solar" className="h-12 w-auto mb-4 brightness-200" />
+              <img src={LOGO_URL} alt="Logo Três Lagoas Solar energia solar" className="h-12 w-auto mb-4 brightness-200" />
               <p className="text-background/60 text-sm leading-relaxed">
                 Energia solar eficiente e sustentável para residências, comércios e propriedades rurais.
               </p>

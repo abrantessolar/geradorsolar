@@ -1,14 +1,19 @@
 User-agent: Googlebot
 Allow: /
+Disallow: /orcamentos
+Disallow: /admin
+Disallow: /proposta/
 
 User-agent: Bingbot
 Allow: /
-
-User-agent: Twitterbot
-Allow: /
-
-User-agent: facebookexternalhit
-Allow: /
+Disallow: /orcamentos
+Disallow: /admin
+Disallow: /proposta/
 
 User-agent: *
 Allow: /
+Disallow: /orcamentos
+Disallow: /admin
+Disallow: /proposta/
+
+Sitemap: https://www.treslagoassolar.com.br/sitemap.xml

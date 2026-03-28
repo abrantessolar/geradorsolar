@@ -69,7 +69,7 @@ export default function PublicSimulator() {
           <span className="inline-block px-4 py-1 rounded-full bg-secondary/10 text-secondary text-xs font-bold uppercase tracking-widest mb-4">
             Simulador Gratuito
           </span>
-          <h2 className="text-3xl md:text-4xl font-black text-primary mb-4">SIMULE SEU PROJETO SOLAR</h2>
+          <h2 className="text-3xl md:text-4xl font-black text-primary mb-4">Simule seu Projeto Solar</h2>
           <p className="text-foreground/60 text-lg">Descubra quantas placas você precisa para a sua conta de luz</p>
         </div>
 
