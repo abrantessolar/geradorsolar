@@ -57,6 +57,7 @@ export default function ProposalPage() {
   const [cashflowLine, setCashflowLine] = useState<string>(proposal?.selectedLine || 'excellence');
   const [cashflowPeriod, setCashflowPeriod] = useState(15);
   const [showShareMenu, setShowShareMenu] = useState(false);
+  const [showCashflow, setShowCashflow] = useState(false);
 
   const basePanelCount = proposal?.selectedKit.panelCount ?? 0;
   const finalPanels = Math.max(Math.max(1, basePanelCount - 2), basePanelCount + panelDelta);
