@@ -4,7 +4,6 @@ import { motion } from 'framer-motion';
 import { MessageCircle, Phone, Mail, MapPin, Facebook, Instagram, ChevronDown, X, Sun, Zap, Leaf, Tractor, Building, Home, ArrowRight } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import PublicSimulator from '@/components/PublicSimulator';
-import PublicSimulator from '@/components/PublicSimulator';
 
 const LOGO_URL = 'https://static.wixstatic.com/media/c2ae0d_30cd8efa4a3c4fbab3622fcd674c4d02~mv2.png';
 const HERO_BG = 'https://static.wixstatic.com/media/c2ae0d_0fc9044d218948a585d2170345d4ce87~mv2.jpg';
