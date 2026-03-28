@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useState, useMemo, useEffect } from 'react';
-import { getProposals, saveProposal, getSettings, getSocialProofs, lookupIrradiation, getPriceTable } from '@/data/store';
+import { getProposals, saveProposal, getSettings, getSocialProofs, lookupIrradiation } from '@/data/store';
 import { getPropostaByIdDB, markPropostaViewedDB } from '@/data/supabaseStore';
 import {
   formatCurrency, formatNumber, calcInstallments, calcDimensioning,
@@ -312,43 +312,27 @@ export default function ProposalPage() {
                   </div>
 
                   <div className="space-y-2 text-sm">
-                    {(() => {
-                      const priceTable = getPriceTable();
-                      const priceRow = priceTable.find(r => r.panels === card.panelCount);
-                      const eq = priceRow?.equipInfo?.[card.line];
-                      const inversorLabel = eq?.marcaInversor && eq?.potenciaInversor
-                        ? `${eq.marcaInversor} ${eq.potenciaInversor}`
-                        : `${card.inverter?.brand || ''} ${card.inverter?.model || ''}`;
-                      const placaLabel = eq?.marcaPlaca && eq?.potenciaPlaca
-                        ? `${eq.marcaPlaca} ${eq.potenciaPlaca}`
-                        : `${card.panel?.brand || ''} ${card.panel?.power || ''}Wp`;
-
-                      return (
-                        <>
-                          {isPremium ? (
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">Micro inversores</span>
-                              <span className="font-medium text-right">{card.microCount}× {inversorLabel}</span>
-                            </div>
-                          ) : (
-                            <>
-                              <div className="flex justify-between"><span className="text-muted-foreground">Inversor</span><span className="font-medium text-right">{inversorLabel}</span></div>
-                              <div className="flex justify-between items-start">
-                                <span className="text-muted-foreground">Suporta até</span>
-                                <span className="font-medium text-right" style={limitColor ? { color: limitColor } : undefined}>
-                                  {maxP} placas
-                                  {remaining <= 0 && <span className="block text-xs">Limite atingido — inversor será atualizado na próxima placa</span>}
-                                </span>
-                              </div>
-                            </>
-                          )}
-                          <div className="flex justify-between"><span className="text-muted-foreground">Placas</span><span className="font-medium">{card.panelCount}× {placaLabel}</span></div>
-                          <div className="flex justify-between"><span className="text-muted-foreground">Potência</span><span className="font-medium">{formatNumber(card.dimensioning.powerKwp)} kWp</span></div>
-                          <div className="flex justify-between"><span className="text-muted-foreground">Geração/mês</span><span className="font-semibold text-primary">{formatNumber(card.dimensioning.monthlyGeneration, 0)} kWh</span></div>
-                          <div className="flex justify-between"><span className="text-muted-foreground">Excedente</span><span className="font-medium">{formatNumber(card.dimensioning.surplus, 0)} kWh</span></div>
-                        </>
-                      );
-                    })()}
+                    {isPremium ? (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Micro inversores</span>
+                        <span className="font-medium text-right">{card.microCount}× {card.inverter?.brand} {card.inverter?.model}</span>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="flex justify-between"><span className="text-muted-foreground">Inversor</span><span className="font-medium text-right">{card.inverter?.brand} {card.inverter?.model}</span></div>
+                        <div className="flex justify-between items-start">
+                          <span className="text-muted-foreground">Suporta até</span>
+                          <span className="font-medium text-right" style={limitColor ? { color: limitColor } : undefined}>
+                            {maxP} placas
+                            {remaining <= 0 && <span className="block text-xs">Limite atingido — inversor será atualizado na próxima placa</span>}
+                          </span>
+                        </div>
+                      </>
+                    )}
+                    <div className="flex justify-between"><span className="text-muted-foreground">Placas</span><span className="font-medium">{card.panelCount}× {card.panel?.brand} {card.panel?.power}Wp</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">Potência</span><span className="font-medium">{formatNumber(card.dimensioning.powerKwp)} kWp</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">Geração/mês</span><span className="font-semibold text-primary">{formatNumber(card.dimensioning.monthlyGeneration, 0)} kWh</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">Excedente</span><span className="font-medium">{formatNumber(card.dimensioning.surplus, 0)} kWh</span></div>
                   </div>
 
                   <div className="text-center py-3 border-y border-border">

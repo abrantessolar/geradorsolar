@@ -67,15 +67,12 @@ export async function getPropostasDB(): Promise<Proposal[]> {
   if (!data) return [];
   return data.map(d => {
     const full = d.dados_completos as any;
-    const base = full ? { ...full, id: d.id } : {
+    return full ? { ...full, id: d.id } : {
       id: d.id,
       clientData: { id: d.id, name: d.cliente, state: d.uf, city: d.cidade, networkType: 'bifasica', kwhPrice: 0.85, seller: '' },
       status: d.status,
       createdAt: d.criado_em,
-    };
-    // Attach criador_user_id from the row
-    (base as any).criador_user_id = (d as any).criador_user_id;
-    return base as any;
+    } as any;
   });
 }
 
@@ -86,8 +83,8 @@ export async function getPropostaByIdDB(id: string): Promise<Proposal | null> {
   return full ? { ...full, id: data.id } : null;
 }
 
-export async function savePropostaDB(proposal: Proposal, criadorUserId?: string): Promise<string> {
-  const row: Record<string, any> = {
+export async function savePropostaDB(proposal: Proposal): Promise<string> {
+  const row = {
     cliente: proposal.clientData.name,
     vendedor_id: null as string | null,
     cidade: proposal.clientData.city,
@@ -101,15 +98,14 @@ export async function savePropostaDB(proposal: Proposal, criadorUserId?: string)
     status: proposal.status,
     dados_completos: proposal as any,
   };
-  if (criadorUserId) row.criador_user_id = criadorUserId;
-
+  
   // Check if exists
   const { data: existing } = await supabase.from('propostas').select('id').eq('id', proposal.id).maybeSingle();
   if (existing) {
     await supabase.from('propostas').update(row).eq('id', proposal.id);
     return proposal.id;
   } else {
-    const { data } = await supabase.from('propostas').insert(row as any).select('id').single();
+    const { data } = await supabase.from('propostas').insert(row).select('id').single();
     return data?.id || proposal.id;
   }
 }

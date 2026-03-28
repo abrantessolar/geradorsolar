@@ -96,20 +96,12 @@ export interface AdminSettings {
   sellers: Seller[];
 }
 
-export interface LineEquipmentInfo {
-  marcaInversor?: string;
-  potenciaInversor?: string;
-  marcaPlaca?: string;
-  potenciaPlaca?: string;
-}
-
 export interface PriceTableEntry {
   panels: number;
   acesso: number | null;
   excellence: number | null;
   premium: number | null;
   estimated?: { acesso?: boolean; excellence?: boolean; premium?: boolean };
-  equipInfo?: Record<string, LineEquipmentInfo>;
 }
 
 export interface SocialProof {

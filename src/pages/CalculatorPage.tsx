@@ -17,7 +17,6 @@ import { getSettings, saveProposal, lookupIrradiation } from '@/data/store';
 import { savePropostaDB } from '@/data/supabaseStore';
 import { searchCidades } from '@/data/irradiancia';
 import type { Proposal } from '@/data/types';
-import { useAuth } from '@/contexts/AuthContext';
 
 const EQUIPMENT_COLORS = [
   '#E67E22', '#3498DB', '#9B59B6', '#1ABC9C', '#E74C3C',
@@ -41,7 +40,6 @@ const emptyMonthly = (): MonthlyConsumption => ({
 export default function CalculatorPage() {
   const settings = getSettings();
   const navigate = useNavigate();
-  const { user: authUser } = useAuth();
   const activeSellers = settings.sellers.filter(s => s.active);
 
   const defaultDist = settings.distributors?.find(d => d.name === settings.defaultDistributor);
@@ -229,7 +227,7 @@ export default function CalculatorPage() {
     };
     // Save to localStorage (fallback) and Supabase
     saveProposal(proposal);
-    savePropostaDB(proposal, authUser?.user_id).then(dbId => {
+    savePropostaDB(proposal).then(dbId => {
       navigate(`/proposta/${dbId}`);
     }).catch(() => {
       navigate(`/proposta/${proposal.id}`);
