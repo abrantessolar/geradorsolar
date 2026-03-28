@@ -1,7 +1,9 @@
-import { useState, useRef, useMemo } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { MessageCircle, Phone, Mail, MapPin, Facebook, Instagram, ChevronDown, X, Sun, Zap, Leaf, Tractor, Building, Home, ArrowRight } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import PublicSimulator from '@/components/PublicSimulator';
 import PublicSimulator from '@/components/PublicSimulator';
 
 const LOGO_URL = 'https://static.wixstatic.com/media/c2ae0d_30cd8efa4a3c4fbab3622fcd674c4d02~mv2.png';
@@ -38,14 +40,15 @@ const SOLUTIONS = [
   },
 ];
 
-const PARTNER_NAMES = ['Parceiro fabricante de inversores solares', 'Parceiro distribuidor de equipamentos solares', 'Parceiro financiamento energia solar'];
-const PARTNERS = [
+// Fallback static data (used when DB is empty)
+const STATIC_PARTNER_NAMES = ['Parceiro fabricante de inversores solares', 'Parceiro distribuidor de equipamentos solares', 'Parceiro financiamento energia solar'];
+const STATIC_PARTNERS = [
   'https://static.wixstatic.com/media/c2ae0d_e25309823c3f4aaa8742595e14b12485~mv2.png',
   'https://static.wixstatic.com/media/c2ae0d_b930ee5eefab44e8ad6967703ce7b914~mv2.png',
   'https://static.wixstatic.com/media/c2ae0d_cd3adde29feb4f6ba61eccb1f0e321e1~mv2.png',
 ];
 
-const PORTFOLIO = [
+const STATIC_PORTFOLIO = [
   'https://static.wixstatic.com/media/c2ae0d_6c371c31aaf648c7be252aaff996c7f1~mv2.jpg',
   'https://static.wixstatic.com/media/c2ae0d_6ee05018660840b5a51c119a569c78cf~mv2.jpg',
   'https://static.wixstatic.com/media/c2ae0d_3e01f00f92804e79ac321e54ad8f4d75~mv2.jpg',
@@ -68,6 +71,28 @@ const fadeUp = {
 export default function LandingPage() {
   const simulatorRef = useRef<HTMLDivElement>(null);
   const [lightboxImg, setLightboxImg] = useState<string | null>(null);
+
+  // Dynamic content from database
+  const [portfolioPhotos, setPortfolioPhotos] = useState<{ url: string; descricao: string | null }[]>([]);
+  const [partnerLogos, setPartnerLogos] = useState<{ url: string; nome: string; url_site: string | null }[]>([]);
+
+  useEffect(() => {
+    // Load portfolio photos
+    supabase.from('fotos_portfolio').select('url, descricao').eq('ativo', true).order('ordem')
+      .then(({ data }) => {
+        if (data && data.length > 0) setPortfolioPhotos(data as any);
+      });
+    // Load partner logos
+    supabase.from('logos_parceiros').select('url, nome, url_site').eq('ativo', true).order('ordem')
+      .then(({ data }) => {
+        if (data && data.length > 0) setPartnerLogos(data as any);
+      });
+  }, []);
+
+  // Use DB data if available, else fallback to static
+  const portfolio = portfolioPhotos.length > 0 ? portfolioPhotos.map(p => p.url) : STATIC_PORTFOLIO;
+  const portfolioDescs = portfolioPhotos.length > 0 ? portfolioPhotos.map(p => p.descricao) : null;
+  const partners = partnerLogos.length > 0 ? partnerLogos : STATIC_PARTNERS.map((url, i) => ({ url, nome: STATIC_PARTNER_NAMES[i], url_site: null }));
 
   const scrollToSimulator = () => {
     simulatorRef.current?.scrollIntoView({ behavior: 'smooth' });
