@@ -1,7 +1,8 @@
-import { useState, useRef, useMemo } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { MessageCircle, Phone, Mail, MapPin, Facebook, Instagram, ChevronDown, X, Sun, Zap, Leaf, Tractor, Building, Home, ArrowRight } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 import PublicSimulator from '@/components/PublicSimulator';
 
 const LOGO_URL = 'https://static.wixstatic.com/media/c2ae0d_30cd8efa4a3c4fbab3622fcd674c4d02~mv2.png';
@@ -38,14 +39,15 @@ const SOLUTIONS = [
   },
 ];
 
-const PARTNER_NAMES = ['Parceiro fabricante de inversores solares', 'Parceiro distribuidor de equipamentos solares', 'Parceiro financiamento energia solar'];
-const PARTNERS = [
+// Fallback static data (used when DB is empty)
+const STATIC_PARTNER_NAMES = ['Parceiro fabricante de inversores solares', 'Parceiro distribuidor de equipamentos solares', 'Parceiro financiamento energia solar'];
+const STATIC_PARTNERS = [
   'https://static.wixstatic.com/media/c2ae0d_e25309823c3f4aaa8742595e14b12485~mv2.png',
   'https://static.wixstatic.com/media/c2ae0d_b930ee5eefab44e8ad6967703ce7b914~mv2.png',
   'https://static.wixstatic.com/media/c2ae0d_cd3adde29feb4f6ba61eccb1f0e321e1~mv2.png',
 ];
 
-const PORTFOLIO = [
+const STATIC_PORTFOLIO = [
   'https://static.wixstatic.com/media/c2ae0d_6c371c31aaf648c7be252aaff996c7f1~mv2.jpg',
   'https://static.wixstatic.com/media/c2ae0d_6ee05018660840b5a51c119a569c78cf~mv2.jpg',
   'https://static.wixstatic.com/media/c2ae0d_3e01f00f92804e79ac321e54ad8f4d75~mv2.jpg',
@@ -68,6 +70,28 @@ const fadeUp = {
 export default function LandingPage() {
   const simulatorRef = useRef<HTMLDivElement>(null);
   const [lightboxImg, setLightboxImg] = useState<string | null>(null);
+
+  // Dynamic content from database
+  const [portfolioPhotos, setPortfolioPhotos] = useState<{ url: string; descricao: string | null }[]>([]);
+  const [partnerLogos, setPartnerLogos] = useState<{ url: string; nome: string; url_site: string | null }[]>([]);
+
+  useEffect(() => {
+    // Load portfolio photos
+    supabase.from('fotos_portfolio').select('url, descricao').eq('ativo', true).order('ordem')
+      .then(({ data }) => {
+        if (data && data.length > 0) setPortfolioPhotos(data as any);
+      });
+    // Load partner logos
+    supabase.from('logos_parceiros').select('url, nome, url_site').eq('ativo', true).order('ordem')
+      .then(({ data }) => {
+        if (data && data.length > 0) setPartnerLogos(data as any);
+      });
+  }, []);
+
+  // Use DB data if available, else fallback to static
+  const portfolio = portfolioPhotos.length > 0 ? portfolioPhotos.map(p => p.url) : STATIC_PORTFOLIO;
+  const portfolioDescs = portfolioPhotos.length > 0 ? portfolioPhotos.map(p => p.descricao) : null;
+  const partners = partnerLogos.length > 0 ? partnerLogos : STATIC_PARTNERS.map((url, i) => ({ url, nome: STATIC_PARTNER_NAMES[i], url_site: null }));
 
   const scrollToSimulator = () => {
     simulatorRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -250,20 +274,23 @@ export default function LandingPage() {
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} className="text-center mb-10">
             <h2 className="text-2xl md:text-3xl font-black text-primary">NOSSOS PARCEIROS</h2>
           </motion.div>
-          <div className="flex items-center justify-center gap-12 flex-wrap">
-            {PARTNERS.map((p, i) => (
-              <motion.img
-                key={i}
-                src={p}
-                alt={PARTNER_NAMES[i]}
-                className="h-16 md:h-20 w-auto object-contain grayscale hover:grayscale-0 transition-all duration-300"
-                loading="lazy"
-                initial={{ opacity: 0, scale: 0.8 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.1 }}
-              />
-            ))}
+           <div className="flex items-center justify-center gap-12 flex-wrap">
+            {partners.map((p, i) => {
+              const img = (
+                <motion.img
+                  key={i}
+                  src={p.url}
+                  alt={p.nome}
+                  className="h-16 md:h-20 w-auto object-contain grayscale hover:grayscale-0 transition-all duration-300"
+                  loading="lazy"
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.1 }}
+                />
+              );
+              return p.url_site ? <a key={i} href={p.url_site} target="_blank" rel="noopener noreferrer">{img}</a> : img;
+            })}
           </div>
         </div>
       </section>
@@ -279,7 +306,7 @@ export default function LandingPage() {
           </motion.div>
 
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-            {PORTFOLIO.map((img, i) => (
+            {portfolio.map((img, i) => (
               <motion.div
                 key={i}
                 initial={{ opacity: 0, scale: 0.9 }}
@@ -289,7 +316,7 @@ export default function LandingPage() {
                 className="relative aspect-square overflow-hidden rounded-xl cursor-pointer group"
                 onClick={() => setLightboxImg(img)}
               >
-                <img src={img} alt={`Projeto de energia solar ${i + 1} em Três Lagoas MS`} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" loading="lazy" />
+                <img src={img} alt={portfolioDescs?.[i] || `Projeto de energia solar ${i + 1} em Três Lagoas MS`} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" loading="lazy" />
                 <div className="absolute inset-0 bg-primary/0 group-hover:bg-primary/30 transition-colors duration-300" />
               </motion.div>
             ))}

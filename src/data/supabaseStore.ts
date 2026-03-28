@@ -67,8 +67,9 @@ export async function getPropostasDB(): Promise<Proposal[]> {
   if (!data) return [];
   return data.map(d => {
     const full = d.dados_completos as any;
-    return full ? { ...full, id: d.id } : {
+    return full ? { ...full, id: d.id, numero_proposta: (d as any).numero_proposta } : {
       id: d.id,
+      numero_proposta: (d as any).numero_proposta,
       clientData: { id: d.id, name: d.cliente, state: d.uf, city: d.cidade, networkType: 'bifasica', kwhPrice: 0.85, seller: '' },
       status: d.status,
       createdAt: d.criado_em,
@@ -80,7 +81,7 @@ export async function getPropostaByIdDB(id: string): Promise<Proposal | null> {
   const { data } = await supabase.from('propostas').select('*').eq('id', id).maybeSingle();
   if (!data) return null;
   const full = data.dados_completos as any;
-  return full ? { ...full, id: data.id } : null;
+  return full ? { ...full, id: data.id, numero_proposta: (data as any).numero_proposta } : null;
 }
 
 export async function savePropostaDB(proposal: Proposal): Promise<string> {

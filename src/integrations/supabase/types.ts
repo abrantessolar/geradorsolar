@@ -149,6 +149,63 @@ export type Database = {
         }
         Relationships: []
       }
+      fotos_portfolio: {
+        Row: {
+          ativo: boolean
+          criado_em: string
+          descricao: string | null
+          id: string
+          ordem: number
+          url: string
+        }
+        Insert: {
+          ativo?: boolean
+          criado_em?: string
+          descricao?: string | null
+          id?: string
+          ordem?: number
+          url: string
+        }
+        Update: {
+          ativo?: boolean
+          criado_em?: string
+          descricao?: string | null
+          id?: string
+          ordem?: number
+          url?: string
+        }
+        Relationships: []
+      }
+      logos_parceiros: {
+        Row: {
+          ativo: boolean
+          criado_em: string
+          id: string
+          nome: string
+          ordem: number
+          url: string
+          url_site: string | null
+        }
+        Insert: {
+          ativo?: boolean
+          criado_em?: string
+          id?: string
+          nome: string
+          ordem?: number
+          url: string
+          url_site?: string | null
+        }
+        Update: {
+          ativo?: boolean
+          criado_em?: string
+          id?: string
+          nome?: string
+          ordem?: number
+          url?: string
+          url_site?: string | null
+        }
+        Relationships: []
+      }
       propostas: {
         Row: {
           atualizado_em: string
@@ -162,6 +219,7 @@ export type Database = {
           id: string
           linha: string | null
           num_placas: number | null
+          numero_proposta: string | null
           potencia_kwp: number | null
           status: string
           uf: string | null
@@ -181,6 +239,7 @@ export type Database = {
           id?: string
           linha?: string | null
           num_placas?: number | null
+          numero_proposta?: string | null
           potencia_kwp?: number | null
           status?: string
           uf?: string | null
@@ -200,6 +259,7 @@ export type Database = {
           id?: string
           linha?: string | null
           num_placas?: number | null
+          numero_proposta?: string | null
           potencia_kwp?: number | null
           status?: string
           uf?: string | null

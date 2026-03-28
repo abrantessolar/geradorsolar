@@ -13,7 +13,8 @@ import {
 import { formatCurrency } from '@/data/calculations';
 import { AdminSettings, Seller, IrradiationEntry, PriceTableEntry, SocialProof, BRAZILIAN_STATES, CA_MATERIAL_TABLE_DEFAULT, LINE_NAMES } from '@/data/types';
 import type { Distributor, PriceTableLineDetails } from '@/data/types';
-import { Users, DollarSign, Settings, MapPin, Building2, FileText, Image, Plus, Trash2, Save, Eye, Wand2, AlertCircle, Upload, Check, ChevronDown, UserPlus, Edit2, X } from 'lucide-react';
+import { Users, DollarSign, Settings, MapPin, Building2, FileText, Image, Plus, Trash2, Save, Eye, Wand2, AlertCircle, Upload, Check, ChevronDown, UserPlus, Edit2, X, Globe } from 'lucide-react';
+import SiteContentTab from '@/components/admin/SiteContentTab';
 import { useNavigate } from 'react-router-dom';
 
 const ROLE_LABELS: Record<string, string> = {
@@ -34,6 +35,7 @@ export default function AdminPage() {
     { key: 'company' as const, label: 'Empresa', icon: Building2, roles: ['admin', 'orcamentista'] },
     { key: 'proposals' as const, label: 'Propostas', icon: FileText, roles: ['admin', 'orcamentista'] },
     { key: 'social' as const, label: 'Provas Sociais', icon: Image, roles: ['admin'] },
+    { key: 'site_content' as const, label: 'Conteúdo do Site', icon: Globe, roles: ['admin'] },
   ];
 
   const visibleTabs = adminTabs.filter(t => t.roles.includes(profile?.role || ''));
@@ -62,6 +64,7 @@ export default function AdminPage() {
       {tab === 'company' && <CompanyTab />}
       {tab === 'proposals' && <ProposalsTab />}
       {tab === 'social' && <SocialTab />}
+      {tab === 'site_content' && <SiteContentTab />}
     </div>
   );
 }
@@ -879,13 +882,14 @@ function ProposalsTab() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead><tr className="border-b border-border text-left text-muted-foreground">
-              <th className="py-2 px-2">Cliente</th><th className="py-2 px-2">Vendedor</th>
+              <th className="py-2 px-2">Nº</th><th className="py-2 px-2">Cliente</th><th className="py-2 px-2">Vendedor</th>
               <th className="py-2 px-2">Data</th><th className="py-2 px-2">Valor</th>
               <th className="py-2 px-2">Status</th><th className="py-2 px-2"></th>
             </tr></thead>
             <tbody>
               {proposals.map(p => (
                 <tr key={p.id} className="border-b border-border/50 hover:bg-muted/30">
+                  <td className="py-2 px-2 font-mono text-xs text-primary">{p.numero_proposta || '—'}</td>
                   <td className="py-2 px-2 font-medium">{p.clientData?.name || 'Sem nome'}</td>
                   <td className="py-2 px-2">{p.clientData?.seller}</td>
                   <td className="py-2 px-2">{new Date(p.createdAt).toLocaleDateString('pt-BR')}</td>
