@@ -38,6 +38,7 @@ const SOLUTIONS = [
   },
 ];
 
+const PARTNER_NAMES = ['Parceiro fabricante de inversores solares', 'Parceiro distribuidor de equipamentos solares', 'Parceiro financiamento energia solar'];
 const PARTNERS = [
   'https://static.wixstatic.com/media/c2ae0d_e25309823c3f4aaa8742595e14b12485~mv2.png',
   'https://static.wixstatic.com/media/c2ae0d_b930ee5eefab44e8ad6967703ce7b914~mv2.png',
@@ -254,7 +255,7 @@ export default function LandingPage() {
               <motion.img
                 key={i}
                 src={p}
-                alt={`Parceiro ${i + 1}`}
+                alt={PARTNER_NAMES[i]}
                 className="h-16 md:h-20 w-auto object-contain grayscale hover:grayscale-0 transition-all duration-300"
                 loading="lazy"
                 initial={{ opacity: 0, scale: 0.8 }}
@@ -304,7 +305,7 @@ export default function LandingPage() {
           <button className="absolute top-4 right-4 text-white/80 hover:text-white" onClick={() => setLightboxImg(null)}>
             <X className="w-8 h-8" />
           </button>
-          <img src={lightboxImg} alt="Projeto" className="max-w-full max-h-[90vh] object-contain rounded-lg" />
+          <img src={lightboxImg} alt="Projeto de energia solar Três Lagoas Solar" className="max-w-full max-h-[90vh] object-contain rounded-lg" />
         </div>
       )}
 
@@ -339,7 +340,7 @@ export default function LandingPage() {
         <div className="container">
           <div className="grid md:grid-cols-3 gap-12">
             <div>
-              <img src={LOGO_URL} alt="Três Lagoas Solar" className="h-12 w-auto mb-4 brightness-200" />
+              <img src={LOGO_URL} alt="Logo Três Lagoas Solar energia solar" className="h-12 w-auto mb-4 brightness-200" />
               <p className="text-background/60 text-sm leading-relaxed">
                 Energia solar eficiente e sustentável para residências, comércios e propriedades rurais.
               </p>
