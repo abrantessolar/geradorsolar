@@ -97,15 +97,128 @@
 }
 
 @media print {
+  /* Hide interactive elements */
   .no-print {
     display: none !important;
   }
-  body {
-    background: white !important;
-    font-size: 12pt;
+
+  /* Show print-only elements */
+  .print-only-block {
+    display: block !important;
   }
+
+  /* Base */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  html, body {
+    background: white !important;
+    font-size: 11pt !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+  }
+
+  /* Page setup */
+  @page {
+    size: A4;
+    margin: 15mm 12mm;
+  }
+
+  /* Page breaks */
+  .print-page {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  .print-cover {
+    page-break-after: always;
+    break-after: page;
+    padding: 80px 0 !important;
+  }
+
+  /* Container */
+  .print-container {
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .print-container > * + * {
+    margin-top: 24px !important;
+  }
+
+  /* Cards */
   .solar-card {
     box-shadow: none !important;
     border: 1px solid #ddd !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  .print-card {
+    border: 1px solid #ccc !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /* Line cards grid - force side by side */
+  .print-line-cards {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 12px !important;
+  }
+
+  .print-line-cards .solar-card {
+    padding: 12px !important;
+    font-size: 9pt !important;
+  }
+
+  .print-line-cards .text-2xl {
+    font-size: 14pt !important;
+  }
+
+  /* Charts - ensure they render */
+  .print-chart {
+    height: 250px !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  .print-chart .recharts-wrapper {
+    width: 100% !important;
+  }
+
+  /* Logo */
+  .print-logo {
+    height: 60px !important;
+  }
+
+  .print-title {
+    font-size: 28pt !important;
+  }
+
+  /* Hide scrollbars */
+  .max-h-48 {
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  /* Summary cards */
+  .bg-primary\/5 {
+    background-color: #f5f5f0 !important;
+  }
+
+  /* Links */
+  a {
+    text-decoration: none !important;
+    color: inherit !important;
+  }
+
+  /* Footer */
+  .print-only-block:last-child {
+    page-break-before: avoid;
   }
 }
