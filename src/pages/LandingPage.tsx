@@ -290,9 +290,7 @@ export default function LandingPage() {
                 onClick={() => setLightboxImg(img)}
               >
                 <img src={img} alt={`Projeto de energia solar ${i + 1} em Três Lagoas MS`} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" loading="lazy" />
-                <div className="absolute inset-0 bg-primary/0 group-hover:bg-primary/30 transition-colors duration-300 flex items-center justify-center">
-                  <Zap className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                </div>
+                <div className="absolute inset-0 bg-primary/0 group-hover:bg-primary/30 transition-colors duration-300" />
               </motion.div>
             ))}
           </div>
