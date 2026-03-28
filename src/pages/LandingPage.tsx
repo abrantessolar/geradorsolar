@@ -274,20 +274,23 @@ export default function LandingPage() {
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} className="text-center mb-10">
             <h2 className="text-2xl md:text-3xl font-black text-primary">NOSSOS PARCEIROS</h2>
           </motion.div>
-          <div className="flex items-center justify-center gap-12 flex-wrap">
-            {PARTNERS.map((p, i) => (
-              <motion.img
-                key={i}
-                src={p}
-                alt={PARTNER_NAMES[i]}
-                className="h-16 md:h-20 w-auto object-contain grayscale hover:grayscale-0 transition-all duration-300"
-                loading="lazy"
-                initial={{ opacity: 0, scale: 0.8 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.1 }}
-              />
-            ))}
+           <div className="flex items-center justify-center gap-12 flex-wrap">
+            {partners.map((p, i) => {
+              const img = (
+                <motion.img
+                  key={i}
+                  src={p.url}
+                  alt={p.nome}
+                  className="h-16 md:h-20 w-auto object-contain grayscale hover:grayscale-0 transition-all duration-300"
+                  loading="lazy"
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.1 }}
+                />
+              );
+              return p.url_site ? <a key={i} href={p.url_site} target="_blank" rel="noopener noreferrer">{img}</a> : img;
+            })}
           </div>
         </div>
       </section>
@@ -303,7 +306,7 @@ export default function LandingPage() {
           </motion.div>
 
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-            {PORTFOLIO.map((img, i) => (
+            {portfolio.map((img, i) => (
               <motion.div
                 key={i}
                 initial={{ opacity: 0, scale: 0.9 }}
@@ -313,7 +316,7 @@ export default function LandingPage() {
                 className="relative aspect-square overflow-hidden rounded-xl cursor-pointer group"
                 onClick={() => setLightboxImg(img)}
               >
-                <img src={img} alt={`Projeto de energia solar ${i + 1} em Três Lagoas MS`} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" loading="lazy" />
+                <img src={img} alt={portfolioDescs?.[i] || `Projeto de energia solar ${i + 1} em Três Lagoas MS`} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" loading="lazy" />
                 <div className="absolute inset-0 bg-primary/0 group-hover:bg-primary/30 transition-colors duration-300" />
               </motion.div>
             ))}
