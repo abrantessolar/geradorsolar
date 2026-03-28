@@ -76,22 +76,36 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'update') {
-      const { user_id, nome, role, ativo, password } = body;
+      const { user_id, nome, role, ativo, password, email } = body;
 
       const updates: Record<string, any> = {};
       if (nome !== undefined) updates.nome = nome;
       if (role !== undefined) updates.role = role;
       if (ativo !== undefined) updates.ativo = ativo;
       if (password !== undefined) updates.senha_visivel = password;
+      if (email !== undefined) updates.email = email;
 
       if (Object.keys(updates).length > 0) {
         await supabaseAdmin.from('user_profiles').update(updates).eq('user_id', user_id);
       }
 
-      if (password) {
-        await supabaseAdmin.auth.admin.updateUserById(user_id, { password });
+      // Update auth user if password or email changed
+      const authUpdates: Record<string, any> = {};
+      if (password) authUpdates.password = password;
+      if (email) authUpdates.email = email;
+      if (Object.keys(authUpdates).length > 0) {
+        await supabaseAdmin.auth.admin.updateUserById(user_id, authUpdates);
       }
 
+      return new Response(JSON.stringify({ ok: true }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (action === 'delete') {
+      const { user_id } = body;
+      await supabaseAdmin.from('user_profiles').delete().eq('user_id', user_id);
+      await supabaseAdmin.auth.admin.deleteUser(user_id);
       return new Response(JSON.stringify({ ok: true }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });

@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import Layout from "@/components/Layout";
+import LandingPage from "@/pages/LandingPage";
 import LoginPage from "@/pages/LoginPage";
 import CalculatorPage from "@/pages/CalculatorPage";
 import AdminPage from "@/pages/AdminPage";
@@ -47,7 +48,7 @@ function AuthRedirect() {
 
   if (session && profile) {
     if (profile.role === 'admin') return <Navigate to="/admin" replace />;
-    return <Navigate to="/" replace />;
+    return <Navigate to="/orcamentos" replace />;
   }
 
   return <LoginPage />;
@@ -61,10 +62,11 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <Routes>
+            <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<AuthRedirect />} />
             <Route path="/proposta/:id" element={<ProposalPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
-            <Route path="/" element={
+            <Route path="/orcamentos" element={
               <ProtectedRoute>
                 <Layout><CalculatorPage /></Layout>
               </ProtectedRoute>

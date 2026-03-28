@@ -208,6 +208,14 @@ function UsersTab() {
                         className={`text-xs px-2 py-1 rounded ${u.ativo ? 'text-destructive hover:bg-destructive/10' : 'text-green-700 hover:bg-green-50'}`}>
                         {u.ativo ? 'Desativar' : 'Ativar'}
                       </button>
+                      <button onClick={async () => {
+                        if (confirm(`Excluir ${u.nome}? Esta ação não pode ser desfeita.`)) {
+                          await callApi({ action: 'delete', user_id: u.user_id });
+                          loadUsers();
+                        }
+                      }} className="text-destructive/60 hover:text-destructive" title="Excluir">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -227,15 +235,24 @@ function UsersTab() {
 
 function EditUserModal({ user, onClose, callApi }: { user: any; onClose: () => void; callApi: (body: any) => Promise<any> }) {
   const [nome, setNome] = useState(user.nome);
+  const [email, setEmail] = useState(user.email);
   const [role, setRole] = useState(user.role);
   const [password, setPassword] = useState('');
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
 
   const handleSave = async () => {
     setSaving(true);
+    setError('');
     const updates: any = { nome, role };
+    if (email !== user.email) updates.email = email;
     if (password) updates.password = password;
-    await callApi({ action: 'update', user_id: user.user_id, ...updates });
+    const { data, error: err } = await callApi({ action: 'update', user_id: user.user_id, ...updates });
+    if (err || data?.error) {
+      setError(data?.error || 'Erro ao atualizar.');
+      setSaving(false);
+      return;
+    }
     setSaving(false);
     onClose();
   };
@@ -247,9 +264,12 @@ function EditUserModal({ user, onClose, callApi }: { user: any; onClose: () => v
           <h3 className="text-lg font-bold text-primary">Editar Usuário</h3>
           <button onClick={onClose}><X className="w-5 h-5 text-muted-foreground" /></button>
         </div>
+        {error && <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 text-destructive text-sm"><AlertCircle className="w-4 h-4" />{error}</div>}
         <div className="space-y-3">
           <div><label className="block text-sm font-medium mb-1">Nome</label>
             <input className="solar-input" value={nome} onChange={e => setNome(e.target.value)} /></div>
+          <div><label className="block text-sm font-medium mb-1">E-mail</label>
+            <input className="solar-input" type="email" value={email} onChange={e => setEmail(e.target.value)} /></div>
           <div><label className="block text-sm font-medium mb-1">Nível</label>
             <select className="solar-input" value={role} onChange={e => setRole(e.target.value)}>
               <option value="vendedor">Vendedor</option>
