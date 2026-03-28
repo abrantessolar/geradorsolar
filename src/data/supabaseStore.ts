@@ -180,3 +180,47 @@ export async function getCidadesIrradianciaDB(cidade: string, uf: string) {
     Number(data.out_), Number(data.nov), Number(data.dez),
   ];
 }
+
+export async function searchCidadesDB(query: string): Promise<{ cidade: string; uf: string; monthly: number[] }[]> {
+  if (!query || query.length < 2) return [];
+  const normalized = query.toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const { data } = await supabase
+    .from('cidades_irradiancia')
+    .select('*')
+    .ilike('cidade', `%${normalized}%`)
+    .limit(10);
+  if (!data) return [];
+  return data.map(d => ({
+    cidade: d.cidade,
+    uf: d.uf,
+    monthly: [
+      Number(d.jan), Number(d.fev), Number(d.mar),
+      Number(d.abr), Number(d.mai), Number(d.jun),
+      Number(d.jul), Number(d.ago), Number(d.set_),
+      Number(d.out_), Number(d.nov), Number(d.dez),
+    ],
+  }));
+}
+
+export async function countCidadesDB(): Promise<number> {
+  const { count } = await supabase
+    .from('cidades_irradiancia')
+    .select('*', { count: 'exact', head: true });
+  return count || 0;
+}
+
+export async function listCidadesDB(page: number = 0, pageSize: number = 50, search?: string): Promise<{ data: any[]; total: number }> {
+  let query = supabase
+    .from('cidades_irradiancia')
+    .select('*', { count: 'exact' });
+  
+  if (search && search.length >= 2) {
+    query = query.ilike('cidade', `%${search.toUpperCase()}%`);
+  }
+  
+  query = query.order('uf').order('cidade');
+  query = query.range(page * pageSize, (page + 1) * pageSize - 1);
+  
+  const { data, count } = await query;
+  return { data: data || [], total: count || 0 };
+}

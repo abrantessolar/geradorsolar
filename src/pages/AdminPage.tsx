@@ -643,25 +643,27 @@ function PricingTab() {
 
 /* ─── IRRADIAÇÃO ─── */
 function IrradiationTab() {
-  const [settings, setSettings] = useState(getSettings());
-  const entries = settings.irradiationEntries;
   const [importMsg, setImportMsg] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [dbCidades, setDbCidades] = useState<any[]>([]);
+  const [dbTotal, setDbTotal] = useState(0);
+  const [dbPage, setDbPage] = useState(0);
+  const [dbSearch, setDbSearch] = useState('');
+  const [loadingDb, setLoadingDb] = useState(false);
+  const PAGE_SIZE = 50;
 
-  const updateEntry = (idx: number, field: keyof IrradiationEntry, value: any) => {
-    const updated = [...entries];
-    updated[idx] = { ...updated[idx], [field]: field === 'value' ? (parseFloat(value) || 0) : value };
-    setSettings(prev => ({ ...prev, irradiationEntries: updated }));
+  const loadCidades = async (page: number, search: string) => {
+    setLoadingDb(true);
+    const { listCidadesDB } = await import('@/data/supabaseStore');
+    const { data, total } = await listCidadesDB(page, PAGE_SIZE, search);
+    setDbCidades(data);
+    setDbTotal(total);
+    setLoadingDb(false);
   };
 
-  const add = () => {
-    const entry: IrradiationEntry = { id: Date.now().toString(), state: 'MS', city: '', value: 5.0 };
-    setSettings(prev => ({ ...prev, irradiationEntries: [...prev.irradiationEntries, entry] }));
-  };
-
-  const remove = (idx: number) => {
-    setSettings(prev => ({ ...prev, irradiationEntries: prev.irradiationEntries.filter((_, i) => i !== idx) }));
-  };
+  useEffect(() => {
+    loadCidades(dbPage, dbSearch);
+  }, [dbPage, dbSearch]);
 
   const handleImportJSON = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -673,14 +675,9 @@ function IrradiationTab() {
         const data = JSON.parse(ev.target?.result as string);
         if (!Array.isArray(data)) throw new Error('Formato inválido');
         await importCidadesIrradianciaDB(data);
-        const newEntries: IrradiationEntry[] = data.map((item: any, i: number) => ({
-          id: `imp_${Date.now()}_${i}`,
-          state: item.uf || item.state || 'MS',
-          city: item.cidade || item.city || '',
-          value: Array.isArray(item.irr) ? item.irr.reduce((a: number, b: number) => a + b, 0) / 12 : (item.value || 5.0),
-        }));
-        setSettings(prev => ({ ...prev, irradiationEntries: [...prev.irradiationEntries, ...newEntries] }));
-        setImportMsg(`${newEntries.length} cidades importadas no banco de dados com sucesso!`);
+        setImportMsg(`${data.length} cidades importadas no banco de dados com sucesso!`);
+        loadCidades(0, dbSearch);
+        setDbPage(0);
         setTimeout(() => setImportMsg(''), 4000);
       } catch {
         setImportMsg('Erro ao importar arquivo. Verifique o formato JSON.');
@@ -691,7 +688,8 @@ function IrradiationTab() {
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  const handleSave = () => { saveSettings(settings); saveSettingsDB(settings); };
+  const totalPages = Math.ceil(dbTotal / PAGE_SIZE);
+
   return (
     <div className="solar-card p-6 space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-2">
@@ -701,8 +699,6 @@ function IrradiationTab() {
           <button onClick={() => fileInputRef.current?.click()} className="solar-btn-outline text-sm py-2 px-3 flex items-center gap-1">
             <Upload className="w-4 h-4" /> Importar base completa (JSON)
           </button>
-          <button onClick={add} className="solar-btn-outline text-sm py-2 px-3 flex items-center gap-1"><Plus className="w-4 h-4" /> Nova cidade</button>
-          <button onClick={handleSave} className="solar-btn-primary text-sm py-2 px-3 flex items-center gap-1"><Save className="w-4 h-4" /> Salvar</button>
         </div>
       </div>
       {importMsg && (
@@ -711,37 +707,67 @@ function IrradiationTab() {
           {importMsg}
         </div>
       )}
-      <p className="text-xs text-muted-foreground">
-        Base CRESESB com 98 cidades já incluída no sistema. Aqui você pode adicionar cidades extras ou importar a base completa via JSON.
-      </p>
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <p className="text-sm text-muted-foreground">
+          <span className="font-semibold text-primary">{dbTotal.toLocaleString()}</span> cidades cadastradas no banco de dados.
+        </p>
+        <div className="relative w-64">
+          <input
+            className="solar-input pl-9 text-sm py-2"
+            placeholder="Buscar cidade..."
+            value={dbSearch}
+            onChange={e => { setDbSearch(e.target.value); setDbPage(0); }}
+          />
+          <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+        </div>
+      </div>
       <div className="overflow-x-auto max-h-[500px] overflow-y-auto">
         <table className="w-full text-sm">
           <thead className="sticky top-0 bg-card z-10">
             <tr className="border-b border-border text-left text-muted-foreground">
-              <th className="py-2 px-2">UF</th><th className="py-2 px-2">Cidade</th>
-              <th className="py-2 px-2">Irradiação (kWh/m².dia)</th><th className="py-2 px-2"></th>
+              <th className="py-2 px-2">UF</th>
+              <th className="py-2 px-2">Cidade</th>
+              <th className="py-2 px-2">Jan</th><th className="py-2 px-2">Fev</th><th className="py-2 px-2">Mar</th>
+              <th className="py-2 px-2">Abr</th><th className="py-2 px-2">Mai</th><th className="py-2 px-2">Jun</th>
+              <th className="py-2 px-2">Jul</th><th className="py-2 px-2">Ago</th><th className="py-2 px-2">Set</th>
+              <th className="py-2 px-2">Out</th><th className="py-2 px-2">Nov</th><th className="py-2 px-2">Dez</th>
+              <th className="py-2 px-2">Média</th>
             </tr>
           </thead>
           <tbody>
-            {entries.map((e, i) => (
-              <tr key={e.id} className="border-b border-border/50 hover:bg-muted/30">
-                <td className="py-2 px-2">
-                  <select className="solar-input py-1 text-sm w-20" value={e.state} onChange={ev => updateEntry(i, 'state', ev.target.value)}>
-                    {BRAZILIAN_STATES.map(uf => <option key={uf} value={uf}>{uf}</option>)}
-                  </select>
-                </td>
-                <td className="py-2 px-2"><input className="solar-input py-1 text-sm" value={e.city} onChange={ev => updateEntry(i, 'city', ev.target.value)} /></td>
-                <td className="py-2 px-2"><input className="solar-input py-1 text-sm w-24" type="number" step="0.1" value={e.value} onChange={ev => updateEntry(i, 'value', ev.target.value)} /></td>
-                <td className="py-2 px-2"><button onClick={() => remove(i)} className="text-destructive hover:text-destructive/80"><Trash2 className="w-4 h-4" /></button></td>
-              </tr>
-            ))}
+            {loadingDb ? (
+              <tr><td colSpan={15} className="py-8 text-center text-muted-foreground">Carregando...</td></tr>
+            ) : dbCidades.length === 0 ? (
+              <tr><td colSpan={15} className="py-8 text-center text-muted-foreground">Nenhuma cidade encontrada.</td></tr>
+            ) : dbCidades.map((c) => {
+              const vals = [c.jan, c.fev, c.mar, c.abr, c.mai, c.jun, c.jul, c.ago, c.set_, c.out_, c.nov, c.dez].map(Number);
+              const avg = (vals.reduce((a, b) => a + b, 0) / 12).toFixed(3);
+              return (
+                <tr key={c.id} className="border-b border-border/50 hover:bg-muted/30">
+                  <td className="py-1.5 px-2 font-medium">{c.uf}</td>
+                  <td className="py-1.5 px-2">{c.cidade}</td>
+                  {vals.map((v, i) => (
+                    <td key={i} className="py-1.5 px-2 text-muted-foreground tabular-nums">{v.toFixed(2)}</td>
+                  ))}
+                  <td className="py-1.5 px-2 font-semibold text-primary tabular-nums">{avg}</td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between pt-2">
+          <p className="text-xs text-muted-foreground">Página {dbPage + 1} de {totalPages}</p>
+          <div className="flex gap-2">
+            <button disabled={dbPage === 0} onClick={() => setDbPage(p => p - 1)} className="solar-btn-outline text-xs py-1 px-3 disabled:opacity-40">Anterior</button>
+            <button disabled={dbPage >= totalPages - 1} onClick={() => setDbPage(p => p + 1)} className="solar-btn-outline text-xs py-1 px-3 disabled:opacity-40">Próxima</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
-
 /* ─── EMPRESA ─── */
 function CompanyTab() {
   const [settings, setSettings] = useState(getSettings());

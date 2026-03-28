@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Minus, ChevronDown, ChevronUp, Zap, Sun, TrendingUp, ArrowRight, AlertTriangle } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
@@ -14,8 +14,7 @@ import {
   formatCurrency, formatNumber, maxPanelsForInverter, calcMicroInverterCount,
 } from '@/data/calculations';
 import { getSettings, saveProposal, lookupIrradiation } from '@/data/store';
-import { savePropostaDB } from '@/data/supabaseStore';
-import { searchCidades } from '@/data/irradiancia';
+import { savePropostaDB, searchCidadesDB } from '@/data/supabaseStore';
 import type { Proposal } from '@/data/types';
 
 const EQUIPMENT_COLORS = [
@@ -62,13 +61,25 @@ export default function CalculatorPage() {
   // City autocomplete
   const [citySuggestions, setCitySuggestions] = useState<{ cidade: string; uf: string }[]>([]);
   const [showCitySuggestions, setShowCitySuggestions] = useState(false);
+  const [citySearching, setCitySearching] = useState(false);
   const cityRef = useRef<HTMLDivElement>(null);
+  const cityTimerRef = useRef<ReturnType<typeof setTimeout>>();
 
   const handleCityChange = (value: string) => {
     setClient(p => ({ ...p, city: value }));
-    const results = searchCidades(value);
-    setCitySuggestions(results);
-    setShowCitySuggestions(results.length > 0);
+    if (cityTimerRef.current) clearTimeout(cityTimerRef.current);
+    if (value.length < 2) {
+      setCitySuggestions([]);
+      setShowCitySuggestions(false);
+      return;
+    }
+    setCitySearching(true);
+    cityTimerRef.current = setTimeout(async () => {
+      const results = await searchCidadesDB(value);
+      setCitySuggestions(results);
+      setShowCitySuggestions(results.length > 0);
+      setCitySearching(false);
+    }, 300);
   };
 
   const selectCity = (cidade: string, uf: string) => {
@@ -106,7 +117,28 @@ export default function CalculatorPage() {
     return combinedMonthly;
   }, [mode, totalAverage, combinedMonthly]);
 
-  const irradiationLookup = lookupIrradiation(client.state, client.city);
+  // Try local first, then async DB lookup
+  const localLookup = lookupIrradiation(client.state, client.city);
+  const [dbIrr, setDbIrr] = useState<{ value: number; found: boolean; monthly: number[] | null } | null>(null);
+
+  useEffect(() => {
+    if (localLookup.found || !client.city || client.city.length < 2) {
+      setDbIrr(null);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      const { getCidadesIrradianciaDB } = await import('@/data/supabaseStore');
+      const monthly = await getCidadesIrradianciaDB(client.city, client.state);
+      if (!cancelled && monthly) {
+        const avg = monthly.reduce((a, b) => a + b, 0) / 12;
+        setDbIrr({ value: avg, found: true, monthly });
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [client.city, client.state, localLookup.found]);
+
+  const irradiationLookup = dbIrr && dbIrr.found ? dbIrr : localLookup;
   const irradiation = irradiationLookup.value;
   const monthlyIrr = irradiationLookup.monthly;
 

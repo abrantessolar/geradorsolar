@@ -1,22 +1,39 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { Sun, Zap, ArrowRight, Search } from 'lucide-react';
-import { searchCidades } from '@/data/irradiancia';
+import { searchCidadesDB } from '@/data/supabaseStore';
 import { MONTH_LABELS, MONTH_KEYS, SEASONAL_FACTORS } from '@/data/types';
-import { estimateFullConsumption } from '@/data/calculations';
 
 const LOSS = 0.21;
+
+interface CityResult {
+  cidade: string;
+  uf: string;
+  monthly: number[];
+}
 
 export default function PublicSimulator() {
   const [avgConsumption, setAvgConsumption] = useState('');
   const [citySearch, setCitySearch] = useState('');
-  const [selectedCity, setSelectedCity] = useState<any>(null);
+  const [selectedCity, setSelectedCity] = useState<CityResult | null>(null);
   const [showResults, setShowResults] = useState(false);
   const [showCityDropdown, setShowCityDropdown] = useState(false);
+  const [cityResults, setCityResults] = useState<CityResult[]>([]);
+  const [searching, setSearching] = useState(false);
 
-  const cityResults = useMemo(() => {
-    if (citySearch.length < 2) return [];
-    return searchCidades(citySearch).slice(0, 8);
+  // Debounced search from DB
+  useEffect(() => {
+    if (citySearch.length < 2) {
+      setCityResults([]);
+      return;
+    }
+    setSearching(true);
+    const timer = setTimeout(async () => {
+      const results = await searchCidadesDB(citySearch);
+      setCityResults(results);
+      setSearching(false);
+    }, 300);
+    return () => clearTimeout(timer);
   }, [citySearch]);
 
   const results = useMemo(() => {
@@ -24,32 +41,21 @@ export default function PublicSimulator() {
     const avg = parseFloat(avgConsumption);
     if (isNaN(avg) || avg <= 0) return null;
 
-    // Build monthly consumption using seasonal factors
-    const monthly: Record<string, number> = {};
-    MONTH_KEYS.forEach(k => {
-      monthly[k] = Math.round(avg * SEASONAL_FACTORS[k]);
-    });
+    const irrValues = selectedCity.monthly;
+    const avgIrr = irrValues.reduce((a, b) => a + b, 0) / 12;
 
-    // Get irradiation data
-    const irr = selectedCity;
-    const irrValues = [irr[2], irr[3], irr[4], irr[5], irr[6], irr[7], irr[8], irr[9], irr[10], irr[11], irr[12], irr[13]];
-    const avgIrr = irrValues.reduce((a: number, b: number) => a + b, 0) / 12;
-
-    // Dimensioning
     const avgDaily = avg / 30;
     const powerKwp = avgDaily / (avgIrr * (1 - LOSS));
     const panelCount = Math.ceil(powerKwp / 0.570);
     const actualKwp = panelCount * 0.570;
 
-    // Monthly generation
     const chartData = MONTH_LABELS.map((label, i) => {
       const gen = Math.round(actualKwp * irrValues[i] * 30 * (1 - LOSS));
-      const cons = monthly[MONTH_KEYS[i]];
+      const cons = Math.round(avg * SEASONAL_FACTORS[MONTH_KEYS[i]]);
       return { name: label, Geração: gen, Consumo: cons };
     });
 
     const totalGen = chartData.reduce((s, d) => s + d.Geração, 0);
-    const totalCons = chartData.reduce((s, d) => s + d.Consumo, 0);
     const avgGen = Math.round(totalGen / 12);
     const surplus = Math.max(0, avgGen - avg);
 
@@ -74,7 +80,6 @@ export default function PublicSimulator() {
         </div>
 
         <div className="solar-card p-8 space-y-6">
-          {/* Consumo */}
           <div>
             <label className="block text-sm font-bold text-foreground mb-2">Consumo médio mensal (kWh)</label>
             <input
@@ -86,7 +91,6 @@ export default function PublicSimulator() {
             />
           </div>
 
-          {/* Cidade */}
           <div className="relative">
             <label className="block text-sm font-bold text-foreground mb-2">Cidade</label>
             <div className="relative">
@@ -104,20 +108,21 @@ export default function PublicSimulator() {
                 onFocus={() => setShowCityDropdown(true)}
               />
             </div>
-            {showCityDropdown && cityResults.length > 0 && (
+            {showCityDropdown && (cityResults.length > 0 || searching) && (
               <div className="absolute z-20 mt-1 w-full bg-card border border-border rounded-xl shadow-xl max-h-60 overflow-y-auto">
-                {cityResults.map((c: any, i: number) => (
+                {searching && <div className="px-4 py-3 text-sm text-muted-foreground">Buscando...</div>}
+                {cityResults.map((c, i) => (
                   <button
                     key={i}
                     className="w-full text-left px-4 py-3 hover:bg-muted text-sm transition-colors"
                     onClick={() => {
                       setSelectedCity(c);
-                      setCitySearch(`${c[0]} - ${c[1]}`);
+                      setCitySearch(`${c.cidade} - ${c.uf}`);
                       setShowCityDropdown(false);
                     }}
                   >
-                    <span className="font-medium">{c[0]}</span>
-                    <span className="text-muted-foreground"> — {c[1]}</span>
+                    <span className="font-medium">{c.cidade}</span>
+                    <span className="text-muted-foreground"> — {c.uf}</span>
                   </button>
                 ))}
               </div>
@@ -132,7 +137,6 @@ export default function PublicSimulator() {
             <Zap className="w-5 h-5" /> Simular
           </button>
 
-          {/* Results */}
           {showResults && results && (
             <div className="space-y-6 pt-6 border-t border-border animate-fade-in-up">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
