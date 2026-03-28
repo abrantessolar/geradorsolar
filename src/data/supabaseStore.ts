@@ -85,6 +85,10 @@ export async function getPropostaByIdDB(id: string): Promise<Proposal | null> {
 }
 
 export async function savePropostaDB(proposal: Proposal): Promise<string> {
+  // Get current user id for RLS policy compliance
+  const { data: { user } } = await supabase.auth.getUser();
+  const userId = user?.id || null;
+
   const row = {
     cliente: proposal.clientData.name,
     vendedor_id: null as string | null,
@@ -98,15 +102,21 @@ export async function savePropostaDB(proposal: Proposal): Promise<string> {
     cet: proposal.cetApplied,
     status: proposal.status,
     dados_completos: proposal as any,
+    criador_user_id: userId,
   };
   
   // Check if exists
   const { data: existing } = await supabase.from('propostas').select('id').eq('id', proposal.id).maybeSingle();
   if (existing) {
-    await supabase.from('propostas').update(row).eq('id', proposal.id);
+    const { criador_user_id, ...updateRow } = row;
+    await supabase.from('propostas').update(updateRow).eq('id', proposal.id);
     return proposal.id;
   } else {
-    const { data } = await supabase.from('propostas').insert(row).select('id').single();
+    const { data, error } = await supabase.from('propostas').insert(row).select('id').single();
+    if (error) {
+      console.error('Erro ao salvar proposta no banco:', error);
+      throw error;
+    }
     return data?.id || proposal.id;
   }
 }
