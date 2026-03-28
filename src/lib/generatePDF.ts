@@ -1,357 +1,758 @@
 import jsPDF from 'jspdf';
 import { formatCurrency, formatNumber } from '@/data/calculations';
-import { LINE_NAMES, INSTALLMENT_OPTIONS } from '@/data/types';
+import { LINE_NAMES, INSTALLMENT_OPTIONS, MONTH_LABELS } from '@/data/types';
+import { supabase } from '@/integrations/supabase/client';
 
-const PRIMARY = [74, 90, 42]; // #4A5A2A
-const SECONDARY = [232, 184, 75]; // #E8B84B
-const WHITE = [255, 255, 255];
-const DARK = [30, 30, 30];
-const GRAY = [120, 120, 120];
-const LIGHT_BG = [245, 245, 240];
+// Brand colors
+const PRIMARY = [74, 90, 42] as const;    // #4A5A2A
+const SECONDARY = [232, 184, 75] as const; // #E8B84B
+const WHITE = [255, 255, 255] as const;
+const DARK = [33, 33, 33] as const;
+const GRAY = [120, 120, 120] as const;
+const LIGHT_BG = [247, 247, 242] as const;
+const RED_SOFT = [220, 60, 60] as const;
+const GREEN = [34, 139, 34] as const;
 
-export async function generateProposalPDF(proposal: any, settings: any, lineCards: any[], chartData: any[], cashflowData: any[]) {
+type RGB = readonly [number, number, number];
+
+export async function generateProposalPDF(
+  proposal: any, settings: any, lineCards: any[],
+  chartData: any[], cashflowData: any[]
+) {
   const doc = new jsPDF('p', 'mm', 'a4');
   const W = 210;
   const H = 297;
-  const M = 15; // margin
-  const CW = W - 2 * M; // content width
+  const M = 15;
+  const CW = W - 2 * M;
 
-  const selectedCard = lineCards.find(c => c.line === proposal.selectedLine) || lineCards[0];
+  const selectedCard = lineCards.find((c: any) => c.line === proposal.selectedLine) || lineCards[0];
   const numero = proposal.numero_proposta || 'TLS-0000';
+  const isPremium = proposal.selectedLine === 'premium';
 
-  // Helper functions
-  const setColor = (rgb: number[]) => doc.setTextColor(rgb[0], rgb[1], rgb[2]);
-  const setFill = (rgb: number[]) => doc.setFillColor(rgb[0], rgb[1], rgb[2]);
+  // Helpers
+  const setColor = (rgb: RGB) => doc.setTextColor(rgb[0], rgb[1], rgb[2]);
+  const setFill = (rgb: RGB) => doc.setFillColor(rgb[0], rgb[1], rgb[2]);
+  const setDraw = (rgb: RGB) => doc.setDrawColor(rgb[0], rgb[1], rgb[2]);
+
+  const drawFooter = () => {
+    const fy = H - 14;
+    setFill(PRIMARY);
+    doc.rect(0, fy - 2, W, 16, 'F');
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'normal');
+    setColor(WHITE);
+    const footerText = `${settings.company.phone}  |  ${settings.company.email}  |  CNPJ: ${settings.company.cnpj || ''}  |  ${settings.company.site || 'www.treslagoassolar.com.br'}  |  @treslagoassolar`;
+    doc.text(footerText, W / 2, fy + 5, { align: 'center' });
+  };
+
+  const drawPageHeader = (title: string) => {
+    // Dark green header bar
+    setFill(PRIMARY);
+    doc.rect(0, 0, W, 28, 'F');
+    // Gold accent line
+    setFill(SECONDARY);
+    doc.rect(0, 28, W, 2, 'F');
+    // Title
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(16);
+    setColor(WHITE);
+    doc.text(title, W / 2, 18, { align: 'center' });
+    // Proposal number
+    doc.setFontSize(8);
+    setColor(SECONDARY);
+    doc.text(numero, W - M, 18, { align: 'right' });
+  };
+
+  // Try to load logo as base64
+  let logoData: string | null = null;
+  try {
+    const response = await fetch(new URL('/src/assets/logo.png', window.location.origin).href);
+    const blob = await response.blob();
+    logoData = await new Promise<string>((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.readAsDataURL(blob);
+    });
+  } catch { /* logo not available */ }
 
   // ═══════════════════════════════════════
   // PAGE 1: COVER
   // ═══════════════════════════════════════
-  setFill(PRIMARY);
-  doc.rect(0, 0, W, H, 'F');
-
-  // Gold accent bar
+  // Full page white with decorative elements
+  // Top-left gold accents
   setFill(SECONDARY);
-  doc.rect(0, H * 0.38, W, 3, 'F');
+  doc.rect(12, 8, 4, 4, 'F');
+  doc.rect(20, 8, 4, 4, 'F');
+  doc.rect(28, 8, 4, 4, 'F');
 
-  // Company name
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(14);
-  setColor(SECONDARY);
-  doc.text(settings.company.name.toUpperCase(), W / 2, 50, { align: 'center' });
-
-  // Title
-  doc.setFontSize(32);
-  setColor(WHITE);
-  doc.text('PROPOSTA', W / 2, 90, { align: 'center' });
-  doc.setFontSize(24);
-  doc.text('DE ENERGIA SOLAR', W / 2, 105, { align: 'center' });
-
-  // Proposal number
-  doc.setFontSize(16);
-  setColor(SECONDARY);
-  doc.text(numero, W / 2, 125, { align: 'center' });
-
-  // Gold line
-  setFill(SECONDARY);
-  doc.rect(M + 40, 135, CW - 80, 0.5, 'F');
-
-  // Client info
-  let y = 155;
-  doc.setFontSize(18);
-  setColor(WHITE);
-  doc.text(proposal.clientData.name, W / 2, y, { align: 'center' });
-  y += 10;
-  doc.setFontSize(12);
-  setColor([200, 200, 200]);
-  doc.text(`${proposal.clientData.city} — ${proposal.clientData.state || 'MS'}`, W / 2, y, { align: 'center' });
-  y += 8;
-  doc.text(`${formatNumber(selectedCard?.dimensioning?.avgMonthlyKwh || 0, 0)} kWh/mês`, W / 2, y, { align: 'center' });
-
-  // Date
-  y = H - 50;
-  doc.setFontSize(10);
-  setColor([180, 180, 180]);
-  doc.text(`Gerada em ${new Date(proposal.createdAt).toLocaleDateString('pt-BR')}`, W / 2, y, { align: 'center' });
-  y += 6;
-  doc.text(`Válida por ${settings.proposalValidity || 15} dias`, W / 2, y, { align: 'center' });
-
-  // Contact
-  y += 12;
-  doc.setFontSize(9);
-  doc.text(`${settings.company.phone} • ${settings.company.email}`, W / 2, y, { align: 'center' });
-
-  // ═══════════════════════════════════════
-  // PAGE 2: SPECIFICATIONS
-  // ═══════════════════════════════════════
-  doc.addPage();
-  y = M;
-
-  // Header bar
-  setFill(PRIMARY);
-  doc.rect(0, 0, W, 25, 'F');
-  doc.setFontSize(14);
-  doc.setFont('helvetica', 'bold');
-  setColor(WHITE);
-  doc.text('ESPECIFICAÇÕES DO PROJETO', W / 2, 17, { align: 'center' });
-
-  y = 35;
-
-  // Selected line info
-  setFill(LIGHT_BG);
-  doc.roundedRect(M, y, CW, 12, 2, 2, 'F');
-  doc.setFontSize(12);
-  setColor(PRIMARY);
-  doc.text(`Linha ${LINE_NAMES[proposal.selectedLine] || proposal.selectedLine}`, M + 5, y + 8);
-  y += 20;
-
-  // Equipment specs table
-  const specs = [
-    ['Inversor', `${selectedCard?.inverter?.brand || '—'} ${selectedCard?.inverter?.model || ''}`],
-    ['Potência Inversor', `${selectedCard?.inverter?.power || '—'} kW`],
-    ['Placas Solares', `${selectedCard?.panelCount || 0}× ${selectedCard?.panel?.brand || ''} ${selectedCard?.panel?.power || ''}Wp`],
-    ['Potência Total', `${formatNumber(selectedCard?.dimensioning?.powerKwp || 0)} kWp`],
-    ['Geração Mensal', `${formatNumber(selectedCard?.dimensioning?.monthlyGeneration || 0, 0)} kWh`],
-    ['Consumo Médio', `${formatNumber(selectedCard?.dimensioning?.avgMonthlyKwh || 0, 0)} kWh`],
-    ['Excedente', `${formatNumber(selectedCard?.dimensioning?.surplus || 0, 0)} kWh`],
-  ];
-
-  doc.setFontSize(10);
-  specs.forEach(([label, value], i) => {
-    if (i % 2 === 0) {
-      setFill([250, 250, 245]);
-      doc.rect(M, y - 4, CW, 10, 'F');
-    }
-    setColor(GRAY);
-    doc.setFont('helvetica', 'normal');
-    doc.text(label, M + 5, y + 2);
-    setColor(DARK);
+  // Logo
+  if (logoData) {
+    try { doc.addImage(logoData, 'PNG', M, 18, 55, 28); } catch {}
+  } else {
     doc.setFont('helvetica', 'bold');
-    doc.text(value, M + CW - 5, y + 2, { align: 'right' });
-    y += 10;
-  });
+    doc.setFontSize(22);
+    setColor(PRIMARY);
+    doc.text('TRÊS LAGOAS', M, 32);
+    doc.setFontSize(28);
+    doc.text('Solar', M, 44);
+  }
 
-  // Monthly generation table
+  // Main title - styled like the template
+  let y = 85;
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(26);
+  setColor(DARK);
+  doc.text('meu', M + 10, y);
+  y += 12;
+  doc.text('projeto', M + 10, y);
   y += 10;
-  doc.setFontSize(11);
+  doc.setFontSize(20);
+  doc.text('de', M + 10, y);
+
+  // Large "Energia solar" text
+  y += 18;
   doc.setFont('helvetica', 'bold');
+  doc.setFontSize(48);
   setColor(PRIMARY);
-  doc.text('Geração Mensal Estimada (kWh)', M, y);
-  y += 8;
+  doc.text('Energia', M, y);
+  y += 20;
+  doc.setFontSize(44);
+  setColor(PRIMARY);
+  doc.text('solar', M + 30, y);
+  y += 14;
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(22);
+  setColor(GRAY);
+  doc.text('fotovoltaica', M + 50, y);
 
-  const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
-  const colW = CW / 6;
+  // Gold circle decoration (like template)
+  setFill(SECONDARY);
+  doc.circle(155, 120, 35, 'F');
 
-  // Table header
+  // Client info box
+  y = 200;
   setFill(PRIMARY);
-  doc.rect(M, y - 4, CW, 8, 'F');
+  doc.roundedRect(M + 30, y, CW - 30, 24, 3, 3, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(16);
+  setColor(WHITE);
+  doc.text(proposal.clientData.name, M + 38, y + 10);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+  setColor([220, 220, 220]);
+  doc.text(`${formatNumber(selectedCard?.dimensioning?.avgMonthlyKwh || 0, 0)} kWh por mês  •  ${proposal.clientData.city} — ${proposal.clientData.state || 'MS'}`, M + 38, y + 18);
+
+  // Seller info
+  y = 238;
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9);
+  setColor(GRAY);
+  doc.text('Representante:', M + 20, y);
+  y += 6;
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(12);
+  setColor(DARK);
+  doc.text(proposal.clientData.seller || '', M + 20, y);
+
+  y += 10;
+  doc.setFont('helvetica', 'bold');
   doc.setFontSize(8);
-  doc.setFont('helvetica', 'bold');
-  setColor(WHITE);
-  for (let i = 0; i < 6; i++) {
-    doc.text(months[i], M + colW * i + colW / 2, y + 1, { align: 'center' });
-  }
-  y += 8;
-
-  // Table row 1
-  doc.setFont('helvetica', 'normal');
   setColor(DARK);
-  for (let i = 0; i < 6; i++) {
-    const val = chartData[i]?.['geração'] || 0;
-    doc.text(String(val), M + colW * i + colW / 2, y + 1, { align: 'center' });
-  }
-  y += 8;
-
-  // Table header row 2
-  setFill(PRIMARY);
-  doc.rect(M, y - 4, CW, 8, 'F');
-  setColor(WHITE);
-  doc.setFont('helvetica', 'bold');
-  for (let i = 0; i < 6; i++) {
-    doc.text(months[i + 6], M + colW * i + colW / 2, y + 1, { align: 'center' });
-  }
-  y += 8;
-
+  doc.text(`${settings.company.phone}  |  ${settings.company.email}`, M + 20, y);
+  y += 5;
   doc.setFont('helvetica', 'normal');
-  setColor(DARK);
-  for (let i = 0; i < 6; i++) {
-    const val = chartData[i + 6]?.['geração'] || 0;
-    doc.text(String(val), M + colW * i + colW / 2, y + 1, { align: 'center' });
-  }
+  doc.text(`${settings.company.site || 'www.treslagoassolar.com.br'}  |  @treslagoassolar`, M + 20, y);
+
+  // Bottom-right gold accents
+  setFill(SECONDARY);
+  doc.rect(W - 32, H - 28, 4, 4, 'F');
+  doc.rect(W - 24, H - 28, 4, 4, 'F');
+  doc.rect(W - 16, H - 28, 4, 4, 'F');
 
   // ═══════════════════════════════════════
-  // PAGE 3: INVESTMENT
+  // PAGE 2: SPECS + CHART
   // ═══════════════════════════════════════
   doc.addPage();
-
-  setFill(PRIMARY);
-  doc.rect(0, 0, W, 25, 'F');
-  doc.setFontSize(14);
-  doc.setFont('helvetica', 'bold');
-  setColor(WHITE);
-  doc.text('INVESTIMENTO', W / 2, 17, { align: 'center' });
-
+  drawPageHeader('Especificações do projeto');
   y = 40;
 
-  // Price box
-  setFill(LIGHT_BG);
-  doc.roundedRect(M + 20, y, CW - 40, 30, 3, 3, 'F');
+  // Two columns: Equipamentos | Rendimentos
+  const halfW = CW / 2 - 3;
+
+  // Equipamentos section
   setFill(SECONDARY);
-  doc.rect(M + 20, y, CW - 40, 1, 'F');
-  doc.setFontSize(22);
-  setColor(PRIMARY);
+  doc.roundedRect(M, y, halfW, 9, 2, 2, 'F');
   doc.setFont('helvetica', 'bold');
-  doc.text(formatCurrency(selectedCard?.totalPrice || 0), W / 2, y + 20, { align: 'center' });
-  y += 40;
-
-  // All 3 lines comparison
   doc.setFontSize(11);
-  setColor(PRIMARY);
-  doc.text('Comparativo de Linhas', M, y);
-  y += 8;
+  setColor(DARK);
+  doc.text('Equipamentos', M + 5, y + 6.5);
 
-  const lineColW = CW / 3;
-  lineCards.forEach((card, i) => {
-    const x = M + i * lineColW;
-    const isSelected = card.line === proposal.selectedLine;
-    setFill(isSelected ? PRIMARY : LIGHT_BG);
-    doc.roundedRect(x + 2, y, lineColW - 4, 45, 2, 2, 'F');
-
-    doc.setFontSize(9);
-    doc.setFont('helvetica', 'bold');
-    setColor(isSelected ? WHITE : PRIMARY);
-    doc.text(LINE_NAMES[card.line] || card.line, x + lineColW / 2, y + 8, { align: 'center' });
-
-    doc.setFontSize(12);
-    doc.text(formatCurrency(card.totalPrice), x + lineColW / 2, y + 20, { align: 'center' });
-
-    doc.setFontSize(7);
-    doc.setFont('helvetica', 'normal');
-    setColor(isSelected ? [220, 220, 220] : GRAY);
-    doc.text(`${formatNumber(card.dimensioning.powerKwp)} kWp`, x + lineColW / 2, y + 28, { align: 'center' });
-    doc.text(`${formatNumber(card.dimensioning.monthlyGeneration, 0)} kWh/mês`, x + lineColW / 2, y + 34, { align: 'center' });
-    doc.text(`Payback: ${formatNumber(card.dimensioning.paybackYears)}a`, x + lineColW / 2, y + 40, { align: 'center' });
-  });
-  y += 55;
-
-  // Financing table
-  doc.setFontSize(11);
-  doc.setFont('helvetica', 'bold');
-  setColor(PRIMARY);
-  doc.text('Parcelamento — Financiamento', M, y);
-  y += 8;
-
-  setFill(PRIMARY);
-  doc.rect(M, y - 3, CW, 8, 'F');
+  let ly = y + 15;
   doc.setFontSize(9);
-  setColor(WHITE);
-  doc.text('Parcelas', M + 5, y + 2);
-  doc.text('Valor Mensal', M + CW - 5, y + 2, { align: 'right' });
-  y += 8;
-
   doc.setFont('helvetica', 'normal');
-  INSTALLMENT_OPTIONS.forEach((n, i) => {
-    if (i % 2 === 0) {
-      setFill([250, 250, 245]);
-      doc.rect(M, y - 3, CW, 8, 'F');
-    }
-    setColor(DARK);
-    doc.text(`${n}×`, M + 5, y + 2);
-    doc.text(formatCurrency(selectedCard?.installments?.[n] || 0), M + CW - 5, y + 2, { align: 'right' });
-    y += 8;
+  setColor(DARK);
+
+  if (isPremium) {
+    const microCount = selectedCard?.microCount || 0;
+    doc.text(`Micro Inversores: ${microCount}×`, M + 3, ly);
+    ly += 5.5;
+    doc.setFont('helvetica', 'bold');
+    doc.text(`${selectedCard?.inverter?.brand || ''} ${selectedCard?.inverter?.model || ''}`, M + 3, ly);
+    doc.setFont('helvetica', 'normal');
+    ly += 5.5;
+    doc.text(`${selectedCard?.inverter?.power || ''} W cada`, M + 3, ly);
+  } else {
+    doc.text('Inversor:', M + 3, ly);
+    ly += 5.5;
+    doc.setFont('helvetica', 'bold');
+    doc.text(`${selectedCard?.inverter?.brand || ''} ${selectedCard?.inverter?.model || ''}`, M + 3, ly);
+    doc.setFont('helvetica', 'normal');
+    ly += 5.5;
+    doc.text(`${selectedCard?.inverter?.power || ''} kW`, M + 3, ly);
+  }
+
+  ly += 8;
+  doc.text('Placas:', M + 3, ly);
+  ly += 5.5;
+  doc.setFont('helvetica', 'bold');
+  doc.text(`${selectedCard?.panelCount || 0}× ${selectedCard?.panel?.brand || ''} ${selectedCard?.panel?.power || ''}Wp`, M + 3, ly);
+
+  // Rendimentos section
+  const rx = M + halfW + 6;
+  setFill(SECONDARY);
+  doc.roundedRect(rx, y, halfW, 9, 2, 2, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(11);
+  setColor(DARK);
+  doc.text('Rendimentos', rx + 5, y + 6.5);
+
+  let ry = y + 15;
+  const rendimentos = [
+    ['Geração:', `${formatNumber(selectedCard?.dimensioning?.monthlyGeneration || 0, 0)} kWh/mês`],
+    ['Consumo:', `${formatNumber(selectedCard?.dimensioning?.avgMonthlyKwh || 0, 0)} kWh/mês`],
+    ['Excedente:', `${formatNumber(selectedCard?.dimensioning?.surplus || 0, 0)} kWh/mês`],
+    ['Potência:', `${formatNumber(selectedCard?.dimensioning?.powerKwp || 0)} kWp`],
+  ];
+
+  doc.setFontSize(9);
+  rendimentos.forEach(([label, value]) => {
+    doc.setFont('helvetica', 'normal');
+    setColor(GRAY);
+    doc.text(label, rx + 3, ry);
+    doc.setFont('helvetica', 'bold');
+    setColor(PRIMARY);
+    doc.text(value, rx + halfW - 5, ry, { align: 'right' });
+    ry += 7;
   });
+
+  // "Incluso" section
+  y = Math.max(ly, ry) + 10;
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'normal');
+  setColor(GRAY);
+  const inclusoText = 'Sistema solar + Material de instalação + Análise de sombreamento + Homologação + 3 Anos de garantia de instalação e acompanhamento';
+  const inclusoLines = doc.splitTextToSize(inclusoText, CW);
+  doc.text(inclusoLines, W / 2, y, { align: 'center' });
+
+  // ── Chart: Geração vs Consumo ──
+  y += 14;
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  setColor(PRIMARY);
+  doc.text('Geração vs Consumo Mensal (kWh)', W / 2, y, { align: 'center' });
+  y += 6;
+
+  // Draw bar chart
+  const chartH = 55;
+  const barGroupW = CW / 12;
+  const maxVal = Math.max(...chartData.map((d: any) => Math.max(d.geração || 0, d.consumo || 0, 1)));
+
+  // Legend
+  setFill(PRIMARY);
+  doc.rect(M + CW / 2 - 35, y, 6, 3, 'F');
+  doc.setFontSize(7);
+  doc.setFont('helvetica', 'normal');
+  setColor(DARK);
+  doc.text('Geração', M + CW / 2 - 27, y + 2.5);
+  setFill(SECONDARY);
+  doc.rect(M + CW / 2 + 8, y, 6, 3, 'F');
+  doc.text('Consumo', M + CW / 2 + 16, y + 2.5);
+  y += 7;
+
+  const chartY = y;
+  // Y axis line
+  setDraw([200, 200, 200]);
+  doc.setLineWidth(0.2);
+  doc.line(M, chartY, M, chartY + chartH);
+  doc.line(M, chartY + chartH, M + CW, chartY + chartH);
+
+  chartData.forEach((d: any, i: number) => {
+    const cx = M + i * barGroupW;
+    const barW = barGroupW * 0.35;
+    const genH = ((d.geração || 0) / maxVal) * chartH;
+    const conH = ((d.consumo || 0) / maxVal) * chartH;
+
+    // Generation bar (green)
+    setFill(PRIMARY);
+    doc.rect(cx + barGroupW * 0.15, chartY + chartH - genH, barW, genH, 'F');
+
+    // Consumption bar (gold)
+    setFill(SECONDARY);
+    doc.rect(cx + barGroupW * 0.5, chartY + chartH - conH, barW, conH, 'F');
+
+    // Value labels on bars
+    doc.setFontSize(5);
+    doc.setFont('helvetica', 'bold');
+    setColor(PRIMARY);
+    if (genH > 5) doc.text(String(d.geração || 0), cx + barGroupW * 0.15 + barW / 2, chartY + chartH - genH - 1.5, { align: 'center' });
+    setColor(DARK);
+    if (conH > 5) doc.text(String(d.consumo || 0), cx + barGroupW * 0.5 + barW / 2, chartY + chartH - conH - 1.5, { align: 'center' });
+
+    // Month label
+    doc.setFontSize(6);
+    doc.setFont('helvetica', 'normal');
+    setColor(DARK);
+    doc.text(MONTH_LABELS[i], cx + barGroupW / 2, chartY + chartH + 4, { align: 'center' });
+  });
+
+  // ═══════════════════════════════════════
+  // INVESTMENT section (on same page below chart)
+  // ═══════════════════════════════════════
+  y = chartY + chartH + 12;
+
+  // Gold accent line
+  setFill(SECONDARY);
+  doc.rect(M, y, CW, 1.5, 'F');
+  y += 6;
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(16);
+  setColor(PRIMARY);
+  doc.text('Investimento', M, y);
+  y += 4;
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'normal');
+  setColor(GRAY);
+  doc.text('sistema completo de energia solar fotovoltaica', M, y + 4);
+  y += 12;
+
+  // Big installment boxes — like the template
+  const installW = CW / 5;
+  INSTALLMENT_OPTIONS.forEach((n, i) => {
+    const ix = M + i * installW;
+    // Number big
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(24);
+    setColor(SECONDARY);
+    doc.text(`${n}X`, ix + installW / 2, y + 8, { align: 'center' });
+
+    // Gold underline
+    setFill(SECONDARY);
+    doc.rect(ix + 4, y + 10, installW - 8, 0.8, 'F');
+
+    // Value below
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'bold');
+    setColor(DARK);
+    doc.text(formatCurrency(selectedCard?.installments?.[n] || 0), ix + installW / 2, y + 17, { align: 'center' });
+  });
+
+  y += 24;
+
+  // À vista price
+  doc.setFontSize(12);
+  doc.setFont('helvetica', 'normal');
+  setColor(DARK);
+  doc.text('À vista:', W / 2 - 20, y, { align: 'right' });
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(14);
+  setColor(PRIMARY);
+  doc.text(formatCurrency(selectedCard?.totalPrice || 0), W / 2 - 17, y);
+
+  y += 6;
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'normal');
+  setColor(GRAY);
+  doc.text(`Proposta válida por ${settings.proposalValidity || 15} dias  •  ${numero}  •  ${new Date(proposal.createdAt).toLocaleDateString('pt-BR')}`, W / 2, y, { align: 'center' });
 
   if (proposal.cetApplied) {
-    doc.setFontSize(8);
-    setColor(GRAY);
-    doc.text(`CET aplicada: ${proposal.cetApplied}% a.m.`, M, y + 3);
+    y += 4;
+    doc.text(`CET aplicada: ${proposal.cetApplied}% a.m.`, W / 2, y, { align: 'center' });
   }
+
+  drawFooter();
+
+  // ═══════════════════════════════════════
+  // PAGE 3: INVESTMENT COMPARISON + CARD RATES
+  // ═══════════════════════════════════════
+  doc.addPage();
+  drawPageHeader('Comparativo de Linhas');
+  y = 40;
+
+  // Line comparison cards
+  const lineColW = CW / lineCards.length;
+  lineCards.forEach((card: any, i: number) => {
+    const x = M + i * lineColW;
+    const isSelected = card.line === proposal.selectedLine;
+
+    // Card background
+    if (isSelected) {
+      setFill(PRIMARY);
+      doc.roundedRect(x + 2, y, lineColW - 4, 70, 3, 3, 'F');
+      // Selected badge
+      setFill(SECONDARY);
+      doc.roundedRect(x + lineColW / 2 - 15, y - 3, 30, 8, 2, 2, 'F');
+      doc.setFontSize(6);
+      doc.setFont('helvetica', 'bold');
+      setColor(DARK);
+      doc.text('SELECIONADA', x + lineColW / 2, y + 2, { align: 'center' });
+    } else {
+      setFill(LIGHT_BG);
+      doc.roundedRect(x + 2, y, lineColW - 4, 70, 3, 3, 'F');
+      setDraw([200, 200, 200]);
+      doc.setLineWidth(0.3);
+      doc.roundedRect(x + 2, y, lineColW - 4, 70, 3, 3, 'S');
+    }
+
+    const textColor: RGB = isSelected ? WHITE : DARK;
+    const subColor: RGB = isSelected ? [200, 210, 190] : GRAY;
+
+    let cy = y + 12;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    setColor(textColor);
+    doc.text(LINE_NAMES[card.line] || card.line, x + lineColW / 2, cy, { align: 'center' });
+
+    cy += 10;
+    doc.setFontSize(16);
+    doc.text(formatCurrency(card.totalPrice), x + lineColW / 2, cy, { align: 'center' });
+
+    cy += 8;
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'normal');
+    setColor(subColor);
+    doc.text(`${formatNumber(card.dimensioning.powerKwp)} kWp`, x + lineColW / 2, cy, { align: 'center' });
+    cy += 5;
+    doc.text(`${formatNumber(card.dimensioning.monthlyGeneration, 0)} kWh/mês`, x + lineColW / 2, cy, { align: 'center' });
+    cy += 5;
+    doc.text(`Payback: ${formatNumber(card.dimensioning.paybackYears)} anos`, x + lineColW / 2, cy, { align: 'center' });
+    cy += 5;
+    doc.text(`Economia: ${formatCurrency(card.dimensioning.monthlySavings)}/mês`, x + lineColW / 2, cy, { align: 'center' });
+
+    // Inverter/panel info
+    cy += 6;
+    doc.setFontSize(6);
+    const isPrem = card.line === 'premium';
+    if (isPrem) {
+      doc.text(`${card.microCount}× ${card.inverter?.brand || ''} ${card.inverter?.model || ''}`, x + lineColW / 2, cy, { align: 'center' });
+    } else {
+      doc.text(`${card.inverter?.brand || ''} ${card.inverter?.model || ''}`, x + lineColW / 2, cy, { align: 'center' });
+    }
+    cy += 4;
+    doc.text(`${card.panelCount}× ${card.panel?.brand || ''} ${card.panel?.power || ''}Wp`, x + lineColW / 2, cy, { align: 'center' });
+  });
+
+  y += 80;
+
+  // Card installment table (if available)
+  if (selectedCard?.cardInstallments && Object.keys(selectedCard.cardInstallments).length > 0) {
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    setColor(PRIMARY);
+    doc.text('Parcelamento no Cartão de Crédito', M, y);
+    y += 7;
+
+    // Table header
+    setFill(PRIMARY);
+    doc.rect(M, y - 3, CW, 8, 'F');
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'bold');
+    setColor(WHITE);
+    doc.text('Parcelas', M + 5, y + 2);
+    doc.text('Total', M + CW * 0.5, y + 2, { align: 'center' });
+    doc.text('Valor/Mês', M + CW - 5, y + 2, { align: 'right' });
+    y += 8;
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.5);
+    const cardEntries = Object.entries(selectedCard.cardInstallments);
+    cardEntries.forEach(([n, v]: [string, any], i: number) => {
+      if (i % 2 === 0) {
+        setFill([250, 250, 245]);
+        doc.rect(M, y - 3, CW, 6.5, 'F');
+      }
+      setColor(DARK);
+      doc.text(`${n}×`, M + 5, y + 1.5);
+      doc.text(formatCurrency(v.total), M + CW * 0.5, y + 1.5, { align: 'center' });
+      doc.setFont('helvetica', 'bold');
+      doc.text(formatCurrency(v.perMonth), M + CW - 5, y + 1.5, { align: 'right' });
+      doc.setFont('helvetica', 'normal');
+      y += 6.5;
+    });
+  }
+
+  drawFooter();
 
   // ═══════════════════════════════════════
   // PAGE 4: FINANCIAL RETURN
   // ═══════════════════════════════════════
   doc.addPage();
-
-  setFill(PRIMARY);
-  doc.rect(0, 0, W, 25, 'F');
-  doc.setFontSize(14);
-  doc.setFont('helvetica', 'bold');
-  setColor(WHITE);
-  doc.text('RETORNO FINANCEIRO', W / 2, 17, { align: 'center' });
-
+  drawPageHeader('Retorno Financeiro');
   y = 40;
 
-  // KPIs
-  const kpis = [
-    { label: 'Economia Mensal', value: formatCurrency(selectedCard?.dimensioning?.monthlySavings || 0) },
-    { label: 'Payback', value: `${formatNumber(selectedCard?.dimensioning?.paybackYears || 0)} anos` },
-    { label: 'Retorno 25 anos', value: formatCurrency(selectedCard?.dimensioning?.return25 || 0) },
+  // Economy cards
+  const monthlyBill = (selectedCard?.dimensioning?.avgMonthlyKwh || 0) * (proposal.clientData.kwhPrice || 0.85);
+  const calcSavings = (years: number) => {
+    let totalWithout = 0;
+    let totalWith = 0;
+    for (let yr = 0; yr < years; yr++) {
+      totalWithout += monthlyBill * 12 * Math.pow(1.10, yr);
+      totalWith += Math.max(80, monthlyBill * 0.15) * 12;
+    }
+    return totalWithout - totalWith;
+  };
+  const calcWithout = (years: number) => {
+    let total = 0;
+    for (let yr = 0; yr < years; yr++) total += monthlyBill * 12 * Math.pow(1.10, yr);
+    return total;
+  };
+
+  // KPI cards row
+  const kpiData = [
+    { label: 'Economia Mensal', value: formatCurrency(selectedCard?.dimensioning?.monthlySavings || 0), color: PRIMARY },
+    { label: 'Payback', value: `${formatNumber(selectedCard?.dimensioning?.paybackYears || 0)} anos`, color: PRIMARY },
+    { label: 'Retorno 25 anos', value: formatCurrency(selectedCard?.dimensioning?.return25 || 0), color: PRIMARY },
   ];
 
   const kpiW = CW / 3;
-  kpis.forEach((kpi, i) => {
-    const x = M + i * kpiW;
+  kpiData.forEach((kpi, i) => {
+    const kx = M + i * kpiW;
     setFill(LIGHT_BG);
-    doc.roundedRect(x + 2, y, kpiW - 4, 28, 2, 2, 'F');
-    doc.setFontSize(8);
+    doc.roundedRect(kx + 2, y, kpiW - 4, 22, 2, 2, 'F');
+    setFill(SECONDARY);
+    doc.rect(kx + 2, y, kpiW - 4, 2, 'F');
+
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'normal');
     setColor(GRAY);
-    doc.text(kpi.label, x + kpiW / 2, y + 8, { align: 'center' });
+    doc.text(kpi.label, kx + kpiW / 2, y + 9, { align: 'center' });
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    setColor(kpi.color);
+    doc.text(kpi.value, kx + kpiW / 2, y + 18, { align: 'center' });
+  });
+  y += 30;
+
+  // Savings cards - 2x2 grid
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(11);
+  setColor(PRIMARY);
+  doc.text('Sua economia com energia solar', M, y);
+  y += 7;
+
+  const savingsItems = [
+    { years: 5, value: calcSavings(5), type: 'savings' as const },
+    { years: 10, value: calcSavings(10), type: 'savings' as const },
+    { years: 15, value: calcSavings(15), type: 'savings' as const },
+  ];
+
+  const cardW = CW / 3 - 2;
+  savingsItems.forEach((item, i) => {
+    const sx = M + i * (cardW + 3);
+    setFill([240, 245, 235]);
+    doc.roundedRect(sx, y, cardW, 24, 2, 2, 'F');
+    setFill(PRIMARY);
+    doc.rect(sx, y, 3, 24, 'F');
+
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'normal');
+    setColor(GRAY);
+    doc.text(`Economia em ${item.years} anos`, sx + 8, y + 8);
     doc.setFontSize(13);
     doc.setFont('helvetica', 'bold');
     setColor(PRIMARY);
-    doc.text(kpi.value, x + kpiW / 2, y + 21, { align: 'center' });
+    doc.text(formatCurrency(item.value), sx + 8, y + 18);
   });
-  y += 38;
+  y += 30;
 
-  // Cashflow table
-  doc.setFontSize(11);
+  // "Without solar" cards
   doc.setFont('helvetica', 'bold');
-  setColor(PRIMARY);
-  doc.text('Fluxo de Caixa Comparativo', M, y);
-  y += 8;
+  doc.setFontSize(11);
+  setColor(RED_SOFT);
+  doc.text('Quanto você pagaria sem energia solar', M, y);
+  y += 7;
 
+  const noSolarItems = [
+    { years: 5, value: calcWithout(5) },
+    { years: 10, value: calcWithout(10) },
+  ];
+  const nCardW = CW / 2 - 3;
+  noSolarItems.forEach((item, i) => {
+    const nx = M + i * (nCardW + 6);
+    setFill([255, 240, 240]);
+    doc.roundedRect(nx, y, nCardW, 24, 2, 2, 'F');
+    setFill(RED_SOFT);
+    doc.rect(nx, y, 3, 24, 'F');
+
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'normal');
+    setColor(GRAY);
+    doc.text(`Sem solar em ${item.years} anos`, nx + 8, y + 8);
+    doc.setFontSize(13);
+    doc.setFont('helvetica', 'bold');
+    setColor(RED_SOFT);
+    doc.text(formatCurrency(item.value), nx + 8, y + 18);
+  });
+  y += 32;
+
+  // Cash flow table
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  setColor(PRIMARY);
+  doc.text('Fluxo de Caixa Comparativo (Acumulado)', M, y);
+  y += 7;
+
+  // Table header
   setFill(PRIMARY);
-  doc.rect(M, y - 3, CW, 8, 'F');
-  doc.setFontSize(8);
+  doc.rect(M, y - 3, CW, 7, 'F');
+  doc.setFontSize(7.5);
   doc.setFont('helvetica', 'bold');
   setColor(WHITE);
-  doc.text('Ano', M + 5, y + 2);
-  doc.text('Sem Solar', M + CW * 0.45, y + 2, { align: 'right' });
-  doc.text('Com Solar', M + CW * 0.72, y + 2, { align: 'right' });
-  doc.text('Economia', M + CW - 5, y + 2, { align: 'right' });
-  y += 8;
+  doc.text('Ano', M + 5, y + 1.5);
+  doc.text('Sem Solar', M + CW * 0.35, y + 1.5, { align: 'right' });
+  doc.text('Com Solar', M + CW * 0.60, y + 1.5, { align: 'right' });
+  doc.text('Economia', M + CW * 0.82, y + 1.5, { align: 'right' });
+  doc.text('Status', M + CW - 3, y + 1.5, { align: 'right' });
+  y += 7;
 
   doc.setFont('helvetica', 'normal');
-  const cfSlice = cashflowData.filter((_, i) => i % 5 === 0 || i === cashflowData.length - 1);
-  cfSlice.forEach((row, i) => {
+  doc.setFontSize(7);
+  const cfDisplay = cashflowData.filter((_: any, i: number) => i === 0 || i % 3 === 0 || i === cashflowData.length - 1);
+  cfDisplay.forEach((row: any, i: number) => {
     if (i % 2 === 0) {
       setFill([250, 250, 245]);
-      doc.rect(M, y - 3, CW, 8, 'F');
+      doc.rect(M, y - 2.5, CW, 6, 'F');
     }
     setColor(DARK);
-    doc.text(`${row.year}`, M + 5, y + 2);
-    doc.text(formatCurrency(row.semSolar), M + CW * 0.45, y + 2, { align: 'right' });
-    doc.text(formatCurrency(row.comSolar), M + CW * 0.72, y + 2, { align: 'right' });
-    const economia = row.semSolar - row.comSolar;
-    setColor(economia > 0 ? [0, 128, 0] : [200, 0, 0]);
-    doc.text(formatCurrency(economia), M + CW - 5, y + 2, { align: 'right' });
-    y += 8;
+    doc.text(`Ano ${row.year}`, M + 5, y + 1);
+    doc.text(formatCurrency(row.semSolar), M + CW * 0.35, y + 1, { align: 'right' });
+    doc.text(formatCurrency(row.comSolar), M + CW * 0.60, y + 1, { align: 'right' });
+    const eco = row.semSolar - row.comSolar;
+    setColor(eco > 0 ? GREEN : RED_SOFT);
+    doc.setFont('helvetica', 'bold');
+    doc.text(formatCurrency(eco), M + CW * 0.82, y + 1, { align: 'right' });
+    doc.text(eco > 0 ? '✓' : '—', M + CW - 3, y + 1, { align: 'right' });
+    doc.setFont('helvetica', 'normal');
+    y += 6;
   });
 
-  // Footer
-  y = H - 30;
-  setFill(SECONDARY);
-  doc.rect(M, y, CW, 0.5, 'F');
-  y += 8;
-  doc.setFontSize(9);
+  drawFooter();
+
+  // ═══════════════════════════════════════
+  // PAGE 5: PORTFOLIO PHOTOS
+  // ═══════════════════════════════════════
+  doc.addPage();
+  drawPageHeader('Nossos Projetos');
+  y = 40;
+
   doc.setFont('helvetica', 'normal');
-  setColor(GRAY);
-  doc.text(`${settings.company.name} • ${settings.company.phone} • ${settings.company.email}`, W / 2, y, { align: 'center' });
+  doc.setFontSize(10);
+  setColor(PRIMARY);
+  doc.text('Soluções Residenciais | Rurais | Comerciais', W / 2, y, { align: 'center' });
+  y += 8;
+
+  // Try to load portfolio photos from DB
+  let portfolioPhotos: string[] = [];
+  try {
+    const { data } = await supabase
+      .from('fotos_portfolio')
+      .select('url')
+      .eq('ativo', true)
+      .order('ordem', { ascending: true })
+      .limit(6);
+    if (data && data.length > 0) {
+      portfolioPhotos = data.map((f: any) => f.url);
+    }
+  } catch {}
+
+  if (portfolioPhotos.length > 0) {
+    // Load and add images in a grid
+    const photoW = (CW - 6) / 3;
+    const photoH = photoW * 0.7;
+
+    for (let i = 0; i < Math.min(portfolioPhotos.length, 6); i++) {
+      const col = i % 3;
+      const row = Math.floor(i / 3);
+      const px = M + col * (photoW + 3);
+      const py = y + row * (photoH + 4);
+
+      try {
+        const imgResp = await fetch(portfolioPhotos[i]);
+        const blob = await imgResp.blob();
+        const imgData = await new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.readAsDataURL(blob);
+        });
+
+        // Rounded border
+        setFill([240, 240, 240]);
+        doc.roundedRect(px, py, photoW, photoH, 2, 2, 'F');
+        doc.addImage(imgData, 'JPEG', px + 0.5, py + 0.5, photoW - 1, photoH - 1);
+      } catch {
+        // Placeholder
+        setFill([230, 230, 225]);
+        doc.roundedRect(px, py, photoW, photoH, 2, 2, 'F');
+        doc.setFontSize(7);
+        setColor(GRAY);
+        doc.text('Foto', px + photoW / 2, py + photoH / 2, { align: 'center' });
+      }
+    }
+
+    y += Math.ceil(Math.min(portfolioPhotos.length, 6) / 3) * (photoH + 4) + 5;
+  } else {
+    // No photos available message
+    y += 10;
+    setFill(LIGHT_BG);
+    doc.roundedRect(M, y, CW, 30, 3, 3, 'F');
+    doc.setFontSize(10);
+    setColor(GRAY);
+    doc.text('Portfólio de obras disponível em nosso site e redes sociais.', W / 2, y + 16, { align: 'center' });
+    y += 40;
+  }
+
+  // Company info section at bottom
+  y = Math.max(y, H - 80);
+  setFill(SECONDARY);
+  doc.rect(M, y, CW, 1.5, 'F');
+  y += 10;
+
+  if (logoData) {
+    try { doc.addImage(logoData, 'PNG', W / 2 - 25, y, 50, 26); } catch {}
+  }
+  y += 32;
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  setColor(PRIMARY);
+  doc.text(settings.company.name, W / 2, y, { align: 'center' });
+  y += 6;
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  setColor(DARK);
+  doc.text(settings.company.phone, W / 2, y, { align: 'center' });
   y += 5;
-  doc.text(`Proposta ${numero} • Válida por ${settings.proposalValidity || 15} dias`, W / 2, y, { align: 'center' });
+  doc.text(settings.company.email, W / 2, y, { align: 'center' });
+  y += 5;
+  doc.text(settings.company.site || 'www.treslagoassolar.com.br', W / 2, y, { align: 'center' });
+  y += 5;
+  doc.text('@treslagoassolar', W / 2, y, { align: 'center' });
+
+  drawFooter();
 
   // ═══════════════════════════════════════
   // SAVE
   // ═══════════════════════════════════════
-  const clientName = (proposal.clientData.name || 'Cliente').replace(/[^a-zA-Z0-9]/g, '_');
+  const clientName = (proposal.clientData.name || 'Cliente').replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_');
   doc.save(`Proposta_${numero}_${clientName}.pdf`);
 }
