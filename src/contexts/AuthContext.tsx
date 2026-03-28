@@ -7,7 +7,6 @@ interface UserProfile {
   email: string;
   role: string;
   ativo: boolean;
-  senha_visivel?: string | null;
   ultimo_acesso?: string | null;
   criado_em?: string;
 }
