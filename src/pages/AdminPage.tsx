@@ -113,7 +113,7 @@ function UsersTab() {
     loadUsers();
   };
 
-  const togglePassword = (id: string) => setShowPasswords(prev => ({ ...prev, [id]: !prev[id] }));
+  
 
   return (
     <div className="solar-card p-6 space-y-4">
