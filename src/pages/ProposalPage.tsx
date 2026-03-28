@@ -54,7 +54,7 @@ export default function ProposalPage() {
   const [cashflowInstallments, setCashflowInstallments] = useState(60);
   const [paymentTab, setPaymentTab] = useState<'financing' | 'card'>('financing');
   const [cashflowMode, setCashflowMode] = useState<'financing' | 'card' | 'cash'>('financing');
-  const [cashflowLine, setCashflowLine] = useState<string>(proposal?.selectedLine || 'acesso');
+  const [cashflowLine, setCashflowLine] = useState<string>(proposal?.selectedLine || 'excellence');
   const [cashflowPeriod, setCashflowPeriod] = useState(15);
   const [showShareMenu, setShowShareMenu] = useState(false);
 
@@ -370,7 +370,7 @@ export default function ProposalPage() {
           <h2 className="text-2xl font-bold text-primary text-center flex items-center justify-center gap-2">
             <Zap className="w-6 h-6 text-secondary" /> Compare as Linhas
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 print-line-cards">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 print-line-cards">
             {lineCards.map(card => {
               const isPremium = card.line === 'premium';
               const maxP = card.maxPanels;
@@ -538,7 +538,7 @@ export default function ProposalPage() {
           {/* Line selector */}
           <div className="space-y-1 no-print">
             <label className="text-xs font-medium text-muted-foreground">Linha</label>
-            <div className="grid grid-cols-3 gap-1">
+            <div className="grid grid-cols-2 gap-1">
               {LINES.map(line => (
                 <button key={line} onClick={() => setCashflowLine(line)}
                   className={`px-2 py-2 rounded text-xs sm:text-sm font-medium transition-colors text-center ${cashflowLine === line ? 'bg-secondary text-secondary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/70'}`}>
