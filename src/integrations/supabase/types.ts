@@ -225,7 +225,6 @@ export type Database = {
           id: string
           nome: string
           role: string
-          senha_visivel: string | null
           ultimo_acesso: string | null
           user_id: string
         }
@@ -236,7 +235,6 @@ export type Database = {
           id?: string
           nome: string
           role?: string
-          senha_visivel?: string | null
           ultimo_acesso?: string | null
           user_id: string
         }
@@ -247,7 +245,6 @@ export type Database = {
           id?: string
           nome?: string
           role?: string
-          senha_visivel?: string | null
           ultimo_acesso?: string | null
           user_id?: string
         }
