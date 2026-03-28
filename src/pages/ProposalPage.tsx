@@ -454,25 +454,29 @@ export default function ProposalPage() {
         </section>
 
         {/* CHART */}
-        <section className="solar-card p-8 space-y-6 print-page print-chart-section">
-          <h2 className="text-2xl font-bold text-primary flex items-center gap-2">
-            <TrendingUp className="w-6 h-6 text-secondary" /> Geração vs Consumo — 12 Meses
+        <section className="solar-card p-4 sm:p-8 space-y-6 print-page print-chart-section">
+          <h2 className="text-xl sm:text-2xl font-bold text-primary flex items-center gap-2">
+            <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 text-secondary" /> Geração vs Consumo — 12 Meses
           </h2>
-          <div className="h-72 print-chart">
+          <div className="min-h-[280px] h-72 sm:h-80 print-chart">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartData}>
-                <XAxis dataKey="month" tick={{ fontSize: 12 }} />
-                <YAxis tick={{ fontSize: 12 }} />
+              <BarChart data={chartData}
+                barCategoryGap={typeof window !== 'undefined' && window.innerWidth < 768 ? '10%' : '20%'}>
+                <XAxis dataKey="month" tick={{ fontSize: typeof window !== 'undefined' && window.innerWidth < 768 ? 11 : 12 }} />
+                <YAxis tick={{ fontSize: typeof window !== 'undefined' && window.innerWidth < 768 ? 11 : 12 }} />
                 <Tooltip formatter={(v: number) => `${v} kWh`} />
-                <Legend />
-                <Bar dataKey="geração" fill="hsl(80, 37%, 26%)" radius={[4, 4, 0, 0]} />
+                <Legend wrapperStyle={{ fontSize: typeof window !== 'undefined' && window.innerWidth < 768 ? '11px' : '12px' }} />
+                <Bar dataKey="geração" fill="hsl(80, 37%, 26%)" radius={[4, 4, 0, 0]}
+                  maxBarSize={typeof window !== 'undefined' && window.innerWidth < 768 ? 40 : undefined} />
                 {proposal.consumerUnits && proposal.consumerUnits.length > 1 ? (
                   proposal.consumerUnits.map((u, j) => (
                     <Bar key={u.id} dataKey={`UC ${j + 1}`} stackId="consumption"
-                      fill={UC_COLORS[j % UC_COLORS.length]} />
+                      fill={UC_COLORS[j % UC_COLORS.length]}
+                      maxBarSize={typeof window !== 'undefined' && window.innerWidth < 768 ? 40 : undefined} />
                   ))
                 ) : (
-                  <Bar dataKey="consumo" stackId="consumption" fill="hsl(40, 79%, 60%)" />
+                  <Bar dataKey="consumo" stackId="consumption" fill="hsl(40, 79%, 60%)"
+                    maxBarSize={typeof window !== 'undefined' && window.innerWidth < 768 ? 40 : undefined} />
                 )}
               </BarChart>
             </ResponsiveContainer>

@@ -527,25 +527,30 @@ export default function CalculatorPage() {
         <h2 className="text-xl font-bold text-primary flex items-center gap-2">
           <TrendingUp className="w-5 h-5 text-secondary" /> Gráfico Mensal
         </h2>
-        <div className="h-80">
+        <div className="h-80 md:h-80 min-h-[280px]">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-              <XAxis dataKey="month" tick={{ fontSize: 12 }} />
-              <YAxis tick={{ fontSize: 12 }} />
+            <BarChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+              barCategoryGap={typeof window !== 'undefined' && window.innerWidth < 768 ? '10%' : '20%'}>
+              <XAxis dataKey="month" tick={{ fontSize: typeof window !== 'undefined' && window.innerWidth < 768 ? 11 : 12 }} />
+              <YAxis tick={{ fontSize: typeof window !== 'undefined' && window.innerWidth < 768 ? 11 : 12 }} />
               <Tooltip formatter={(v: number) => `${v} kWh`} />
-              <Legend />
-              <Bar dataKey="geração" fill="#4A5A2A" radius={[4, 4, 0, 0]} />
+              <Legend wrapperStyle={{ fontSize: typeof window !== 'undefined' && window.innerWidth < 768 ? '11px' : '12px' }} />
+              <Bar dataKey="geração" fill="#4A5A2A" radius={[4, 4, 0, 0]}
+                maxBarSize={typeof window !== 'undefined' && window.innerWidth < 768 ? 40 : undefined} />
               {(mode === 'average' ? units.length > 1 : monthlyUnits.length > 1) ? (
                 (mode === 'average' ? units : monthlyUnits).map((_, j) => (
                   <Bar key={j} dataKey={`UC ${j + 1}`} stackId="consumption"
-                    fill={UC_COLORS[j % UC_COLORS.length]} />
+                    fill={UC_COLORS[j % UC_COLORS.length]}
+                    maxBarSize={typeof window !== 'undefined' && window.innerWidth < 768 ? 40 : undefined} />
                 ))
               ) : (
-                <Bar dataKey="consumo" stackId="consumption" fill="#E8B84B" />
+                <Bar dataKey="consumo" stackId="consumption" fill="#E8B84B"
+                  maxBarSize={typeof window !== 'undefined' && window.innerWidth < 768 ? 40 : undefined} />
               )}
               {equipment.map((eq, idx) => (
                 <Bar key={eq.id} dataKey={eq.label} stackId="consumption"
-                  fill={EQUIPMENT_COLORS[idx % EQUIPMENT_COLORS.length]} />
+                  fill={EQUIPMENT_COLORS[idx % EQUIPMENT_COLORS.length]}
+                  maxBarSize={typeof window !== 'undefined' && window.innerWidth < 768 ? 40 : undefined} />
               ))}
             </BarChart>
           </ResponsiveContainer>
