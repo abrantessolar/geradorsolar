@@ -106,8 +106,8 @@ export default function LandingPage() {
               <span className="text-sm font-semibold">Energia Solar em Três Lagoas e Região</span>
             </div>
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-black text-white leading-tight mb-6 tracking-tight">
-              ENERGIA SOLAR<br />
-              <span className="text-secondary">EFICIENTE</span> E SUSTENTÁVEL
+              ENERGIA SOLAR EM<br />
+              <span className="text-secondary">TRÊS LAGOAS</span>/MS
             </h1>
             <p className="text-lg md:text-xl text-white/80 max-w-2xl mx-auto mb-10">
               Soluções em energia solar para residências, comércios e propriedades rurais em Três Lagoas e região.
@@ -154,7 +154,7 @@ export default function LandingPage() {
               <span className="inline-block px-4 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold uppercase tracking-widest mb-4">
                 Quem somos
               </span>
-              <h2 className="text-3xl md:text-4xl font-black text-primary mb-6">NOSSA MISSÃO</h2>
+              <h2 className="text-3xl md:text-4xl font-black text-primary mb-6">Nossa Missão</h2>
               <p className="text-foreground/70 leading-relaxed text-lg">
                 Estamos comprometidos em revolucionar a forma como as pessoas utilizam a energia através de soluções inovadoras e sustentáveis. Nosso foco está em oferecer tecnologia de ponta e serviços que permitam aos nossos clientes gerar e consumir energia de forma mais eficiente e amigável ao meio ambiente.
               </p>
@@ -178,7 +178,7 @@ export default function LandingPage() {
             <div className="relative">
               <img
                 src={MISSION_IMG}
-                alt="Painel solar em telhado"
+                alt="Instalação de painéis solares residencial em Três Lagoas"
                 className="rounded-2xl shadow-2xl w-full object-cover aspect-[4/3]"
                 loading="lazy"
               />
@@ -197,7 +197,7 @@ export default function LandingPage() {
             <span className="inline-block px-4 py-1 rounded-full bg-secondary/10 text-secondary text-xs font-bold uppercase tracking-widest mb-4">
               O que fazemos
             </span>
-            <h2 className="text-3xl md:text-4xl font-black text-primary mb-4">NOSSAS SOLUÇÕES</h2>
+            <h2 className="text-3xl md:text-4xl font-black text-primary mb-4">Soluções em Energia Solar</h2>
             <p className="text-foreground/60 max-w-2xl mx-auto text-lg">
               Oferecemos uma ampla gama de produtos e serviços voltados para energia solar
             </p>
@@ -271,7 +271,7 @@ export default function LandingPage() {
             <span className="inline-block px-4 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold uppercase tracking-widest mb-4">
               Portfólio
             </span>
-            <h2 className="text-3xl md:text-4xl font-black text-primary">ALGUNS DOS NOSSOS PROJETOS</h2>
+            <h2 className="text-3xl md:text-4xl font-black text-primary">Nossos Projetos</h2>
           </motion.div>
 
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
