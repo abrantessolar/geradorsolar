@@ -72,7 +72,6 @@ function UsersTab() {
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [editUser, setEditUser] = useState<any>(null);
-  const [showPasswords, setShowPasswords] = useState<Record<string, boolean>>({});
   const [form, setForm] = useState({ nome: '', email: '', role: 'vendedor', password: '', confirmPassword: '' });
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
@@ -167,7 +166,6 @@ function UsersTab() {
                 <th className="py-2 px-2">Nome</th>
                 <th className="py-2 px-2">E-mail</th>
                 <th className="py-2 px-2">Nível</th>
-                <th className="py-2 px-2">Senha</th>
                 <th className="py-2 px-2">Status</th>
                 <th className="py-2 px-2">Último acesso</th>
                 <th className="py-2 px-2">Ações</th>
@@ -182,14 +180,6 @@ function UsersTab() {
                     <span className={`solar-badge text-xs ${u.role === 'admin' ? 'bg-primary/10 text-primary' : u.role === 'orcamentista' ? 'bg-blue-100 text-blue-800' : 'bg-amber-100 text-amber-800'}`}>
                       {ROLE_LABELS[u.role] || u.role}
                     </span>
-                  </td>
-                  <td className="py-2 px-2">
-                    <div className="flex items-center gap-1">
-                      <span className="font-mono text-xs">{showPasswords[u.user_id] ? (u.senha_visivel || '***') : '••••••'}</span>
-                      <button onClick={() => togglePassword(u.user_id)} className="text-muted-foreground hover:text-foreground">
-                        {showPasswords[u.user_id] ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
-                      </button>
-                    </div>
                   </td>
                   <td className="py-2 px-2">
                     <span className={`solar-badge text-xs ${u.ativo ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
