@@ -1,7 +1,8 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { getProposals, saveProposal, getSettings, getSocialProofs, lookupIrradiation } from '@/data/store';
-import { getPropostaByIdDB, markPropostaViewedDB } from '@/data/supabaseStore';
+import { getPropostaByIdDB, markPropostaViewedDB, getSettingsDB } from '@/data/supabaseStore';
+import { getCidadesIrradianciaDB } from '@/data/supabaseStore';
 import {
   formatCurrency, formatNumber, calcInstallments, calcDimensioning,
   findInverterForPanels, findPanel, calcTotalPrice, maxPanelsForInverter,
@@ -9,7 +10,8 @@ import {
 } from '@/data/calculations';
 import { MONTH_LABELS, MONTH_KEYS, SEASONAL_FACTORS, INSTALLMENT_OPTIONS, UC_COLORS, LINE_NAMES, LINE_SUBS } from '@/data/types';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, LineChart, Line, ReferenceLine } from 'recharts';
-import { Printer, Share2, Edit, ArrowLeft, Sun, Zap, TrendingUp, Shield, X, Cpu } from 'lucide-react';
+import { Printer, Share2, Edit, ArrowLeft, Sun, Zap, TrendingUp, Shield, X, Cpu, Check, MessageCircle } from 'lucide-react';
+import { toast } from 'sonner';
 import logo from '@/assets/logo.png';
 
 const LINES = ['acesso', 'excellence', 'premium'] as const;
@@ -20,6 +22,7 @@ export default function ProposalPage() {
   const navigate = useNavigate();
   const [proposal, setProposal] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [isPrinting, setIsPrinting] = useState(false);
   const settings = getSettings();
   const socialProofs = getSocialProofs().filter(s => s.active);
 
@@ -41,6 +44,7 @@ export default function ProposalPage() {
     }
     loadProposal();
   }, [id]);
+
   const [cetModal, setCetModal] = useState(false);
   const [cetValue, setCetValue] = useState('');
   const [lightbox, setLightbox] = useState<string | null>(null);
@@ -51,7 +55,7 @@ export default function ProposalPage() {
   const [cashflowMode, setCashflowMode] = useState<'financing' | 'card' | 'cash'>('financing');
   const [cashflowLine, setCashflowLine] = useState<string>(proposal?.selectedLine || 'acesso');
   const [cashflowPeriod, setCashflowPeriod] = useState(15);
-  
+  const [showShareMenu, setShowShareMenu] = useState(false);
 
   const basePanelCount = proposal?.selectedKit.panelCount ?? 0;
   const finalPanels = Math.max(Math.max(1, basePanelCount - 2), basePanelCount + panelDelta);
@@ -59,7 +63,6 @@ export default function ProposalPage() {
   const irradiation = irradiationLookup.value;
   const monthlyIrr = irradiationLookup.monthly;
 
-  // Recommended minimum panels from dimensioning
   const recommendedPanels = useMemo(() => {
     if (!proposal) return 0;
     const dim = calcDimensioning(
@@ -119,7 +122,6 @@ export default function ProposalPage() {
     });
   }, [lineCards, proposal, irradiation, monthlyIrr, settings.systemLoss]);
 
-  // Cashflow data
   const cashflowData = useMemo(() => {
     if (!proposal || lineCards.length === 0) return [];
     const selectedCard = lineCards.find(c => c.line === cashflowLine) || lineCards[0];
@@ -171,6 +173,43 @@ export default function ProposalPage() {
     return null;
   }, [cashflowData]);
 
+  // Share functions
+  const proposalUrl = typeof window !== 'undefined' ? `${window.location.origin}/proposta/${id}` : '';
+
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(proposalUrl);
+      toast.success('Link copiado!', { description: 'Cole o link e envie para o cliente.' });
+    } catch {
+      // Fallback
+      const input = document.createElement('input');
+      input.value = proposalUrl;
+      document.body.appendChild(input);
+      input.select();
+      document.execCommand('copy');
+      document.body.removeChild(input);
+      toast.success('Link copiado!');
+    }
+    setShowShareMenu(false);
+  };
+
+  const handleShareWhatsApp = () => {
+    const clientName = proposal?.clientData?.name || 'cliente';
+    const text = encodeURIComponent(
+      `Olá ${clientName}! Segue sua proposta de energia solar personalizada:\n\n${proposalUrl}\n\n${settings.company.name}`
+    );
+    window.open(`https://wa.me/?text=${text}`, '_blank');
+    setShowShareMenu(false);
+  };
+
+  const handlePrint = () => {
+    setIsPrinting(true);
+    setTimeout(() => {
+      window.print();
+      setTimeout(() => setIsPrinting(false), 500);
+    }, 100);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -184,7 +223,8 @@ export default function ProposalPage() {
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center space-y-4">
           <h1 className="text-2xl font-bold text-primary">Proposta não encontrada</h1>
-          <button onClick={() => navigate('/')} className="solar-btn-primary">Voltar</button>
+          <p className="text-muted-foreground">Esta proposta pode ter expirado ou o link está incorreto.</p>
+          <button onClick={() => navigate('/')} className="solar-btn-primary">Voltar ao site</button>
         </div>
       </div>
     );
@@ -207,7 +247,7 @@ export default function ProposalPage() {
     : 0;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className={`min-h-screen bg-background ${isPrinting ? 'print-mode' : ''}`}>
       {/* Action bar */}
       <div className="no-print sticky top-0 z-50 bg-card border-b border-border/50 shadow-sm">
         <div className="container flex items-center justify-between py-3">
@@ -215,13 +255,35 @@ export default function ProposalPage() {
             <ArrowLeft className="w-4 h-4" /> Voltar
           </button>
           <div className="flex gap-2">
-            <button onClick={() => window.print()} className="solar-btn-outline text-sm py-2 px-3 flex items-center gap-1">
+            <button onClick={handlePrint} className="solar-btn-outline text-sm py-2 px-3 flex items-center gap-1">
               <Printer className="w-4 h-4" /> Imprimir
             </button>
-            <button onClick={() => { navigator.clipboard.writeText(window.location.href); }}
-              className="solar-btn-outline text-sm py-2 px-3 flex items-center gap-1">
-              <Share2 className="w-4 h-4" /> Compartilhar
-            </button>
+            <div className="relative">
+              <button onClick={() => setShowShareMenu(!showShareMenu)}
+                className="solar-btn-outline text-sm py-2 px-3 flex items-center gap-1">
+                <Share2 className="w-4 h-4" /> Compartilhar
+              </button>
+              {showShareMenu && (
+                <div className="absolute right-0 mt-2 w-56 bg-card border border-border rounded-xl shadow-xl z-50 overflow-hidden">
+                  <button onClick={handleCopyLink}
+                    className="w-full text-left px-4 py-3 hover:bg-muted flex items-center gap-3 text-sm transition-colors">
+                    <Share2 className="w-4 h-4 text-primary" />
+                    <div>
+                      <p className="font-medium">Copiar link</p>
+                      <p className="text-xs text-muted-foreground">Cole onde quiser</p>
+                    </div>
+                  </button>
+                  <button onClick={handleShareWhatsApp}
+                    className="w-full text-left px-4 py-3 hover:bg-muted flex items-center gap-3 text-sm transition-colors border-t border-border">
+                    <MessageCircle className="w-4 h-4 text-green-600" />
+                    <div>
+                      <p className="font-medium">Enviar via WhatsApp</p>
+                      <p className="text-xs text-muted-foreground">Escolha o contato</p>
+                    </div>
+                  </button>
+                </div>
+              )}
+            </div>
             <button onClick={() => setCetModal(true)} className="solar-btn-outline text-sm py-2 px-3 flex items-center gap-1">
               <Edit className="w-4 h-4" /> Editar CET
             </button>
@@ -229,19 +291,22 @@ export default function ProposalPage() {
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto py-8 px-4 space-y-12">
+      {/* Click outside to close share menu */}
+      {showShareMenu && <div className="fixed inset-0 z-40" onClick={() => setShowShareMenu(false)} />}
+
+      <div className="max-w-5xl mx-auto py-8 px-4 space-y-12 print-container">
         {/* COVER */}
-        <section className="text-center space-y-6 py-16 relative overflow-hidden">
-          <div className="absolute inset-0 opacity-5">
+        <section className="text-center space-y-6 py-16 relative overflow-hidden print-page print-cover">
+          <div className="absolute inset-0 opacity-5 no-print">
             {Array.from({ length: 20 }).map((_, i) => (
               <span key={i} className="absolute text-6xl font-bold text-primary select-none"
                 style={{ left: `${(i % 5) * 22}%`, top: `${Math.floor(i / 5) * 28}%` }}>+</span>
             ))}
           </div>
           <div className="relative z-10">
-            <img src={logo} alt="Três Lagoas Solar" className="h-24 mx-auto mb-6" />
+            <img src={logo} alt="Três Lagoas Solar" className="h-24 mx-auto mb-6 print-logo" />
             <p className="text-sm uppercase tracking-widest text-muted-foreground mb-2">{settings.company.name}</p>
-            <h1 className="text-4xl md:text-5xl font-bold text-primary text-balance" style={{ lineHeight: '1.1' }}>
+            <h1 className="text-4xl md:text-5xl font-bold text-primary text-balance print-title" style={{ lineHeight: '1.1' }}>
               Meu Projeto de<br />Energia Solar Fotovoltaica
             </h1>
             <div className="mt-8 space-y-1">
@@ -258,7 +323,7 @@ export default function ProposalPage() {
         </section>
 
         {/* PANEL ADJUSTMENT */}
-        <section className="solar-card p-6 space-y-4">
+        <section className="solar-card p-6 space-y-4 no-print">
           <h2 className="text-xl font-bold text-primary text-center flex items-center justify-center gap-2">
             <Zap className="w-5 h-5 text-secondary" /> Ajuste seu Sistema
           </h2>
@@ -293,11 +358,11 @@ export default function ProposalPage() {
         </section>
 
         {/* 3 LINE CARDS */}
-        <section className="space-y-4">
+        <section className="space-y-4 print-page">
           <h2 className="text-2xl font-bold text-primary text-center flex items-center justify-center gap-2">
             <Zap className="w-6 h-6 text-secondary" /> Compare as Linhas
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 print-line-cards">
             {lineCards.map(card => {
               const isPremium = card.line === 'premium';
               const maxP = card.maxPanels;
@@ -305,7 +370,7 @@ export default function ProposalPage() {
               const limitColor = isPremium ? undefined : (remaining <= 0 ? '#E84855' : remaining <= 2 ? '#E8B84B' : undefined);
 
               return (
-                <div key={card.line} className={`solar-card p-6 space-y-4 ${card.line === proposal.selectedLine ? 'ring-2 ring-primary' : ''}`}>
+                <div key={card.line} className={`solar-card p-6 space-y-4 print-card ${card.line === proposal.selectedLine ? 'ring-2 ring-primary' : ''}`}>
                   <div className="text-center">
                     <h3 className="text-lg font-bold text-primary">{LINE_NAMES[card.line]}</h3>
                     <p className="text-xs text-muted-foreground">{LINE_SUBS[card.line]}</p>
@@ -341,7 +406,7 @@ export default function ProposalPage() {
 
                   {/* Payment tabs */}
                   <div className="space-y-2">
-                    <div className="flex gap-1">
+                    <div className="flex gap-1 no-print">
                       <button onClick={() => setPaymentTab('financing')}
                         className={`flex-1 text-xs py-1 rounded ${paymentTab === 'financing' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
                         Financiamento
@@ -353,6 +418,7 @@ export default function ProposalPage() {
                     </div>
                     {paymentTab === 'financing' ? (
                       <div className="space-y-1 text-xs">
+                        <p className="font-semibold text-muted-foreground print-only-block hidden">Financiamento:</p>
                         {INSTALLMENT_OPTIONS.map(n => (
                           <div key={n} className="flex justify-between">
                             <span className="text-muted-foreground">{n}×</span>
@@ -363,6 +429,7 @@ export default function ProposalPage() {
                       </div>
                     ) : (
                       <div className="space-y-1 text-xs max-h-48 overflow-y-auto">
+                        <p className="font-semibold text-muted-foreground print-only-block hidden">Cartão:</p>
                         {Object.entries(card.cardInstallments).map(([n, v]) => (
                           <div key={n} className="flex justify-between">
                             <span className="text-muted-foreground">{n}×</span>
@@ -379,34 +446,56 @@ export default function ProposalPage() {
         </section>
 
         {/* CHART */}
-        <section className="solar-card p-8 space-y-6">
+        <section className="solar-card p-8 space-y-6 print-page print-chart-section">
           <h2 className="text-2xl font-bold text-primary flex items-center gap-2">
             <TrendingUp className="w-6 h-6 text-secondary" /> Geração vs Consumo — 12 Meses
           </h2>
-          <div className="h-72">
+          <div className="h-72 print-chart">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData}>
                 <XAxis dataKey="month" tick={{ fontSize: 12 }} />
                 <YAxis tick={{ fontSize: 12 }} />
                 <Tooltip formatter={(v: number) => `${v} kWh`} />
                 <Legend />
-                <Bar dataKey="geração" fill="#4A5A2A" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="geração" fill="hsl(80, 37%, 26%)" radius={[4, 4, 0, 0]} />
                 {proposal.consumerUnits && proposal.consumerUnits.length > 1 ? (
                   proposal.consumerUnits.map((u, j) => (
                     <Bar key={u.id} dataKey={`UC ${j + 1}`} stackId="consumption"
                       fill={UC_COLORS[j % UC_COLORS.length]} />
                   ))
                 ) : (
-                  <Bar dataKey="consumo" stackId="consumption" fill="#E8B84B" />
+                  <Bar dataKey="consumo" stackId="consumption" fill="hsl(40, 79%, 60%)" />
                 )}
               </BarChart>
             </ResponsiveContainer>
+          </div>
+
+          {/* Print-only table version of chart data */}
+          <div className="hidden print-only-block">
+            <table className="w-full text-xs border-collapse">
+              <thead>
+                <tr>
+                  <th className="border border-border p-1 text-left">Mês</th>
+                  <th className="border border-border p-1 text-right">Geração (kWh)</th>
+                  <th className="border border-border p-1 text-right">Consumo (kWh)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {chartData.map((d, i) => (
+                  <tr key={i}>
+                    <td className="border border-border p-1">{d.month}</td>
+                    <td className="border border-border p-1 text-right">{d.geração}</td>
+                    <td className="border border-border p-1 text-right">{d.consumo || '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </section>
 
         {/* EQUIPMENT */}
         {proposal.equipment && proposal.equipment.length > 0 && (
-          <section className="solar-card p-8 space-y-4">
+          <section className="solar-card p-8 space-y-4 print-page">
             <h2 className="text-2xl font-bold text-primary flex items-center gap-2">
               <Cpu className="w-6 h-6 text-secondary" /> Equipamentos Adicionais
             </h2>
@@ -433,13 +522,13 @@ export default function ProposalPage() {
         )}
 
         {/* CASH FLOW */}
-        <section className="solar-card p-4 sm:p-8 space-y-4 sm:space-y-6">
+        <section className="solar-card p-4 sm:p-8 space-y-4 sm:space-y-6 print-page">
           <h2 className="text-lg sm:text-2xl font-bold text-primary flex items-center gap-2">
             <Shield className="w-5 h-5 sm:w-6 sm:h-6 text-secondary" /> Fluxo de Caixa Comparativo
           </h2>
 
           {/* Line selector */}
-          <div className="space-y-1">
+          <div className="space-y-1 no-print">
             <label className="text-xs font-medium text-muted-foreground">Linha</label>
             <div className="grid grid-cols-3 gap-1">
               {LINES.map(line => (
@@ -452,7 +541,7 @@ export default function ProposalPage() {
           </div>
 
           {/* Mode selector */}
-          <div className="space-y-1">
+          <div className="space-y-1 no-print">
             <label className="text-xs font-medium text-muted-foreground">Pagamento</label>
             <div className="grid grid-cols-3 gap-1">
               <button onClick={() => setCashflowMode('financing')}
@@ -484,7 +573,7 @@ export default function ProposalPage() {
           </div>
 
           {/* Period selector */}
-          <div className="space-y-1">
+          <div className="space-y-1 no-print">
             <label className="text-xs font-medium text-muted-foreground">Período</label>
             <div className="flex flex-wrap gap-1">
               {PERIOD_OPTIONS.map(p => (
@@ -496,16 +585,16 @@ export default function ProposalPage() {
             </div>
           </div>
 
-          <div className="h-64 sm:h-80 -mx-2 sm:mx-0">
+          <div className="h-64 sm:h-80 -mx-2 sm:mx-0 print-chart">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={cashflowData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
                 <XAxis dataKey="year" tick={{ fontSize: 10 }} label={{ value: 'Anos', position: 'insideBottom', offset: -5, fontSize: 10 }} />
                 <YAxis tick={{ fontSize: 9 }} tickFormatter={(v: number) => `R$${(v / 1000).toFixed(0)}k`} width={55} />
                 <Tooltip formatter={(v: number) => formatCurrency(v)} />
                 <Legend wrapperStyle={{ fontSize: '11px' }} />
-                {paybackYear && <ReferenceLine x={`${paybackYear}`} stroke="#4A5A2A" strokeDasharray="3 3" label={{ value: 'Payback', fill: '#4A5A2A', fontSize: 10 }} />}
-                <Line type="monotone" dataKey="semSolar" name="Sem Solar" stroke="#E84855" strokeWidth={2} dot={false} />
-                <Line type="monotone" dataKey="comSolar" name="Com Solar" stroke="#4A5A2A" strokeWidth={2} dot={false} />
+                {paybackYear && <ReferenceLine x={`${paybackYear}`} stroke="hsl(80, 37%, 26%)" strokeDasharray="3 3" label={{ value: 'Payback', fill: 'hsl(80, 37%, 26%)', fontSize: 10 }} />}
+                <Line type="monotone" dataKey="semSolar" name="Sem Solar" stroke="hsl(0, 84%, 60%)" strokeWidth={2} dot={false} />
+                <Line type="monotone" dataKey="comSolar" name="Com Solar" stroke="hsl(80, 37%, 26%)" strokeWidth={2} dot={false} />
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -528,7 +617,7 @@ export default function ProposalPage() {
 
         {/* SOCIAL PROOF */}
         {socialProofs.length > 0 && (
-          <section className="solar-card p-8 space-y-6">
+          <section className="solar-card p-8 space-y-6 no-print">
             <h2 className="text-2xl font-bold text-primary">Nossos Projetos</h2>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {socialProofs.slice(0, 3).map(sp => (
@@ -547,6 +636,17 @@ export default function ProposalPage() {
             </div>
           </section>
         )}
+
+        {/* PRINT FOOTER */}
+        <div className="hidden print-only-block text-center py-8 border-t border-border mt-8">
+          <p className="text-sm font-semibold">{settings.company.name}</p>
+          <p className="text-xs text-muted-foreground">
+            {settings.company.phone} • {settings.company.email} • {settings.company.site}
+          </p>
+          <p className="text-xs text-muted-foreground mt-2">
+            Proposta válida por {settings.proposalValidity || 15} dias • Gerado em {new Date().toLocaleDateString('pt-BR')}
+          </p>
+        </div>
       </div>
 
       {/* CET Modal */}
