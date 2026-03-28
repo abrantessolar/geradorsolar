@@ -10,7 +10,8 @@ import {
 } from '@/data/calculations';
 import { MONTH_LABELS, MONTH_KEYS, SEASONAL_FACTORS, INSTALLMENT_OPTIONS, UC_COLORS, LINE_NAMES, LINE_SUBS } from '@/data/types';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, LineChart, Line, ReferenceLine } from 'recharts';
-import { Printer, Share2, Edit, ArrowLeft, Sun, Zap, TrendingUp, Shield, X, Cpu, Check, MessageCircle } from 'lucide-react';
+import { Download, Share2, Edit, ArrowLeft, Sun, Zap, TrendingUp, Shield, X, Cpu, Check, MessageCircle } from 'lucide-react';
+import { generateProposalPDF } from '@/lib/generatePDF';
 import { toast } from 'sonner';
 import logo from '@/assets/logo.png';
 
@@ -202,12 +203,16 @@ export default function ProposalPage() {
     setShowShareMenu(false);
   };
 
-  const handlePrint = () => {
-    setIsPrinting(true);
-    setTimeout(() => {
-      window.print();
-      setTimeout(() => setIsPrinting(false), 500);
-    }, 100);
+  const handleDownloadPDF = async () => {
+    try {
+      toast.loading('Gerando PDF...');
+      await generateProposalPDF(proposal, settings, lineCards, chartData, cashflowData);
+      toast.dismiss();
+      toast.success('PDF gerado com sucesso!');
+    } catch (err) {
+      toast.dismiss();
+      toast.error('Erro ao gerar PDF');
+    }
   };
 
   if (loading) {
@@ -255,8 +260,8 @@ export default function ProposalPage() {
             <ArrowLeft className="w-4 h-4" /> Voltar
           </button>
           <div className="flex gap-2">
-            <button onClick={handlePrint} className="solar-btn-outline text-sm py-2 px-3 flex items-center gap-1">
-              <Printer className="w-4 h-4" /> Imprimir
+            <button onClick={handleDownloadPDF} className="solar-btn-outline text-sm py-2 px-3 flex items-center gap-1">
+              <Download className="w-4 h-4" /> Baixar PDF
             </button>
             <div className="relative">
               <button onClick={() => setShowShareMenu(!showShareMenu)}
