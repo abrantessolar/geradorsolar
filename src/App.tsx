@@ -42,7 +42,7 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter basename="/geradordepropostas">
+      <BrowserRouter basename={import.meta.env.PROD ? '/geradordepropostas' : '/'}>
         <AuthProvider>
           <Layout>
             <Routes>
