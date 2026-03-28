@@ -61,13 +61,25 @@ export default function CalculatorPage() {
   // City autocomplete
   const [citySuggestions, setCitySuggestions] = useState<{ cidade: string; uf: string }[]>([]);
   const [showCitySuggestions, setShowCitySuggestions] = useState(false);
+  const [citySearching, setCitySearching] = useState(false);
   const cityRef = useRef<HTMLDivElement>(null);
+  const cityTimerRef = useRef<ReturnType<typeof setTimeout>>();
 
   const handleCityChange = (value: string) => {
     setClient(p => ({ ...p, city: value }));
-    const results = searchCidades(value);
-    setCitySuggestions(results);
-    setShowCitySuggestions(results.length > 0);
+    if (cityTimerRef.current) clearTimeout(cityTimerRef.current);
+    if (value.length < 2) {
+      setCitySuggestions([]);
+      setShowCitySuggestions(false);
+      return;
+    }
+    setCitySearching(true);
+    cityTimerRef.current = setTimeout(async () => {
+      const results = await searchCidadesDB(value);
+      setCitySuggestions(results);
+      setShowCitySuggestions(results.length > 0);
+      setCitySearching(false);
+    }, 300);
   };
 
   const selectCity = (cidade: string, uf: string) => {
