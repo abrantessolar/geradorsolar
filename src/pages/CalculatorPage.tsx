@@ -117,7 +117,28 @@ export default function CalculatorPage() {
     return combinedMonthly;
   }, [mode, totalAverage, combinedMonthly]);
 
-  const irradiationLookup = lookupIrradiation(client.state, client.city);
+  // Try local first, then async DB lookup
+  const localLookup = lookupIrradiation(client.state, client.city);
+  const [dbIrr, setDbIrr] = useState<{ value: number; found: boolean; monthly: number[] | null } | null>(null);
+
+  useEffect(() => {
+    if (localLookup.found || !client.city || client.city.length < 2) {
+      setDbIrr(null);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      const { getCidadesIrradianciaDB } = await import('@/data/supabaseStore');
+      const monthly = await getCidadesIrradianciaDB(client.city, client.state);
+      if (!cancelled && monthly) {
+        const avg = monthly.reduce((a, b) => a + b, 0) / 12;
+        setDbIrr({ value: avg, found: true, monthly });
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [client.city, client.state, localLookup.found]);
+
+  const irradiationLookup = dbIrr && dbIrr.found ? dbIrr : localLookup;
   const irradiation = irradiationLookup.value;
   const monthlyIrr = irradiationLookup.monthly;
 
