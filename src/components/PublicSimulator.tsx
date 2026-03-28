@@ -1,8 +1,8 @@
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import { Sun, Zap, ArrowRight, Search } from 'lucide-react';
+import { Zap, ArrowRight, Search, Plus, Trash2, ChevronDown } from 'lucide-react';
 import { searchCidadesDB } from '@/data/supabaseStore';
-import { MONTH_LABELS, MONTH_KEYS, SEASONAL_FACTORS } from '@/data/types';
+import { MONTH_LABELS, MONTH_KEYS, SEASONAL_FACTORS, EQUIPMENT_CATALOG, EquipmentCatalogItem } from '@/data/types';
 
 const LOSS = 0.21;
 
@@ -12,6 +12,17 @@ interface CityResult {
   monthly: number[];
 }
 
+interface SimEquipment {
+  id: string;
+  catalog: EquipmentCatalogItem;
+  quantity: number;
+  hoursPerDay: number;
+  daysPerMonth: number;
+  kmPerMonth?: number;
+}
+
+const CATEGORIES = [...new Set(EQUIPMENT_CATALOG.map(e => e.category))];
+
 export default function PublicSimulator() {
   const [avgConsumption, setAvgConsumption] = useState('');
   const [citySearch, setCitySearch] = useState('');
@@ -20,8 +31,10 @@ export default function PublicSimulator() {
   const [showCityDropdown, setShowCityDropdown] = useState(false);
   const [cityResults, setCityResults] = useState<CityResult[]>([]);
   const [searching, setSearching] = useState(false);
+  const [equipments, setEquipments] = useState<SimEquipment[]>([]);
+  const [showEquipmentPanel, setShowEquipmentPanel] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState(CATEGORIES[0]);
 
-  // Debounced search from DB
   useEffect(() => {
     if (citySearch.length < 2) {
       setCityResults([]);
@@ -36,36 +49,68 @@ export default function PublicSimulator() {
     return () => clearTimeout(timer);
   }, [citySearch]);
 
+  const equipmentMonthlyKwh = useMemo(() => {
+    return equipments.reduce((total, eq) => {
+      if (eq.catalog.unit === 'km') {
+        return total + eq.catalog.powerKw * (eq.kmPerMonth || 0) * eq.quantity;
+      }
+      return total + eq.catalog.powerKw * eq.hoursPerDay * eq.daysPerMonth * eq.quantity;
+    }, 0);
+  }, [equipments]);
+
   const results = useMemo(() => {
     if (!selectedCity || !avgConsumption) return null;
     const avg = parseFloat(avgConsumption);
     if (isNaN(avg) || avg <= 0) return null;
 
+    const totalConsumption = avg + equipmentMonthlyKwh;
     const irrValues = selectedCity.monthly;
     const avgIrr = irrValues.reduce((a, b) => a + b, 0) / 12;
 
-    const avgDaily = avg / 30;
+    const avgDaily = totalConsumption / 30;
     const powerKwp = avgDaily / (avgIrr * (1 - LOSS));
     const panelCount = Math.ceil(powerKwp / 0.570);
     const actualKwp = panelCount * 0.570;
 
     const chartData = MONTH_LABELS.map((label, i) => {
       const gen = Math.round(actualKwp * irrValues[i] * 30 * (1 - LOSS));
-      const cons = Math.round(avg * SEASONAL_FACTORS[MONTH_KEYS[i]]);
+      const cons = Math.round(totalConsumption * SEASONAL_FACTORS[MONTH_KEYS[i]]);
       return { name: label, Geração: gen, Consumo: cons };
     });
 
     const totalGen = chartData.reduce((s, d) => s + d.Geração, 0);
     const avgGen = Math.round(totalGen / 12);
-    const surplus = Math.max(0, avgGen - avg);
+    const surplus = Math.max(0, avgGen - totalConsumption);
 
-    return { panelCount, powerKwp: actualKwp, avgGen, surplus, chartData };
-  }, [selectedCity, avgConsumption]);
+    return { panelCount, powerKwp: actualKwp, avgGen, surplus, chartData, totalConsumption: Math.round(totalConsumption) };
+  }, [selectedCity, avgConsumption, equipmentMonthlyKwh]);
 
   const handleSimulate = () => {
     if (selectedCity && avgConsumption) {
       setShowResults(true);
     }
+  };
+
+  const addEquipment = (catalog: EquipmentCatalogItem) => {
+    setEquipments(prev => [...prev, {
+      id: crypto.randomUUID(),
+      catalog,
+      quantity: 1,
+      hoursPerDay: catalog.defaultHoursPerDay,
+      daysPerMonth: catalog.defaultDaysPerMonth,
+      kmPerMonth: catalog.unit === 'km' ? 1000 : undefined,
+    }]);
+    setShowResults(false);
+  };
+
+  const removeEquipment = (id: string) => {
+    setEquipments(prev => prev.filter(e => e.id !== id));
+    setShowResults(false);
+  };
+
+  const updateEquipment = (id: string, field: string, value: number) => {
+    setEquipments(prev => prev.map(e => e.id === id ? { ...e, [field]: value } : e));
+    setShowResults(false);
   };
 
   return (
@@ -80,6 +125,7 @@ export default function PublicSimulator() {
         </div>
 
         <div className="solar-card p-8 space-y-6">
+          {/* Consumo */}
           <div>
             <label className="block text-sm font-bold text-foreground mb-2">Consumo médio mensal (kWh)</label>
             <input
@@ -91,6 +137,7 @@ export default function PublicSimulator() {
             />
           </div>
 
+          {/* Cidade */}
           <div className="relative">
             <label className="block text-sm font-bold text-foreground mb-2">Cidade</label>
             <div className="relative">
@@ -129,6 +176,143 @@ export default function PublicSimulator() {
             )}
           </div>
 
+          {/* Equipamentos Adicionais */}
+          <div>
+            <button
+              type="button"
+              onClick={() => setShowEquipmentPanel(!showEquipmentPanel)}
+              className="flex items-center gap-2 text-sm font-bold text-primary hover:text-primary/80 transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              Equipamentos adicionais (opcional)
+              <ChevronDown className={`w-4 h-4 transition-transform ${showEquipmentPanel ? 'rotate-180' : ''}`} />
+            </button>
+
+            {showEquipmentPanel && (
+              <div className="mt-4 space-y-4 animate-fade-in-up">
+                <p className="text-xs text-muted-foreground">
+                  Adicione equipamentos que pretende instalar para um dimensionamento mais preciso.
+                </p>
+
+                {/* Category tabs */}
+                <div className="flex flex-wrap gap-2">
+                  {CATEGORIES.map(cat => (
+                    <button
+                      key={cat}
+                      onClick={() => setSelectedCategory(cat)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                        selectedCategory === cat
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-muted-foreground/10 text-muted-foreground hover:bg-muted-foreground/20'
+                      }`}
+                    >
+                      {cat}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Equipment list for selected category */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto">
+                  {EQUIPMENT_CATALOG.filter(e => e.category === selectedCategory).map(eq => (
+                    <button
+                      key={eq.type}
+                      onClick={() => addEquipment(eq)}
+                      className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border hover:border-primary hover:bg-primary/5 text-left text-sm transition-colors"
+                    >
+                      <Plus className="w-3.5 h-3.5 text-primary shrink-0" />
+                      <span className="truncate">{eq.label}</span>
+                      <span className="text-xs text-muted-foreground ml-auto shrink-0">{(eq.powerKw * 1000).toFixed(0)}W</span>
+                    </button>
+                  ))}
+                </div>
+
+                {/* Added equipments */}
+                {equipments.length > 0 && (
+                  <div className="space-y-3 pt-2 border-t border-border">
+                    <h4 className="text-sm font-bold text-foreground">Equipamentos adicionados</h4>
+                    {equipments.map(eq => (
+                      <div key={eq.id} className="flex flex-wrap items-center gap-3 p-3 rounded-lg bg-muted text-sm">
+                        <span className="font-medium flex-1 min-w-[120px]">{eq.catalog.label}</span>
+
+                        <label className="flex items-center gap-1">
+                          <span className="text-xs text-muted-foreground">Qtd:</span>
+                          <input
+                            type="number"
+                            min={1}
+                            max={20}
+                            className="w-14 px-2 py-1 rounded border border-border bg-background text-center text-sm"
+                            value={eq.quantity}
+                            onChange={e => updateEquipment(eq.id, 'quantity', Math.max(1, parseInt(e.target.value) || 1))}
+                          />
+                        </label>
+
+                        {eq.catalog.unit === 'km' ? (
+                          <label className="flex items-center gap-1">
+                            <span className="text-xs text-muted-foreground">km/mês:</span>
+                            <input
+                              type="number"
+                              min={0}
+                              className="w-20 px-2 py-1 rounded border border-border bg-background text-center text-sm"
+                              value={eq.kmPerMonth || 0}
+                              onChange={e => updateEquipment(eq.id, 'kmPerMonth', Math.max(0, parseInt(e.target.value) || 0))}
+                            />
+                          </label>
+                        ) : (
+                          <>
+                            <label className="flex items-center gap-1">
+                              <span className="text-xs text-muted-foreground">h/dia:</span>
+                              <input
+                                type="number"
+                                min={0}
+                                max={24}
+                                step={0.5}
+                                className="w-16 px-2 py-1 rounded border border-border bg-background text-center text-sm"
+                                value={eq.hoursPerDay}
+                                onChange={e => updateEquipment(eq.id, 'hoursPerDay', Math.max(0, parseFloat(e.target.value) || 0))}
+                              />
+                            </label>
+                            <label className="flex items-center gap-1">
+                              <span className="text-xs text-muted-foreground">dias/mês:</span>
+                              <input
+                                type="number"
+                                min={0}
+                                max={30}
+                                className="w-16 px-2 py-1 rounded border border-border bg-background text-center text-sm"
+                                value={eq.daysPerMonth}
+                                onChange={e => updateEquipment(eq.id, 'daysPerMonth', Math.max(0, parseInt(e.target.value) || 0))}
+                              />
+                            </label>
+                          </>
+                        )}
+
+                        <span className="text-xs font-semibold text-secondary ml-auto">
+                          +{Math.round(
+                            eq.catalog.unit === 'km'
+                              ? eq.catalog.powerKw * (eq.kmPerMonth || 0) * eq.quantity
+                              : eq.catalog.powerKw * eq.hoursPerDay * eq.daysPerMonth * eq.quantity
+                          )} kWh/mês
+                        </span>
+
+                        <button
+                          onClick={() => removeEquipment(eq.id)}
+                          className="p-1 rounded hover:bg-destructive/10 text-destructive transition-colors"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+
+                    {equipmentMonthlyKwh > 0 && (
+                      <div className="text-right text-sm font-bold text-primary">
+                        Consumo adicional: +{Math.round(equipmentMonthlyKwh)} kWh/mês
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
           <button
             onClick={handleSimulate}
             disabled={!selectedCity || !avgConsumption}
@@ -143,7 +327,7 @@ export default function PublicSimulator() {
                 <ResultCard label="Placas necessárias" value={`${results.panelCount}`} icon="🔆" />
                 <ResultCard label="Potência do sistema" value={`${results.powerKwp.toFixed(2)} kWp`} icon="⚡" />
                 <ResultCard label="Geração estimada/mês" value={`${results.avgGen} kWh`} icon="📊" />
-                <ResultCard label="Excedente estimado" value={`${results.surplus} kWh`} icon="📈" />
+                <ResultCard label="Consumo total/mês" value={`${results.totalConsumption} kWh`} icon="📈" />
               </div>
 
               <div className="h-72 mt-4">
