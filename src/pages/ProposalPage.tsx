@@ -15,7 +15,7 @@ import { generateProposalPDF } from '@/lib/generatePDF';
 import { toast } from 'sonner';
 import logo from '@/assets/logo.png';
 
-const LINES = ['acesso', 'excellence', 'premium'] as const;
+const LINES = ['excellence', 'premium'] as const;
 const PERIOD_OPTIONS = [5, 10, 15, 20, 25];
 
 export default function ProposalPage() {
