@@ -14,8 +14,7 @@ import {
   formatCurrency, formatNumber, maxPanelsForInverter, calcMicroInverterCount,
 } from '@/data/calculations';
 import { getSettings, saveProposal, lookupIrradiation } from '@/data/store';
-import { savePropostaDB } from '@/data/supabaseStore';
-import { searchCidades } from '@/data/irradiancia';
+import { savePropostaDB, searchCidadesDB } from '@/data/supabaseStore';
 import type { Proposal } from '@/data/types';
 
 const EQUIPMENT_COLORS = [
