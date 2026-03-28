@@ -453,7 +453,6 @@ function PriceTableTab() {
   ];
 
   const LINES_ARR = [
-    { key: 'acesso' as const, name: LINE_NAMES.acesso },
     { key: 'excellence' as const, name: LINE_NAMES.excellence },
     { key: 'premium' as const, name: LINE_NAMES.premium },
   ];
