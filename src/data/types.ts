@@ -170,13 +170,11 @@ export const AVAILABILITY_FEE: Record<string, number> = {
 };
 
 export const LINE_NAMES: Record<string, string> = {
-  acesso: 'TLS Essencial',
-  excellence: 'TLS Plus',
-  premium: 'TLS Prime Micro',
+  excellence: 'TLS Plus — Opção 1',
+  premium: 'TLS Prime Micro — Opção 2',
 };
 
 export const LINE_SUBS: Record<string, string> = {
-  acesso: 'Equipamentos nacionais',
   excellence: 'Importados intermediários',
   premium: 'Micro inversores — Top de linha',
 };
