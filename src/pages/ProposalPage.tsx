@@ -311,6 +311,9 @@ export default function ProposalPage() {
           <div className="relative z-10">
             <img src={logo} alt="Três Lagoas Solar" className="h-24 mx-auto mb-6 print-logo" />
             <p className="text-sm uppercase tracking-widest text-muted-foreground mb-2">{settings.company.name}</p>
+            {proposal.numero_proposta && (
+              <p className="text-sm font-mono font-bold text-secondary mb-2">{proposal.numero_proposta}</p>
+            )}
             <h1 className="text-4xl md:text-5xl font-bold text-primary text-balance print-title" style={{ lineHeight: '1.1' }}>
               Meu Projeto de<br />Energia Solar Fotovoltaica
             </h1>
