@@ -12,7 +12,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   if (isProposal) return <>{children}</>;
 
   const navItems = [
-    { path: '/', label: 'Calculadora', icon: Calculator },
+    { path: '/orcamentos', label: 'Calculadora', icon: Calculator },
     ...((isAdmin || isOrcamentista) ? [{ path: '/admin', label: 'Admin', icon: Settings }] : []),
   ];
 
@@ -20,7 +20,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen bg-background">
       <header className="no-print sticky top-0 z-50 bg-card border-b border-border/50 shadow-sm">
         <div className="container flex items-center justify-between h-16">
-          <Link to="/" className="flex items-center gap-3 group">
+          <Link to="/orcamentos" className="flex items-center gap-3 group">
             <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
               <Sun className="w-6 h-6 text-secondary" />
             </div>
