@@ -145,22 +145,36 @@ export async function importCidadesIrradianciaDB(cidades: any[]) {
   
   // Insert in batches of 100
   for (let i = 0; i < cidades.length; i += 100) {
-    const batch = cidades.slice(i, i + 100).map((c: any) => ({
-      cidade: c.cidade || c.city || '',
-      uf: c.uf || c.state || 'MS',
-      jan: c.irr?.[0] ?? c.jan ?? null,
-      fev: c.irr?.[1] ?? c.fev ?? null,
-      mar: c.irr?.[2] ?? c.mar ?? null,
-      abr: c.irr?.[3] ?? c.abr ?? null,
-      mai: c.irr?.[4] ?? c.mai ?? null,
-      jun: c.irr?.[5] ?? c.jun ?? null,
-      jul: c.irr?.[6] ?? c.jul ?? null,
-      ago: c.irr?.[7] ?? c.ago ?? null,
-      set_: c.irr?.[8] ?? c.set ?? null,
-      out_: c.irr?.[9] ?? c.out ?? null,
-      nov: c.irr?.[10] ?? c.nov ?? null,
-      dez: c.irr?.[11] ?? c.dez ?? null,
-    }));
+    const batch = cidades.slice(i, i + 100).map((c: any) => {
+      // Support array format: [cidade, uf, jan, fev, ..., dez]
+      if (Array.isArray(c)) {
+        return {
+          cidade: c[0] || '',
+          uf: c[1] || 'MS',
+          jan: c[2] ?? null, fev: c[3] ?? null, mar: c[4] ?? null,
+          abr: c[5] ?? null, mai: c[6] ?? null, jun: c[7] ?? null,
+          jul: c[8] ?? null, ago: c[9] ?? null, set_: c[10] ?? null,
+          out_: c[11] ?? null, nov: c[12] ?? null, dez: c[13] ?? null,
+        };
+      }
+      // Support object format
+      return {
+        cidade: c.cidade || c.city || '',
+        uf: c.uf || c.state || 'MS',
+        jan: c.irr?.[0] ?? c.jan ?? null,
+        fev: c.irr?.[1] ?? c.fev ?? null,
+        mar: c.irr?.[2] ?? c.mar ?? null,
+        abr: c.irr?.[3] ?? c.abr ?? null,
+        mai: c.irr?.[4] ?? c.mai ?? null,
+        jun: c.irr?.[5] ?? c.jun ?? null,
+        jul: c.irr?.[6] ?? c.jul ?? null,
+        ago: c.irr?.[7] ?? c.ago ?? null,
+        set_: c.irr?.[8] ?? c.set ?? null,
+        out_: c.irr?.[9] ?? c.out ?? null,
+        nov: c.irr?.[10] ?? c.nov ?? null,
+        dez: c.irr?.[11] ?? c.dez ?? null,
+      };
+    });
     await supabase.from('cidades_irradiancia').insert(batch);
   }
 }
