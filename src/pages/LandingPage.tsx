@@ -12,6 +12,7 @@ const SOLUTIONS = [
   {
     title: 'SISTEMAS RESIDENCIAIS',
     image: 'https://static.wixstatic.com/media/c2ae0d_22207624d8e94b8c924339ec7f85d44c~mv2.png',
+    alt: 'Instalação de painéis solares residencial em Três Lagoas',
     text: 'Nossos sistemas solares residenciais são projetados para fornecer energia limpa e renovável para residências de todos os tamanhos, reduzindo a dependência da rede elétrica convencional.',
     btn: 'Solicitar Orçamento',
     link: 'https://wa.me/5567996448995?text=Vim pelo site e gostaria de um orçamento',
@@ -20,6 +21,7 @@ const SOLUTIONS = [
   {
     title: 'SISTEMAS COMERCIAIS',
     image: 'https://static.wixstatic.com/media/c2ae0d_a5032014b84c4287889fcf5fe1522b78~mv2.jpg',
+    alt: 'Sistema solar comercial Três Lagoas Solar',
     text: 'Ajudamos empresas a adotar soluções de energia solar personalizadas, visando reduzir custos operacionais e diminuir a pegada de carbono.',
     btn: 'Fale Conosco',
     link: 'https://wa.me/5567996448995?text=Vim pelo site e gostaria de um orçamento',
@@ -28,6 +30,7 @@ const SOLUTIONS = [
   {
     title: 'SISTEMAS AGRÍCOLAS',
     image: 'https://static.wixstatic.com/media/c2ae0d_00abcb22b6d74820b004da41552f658c~mv2.png',
+    alt: 'Energia solar rural Mato Grosso do Sul',
     text: 'Nossos sistemas solares são adaptados para atender às necessidades energéticas de propriedades rurais, proporcionando autonomia e eficiência energética. Conciliamos energia solar com rede e geradores à diesel!',
     btn: 'Agro Atendimento',
     link: 'https://wa.me/5567996448995?text=Gostaria de um AgroAtendimento',
@@ -214,7 +217,7 @@ export default function LandingPage() {
                 className="group solar-card overflow-hidden"
               >
                 <div className="relative h-56 overflow-hidden">
-                  <img src={sol.image} alt={sol.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />
+                  <img src={sol.image} alt={sol.alt} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                   <div className="absolute bottom-4 left-4 flex items-center gap-2">
                     <div className="w-10 h-10 rounded-lg bg-secondary flex items-center justify-center">
@@ -285,7 +288,7 @@ export default function LandingPage() {
                 className="relative aspect-square overflow-hidden rounded-xl cursor-pointer group"
                 onClick={() => setLightboxImg(img)}
               >
-                <img src={img} alt={`Projeto ${i + 1}`} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" loading="lazy" />
+                <img src={img} alt={`Projeto de energia solar ${i + 1} em Três Lagoas MS`} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" loading="lazy" />
                 <div className="absolute inset-0 bg-primary/0 group-hover:bg-primary/30 transition-colors duration-300 flex items-center justify-center">
                   <Zap className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 </div>
