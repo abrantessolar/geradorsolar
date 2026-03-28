@@ -13,7 +13,7 @@ import {
 import { formatCurrency } from '@/data/calculations';
 import { AdminSettings, Seller, IrradiationEntry, PriceTableEntry, SocialProof, BRAZILIAN_STATES, CA_MATERIAL_TABLE_DEFAULT, LINE_NAMES } from '@/data/types';
 import type { Distributor, PriceTableLineDetails } from '@/data/types';
-import { Users, DollarSign, Settings, MapPin, Building2, FileText, Image, Plus, Trash2, Save, Eye, EyeOff, Wand2, AlertCircle, Upload, Check, ChevronDown, UserPlus, Edit2, X } from 'lucide-react';
+import { Users, DollarSign, Settings, MapPin, Building2, FileText, Image, Plus, Trash2, Save, Eye, Wand2, AlertCircle, Upload, Check, ChevronDown, UserPlus, Edit2, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const ROLE_LABELS: Record<string, string> = {
@@ -72,7 +72,6 @@ function UsersTab() {
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [editUser, setEditUser] = useState<any>(null);
-  const [showPasswords, setShowPasswords] = useState<Record<string, boolean>>({});
   const [form, setForm] = useState({ nome: '', email: '', role: 'vendedor', password: '', confirmPassword: '' });
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
@@ -114,7 +113,7 @@ function UsersTab() {
     loadUsers();
   };
 
-  const togglePassword = (id: string) => setShowPasswords(prev => ({ ...prev, [id]: !prev[id] }));
+  
 
   return (
     <div className="solar-card p-6 space-y-4">
@@ -167,7 +166,6 @@ function UsersTab() {
                 <th className="py-2 px-2">Nome</th>
                 <th className="py-2 px-2">E-mail</th>
                 <th className="py-2 px-2">Nível</th>
-                <th className="py-2 px-2">Senha</th>
                 <th className="py-2 px-2">Status</th>
                 <th className="py-2 px-2">Último acesso</th>
                 <th className="py-2 px-2">Ações</th>
@@ -182,14 +180,6 @@ function UsersTab() {
                     <span className={`solar-badge text-xs ${u.role === 'admin' ? 'bg-primary/10 text-primary' : u.role === 'orcamentista' ? 'bg-blue-100 text-blue-800' : 'bg-amber-100 text-amber-800'}`}>
                       {ROLE_LABELS[u.role] || u.role}
                     </span>
-                  </td>
-                  <td className="py-2 px-2">
-                    <div className="flex items-center gap-1">
-                      <span className="font-mono text-xs">{showPasswords[u.user_id] ? (u.senha_visivel || '***') : '••••••'}</span>
-                      <button onClick={() => togglePassword(u.user_id)} className="text-muted-foreground hover:text-foreground">
-                        {showPasswords[u.user_id] ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
-                      </button>
-                    </div>
                   </td>
                   <td className="py-2 px-2">
                     <span className={`solar-badge text-xs ${u.ativo ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>

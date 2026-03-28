@@ -67,7 +67,6 @@ Deno.serve(async (req) => {
         nome,
         email,
         role: role || 'vendedor',
-        senha_visivel: password,
       });
 
       return new Response(JSON.stringify({ user: data.user }), {
@@ -82,7 +81,6 @@ Deno.serve(async (req) => {
       if (nome !== undefined) updates.nome = nome;
       if (role !== undefined) updates.role = role;
       if (ativo !== undefined) updates.ativo = ativo;
-      if (password !== undefined) updates.senha_visivel = password;
       if (email !== undefined) updates.email = email;
 
       if (Object.keys(updates).length > 0) {
