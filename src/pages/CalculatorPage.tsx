@@ -705,7 +705,12 @@ export default function CalculatorPage() {
                   <div className="flex justify-between"><span className="text-muted-foreground">Placas</span><span className="font-medium">{card.panelCount}× {card.panelBrand} ({card.panelPowerLabel})</span></div>
                   <div className="flex justify-between"><span className="text-muted-foreground">Potência</span><span className="font-medium">{formatNumber(card.dimensioning.powerKwp)} kWp</span></div>
                   <div className="flex justify-between"><span className="text-muted-foreground">Geração/mês</span><span className="font-medium">{formatNumber(card.dimensioning.monthlyGeneration, 0)} kWh</span></div>
-                  {card.hasPriceTableCost && (
+                  {card.isCustom ? (
+                    <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground text-xs">Fonte</span>
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-secondary/20 text-secondary-foreground font-medium">⚡ Personalizada</span>
+                    </div>
+                  ) : card.hasPriceTableCost && (
                     <div className="flex justify-between items-center">
                       <span className="text-muted-foreground text-xs">Fonte</span>
                       <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700">Tabela de preços</span>
