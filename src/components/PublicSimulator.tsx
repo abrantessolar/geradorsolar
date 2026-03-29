@@ -138,7 +138,7 @@ export default function PublicSimulator() {
     setSavingLead(true);
     try {
       // Save lead to database
-      await supabase.from('leads').insert({
+      const leadData = {
         nome: leadName.trim(),
         telefone: leadPhone.trim(),
         cidade: selectedCity.cidade,
@@ -146,7 +146,11 @@ export default function PublicSimulator() {
         consumo_kwh: parseFloat(avgConsumption) + equipmentMonthlyKwh,
         resultado_placas: results.panelCount,
         resultado_potencia_kwp: results.powerKwp,
-      });
+      };
+      await supabase.from('leads').insert(leadData);
+
+      // Send email notification (fire and forget)
+      supabase.functions.invoke('notify-lead', { body: leadData }).catch(() => {});
 
       // Save to localStorage
       localStorage.setItem(LS_KEY, JSON.stringify({ nome: leadName.trim(), telefone: leadPhone.trim() }));
