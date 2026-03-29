@@ -830,7 +830,9 @@ export default function ProposalPage() {
                 </button>
               </div>
             </div>
-            <iframe src={pdfBlobUrl} className="flex-1 w-full rounded-b-xl bg-white" title="PDF Preview" />
+            <object data={`${pdfBlobUrl}#toolbar=1&navpanes=1&scrollbar=1`} type="application/pdf" className="flex-1 w-full rounded-b-xl bg-white">
+              <iframe src={`${pdfBlobUrl}#toolbar=1&navpanes=1&scrollbar=1`} className="w-full h-full rounded-b-xl bg-white" title="PDF Preview" />
+            </object>
           </div>
         </div>
       )}
