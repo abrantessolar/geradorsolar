@@ -656,6 +656,33 @@ export default function CalculatorPage() {
                   <p className="text-xs text-muted-foreground">{LINE_SUBS[card.line]}</p>
                 </div>
 
+                {/* Custom mode toggle - only for authenticated users */}
+                {isAuthenticated && (
+                  <div className="flex items-center justify-between px-2 py-1.5 rounded-lg bg-muted/50 border border-border/50">
+                    <span className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                      <Settings2 className="w-3.5 h-3.5" />
+                      {customKits[card.line]?.enabled ? 'Personalizar' : 'Usar tabela de preços'}
+                    </span>
+                    <Switch
+                      checked={customKits[card.line]?.enabled || false}
+                      onCheckedChange={(checked) => setCustomKits(prev => ({
+                        ...prev,
+                        [card.line]: { ...(prev[card.line] || defaultCustomKit(finalPanels)), enabled: checked, panelCount: checked && !prev[card.line]?.panelCount ? finalPanels : (prev[card.line]?.panelCount || finalPanels) },
+                      }))}
+                    />
+                  </div>
+                )}
+
+                {/* Custom kit form */}
+                {customKits[card.line]?.enabled && (
+                  <CustomKitForm
+                    data={customKits[card.line]}
+                    onChange={(d) => setCustomKits(prev => ({ ...prev, [card.line]: d }))}
+                    line={card.line}
+                    isAuthenticated={isAuthenticated}
+                  />
+                )}
+
                 <div className="space-y-2 text-sm">
                   {isPremium ? (
                     <div className="flex justify-between">
