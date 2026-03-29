@@ -10,7 +10,7 @@ import {
 } from '@/data/calculations';
 import { MONTH_LABELS, MONTH_KEYS, SEASONAL_FACTORS, INSTALLMENT_OPTIONS, UC_COLORS, LINE_NAMES, LINE_SUBS } from '@/data/types';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, LineChart, Line, ReferenceLine } from 'recharts';
-import { Download, Share2, Edit, ArrowLeft, Sun, Zap, TrendingUp, Shield, X, Cpu, Check, MessageCircle, Calendar, AlertTriangle, ChevronDown, ChevronUp, BarChart3 } from 'lucide-react';
+import { Download, Share2, Edit, ArrowLeft, Sun, Zap, TrendingUp, Shield, X, Cpu, Check, MessageCircle, Calendar, AlertTriangle, ChevronDown, ChevronUp, BarChart3, Eye } from 'lucide-react';
 import { generateProposalPDF } from '@/lib/generatePDF';
 import { toast } from 'sonner';
 import logo from '@/assets/logo.png';
