@@ -487,11 +487,11 @@ export default function ProposalPage() {
                     {isPremium ? (
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Micro inversores</span>
-                        <span className="font-medium text-right">{card.microCount}× {card.inverter?.brand} {card.inverter?.model}</span>
+                        <span className="font-medium text-right">{card.microCount}× {card.inverterBrand || card.inverter?.brand} {card.inverterModel || card.inverter?.model}</span>
                       </div>
                     ) : (
                       <>
-                        <div className="flex justify-between"><span className="text-muted-foreground">Inversor</span><span className="font-medium text-right">{card.inverter?.brand} {card.inverter?.model}</span></div>
+                        <div className="flex justify-between"><span className="text-muted-foreground">Inversor</span><span className="font-medium text-right">{card.inverterBrand || card.inverter?.brand} {card.inverterModel || card.inverter?.model}</span></div>
                         <div className="flex justify-between items-start">
                           <span className="text-muted-foreground">Suporta até</span>
                           <span className="font-medium text-right" style={limitColor ? { color: limitColor } : undefined}>
@@ -501,7 +501,7 @@ export default function ProposalPage() {
                         </div>
                       </>
                     )}
-                    <div className="flex justify-between"><span className="text-muted-foreground">Placas</span><span className="font-medium">{card.panelCount}× {card.panel?.brand} {card.panel?.power}Wp</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">Placas</span><span className="font-medium">{card.panelCount}× {card.panelBrand || card.panel?.brand} {card.panelPowerLabel || `${card.panel?.power || 570}Wp`}</span></div>
                     <div className="flex justify-between"><span className="text-muted-foreground">Potência</span><span className="font-medium">{formatNumber(card.dimensioning.powerKwp)} kWp</span></div>
                     <div className="flex justify-between"><span className="text-muted-foreground">Geração/mês</span><span className="font-semibold text-primary">{formatNumber(card.dimensioning.monthlyGeneration, 0)} kWh</span></div>
                     <div className="flex justify-between"><span className="text-muted-foreground">Excedente</span><span className="font-medium">{formatNumber(card.dimensioning.surplus, 0)} kWh</span></div>
