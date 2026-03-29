@@ -98,7 +98,7 @@ export async function savePropostaDB(proposal: Proposal): Promise<string> {
     linha: proposal.selectedLine,
     num_placas: proposal.selectedKit.panelCount,
     potencia_kwp: proposal.dimensioning.powerKwp,
-    valor_total: proposal.totalPrice,
+    valor_total: proposal.costBreakdown?.salePrice || proposal.totalPrice,
     cet: proposal.cetApplied,
     status: proposal.status,
     dados_completos: proposal as any,
