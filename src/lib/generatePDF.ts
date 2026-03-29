@@ -145,11 +145,11 @@ export async function generateProposalPDF(
   }
 
   // ═══════════════════════════════════════
-  // PAGE 2: SPECS + CHART
+  // PAGE 3: SPECS + CHART
   // ═══════════════════════════════════════
   doc.addPage();
   drawPageHeader('Especificações do projeto');
-  y = 40;
+  let y = 40;
 
   // Two columns: Equipamentos | Rendimentos
   const halfW = CW / 2 - 3;
