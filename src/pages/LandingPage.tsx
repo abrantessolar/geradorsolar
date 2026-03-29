@@ -201,12 +201,12 @@ export default function LandingPage() {
               </p>
               <div className="mt-8 flex items-center gap-6">
                 <div className="text-center">
-                  <div className="text-3xl font-black text-primary">500+</div>
+                  <div className="text-3xl font-black text-primary">800+</div>
                   <div className="text-sm text-muted-foreground">Projetos</div>
                 </div>
                 <div className="w-px h-12 bg-border" />
                 <div className="text-center">
-                  <div className="text-3xl font-black text-secondary">98%</div>
+                  <div className="text-3xl font-black text-secondary">100%</div>
                   <div className="text-sm text-muted-foreground">Satisfação</div>
                 </div>
                 <div className="w-px h-12 bg-border" />
