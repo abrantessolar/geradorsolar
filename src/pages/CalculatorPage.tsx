@@ -49,10 +49,8 @@ export default function CalculatorPage() {
     kwhPrice: defaultDist?.kwhPrice || 0.85, seller: activeSellers[0]?.name || '',
   });
 
-  const [mode, setMode] = useState<ConsumptionMode>('average');
-  const [units, setUnits] = useState<ConsumerUnit[]>([{ id: '1', name: 'Principal', averageKwh: 350 }]);
-  const [monthlyUnits, setMonthlyUnits] = useState<{ id: string; name: string; values: MonthlyConsumption }[]>([
-    { id: '1', name: 'UC 1', values: emptyMonthly() },
+  const [units, setUnits] = useState<(ConsumerUnit & { mode: ConsumptionMode; monthlyValues: MonthlyConsumption })[]>([
+    { id: '1', name: 'Principal', averageKwh: 350, mode: 'average', monthlyValues: emptyMonthly() },
   ]);
   const [equipment, setEquipment] = useState<EquipmentItem[]>([]);
   const [eqOpen, setEqOpen] = useState(false);
