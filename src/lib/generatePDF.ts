@@ -108,7 +108,7 @@ export async function generateProposalPDF(
   } catch { /* logo not available */ }
 
   // Cover: largest image — compress aggressively
-  const coverImgData = await compressImage(pdfCoverImg, 1200, 0.70);
+  const coverImgData = await compressImage(pdfCoverImg, 1200, 0.70, W / H);
 
   // Load portfolio photos from DB
   let portfolioPhotos: string[] = [];
@@ -203,7 +203,7 @@ export async function generateProposalPDF(
   const portfolioImages: (string | null)[] = [];
   for (let i = 0; i < gridCols * gridRows; i++) {
     if (i < portfolioPhotos.length) {
-      const img = await compressImage(portfolioPhotos[i], 300, 0.65);
+      const img = await compressImage(portfolioPhotos[i], 300, 0.65, 1);
       portfolioImages.push(img);
     } else {
       portfolioImages.push(null);
