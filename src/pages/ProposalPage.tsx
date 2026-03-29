@@ -102,10 +102,11 @@ export default function ProposalPage() {
         ? calcInstallments(totalPrice, proposal.cetApplied)
         : calcInstallments(totalPrice);
       const cardInstallments = calcCardInstallments(totalPrice, settings.creditCardRates);
+      const costBreakdown = calcCostBreakdown(inverter, panel, finalPanels, line);
 
       return {
         line, inverter, panel, panelCount: finalPanels, totalPrice, maxPanels, panelsRemaining, microCount,
-        installments, cardInstallments,
+        installments, cardInstallments, costBreakdown,
         dimensioning: { ...dim, panelCount: finalPanels, powerKwp, monthlyGeneration, surplus },
       };
     });
