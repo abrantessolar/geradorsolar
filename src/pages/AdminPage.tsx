@@ -268,6 +268,8 @@ function EditUserModal({ user, onClose, callApi }: { user: any; onClose: () => v
             <input className="solar-input" value={nome} onChange={e => setNome(e.target.value)} /></div>
           <div><label className="block text-sm font-medium mb-1">E-mail</label>
             <input className="solar-input" type="email" value={email} onChange={e => setEmail(e.target.value)} /></div>
+          <div><label className="block text-sm font-medium mb-1">Telefone/WhatsApp</label>
+            <input className="solar-input" value={telefone} onChange={e => setTelefone(e.target.value)} placeholder="(XX) XXXXX-XXXX" /></div>
           <div><label className="block text-sm font-medium mb-1">Nível</label>
             <select className="solar-input" value={role} onChange={e => setRole(e.target.value)}>
               <option value="vendedor">Vendedor</option>
