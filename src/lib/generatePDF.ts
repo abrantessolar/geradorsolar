@@ -474,14 +474,15 @@ export async function generateProposalPDF(
     return total;
   };
 
-  // KPI cards with softer styling
-  const kpiData = [
-    { label: 'Economia Mensal', value: formatCurrency(selectedCard?.dimensioning?.monthlySavings || 0), color: PRIMARY },
-    { label: 'Payback', value: `${formatNumber(selectedCard?.dimensioning?.paybackYears || 0)} anos`, color: PRIMARY },
-    { label: 'Retorno 25 anos', value: formatCurrency(selectedCard?.dimensioning?.return25 || 0), color: PRIMARY },
-  ];
+  // KPI cards with softer styling — filtered by template
+  const kpiData: { label: string; value: string; color: RGB }[] = [];
+  if (tpl.financial.showPayback) kpiData.push({ label: 'Payback', value: `${formatNumber(selectedCard?.dimensioning?.paybackYears || 0)} anos`, color: PRIMARY });
+  if (tpl.financial.showMonthlyLoss) kpiData.push({ label: 'Economia Mensal', value: formatCurrency(selectedCard?.dimensioning?.monthlySavings || 0), color: PRIMARY });
+  if (tpl.financial.showReturn25) kpiData.push({ label: 'Retorno 25 anos', value: formatCurrency(selectedCard?.dimensioning?.return25 || 0), color: PRIMARY });
+  // Always show at least the monthly savings if nothing else
+  if (kpiData.length === 0) kpiData.push({ label: 'Economia Mensal', value: formatCurrency(selectedCard?.dimensioning?.monthlySavings || 0), color: PRIMARY });
 
-  const kpiW = CW / 3;
+  const kpiW = CW / Math.max(kpiData.length, 1);
   kpiData.forEach((kpi, i) => {
     const kx = M + i * kpiW;
     setFill([250, 252, 245]);
@@ -502,17 +503,17 @@ export async function generateProposalPDF(
   y += 32;
 
   // Savings cards with softer edges
+  if (savingsItems.length > 0) {
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(11);
   setColor(PRIMARY);
   doc.text('Sua economia com energia solar', M, y);
   y += 7;
 
-  const savingsItems = [
-    { years: 5, value: calcSavings(5) },
-    { years: 10, value: calcSavings(10) },
-    { years: 15, value: calcSavings(15) },
-  ];
+  const savingsItems: { years: number; value: number }[] = [];
+  if (tpl.financial.showReturn5) savingsItems.push({ years: 5, value: calcSavings(5) });
+  if (tpl.financial.showReturn10) savingsItems.push({ years: 10, value: calcSavings(10) });
+  if (tpl.financial.showReturn15) savingsItems.push({ years: 15, value: calcSavings(15) });
 
   const cardW = CW / 3 - 2;
   savingsItems.forEach((item, i) => {
