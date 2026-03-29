@@ -101,36 +101,34 @@ export async function generateProposalPDF(
     } catch {}
   }
 
-  // Overlay dynamic text on the cover image
+  // Overlay dynamic text on the cover image — NO green rectangle behind text
   // Proposal number top-right
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(9);
-  setColor(GRAY);
+  setColor(WHITE);
   doc.text(numero, W - M, 12, { align: 'right' });
 
-  // Client name on the green bar (approx y=200-224 in the template)
+  // Client name directly on the template (the template already has the green bar)
   const barY = 210;
-  // White semi-transparent overlay on the green bar for text
-  setFill(PRIMARY);
-  doc.rect(M + 20, barY, CW - 20, 22, 'F');
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(16);
+  doc.setFontSize(18);
   setColor(WHITE);
-  doc.text(proposal.clientData.name, M + 28, barY + 10);
+  doc.text(proposal.clientData.name.toUpperCase(), W / 2, barY + 8, { align: 'center' });
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(10);
   setColor([220, 220, 220]);
-  doc.text(`${formatNumber(selectedCard?.dimensioning?.avgMonthlyKwh || 0, 0)} kWh/mês  •  ${proposal.clientData.city} — ${proposal.clientData.state || 'MS'}`, M + 28, barY + 18);
+  doc.text(`${formatNumber(selectedCard?.dimensioning?.avgMonthlyKwh || 0, 0)} kWh/mês  •  ${proposal.clientData.city} — ${proposal.clientData.state || 'MS'}`, W / 2, barY + 16, { align: 'center' });
 
   // Seller info at bottom
-  const sellerY = 245;
+  const sellerY = 248;
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);
-  setColor(WHITE);
-  doc.text(`Representante: ${proposal.clientData.seller || ''}`, M + 20, sellerY);
+  setColor(DARK);
+  doc.text(`Representante: ${proposal.clientData.seller || ''}`, W / 2, sellerY, { align: 'center' });
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(8);
-  doc.text(`${settings.company.phone}  |  ${settings.company.email}`, M + 20, sellerY + 6);
+  setColor(DARK);
+  doc.text(`${settings.company.phone}  |  ${settings.company.email}`, W / 2, sellerY + 6, { align: 'center' });
 
   // ═══════════════════════════════════════
   // PAGE 2: PORTFOLIO (using uploaded template image)
@@ -561,10 +559,11 @@ export async function generateProposalPDF(
   const noSolarItems = [
     { years: 5, value: calcWithout(5) },
     { years: 10, value: calcWithout(10) },
+    { years: 15, value: calcWithout(15) },
   ];
-  const nCardW = CW / 2 - 3;
+  const nCardW = CW / 3 - 2;
   noSolarItems.forEach((item, i) => {
-    const nx = M + i * (nCardW + 6);
+    const nx = M + i * (nCardW + 3);
     setFill([255, 240, 240]);
     doc.roundedRect(nx, y, nCardW, 24, 2, 2, 'F');
     setFill(RED_SOFT);

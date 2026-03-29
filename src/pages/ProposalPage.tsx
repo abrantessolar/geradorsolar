@@ -586,7 +586,7 @@ export default function ProposalPage() {
                 ))}
 
                 {/* Without solar cards */}
-                {[5, 10].map(years => (
+                {[5, 10, 15].map(years => (
                   <div key={`no-${years}`} className="solar-card p-5 space-y-2 bg-red-50 dark:bg-red-950/20" style={{ borderLeft: '4px solid #E84855' }}>
                     <div className="flex items-center gap-2">
                       <AlertTriangle className="w-5 h-5 text-red-500" />
