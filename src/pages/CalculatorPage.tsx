@@ -27,7 +27,7 @@ const EQUIPMENT_COLORS = [
   '#F39C12', '#2ECC71', '#8E44AD', '#16A085', '#D35400',
 ];
 
-const LINES = ['excellence', 'premium'] as const;
+const LINES = ['essencial', 'excellence', 'premium'] as const;
 
 // Group equipment catalog by category
 const EQUIPMENT_CATEGORIES = EQUIPMENT_CATALOG.reduce<Record<string, EquipmentCatalogItem[]>>((acc, item) => {
@@ -66,6 +66,7 @@ export default function CalculatorPage() {
   const [showCostPanel, setShowCostPanel] = useState(false);
   const [selectedLine, setSelectedLine] = useState<number | null>(null);
   const [customKits, setCustomKits] = useState<Record<string, CustomKitData>>({
+    essencial: defaultCustomKit(0),
     excellence: defaultCustomKit(0),
     premium: defaultCustomKit(0),
   });
@@ -162,7 +163,7 @@ export default function CalculatorPage() {
   const priceTable = useMemo(() => getPriceTable(), []);
 
   // Find best price table entry for a given line and panel count
-  const findPriceTableEntry = useCallback((line: 'excellence' | 'premium', panels: number): PriceTableEntry | null => {
+  const findPriceTableEntry = useCallback((line: 'essencial' | 'excellence' | 'premium', panels: number): PriceTableEntry | null => {
     const entries = priceTable.filter(e => e[line] !== null && e[line]! > 0 && e.panels >= panels);
     entries.sort((a, b) => a.panels - b.panels);
     // Exact match first, then next available
@@ -675,7 +676,7 @@ export default function CalculatorPage() {
       {/* System Cards */}
       <section className="space-y-4 animate-fade-in-up" style={{ animationDelay: '500ms' }}>
         <h2 className="text-2xl font-bold text-primary text-center">Sistemas Disponíveis</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {systemCards.map((card, idx) => {
             const isPremium = card.line === 'premium';
             const maxP = card.maxPanels;
@@ -842,7 +843,7 @@ export default function CalculatorPage() {
           <button
             onClick={() => {
               if (selectedLine === null) {
-                toast.error('Selecione uma opção de sistema (TLS Plus ou TLS Prime Micro) antes de gerar a proposta.');
+                toast.error('Selecione uma opção de sistema antes de gerar a proposta.');
                 return;
               }
               generateProposal(selectedLine);
@@ -855,15 +856,15 @@ export default function CalculatorPage() {
       </section>
 
       {/* Financial Summary */}
-      {systemCards[0] && (
+      {selectedLine !== null && systemCards[selectedLine] && (
         <section className="solar-card p-6 space-y-4 animate-fade-in-up" style={{ animationDelay: '600ms' }}>
-          <h2 className="text-xl font-bold text-primary">Viabilidade Financeira ({LINE_NAMES['excellence']})</h2>
+          <h2 className="text-xl font-bold text-primary">Viabilidade Financeira ({LINE_NAMES[systemCards[selectedLine].line]})</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
-              { label: 'Economia mensal', value: formatCurrency(systemCards[0].dimensioning.monthlySavings) },
-              { label: 'Payback', value: `${formatNumber(systemCards[0].dimensioning.paybackYears)} anos` },
-              { label: 'Retorno 10 anos', value: formatCurrency(systemCards[0].dimensioning.return10) },
-              { label: 'Retorno 25 anos', value: formatCurrency(systemCards[0].dimensioning.return25) },
+              { label: 'Economia mensal', value: formatCurrency(systemCards[selectedLine].dimensioning.monthlySavings) },
+              { label: 'Payback', value: `${formatNumber(systemCards[selectedLine].dimensioning.paybackYears)} anos` },
+              { label: 'Retorno 10 anos', value: formatCurrency(systemCards[selectedLine].dimensioning.return10) },
+              { label: 'Retorno 25 anos', value: formatCurrency(systemCards[selectedLine].dimensioning.return25) },
             ].map(item => (
               <div key={item.label} className="text-center p-4 rounded-lg bg-muted/50">
                 <p className="text-xs text-muted-foreground mb-1">{item.label}</p>

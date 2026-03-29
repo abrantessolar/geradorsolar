@@ -343,10 +343,11 @@ function SellersTab() {
 /* ─── TABELA DE PREÇOS ─── */
 function PriceTableTab() {
   const stored = getPriceTable();
-  const initial: PriceTableEntry[] = stored.length > 0 ? stored :
+  const initial: PriceTableEntry[] = stored.length > 0 ? stored.map(r => ({ ...r, essencial: (r as any).essencial ?? null })) :
     Array.from({ length: 97 }, (_, i) => ({
       panels: i + 4,
       acesso: null,
+      essencial: null,
       excellence: null,
       premium: null,
       estimated: {},
@@ -367,6 +368,7 @@ function PriceTableTab() {
   }, []);
 
   const LINES_ARR = [
+    { key: 'essencial' as const, name: LINE_NAMES.essencial },
     { key: 'excellence' as const, name: LINE_NAMES.excellence },
     { key: 'premium' as const, name: LINE_NAMES.premium },
   ];
@@ -378,7 +380,7 @@ function PriceTableTab() {
     { key: 'panelPower', label: 'Pot. Placa', short: 'P.Plc' },
   ];
 
-  // Total columns per line: 1 cost + 4 detail = 5; total cols = 5 * 2 = 10
+  // Total columns per line: 1 cost + 4 detail = 5; total cols = 5 * 3 = 15
   const TOTAL_COLS = LINES_ARR.length * 5;
 
   const focusCell = (row: number, col: number) => {
@@ -425,7 +427,7 @@ function PriceTableTab() {
     })
   );
 
-  const updateCell = (idx: number, field: 'acesso' | 'excellence' | 'premium', value: string) => {
+  const updateCell = (idx: number, field: 'acesso' | 'essencial' | 'excellence' | 'premium', value: string) => {
     const num = value === '' ? null : parseFloat(value);
     setTable(prev => prev.map((row, i) => i === idx ? {
       ...row,
@@ -468,7 +470,7 @@ function PriceTableTab() {
   };
 
   const generateEstimates = () => {
-    const lines: ('acesso' | 'excellence' | 'premium')[] = ['acesso', 'excellence', 'premium'];
+    const lines: ('acesso' | 'essencial' | 'excellence' | 'premium')[] = ['acesso', 'essencial', 'excellence', 'premium'];
     const newTable = [...table.map(r => ({ ...r, estimated: { ...r.estimated } }))];
     lines.forEach(line => {
       const filled = newTable.filter(r => r[line] !== null && r[line]! > 0).map(r => ({ panels: r.panels, value: r[line]! }));
@@ -1032,7 +1034,7 @@ function ProposalsTab() {
           <table className="w-full text-sm">
             <thead><tr className="border-b border-border text-left text-muted-foreground">
               <th className="py-2 px-2">Nº</th><th className="py-2 px-2">Cliente</th><th className="py-2 px-2">Vendedor</th>
-              <th className="py-2 px-2">Data</th><th className="py-2 px-2">Valor</th>
+              <th className="py-2 px-2">Data</th><th className="py-2 px-2">Linha</th><th className="py-2 px-2">Valor</th>
               <th className="py-2 px-2">Status</th><th className="py-2 px-2"></th>
             </tr></thead>
             <tbody>
@@ -1042,6 +1044,14 @@ function ProposalsTab() {
                   <td className="py-2 px-2 font-medium">{p.clientData?.name || 'Sem nome'}</td>
                   <td className="py-2 px-2">{p.clientData?.seller}</td>
                   <td className="py-2 px-2">{new Date(p.createdAt).toLocaleDateString('pt-BR')}</td>
+                  <td className="py-2 px-2">
+                    <span className="solar-badge bg-primary/10 text-primary text-xs">
+                      {LINE_NAMES[p.selectedLine || p.dados_completos?.selectedLine] || p.selectedLine || '—'}
+                    </span>
+                    {(p.customKit || p.dados_completos?.customKit) && (
+                      <span className="solar-badge bg-secondary/20 text-secondary-foreground text-xs ml-1">Personalizada</span>
+                    )}
+                  </td>
                   <td className="py-2 px-2 font-medium">{formatCurrency(p.totalPrice)}</td>
                   <td className="py-2 px-2"><span className={`solar-badge ${STATUS_COLORS[p.status]}`}>{STATUS_LABELS[p.status]}</span></td>
                   <td className="py-2 px-2">
