@@ -225,7 +225,8 @@ export async function generateProposalPDF(
   doc.setFontSize(8);
   doc.setFont('helvetica', 'normal');
   setColor(GRAY);
-  const inclusoText = 'Sistema solar + Material de instalação + Análise de sombreamento + Homologação + 3 Anos de garantia de instalação e acompanhamento';
+  const surplusPct = settings.surplusFactor ?? 20;
+  const inclusoText = `Sistema solar + Material de instalação + Análise de sombreamento + Homologação + 3 Anos de garantia de instalação e acompanhamento • Dimensionado com ${surplusPct}% de reserva para crescimento futuro`;
   const inclusoLines = doc.splitTextToSize(inclusoText, CW);
   doc.text(inclusoLines, W / 2, y, { align: 'center' });
 
