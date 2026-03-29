@@ -747,11 +747,15 @@ export default function CalculatorPage() {
                 <Bar dataKey="consumo" stackId="consumption" fill="#E8B84B"
                   maxBarSize={typeof window !== 'undefined' && window.innerWidth < 768 ? 40 : undefined} />
               )}
-              {equipment.map((eq, idx) => (
-                <Bar key={eq.id} dataKey={eq.label} stackId="consumption"
-                  fill={EQUIPMENT_COLORS[idx % EQUIPMENT_COLORS.length]}
-                  maxBarSize={typeof window !== 'undefined' && window.innerWidth < 768 ? 40 : undefined} />
-              ))}
+              {equipment.map((eq, idx) => {
+                const qty = (eq as any).quantity || 1;
+                const eqLabel = qty > 1 ? `${eq.label} (x${qty})` : eq.label;
+                return (
+                  <Bar key={eq.id} dataKey={eqLabel} stackId="consumption"
+                    fill={EQUIPMENT_COLORS[idx % EQUIPMENT_COLORS.length]}
+                    maxBarSize={typeof window !== 'undefined' && window.innerWidth < 768 ? 40 : undefined} />
+                );
+              })}
             </BarChart>
           </ResponsiveContainer>
         </div>
