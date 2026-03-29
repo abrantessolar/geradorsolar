@@ -300,7 +300,7 @@ export default function ProposalPage() {
       {/* Click outside to close share menu */}
       {showShareMenu && <div className="fixed inset-0 z-40" onClick={() => setShowShareMenu(false)} />}
 
-      <div className="max-w-5xl mx-auto py-8 px-4 space-y-12 print-container">
+      <div className="max-w-5xl mx-auto py-4 sm:py-8 px-2 sm:px-4 space-y-8 sm:space-y-12 print-container">
         {/* COVER */}
         <section className="text-center space-y-6 py-16 relative overflow-hidden print-page print-cover">
           <div className="absolute inset-0 opacity-5 no-print">
@@ -569,7 +569,7 @@ export default function ProposalPage() {
               </p>
 
               {/* Savings cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                 {[5, 10, 15].map(years => (
                   <div key={years} className="solar-card p-5 space-y-2" style={{ borderLeft: '4px solid #4A5A2A' }}>
                     <div className="flex items-center gap-2">
