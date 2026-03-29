@@ -22,11 +22,14 @@ const PERIOD_OPTIONS = [5, 10, 15, 20, 25];
 export default function ProposalPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { session } = useAuth();
+  const isAuthenticated = !!session;
   const [proposal, setProposal] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [isPrinting, setIsPrinting] = useState(false);
   const [pdfBlobUrl, setPdfBlobUrl] = useState<string | null>(null);
   const [showPdfViewer, setShowPdfViewer] = useState(false);
+  const [showCostPanel, setShowCostPanel] = useState(false);
   const settings = getSettings();
   const socialProofs = getSocialProofs().filter(s => s.active);
 
