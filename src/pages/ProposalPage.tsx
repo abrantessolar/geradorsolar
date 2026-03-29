@@ -24,6 +24,8 @@ export default function ProposalPage() {
   const [proposal, setProposal] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [isPrinting, setIsPrinting] = useState(false);
+  const [pdfBlobUrl, setPdfBlobUrl] = useState<string | null>(null);
+  const [showPdfViewer, setShowPdfViewer] = useState(false);
   const settings = getSettings();
   const socialProofs = getSocialProofs().filter(s => s.active);
 
