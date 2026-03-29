@@ -515,7 +515,7 @@ export async function generateProposalPDF(
   doc.text('Sua economia com energia solar', M, y);
   y += 7;
 
-  const cardW = CW / 3 - 2;
+  const cardW = CW / Math.max(savingsItems.length, 1) - 2;
   savingsItems.forEach((item, i) => {
     const sx = M + i * (cardW + 3);
     setFill([245, 250, 238]);
