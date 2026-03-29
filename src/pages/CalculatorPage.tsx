@@ -312,19 +312,29 @@ export default function CalculatorPage() {
       monthlyValues: u.mode === 'monthly' ? u.monthlyValues : undefined,
     }));
 
+    const custom = customKits[card.line];
+    const isCustom = custom?.enabled;
+
     const proposal: Proposal = {
       id: crypto.randomUUID(),
       clientData: { ...client, id: crypto.randomUUID() },
       consumption, consumerUnits: consumerUnitsForProposal, equipment,
       selectedLine: card.line,
-      selectedKit: { inverter: card.inverter, panel: card.panel, panelCount: card.panelCount },
+      selectedKit: isCustom
+        ? {
+            inverter: { id: 'custom', line: card.line as any, type: 'inversor', brand: custom.inverterBrand, model: custom.inverterModel, power: custom.inverterPower, warranty: 10, costPrice: 0, minPower: 0, maxPower: 999, active: true },
+            panel: { id: 'custom', line: card.line as any, type: 'placa', brand: custom.panelBrand, model: custom.panelModel, power: custom.panelPowerWp, warranty: 25, costPrice: 0, minPower: 0, maxPower: 999, active: true },
+            panelCount: custom.panelCount,
+          }
+        : { inverter: card.inverter, panel: card.panel, panelCount: card.panelCount },
       totalPrice: card.totalPrice,
       installmentValues: card.installments,
       cetApplied: null,
       status: 'enviada',
       createdAt: new Date().toISOString(),
       dimensioning: card.dimensioning,
-    };
+      customKit: isCustom ? custom : undefined,
+    } as any;
     // Save to localStorage (fallback) and Supabase
     saveProposal(proposal);
     savePropostaDB(proposal).then(dbId => {
