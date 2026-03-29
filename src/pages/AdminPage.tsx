@@ -233,6 +233,7 @@ function UsersTab() {
 function EditUserModal({ user, onClose, callApi }: { user: any; onClose: () => void; callApi: (body: any) => Promise<any> }) {
   const [nome, setNome] = useState(user.nome);
   const [email, setEmail] = useState(user.email);
+  const [telefone, setTelefone] = useState(user.telefone || '');
   const [role, setRole] = useState(user.role);
   const [password, setPassword] = useState('');
   const [saving, setSaving] = useState(false);
@@ -241,7 +242,7 @@ function EditUserModal({ user, onClose, callApi }: { user: any; onClose: () => v
   const handleSave = async () => {
     setSaving(true);
     setError('');
-    const updates: any = { nome, role };
+    const updates: any = { nome, role, telefone };
     if (email !== user.email) updates.email = email;
     if (password) updates.password = password;
     const { data, error: err } = await callApi({ action: 'update', user_id: user.user_id, ...updates });
