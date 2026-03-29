@@ -91,8 +91,24 @@ export async function generateProposalPDF(
 
   // Cover: largest image — compress aggressively
   const coverImgData = await compressImage(pdfCoverImg, 1200, 0.70);
-  // Portfolio: many photos — compress more
-  const portfolioImgData = await compressImage(pdfPortfolioImg, 1200, 0.60);
+
+  // Load portfolio photos from DB
+  let portfolioPhotos: string[] = [];
+  try {
+    const { data } = await supabase
+      .from('fotos_portfolio')
+      .select('url')
+      .eq('ativo', true)
+      .order('criado_em', { ascending: true })
+      .limit(16);
+    if (data && data.length > 0) {
+      portfolioPhotos = data.map(d => d.url);
+    } else {
+      portfolioPhotos = FALLBACK_PHOTOS.slice(0, 16);
+    }
+  } catch {
+    portfolioPhotos = FALLBACK_PHOTOS.slice(0, 16);
+  }
 
   // ═══════════════════════════════════════
   // PAGE 1: COVER (using uploaded template image)
