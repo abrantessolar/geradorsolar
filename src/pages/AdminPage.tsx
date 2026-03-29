@@ -355,6 +355,75 @@ function PriceTableTab() {
   const [table, setTable] = useState<PriceTableEntry[]>(initial);
   const [bulkFillCol, setBulkFillCol] = useState<string | null>(null);
   const [bulkFillValue, setBulkFillValue] = useState('');
+  const [showSaveWarning, setShowSaveWarning] = useState(false);
+
+  // Keyboard navigation state
+  const [activeCell, setActiveCell] = useState<{ row: number; col: number } | null>(null);
+  const cellRefs = useRef<Map<string, HTMLInputElement>>(new Map());
+  const setCellRef = useCallback((row: number, col: number, el: HTMLInputElement | null) => {
+    const key = `${row}-${col}`;
+    if (el) cellRefs.current.set(key, el);
+    else cellRefs.current.delete(key);
+  }, []);
+
+  const LINES_ARR = [
+    { key: 'excellence' as const, name: LINE_NAMES.excellence },
+    { key: 'premium' as const, name: LINE_NAMES.premium },
+  ];
+
+  const DETAIL_COLS: { key: keyof PriceTableLineDetails; label: string; short: string }[] = [
+    { key: 'inverterBrand', label: 'Marca Inv.', short: 'M.Inv' },
+    { key: 'inverterPower', label: 'Pot. Inv.', short: 'P.Inv' },
+    { key: 'panelBrand', label: 'Marca Placa', short: 'M.Plc' },
+    { key: 'panelPower', label: 'Pot. Placa', short: 'P.Plc' },
+  ];
+
+  // Total columns per line: 1 cost + 4 detail = 5; total cols = 5 * 2 = 10
+  const TOTAL_COLS = LINES_ARR.length * 5;
+
+  const focusCell = (row: number, col: number) => {
+    const maxRow = table.length - 1;
+    const clampedRow = Math.max(0, Math.min(row, maxRow));
+    const clampedCol = Math.max(0, Math.min(col, TOTAL_COLS - 1));
+    setActiveCell({ row: clampedRow, col: clampedCol });
+    const el = cellRefs.current.get(`${clampedRow}-${clampedCol}`);
+    if (el) { el.focus(); el.select(); }
+  };
+
+  const handleCellKeyDown = (e: React.KeyboardEvent, row: number, col: number) => {
+    if (e.key === 'ArrowRight') { e.preventDefault(); focusCell(row, col + 1); }
+    else if (e.key === 'ArrowLeft') { e.preventDefault(); focusCell(row, col - 1); }
+    else if (e.key === 'ArrowDown') { e.preventDefault(); focusCell(row + 1, col); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); focusCell(row - 1, col); }
+    else if (e.key === 'Enter') { e.preventDefault(); focusCell(row + 1, col); }
+    else if (e.key === 'Tab' && !e.shiftKey) { e.preventDefault(); focusCell(row, col + 1); }
+    else if (e.key === 'Tab' && e.shiftKey) { e.preventDefault(); focusCell(row, col - 1); }
+    else if (e.key === 'Escape') { e.preventDefault(); (e.target as HTMLInputElement).blur(); setActiveCell(null); }
+  };
+
+  // 1.5x validation helper
+  const getValidation = (row: PriceTableEntry, lineKey: string) => {
+    const details = (row.details as any)?.[lineKey] as PriceTableLineDetails | undefined;
+    const inverterPowerStr = details?.inverterPower;
+    const panelPowerStr = details?.panelPower;
+    if (!inverterPowerStr || !panelPowerStr) return null;
+    const inverterKw = parseFloat(inverterPowerStr);
+    const panelWp = parseFloat(panelPowerStr);
+    if (isNaN(inverterKw) || isNaN(panelWp) || inverterKw <= 0 || panelWp <= 0) return null;
+    if (lineKey === 'premium') return null; // micro inverters don't apply
+    const panelKwp = panelWp / 1000;
+    const totalPanelKwp = row.panels * panelKwp;
+    const limit = inverterKw * 1.5;
+    const margin = limit - totalPanelKwp;
+    return { totalPanelKwp, limit, margin, valid: totalPanelKwp <= limit, inverterKw };
+  };
+
+  const hasAnyViolation = table.some(row =>
+    LINES_ARR.some(line => {
+      const v = getValidation(row, line.key);
+      return v && !v.valid;
+    })
+  );
 
   const updateCell = (idx: number, field: 'acesso' | 'excellence' | 'premium', value: string) => {
     const num = value === '' ? null : parseFloat(value);
@@ -379,14 +448,12 @@ function PriceTableTab() {
     if (!bulkFillCol) return;
     const parts = bulkFillCol.split('.');
     if (parts.length === 1) {
-      // Cost column (e.g., 'acesso')
       const line = parts[0] as 'acesso' | 'excellence' | 'premium';
       const num = parseFloat(bulkFillValue);
       if (!isNaN(num)) {
         setTable(prev => prev.map(row => ({ ...row, [line]: row[line] ?? num })));
       }
     } else {
-      // Detail column (e.g., 'acesso.inverterBrand')
       const [line, field] = parts;
       setTable(prev => prev.map(row => ({
         ...row,
@@ -403,18 +470,14 @@ function PriceTableTab() {
   const generateEstimates = () => {
     const lines: ('acesso' | 'excellence' | 'premium')[] = ['acesso', 'excellence', 'premium'];
     const newTable = [...table.map(r => ({ ...r, estimated: { ...r.estimated } }))];
-
     lines.forEach(line => {
       const filled = newTable.filter(r => r[line] !== null && r[line]! > 0).map(r => ({ panels: r.panels, value: r[line]! }));
       if (filled.length < 2) return;
-
       const increments: number[] = [];
       for (let i = 1; i < filled.length; i++) {
-        const inc = (filled[i].value - filled[i - 1].value) / (filled[i].panels - filled[i - 1].panels);
-        increments.push(inc);
+        increments.push((filled[i].value - filled[i - 1].value) / (filled[i].panels - filled[i - 1].panels));
       }
       const avgInc = increments.reduce((a, b) => a + b, 0) / increments.length;
-
       newTable.forEach((row, idx) => {
         if (row[line] !== null) return;
         const before = filled.filter(f => f.panels < row.panels).pop();
@@ -428,8 +491,7 @@ function PriceTableTab() {
           if (line === 'premium') {
             const microsBefore = Math.ceil(before.panels / 4);
             const microsNow = Math.ceil(row.panels / 4);
-            const extraMicros = microsNow - microsBefore;
-            estimated = before.value + (row.panels - before.panels) * avgInc + extraMicros * 300;
+            estimated = before.value + (row.panels - before.panels) * avgInc + (microsNow - microsBefore) * 300;
           } else {
             estimated = before.value + (row.panels - before.panels) * avgInc;
           }
@@ -444,19 +506,20 @@ function PriceTableTab() {
     setTable(newTable);
   };
 
-  const handleSave = () => { savePriceTable(table); savePriceTableDB(table); };
+  const handleSave = () => {
+    if (hasAnyViolation) {
+      setShowSaveWarning(true);
+    } else {
+      savePriceTable(table);
+      savePriceTableDB(table);
+    }
+  };
 
-  const DETAIL_COLS: { key: keyof PriceTableLineDetails; label: string; short: string }[] = [
-    { key: 'inverterBrand', label: 'Marca Inv.', short: 'M.Inv' },
-    { key: 'inverterPower', label: 'Pot. Inv.', short: 'P.Inv' },
-    { key: 'panelBrand', label: 'Marca Placa', short: 'M.Plc' },
-    { key: 'panelPower', label: 'Pot. Placa', short: 'P.Plc' },
-  ];
-
-  const LINES_ARR = [
-    { key: 'excellence' as const, name: LINE_NAMES.excellence },
-    { key: 'premium' as const, name: LINE_NAMES.premium },
-  ];
+  const confirmSave = () => {
+    savePriceTable(table);
+    savePriceTableDB(table);
+    setShowSaveWarning(false);
+  };
 
   const BulkFillButton = ({ colKey }: { colKey: string }) => (
     <button onClick={() => { setBulkFillCol(colKey); setBulkFillValue(''); }}
@@ -464,94 +527,177 @@ function PriceTableTab() {
   );
 
   return (
-    <div className="solar-card p-6 space-y-4">
-      <div className="flex items-center justify-between flex-wrap gap-2">
-        <h2 className="text-lg font-bold text-primary">Tabela de Preços dos Kits</h2>
-        <div className="flex gap-2">
-          <button onClick={generateEstimates} className="solar-btn-outline text-sm py-2 px-3 flex items-center gap-1">
-            <Wand2 className="w-4 h-4" /> Gerar Estimativas
-          </button>
-          <button onClick={handleSave} className="solar-btn-primary text-sm py-2 px-3 flex items-center gap-1">
-            <Save className="w-4 h-4" /> Salvar tabela
-          </button>
-        </div>
-      </div>
-
-      {/* Bulk fill modal */}
-      {bulkFillCol && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center" onClick={() => setBulkFillCol(null)}>
-          <div className="bg-card rounded-xl p-6 max-w-sm w-full mx-4 space-y-4" onClick={e => e.stopPropagation()}>
-            <h3 className="text-lg font-bold text-primary">Preencher coluna inteira</h3>
-            <p className="text-sm text-muted-foreground">
-              Todas as células da coluna serão preenchidas com este valor. Células com valores existentes serão substituídas.
-            </p>
-            <input className="solar-input" value={bulkFillValue} onChange={e => setBulkFillValue(e.target.value)}
-              placeholder="Digite o valor" autoFocus onKeyDown={e => { if (e.key === 'Enter') applyBulkFill(); }} />
-            <div className="flex gap-2 justify-end">
-              <button onClick={() => setBulkFillCol(null)} className="solar-btn-outline text-sm py-2">Cancelar</button>
-              <button onClick={applyBulkFill} className="solar-btn-primary text-sm py-2">Aplicar</button>
-            </div>
+    <TooltipProvider>
+      <div className="solar-card p-6 space-y-4">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <h2 className="text-lg font-bold text-primary">Tabela de Preços dos Kits</h2>
+          <div className="flex gap-2">
+            <button onClick={generateEstimates} className="solar-btn-outline text-sm py-2 px-3 flex items-center gap-1">
+              <Wand2 className="w-4 h-4" /> Gerar Estimativas
+            </button>
+            <button onClick={handleSave} className="solar-btn-primary text-sm py-2 px-3 flex items-center gap-1">
+              <Save className="w-4 h-4" /> Salvar tabela
+            </button>
           </div>
         </div>
-      )}
 
-      <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
-        <table className="w-full text-xs">
-          <thead className="sticky top-0 bg-card z-10">
-            <tr className="border-b border-border text-left text-muted-foreground">
-              <th className="py-2 px-1 w-14" rowSpan={2}>Nº</th>
-              {LINES_ARR.map(line => (
-                <th key={line.key} className="py-1 px-1 text-center border-l border-border/50" colSpan={5}>
-                  {line.name}
-                </th>
-              ))}
-            </tr>
-            <tr className="border-b border-border text-muted-foreground text-[10px]">
-              {LINES_ARR.map(line => (
-                <>
-                  <th key={`${line.key}-cost`} className="py-1 px-1 border-l border-border/50">
-                    Custo <BulkFillButton colKey={line.key} />
+        {/* Save warning modal */}
+        {showSaveWarning && (
+          <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center" onClick={() => setShowSaveWarning(false)}>
+            <div className="bg-card rounded-xl p-6 max-w-md w-full mx-4 space-y-4" onClick={e => e.stopPropagation()}>
+              <div className="flex items-center gap-2 text-amber-500">
+                <AlertTriangle className="w-6 h-6" />
+                <h3 className="text-lg font-bold">Atenção — Limite 1,5x ultrapassado</h3>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Algumas combinações na tabela ultrapassam o limite técnico de 1,5x da potência do inversor.
+                Deseja salvar mesmo assim?
+              </p>
+              <div className="flex gap-2 justify-end">
+                <button onClick={() => setShowSaveWarning(false)} className="solar-btn-outline text-sm py-2">Cancelar</button>
+                <button onClick={confirmSave} className="solar-btn-primary text-sm py-2">Salvar mesmo assim</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Bulk fill modal */}
+        {bulkFillCol && (
+          <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center" onClick={() => setBulkFillCol(null)}>
+            <div className="bg-card rounded-xl p-6 max-w-sm w-full mx-4 space-y-4" onClick={e => e.stopPropagation()}>
+              <h3 className="text-lg font-bold text-primary">Preencher coluna inteira</h3>
+              <p className="text-sm text-muted-foreground">
+                Todas as células da coluna serão preenchidas com este valor. Células com valores existentes serão substituídas.
+              </p>
+              <input className="solar-input" value={bulkFillValue} onChange={e => setBulkFillValue(e.target.value)}
+                placeholder="Digite o valor" autoFocus onKeyDown={e => { if (e.key === 'Enter') applyBulkFill(); }} />
+              <div className="flex gap-2 justify-end">
+                <button onClick={() => setBulkFillCol(null)} className="solar-btn-outline text-sm py-2">Cancelar</button>
+                <button onClick={applyBulkFill} className="solar-btn-primary text-sm py-2">Aplicar</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <p className="text-xs text-muted-foreground">
+          Use as setas do teclado para navegar entre células. Enter avança para baixo, Tab avança para a direita, Esc cancela.
+        </p>
+
+        <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
+          <table className="w-full text-xs">
+            <thead className="sticky top-0 bg-card z-10">
+              <tr className="border-b border-border text-left text-muted-foreground">
+                <th className="py-2 px-1 w-14" rowSpan={2}>Nº</th>
+                <th className="py-2 px-1 w-8" rowSpan={2}>✓</th>
+                {LINES_ARR.map(line => (
+                  <th key={line.key} className="py-1 px-1 text-center border-l border-border/50" colSpan={5}>
+                    {line.name}
                   </th>
-                  {DETAIL_COLS.map(col => (
-                    <th key={`${line.key}-${col.key}`} className="py-1 px-1">
-                      {col.short} <BulkFillButton colKey={`${line.key}.${col.key}`} />
-                    </th>
-                  ))}
-                </>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {table.map((row, idx) => (
-              <tr key={row.panels} className="border-b border-border/50 hover:bg-muted/30">
-                <td className="py-1 px-1 font-medium text-muted-foreground">{row.panels}</td>
-                {LINES_ARR.map(line => {
-                  const isEstimated = row.estimated?.[line.key];
-                  const details = (row.details as any)?.[line.key] as PriceTableLineDetails | undefined;
-                  return (
-                    <>
-                      <td key={`${line.key}-cost-${idx}`} className="py-1 px-1 border-l border-border/50">
-                        <input
-                          className={`solar-input py-0.5 text-xs w-20 ${isEstimated ? 'italic text-muted-foreground' : ''}`}
-                          type="number" value={row[line.key] ?? ''} placeholder="—"
-                          onChange={e => updateCell(idx, line.key, e.target.value)} />
-                      </td>
-                      {DETAIL_COLS.map(col => (
-                        <td key={`${line.key}-${col.key}-${idx}`} className="py-1 px-1">
-                          <input className="solar-input py-0.5 text-xs w-20"
-                            value={details?.[col.key] || ''} placeholder="—"
-                            onChange={e => updateDetail(idx, line.key, col.key, e.target.value)} />
-                        </td>
-                      ))}
-                    </>
-                  );
-                })}
+                ))}
               </tr>
-            ))}
-          </tbody>
-        </table>
+              <tr className="border-b border-border text-muted-foreground text-[10px]">
+                {LINES_ARR.map(line => (
+                  <React.Fragment key={`head-${line.key}`}>
+                    <th className="py-1 px-1 border-l border-border/50">
+                      Custo <BulkFillButton colKey={line.key} />
+                    </th>
+                    {DETAIL_COLS.map(col => (
+                      <th key={`${line.key}-${col.key}`} className="py-1 px-1">
+                        {col.short} <BulkFillButton colKey={`${line.key}.${col.key}`} />
+                      </th>
+                    ))}
+                  </React.Fragment>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {table.map((row, idx) => {
+                // Check validation for each line
+                const validations = LINES_ARR.map(line => ({
+                  key: line.key,
+                  v: getValidation(row, line.key),
+                }));
+                const hasViolation = validations.some(x => x.v && !x.v.valid);
+                const hasValidation = validations.some(x => x.v !== null);
+                const allValid = hasValidation && validations.every(x => !x.v || x.v.valid);
+
+                return (
+                  <React.Fragment key={row.panels}>
+                    <tr className={`border-b border-border/50 hover:bg-muted/30 ${hasViolation ? 'bg-destructive/5' : ''}`}>
+                      <td className="py-1 px-1 font-medium text-muted-foreground">{row.panels}</td>
+                      <td className="py-1 px-1">
+                        {hasViolation ? (
+                          <Tooltip>
+                            <TooltipTrigger>
+                              <AlertTriangle className="w-3.5 h-3.5 text-destructive" />
+                            </TooltipTrigger>
+                            <TooltipContent className="max-w-xs text-xs">
+                              {validations.filter(x => x.v && !x.v.valid).map(x => (
+                                <p key={x.key}>
+                                  {LINE_NAMES[x.key]}: Potência das placas ({x.v!.totalPanelKwp.toFixed(2)} kWp) ultrapassa 1,5x do inversor ({x.v!.inverterKw} kW). Máximo: {x.v!.limit.toFixed(2)} kWp
+                                </p>
+                              ))}
+                            </TooltipContent>
+                          </Tooltip>
+                        ) : allValid ? (
+                          <CheckCircle className="w-3.5 h-3.5 text-green-500" />
+                        ) : null}
+                      </td>
+                      {LINES_ARR.map((line, lineIdx) => {
+                        const isEstimated = row.estimated?.[line.key];
+                        const details = (row.details as any)?.[line.key] as PriceTableLineDetails | undefined;
+                        const colBase = lineIdx * 5;
+                        return (
+                          <React.Fragment key={`${line.key}-${idx}`}>
+                            <td className="py-1 px-1 border-l border-border/50">
+                              <input
+                                ref={el => setCellRef(idx, colBase, el)}
+                                className={`solar-input py-0.5 text-xs w-20 ${isEstimated ? 'italic text-muted-foreground' : ''} ${activeCell?.row === idx && activeCell?.col === colBase ? 'ring-2 ring-[#E8B84B]' : ''}`}
+                                type="number" value={row[line.key] ?? ''} placeholder="—"
+                                onChange={e => updateCell(idx, line.key, e.target.value)}
+                                onFocus={() => setActiveCell({ row: idx, col: colBase })}
+                                onKeyDown={e => handleCellKeyDown(e, idx, colBase)} />
+                            </td>
+                            {DETAIL_COLS.map((col, colIdx) => {
+                              const c = colBase + 1 + colIdx;
+                              return (
+                                <td key={`${line.key}-${col.key}-${idx}`} className="py-1 px-1">
+                                  <input
+                                    ref={el => setCellRef(idx, c, el)}
+                                    className={`solar-input py-0.5 text-xs w-20 ${activeCell?.row === idx && activeCell?.col === c ? 'ring-2 ring-[#E8B84B]' : ''}`}
+                                    value={details?.[col.key] || ''} placeholder="—"
+                                    onChange={e => updateDetail(idx, line.key, col.key, e.target.value)}
+                                    onFocus={() => setActiveCell({ row: idx, col: c })}
+                                    onKeyDown={e => handleCellKeyDown(e, idx, c)} />
+                                </td>
+                              );
+                            })}
+                          </React.Fragment>
+                        );
+                      })}
+                    </tr>
+                    {/* Validation footer for this row */}
+                    {validations.some(x => x.v !== null) && (
+                      <tr className="border-b border-border/30">
+                        <td colSpan={2 + TOTAL_COLS} className="py-0.5 px-2">
+                          <div className="flex flex-wrap gap-4 text-[10px] text-muted-foreground">
+                            {validations.filter(x => x.v !== null).map(x => (
+                              <span key={x.key} className={!x.v!.valid ? 'text-destructive' : 'text-green-600'}>
+                                {LINE_NAMES[x.key]}: {x.v!.totalPanelKwp.toFixed(2)} kWp | Lim: {x.v!.limit.toFixed(2)} kWp | Margem: {x.v!.margin.toFixed(2)} kWp
+                              </span>
+                            ))}
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       </div>
-    </div>
+    </TooltipProvider>
   );
 }
 
