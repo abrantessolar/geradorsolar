@@ -195,7 +195,7 @@ export default function ProposalPage() {
         yearlyWithSolar = year === 0 ? selectedCard.totalPrice + minFee * 12 : minFee * 12;
       } else if (cashflowMode === 'card') {
         const bestCard = Object.values(selectedCard.cardInstallments).pop();
-        const cardMonthly = bestCard ? bestCard.perMonth : selectedCard.totalPrice / 12;
+        const cardMonthly = bestCard ? (bestCard as any).perMonth : selectedCard.totalPrice / 12;
         const cardMonths = bestCard ? Number(Object.keys(selectedCard.cardInstallments).pop()) : 12;
         yearlyWithSolar = year === 0 ? (cardMonthly * Math.min(cardMonths, 12) + minFee * 12) : (year * 12 < cardMonths ? (cardMonthly * 12 + minFee * 12) : minFee * 12);
       } else {
@@ -540,7 +540,7 @@ export default function ProposalPage() {
                         {Object.entries(card.cardInstallments).map(([n, v]) => (
                           <div key={n} className="flex justify-between">
                             <span className="text-muted-foreground">{n}×</span>
-                            <span className="font-medium">{formatCurrency(v.perMonth)}</span>
+                            <span className="font-medium">{formatCurrency((v as any).perMonth)}</span>
                           </div>
                         ))}
                       </div>
