@@ -365,7 +365,9 @@ export default function CalculatorPage() {
         }
       }
       equipment.forEach((eq, idx) => {
-        row[eq.label || `Equip ${idx + 1}`] = Math.round(calcEquipmentMonthly(eq) * SEASONAL_FACTORS[k]);
+        const qty = (eq as any).quantity || 1;
+        const eqLabel = qty > 1 ? `${eq.label} (x${qty})` : (eq.label || `Equip ${idx + 1}`);
+        row[eqLabel] = Math.round(calcEquipmentMonthly(eq) * qty * SEASONAL_FACTORS[k]);
       });
       return row;
     });
@@ -495,6 +497,7 @@ export default function CalculatorPage() {
             <label className="block text-sm font-medium mb-1">Cidade</label>
             <input className="solar-input" value={client.city}
               onChange={e => handleCityChange(e.target.value)}
+              placeholder="Clique ou escreva a cidade"
               onFocus={() => { if (citySuggestions.length > 0) setShowCitySuggestions(true); }}
               onBlur={() => setTimeout(() => setShowCitySuggestions(false), 200)}
             />
