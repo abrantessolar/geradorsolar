@@ -18,7 +18,7 @@ import {
   formatCurrency, formatNumber, maxPanelsForInverter, calcMicroInverterCount,
 } from '@/data/calculations';
 import { getSettings, saveProposal, lookupIrradiation, getPriceTable } from '@/data/store';
-import { savePropostaDB, searchCidadesDB } from '@/data/supabaseStore';
+import { savePropostaDB, searchCidadesDB, syncKitsFromDB, syncPriceTableFromDB } from '@/data/supabaseStore';
 import type { Proposal, PriceTableEntry, PriceTableLineDetails } from '@/data/types';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -219,7 +219,23 @@ export default function CalculatorPage() {
 
   const finalPanels = Math.max(1, basePanelCount + panelDelta);
 
-  const priceTable = useMemo(() => getPriceTable(), []);
+  const [priceTable, setPriceTable] = useState<PriceTableEntry[]>(() => getPriceTable());
+  const [dbDataLoaded, setDbDataLoaded] = useState(false);
+
+  // Load kits and price table from database
+  useEffect(() => {
+    const loadFromDB = async () => {
+      try {
+        const [kits, pt] = await Promise.all([syncKitsFromDB(), syncPriceTableFromDB()]);
+        if (pt.length > 0) setPriceTable(pt);
+        setDbDataLoaded(true);
+      } catch (e) {
+        console.error('Erro ao carregar dados do banco:', e);
+        setDbDataLoaded(true);
+      }
+    };
+    loadFromDB();
+  }, []);
 
   // Find best price table entry for a given line and panel count
   const findPriceTableEntry = useCallback((line: 'essencial' | 'excellence' | 'premium', panels: number): PriceTableEntry | null => {
@@ -306,7 +322,7 @@ export default function CalculatorPage() {
         dimensioning: { ...dim, panelCount: usedPanels, powerKwp, monthlyGeneration, surplus },
       };
     });
-  }, [consumption, equipment, client, irradiation, finalPanels, settings.systemLoss, settings.creditCardRates, findPriceTableEntry, customKits]);
+  }, [consumption, equipment, client, irradiation, finalPanels, settings.systemLoss, settings.creditCardRates, findPriceTableEntry, customKits, dbDataLoaded]);
 
   const chartData = useMemo(() => {
     const baseDim = systemCards[0]?.dimensioning;

@@ -1,6 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import type { AdminSettings, Kit, Proposal, SocialProof, PriceTableEntry, Seller, Distributor } from './types';
 import { CA_MATERIAL_TABLE_DEFAULT, DEFAULT_CARD_RATES } from './types';
+import { saveKits, savePriceTable } from './store';
 
 // ─── VENDEDORES ───
 export async function getVendedoresDB(): Promise<Seller[]> {
@@ -277,4 +278,41 @@ export async function listCidadesDB(page: number = 0, pageSize: number = 50, sea
   
   const { data, count } = await query;
   return { data: data || [], total: count || 0 };
+}
+
+// ─── EQUIPAMENTOS (KITS) DO BANCO ───
+export async function getEquipamentosDB(): Promise<Kit[]> {
+  const { data } = await supabase.from('equipamentos_kits').select('*').eq('ativo', true);
+  if (!data || data.length === 0) return [];
+  return data.map(d => ({
+    id: d.id,
+    line: d.linha as Kit['line'],
+    type: d.tipo as 'inversor' | 'placa',
+    brand: d.marca || '',
+    model: d.modelo || '',
+    power: Number(d.potencia) || 0,
+    warranty: d.garantia || 0,
+    costPrice: Number(d.preco_custo) || 0,
+    minPower: Number(d.potencia_min) || 0,
+    maxPower: Number(d.potencia_max) || 999,
+    active: d.ativo,
+  }));
+}
+
+// Load kits from DB and sync to localStorage so calculation functions work
+export async function syncKitsFromDB(): Promise<Kit[]> {
+  const kits = await getEquipamentosDB();
+  if (kits.length > 0) {
+    saveKits(kits);
+  }
+  return kits;
+}
+
+// Load price table from DB and sync to localStorage
+export async function syncPriceTableFromDB(): Promise<PriceTableEntry[]> {
+  const table = await getPriceTableDB();
+  if (table.length > 0) {
+    savePriceTable(table);
+  }
+  return table;
 }
