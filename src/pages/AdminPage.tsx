@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   getSettings, saveSettings, getKits, saveKits, getProposals,
   getSocialProofs, saveSocialProofs,
