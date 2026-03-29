@@ -1,57 +1,30 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Calendar, Shield, FileText, Building2, CreditCard, Zap, BadgeCheck, Plane, Eye, X } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
-const DIFERENCIAIS = [
-  {
-    icon: Calendar,
-    title: 'Acompanhamento por 3 anos',
-    text: 'Monitoramos sua usina no pós-venda para mais segurança e tranquilidade.',
-    modal: null,
-  },
-  {
-    icon: Shield,
-    title: '3 anos de garantia da instalação',
-    text: 'Garantia do nosso serviço, com montagem segura e acabamento profissional.',
-    modal: null,
-  },
-  {
-    icon: FileText,
-    title: 'Geração garantida em contrato',
-    text: 'Dimensionamento técnico com compromisso formal de geração.',
-    modal: { type: 'text' as const, label: 'Contrato de geração garantida' },
-  },
-  {
-    icon: Building2,
-    title: 'Empresa sólida',
-    text: 'Atendimento responsável, estrutura profissional e relação de longo prazo.',
-    modal: { type: 'image' as const, url: 'https://static.wixstatic.com/media/c2ae0d_a39bd5c40b7548248101a986677e534a~mv2.jpg', alt: 'Sede da Três Lagoas Solar' },
-  },
-  {
-    icon: CreditCard,
-    title: 'Financiamento facilitado',
-    text: 'Você financia com a nossa ajuda, sem precisar ir ao banco.',
-    modal: null,
-  },
-  {
-    icon: Zap,
-    title: 'Sistema solar completo',
-    text: 'Entregamos todos os equipamentos e componentes da solução.',
-    modal: { type: 'image' as const, url: 'https://static.wixstatic.com/media/c2ae0d_894355b5cb6445ba9c1277ddecfb6ec6~mv2.png', alt: 'Equipamentos de energia solar' },
-  },
-  {
-    icon: BadgeCheck,
-    title: 'Materiais selecionados',
-    text: 'Usamos estrutura, proteções e acessórios de instalação com padrão de qualidade.',
-    modal: null,
-  },
-  {
-    icon: Plane,
-    title: 'Análise 3D com drone',
-    text: 'Estudo técnico de sombreamento para máxima eficiência do projeto.',
-    modal: { type: 'image' as const, url: 'https://static.wixstatic.com/media/c2ae0d_3e01f00f92804e79ac321e54ad8f4d75~mv2.jpg', alt: 'Análise aérea com drone' },
-  },
-];
+const DEFAULT_IMAGES: Record<string, string> = {
+  empresa_solida: 'https://static.wixstatic.com/media/c2ae0d_a39bd5c40b7548248101a986677e534a~mv2.jpg',
+  sistema_completo: 'https://static.wixstatic.com/media/c2ae0d_894355b5cb6445ba9c1277ddecfb6ec6~mv2.png',
+  analise_drone: 'https://static.wixstatic.com/media/c2ae0d_3e01f00f92804e79ac321e54ad8f4d75~mv2.jpg',
+};
+
+function buildDiferenciais(images: Record<string, string>) {
+  const img = (key: string) => images[key] || DEFAULT_IMAGES[key] || '';
+  return [
+    { icon: Calendar, title: 'Acompanhamento por 3 anos', text: 'Monitoramos sua usina no pós-venda para mais segurança e tranquilidade.', modal: null },
+    { icon: Shield, title: '3 anos de garantia da instalação', text: 'Garantia do nosso serviço, com montagem segura e acabamento profissional.', modal: null },
+    { icon: FileText, title: 'Geração garantida em contrato', text: 'Dimensionamento técnico com compromisso formal de geração.', modal: null },
+    { icon: Building2, title: 'Empresa sólida', text: 'Atendimento responsável, estrutura profissional e relação de longo prazo.',
+      modal: img('empresa_solida') ? { type: 'image' as const, url: img('empresa_solida'), alt: 'Sede da Três Lagoas Solar' } : null },
+    { icon: CreditCard, title: 'Financiamento facilitado', text: 'Você financia com a nossa ajuda, sem precisar ir ao banco.', modal: null },
+    { icon: Zap, title: 'Sistema solar completo', text: 'Entregamos todos os equipamentos e componentes da solução.',
+      modal: img('sistema_completo') ? { type: 'image' as const, url: img('sistema_completo'), alt: 'Equipamentos de energia solar' } : null },
+    { icon: BadgeCheck, title: 'Materiais selecionados', text: 'Usamos estrutura, proteções e acessórios de instalação com padrão de qualidade.', modal: null },
+    { icon: Plane, title: 'Análise 3D com drone', text: 'Estudo técnico de sombreamento para máxima eficiência do projeto.',
+      modal: img('analise_drone') ? { type: 'image' as const, url: img('analise_drone'), alt: 'Análise aérea com drone' } : null },
+  ];
+}
 
 const fadeUp = {
   hidden: { opacity: 0, y: 30 },
@@ -59,14 +32,23 @@ const fadeUp = {
 };
 
 interface DiferenciaisProps {
-  /** If true, render a simpler version for the proposal page (no motion, compact) */
   compact?: boolean;
 }
 
 export default function Diferenciais({ compact = false }: DiferenciaisProps) {
   const [modalImg, setModalImg] = useState<{ url: string; alt: string } | null>(null);
+  const [customImages, setCustomImages] = useState<Record<string, string>>({});
 
-  const Wrapper = compact ? 'div' : motion.div;
+  useEffect(() => {
+    supabase.from('configuracoes').select('*').eq('chave', 'diferenciais_images').maybeSingle()
+      .then(({ data }) => {
+        if (data?.valor && typeof data.valor === 'object') {
+          setCustomImages(data.valor as Record<string, string>);
+        }
+      });
+  }, []);
+
+  const DIFERENCIAIS = buildDiferenciais(customImages);
 
   return (
     <>
