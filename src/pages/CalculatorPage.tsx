@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Minus, ChevronDown, ChevronUp, Zap, Sun, TrendingUp, ArrowRight, AlertTriangle } from 'lucide-react';
+import { Plus, Minus, ChevronDown, ChevronUp, Zap, Sun, TrendingUp, ArrowRight, AlertTriangle, Eye, EyeOff, CreditCard } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import {
   ClientData, MonthlyConsumption, ConsumptionMode, ConsumerUnit, EquipmentItem,
@@ -11,11 +11,13 @@ import type { EquipmentCatalogItem } from '@/data/types';
 import {
   estimateFullConsumption, calcEquipmentMonthly, calcDimensioning,
   findInverterForPanels, findPanel, calcTotalPrice, calcInstallments,
+  calcCardInstallments, calcCostBreakdown,
   formatCurrency, formatNumber, maxPanelsForInverter, calcMicroInverterCount,
 } from '@/data/calculations';
 import { getSettings, saveProposal, lookupIrradiation, getPriceTable } from '@/data/store';
 import { savePropostaDB, searchCidadesDB } from '@/data/supabaseStore';
 import type { Proposal, PriceTableEntry, PriceTableLineDetails } from '@/data/types';
+import { useAuth } from '@/contexts/AuthContext';
 
 const EQUIPMENT_COLORS = [
   '#E67E22', '#3498DB', '#9B59B6', '#1ABC9C', '#E74C3C',
@@ -37,6 +39,8 @@ const emptyMonthly = (): MonthlyConsumption => ({
 });
 
 export default function CalculatorPage() {
+  const { session } = useAuth();
+  const isAuthenticated = !!session;
   const settings = getSettings();
   const navigate = useNavigate();
   const activeSellers = settings.sellers.filter(s => s.active);
@@ -55,6 +59,8 @@ export default function CalculatorPage() {
   const [equipment, setEquipment] = useState<EquipmentItem[]>([]);
   const [eqOpen, setEqOpen] = useState(false);
   const [panelDelta, setPanelDelta] = useState(0);
+  const [paymentTab, setPaymentTab] = useState<'financing' | 'card'>('financing');
+  const [showCostPanel, setShowCostPanel] = useState(false);
 
   // City autocomplete
   const [citySuggestions, setCitySuggestions] = useState<{ cidade: string; uf: string }[]>([]);
@@ -193,18 +199,21 @@ export default function CalculatorPage() {
       const monthlyGeneration = powerKwp * irradiation * 30 * (1 - settings.systemLoss / 100);
       const surplus = monthlyGeneration - dim.avgMonthlyKwh;
 
-      return {
-        line, inverter, panel, panelCount: usedPanels, totalPrice, maxPanels, panelsRemaining, microCount,
-        ptDetails, ptEntry, hasPriceTableCost,
-        inverterBrand: ptDetails?.inverterBrand || inverter?.brand || '',
-        inverterModel: ptDetails?.inverterPower ? `${ptDetails.inverterPower} kW` : inverter?.model || '',
-        panelBrand: ptDetails?.panelBrand || panel?.brand || '',
-        panelPowerLabel: ptDetails?.panelPower ? `${ptDetails.panelPower} Wp` : `${panel?.power || 570} Wp`,
-        installments: calcInstallments(totalPrice),
-        dimensioning: { ...dim, panelCount: usedPanels, powerKwp, monthlyGeneration, surplus },
-      };
-    });
-  }, [consumption, equipment, client, irradiation, finalPanels, settings.systemLoss, findPriceTableEntry]);
+        const costBreakdown = calcCostBreakdown(inverter, panel, usedPanels, line);
+        const cardInstallments = calcCardInstallments(totalPrice, settings.creditCardRates);
+
+        return {
+          line, inverter, panel, panelCount: usedPanels, totalPrice, maxPanels, panelsRemaining, microCount,
+          ptDetails, ptEntry, hasPriceTableCost, costBreakdown, cardInstallments,
+          inverterBrand: ptDetails?.inverterBrand || inverter?.brand || '',
+          inverterModel: ptDetails?.inverterPower ? `${ptDetails.inverterPower} kW` : inverter?.model || '',
+          panelBrand: ptDetails?.panelBrand || panel?.brand || '',
+          panelPowerLabel: ptDetails?.panelPower ? `${ptDetails.panelPower} Wp` : `${panel?.power || 570} Wp`,
+          installments: calcInstallments(totalPrice),
+          dimensioning: { ...dim, panelCount: usedPanels, powerKwp, monthlyGeneration, surplus },
+        };
+      });
+    }, [consumption, equipment, client, irradiation, finalPanels, settings.systemLoss, settings.creditCardRates, findPriceTableEntry]);
 
   const chartData = useMemo(() => {
     const baseDim = systemCards[0]?.dimensioning;
@@ -637,17 +646,72 @@ export default function CalculatorPage() {
                 </div>
 
                 <div className="text-center py-3 border-y border-border">
+                  <p className="text-xs text-muted-foreground mb-1">Investimento</p>
                   <p className="text-2xl font-bold text-primary">{formatCurrency(card.totalPrice)}</p>
                 </div>
 
-                <div className="space-y-1 text-xs">
-                  {Object.entries(card.installments).map(([n, v]) => (
-                    <div key={n} className="flex justify-between">
-                      <span className="text-muted-foreground">{n}×</span>
-                      <span className="font-medium">{formatCurrency(v)}</span>
+                {/* Payment tabs */}
+                <div className="space-y-2">
+                  <div className="flex gap-1">
+                    <button onClick={() => setPaymentTab('financing')}
+                      className={`flex-1 text-xs py-1.5 rounded font-medium transition-colors ${paymentTab === 'financing' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>
+                      Financiamento
+                    </button>
+                    <button onClick={() => setPaymentTab('card')}
+                      className={`flex-1 text-xs py-1.5 rounded font-medium transition-colors ${paymentTab === 'card' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>
+                      <CreditCard className="w-3 h-3 inline mr-1" />Cartão
+                    </button>
+                  </div>
+                  {paymentTab === 'financing' ? (
+                    <div className="space-y-1 text-xs">
+                      {Object.entries(card.installments).map(([n, v]) => (
+                        <div key={n} className="flex justify-between">
+                          <span className="text-muted-foreground">{n}×</span>
+                          <span className="font-medium">{formatCurrency(v as number)}</span>
+                        </div>
+                      ))}
+                      <p className="text-[10px] text-muted-foreground mt-1 italic">
+                        Valores sujeitos à aprovação de crédito
+                      </p>
                     </div>
-                  ))}
+                  ) : (
+                    <div className="space-y-1 text-xs max-h-48 overflow-y-auto">
+                      {Object.entries(card.cardInstallments).map(([n, v]) => (
+                        <div key={n} className="flex justify-between">
+                          <span className="text-muted-foreground">{n}×</span>
+                          <span className="font-medium">{formatCurrency((v as any).perMonth)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
+
+                {/* Internal cost breakdown - only for authenticated users */}
+                {isAuthenticated && (
+                  <div className="border-t border-border pt-3 space-y-2">
+                    <button onClick={() => setShowCostPanel(p => !p)}
+                      className="flex items-center gap-2 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors w-full">
+                      {showCostPanel ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                      {showCostPanel ? 'Ocultar custos internos' : 'Ver custos internos'}
+                    </button>
+                    {showCostPanel && (
+                      <div className="space-y-1.5 text-xs p-3 rounded-lg bg-muted/50 border border-border/50">
+                        <p className="font-semibold text-muted-foreground uppercase tracking-wide text-[10px] mb-2">Detalhamento interno</p>
+                        <div className="flex justify-between"><span className="text-muted-foreground">Equipamentos</span><span>{formatCurrency(card.costBreakdown.equipmentCost)}</span></div>
+                        <div className="flex justify-between"><span className="text-muted-foreground">Instalação ({card.panelCount}× R$100)</span><span>{formatCurrency(card.costBreakdown.installationCost)}</span></div>
+                        <div className="flex justify-between"><span className="text-muted-foreground">Homologação</span><span>{formatCurrency(card.costBreakdown.homologationCost)}</span></div>
+                        <div className="flex justify-between"><span className="text-muted-foreground">Material CA ({card.inverter?.power || 0} kW)</span><span>{formatCurrency(card.costBreakdown.caMaterialCost)}</span></div>
+                        {card.costBreakdown.trunkCableCost > 0 && (
+                          <div className="flex justify-between"><span className="text-muted-foreground">Cabo tronco</span><span>{formatCurrency(card.costBreakdown.trunkCableCost)}</span></div>
+                        )}
+                        <div className="flex justify-between pt-1.5 border-t border-border font-semibold"><span>Custo total</span><span>{formatCurrency(card.costBreakdown.totalCost)}</span></div>
+                        <div className="flex justify-between"><span className="text-muted-foreground">Margem</span><span>{card.costBreakdown.profitMargin}%</span></div>
+                        <div className="flex justify-between font-bold text-primary"><span>Preço de venda</span><span>{formatCurrency(card.costBreakdown.salePrice)}</span></div>
+                        <div className="flex justify-between text-green-600 font-semibold"><span>Lucro bruto</span><span>{formatCurrency(card.costBreakdown.grossProfit)}</span></div>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 <button onClick={() => generateProposal(idx)}
                   className="w-full solar-btn-primary flex items-center justify-center gap-2">

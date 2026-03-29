@@ -166,6 +166,61 @@ export function calcCardInstallments(totalPrice: number, rates: { installments: 
   return result;
 }
 
+export interface CostBreakdown {
+  equipmentCost: number;
+  installationCost: number;
+  homologationCost: number;
+  caMaterialCost: number;
+  trunkCableCost: number;
+  totalCost: number;
+  profitMargin: number;
+  salePrice: number;
+  grossProfit: number;
+}
+
+export function calcCostBreakdown(inverter: Kit | null, panel: Kit | null, panelCount: number, line?: string): CostBreakdown {
+  const settings = getSettings();
+  const isPremium = line === 'premium';
+
+  let equipmentCost: number;
+  if (isPremium) {
+    const microCount = calcMicroInverterCount(panelCount);
+    equipmentCost = (inverter?.costPrice || 0) * microCount + (panel?.costPrice || 0) * panelCount;
+  } else {
+    equipmentCost = (inverter?.costPrice || 0) + (panel?.costPrice || 0) * panelCount;
+  }
+
+  const installationCost = settings.installationPricePerPanel * panelCount;
+  const homologationCost = settings.homologationPrice;
+
+  let caMaterial: number;
+  if (isPremium) {
+    const microCount = calcMicroInverterCount(panelCount);
+    const totalMicroPower = (inverter?.power || 2) * microCount;
+    caMaterial = getCaMaterialCost(totalMicroPower);
+  } else {
+    caMaterial = getCaMaterialCost(inverter?.power || 5);
+  }
+
+  const trunkCable = isPremium ? calcTrunkCableCost(panelCount) : 0;
+  const totalCost = equipmentCost + installationCost + homologationCost + caMaterial + trunkCable;
+  const profitMargin = settings.profitMargin;
+  const salePrice = totalCost / (1 - profitMargin / 100);
+  const grossProfit = salePrice - totalCost;
+
+  return {
+    equipmentCost,
+    installationCost,
+    homologationCost: homologationCost,
+    caMaterialCost: caMaterial,
+    trunkCableCost: trunkCable,
+    totalCost,
+    profitMargin,
+    salePrice,
+    grossProfit,
+  };
+}
+
 export function formatCurrency(v: number): string {
   return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
