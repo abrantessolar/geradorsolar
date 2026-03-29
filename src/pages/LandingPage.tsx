@@ -290,6 +290,11 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ─── SIMULADOR PÚBLICO ─── */}
+      <div ref={simulatorRef}>
+        <PublicSimulator />
+      </div>
+
       {/* ─── DIFERENCIAIS ─── */}
       <Diferenciais />
 
@@ -365,11 +370,6 @@ export default function LandingPage() {
           <img src={lightboxImg} alt="Projeto de energia solar Três Lagoas Solar" className="max-w-full max-h-[90vh] object-contain rounded-lg" />
         </div>
       )}
-
-      {/* ─── SIMULADOR PÚBLICO ─── */}
-      <div ref={simulatorRef}>
-        <PublicSimulator />
-      </div>
 
       {/* ─── CTA FINAL ─── */}
       <section className="py-20 md:py-28 bg-primary text-primary-foreground">
