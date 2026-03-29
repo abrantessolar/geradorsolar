@@ -14,12 +14,13 @@ import {
 import { formatCurrency } from '@/data/calculations';
 import { AdminSettings, IrradiationEntry, PriceTableEntry, SocialProof, BRAZILIAN_STATES, CA_MATERIAL_TABLE_DEFAULT, LINE_NAMES } from '@/data/types';
 import type { Distributor, PriceTableLineDetails } from '@/data/types';
-import { Users, DollarSign, Settings, MapPin, Building2, FileText, Image, Plus, Trash2, Save, Eye, Wand2, AlertCircle, Upload, Check, ChevronDown, UserPlus, Edit2, X, Globe, CheckCircle, AlertTriangle, Share2, Megaphone } from 'lucide-react';
+import { Users, DollarSign, Settings, MapPin, Building2, FileText, Image, Plus, Trash2, Save, Eye, Wand2, AlertCircle, Upload, Check, ChevronDown, UserPlus, Edit2, X, Globe, CheckCircle, AlertTriangle, Share2, Megaphone, Cpu } from 'lucide-react';
 import LeadsTab from '@/components/admin/LeadsTab';
 import { useNewLeadsCount } from '@/components/LeadNotification';
 import { toast } from 'sonner';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import SiteContentTab from '@/components/admin/SiteContentTab';
+import EquipmentTab from '@/components/admin/EquipmentTab';
 import { useNavigate } from 'react-router-dom';
 
 const ROLE_LABELS: Record<string, string> = {
@@ -38,6 +39,7 @@ export default function AdminPage() {
     { key: 'leads' as const, label: 'Leads', icon: Megaphone, roles: ['admin', 'orcamentista'], badge: newLeadsCount },
     { key: 'prices' as const, label: 'Tabela de Preços', icon: DollarSign, roles: ['admin'] },
     { key: 'pricing' as const, label: 'Precificação', icon: Settings, roles: ['admin'] },
+    { key: 'equipment' as const, label: 'Equipamentos', icon: Cpu, roles: ['admin'] },
     { key: 'irradiation' as const, label: 'Irradiação', icon: MapPin, roles: ['admin', 'orcamentista'] },
     { key: 'company' as const, label: 'Empresa', icon: Building2, roles: ['admin', 'orcamentista'] },
     { key: 'proposals' as const, label: 'Propostas', icon: FileText, roles: ['admin', 'orcamentista', 'vendedor'] },
@@ -72,6 +74,7 @@ export default function AdminPage() {
       {tab === 'users' && isAdmin && <UsersTab />}
       {tab === 'leads' && <LeadsTab />}
       {tab === 'prices' && <PriceTableTab />}
+      {tab === 'equipment' && <EquipmentTab />}
       {tab === 'pricing' && <PricingTab />}
       {tab === 'irradiation' && <IrradiationTab />}
       {tab === 'company' && <CompanyTab />}
