@@ -65,8 +65,8 @@ const App = () => (
           <Routes>
             <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<AuthRedirect />} />
-            <Route path="/proposta/:id" element={<><SeoNoIndex /><ProposalPage /></>} />
-            <Route path="/reset-password" element={<><SeoNoIndex /><ResetPasswordPage /></>} />
+            <Route path="/proposta/:id" element={<div><SeoNoIndex /><ProposalPage /></div>} />
+            <Route path="/reset-password" element={<div><SeoNoIndex /><ResetPasswordPage /></div>} />
             <Route path="/orcamentos" element={
               <ProtectedRoute>
                 <SeoNoIndex /><Layout><CalculatorPage /></Layout>
