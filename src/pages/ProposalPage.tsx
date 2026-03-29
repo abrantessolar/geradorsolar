@@ -564,6 +564,9 @@ export default function ProposalPage() {
               <h2 className="text-xl sm:text-2xl font-bold text-primary text-center flex items-center justify-center gap-2">
                 <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 text-secondary" /> Retorno Financeiro
               </h2>
+              <p className="text-center text-sm text-muted-foreground">
+                Sistema dimensionado com {settings.surplusFactor ?? 20}% de reserva para crescimento futuro do consumo
+              </p>
 
               {/* Savings cards */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

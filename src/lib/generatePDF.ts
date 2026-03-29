@@ -2,6 +2,8 @@ import jsPDF from 'jspdf';
 import { formatCurrency, formatNumber } from '@/data/calculations';
 import { LINE_NAMES, INSTALLMENT_OPTIONS, MONTH_LABELS } from '@/data/types';
 import { supabase } from '@/integrations/supabase/client';
+import pdfCoverImg from '@/assets/pdf-cover.png';
+import pdfPortfolioImg from '@/assets/pdf-portfolio.png';
 
 // Brand colors
 const PRIMARY = [74, 90, 42] as const;    // #4A5A2A
@@ -63,7 +65,19 @@ export async function generateProposalPDF(
     doc.text(numero, W - M, 18, { align: 'right' });
   };
 
-  // Try to load logo as base64
+  // Load cover and portfolio images as base64
+  const loadImageAsBase64 = async (src: string): Promise<string | null> => {
+    try {
+      const response = await fetch(src);
+      const blob = await response.blob();
+      return await new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.readAsDataURL(blob);
+      });
+    } catch { return null; }
+  };
+
   let logoData: string | null = null;
   try {
     const response = await fetch(new URL('/src/assets/logo.png', window.location.origin).href);
@@ -75,106 +89,67 @@ export async function generateProposalPDF(
     });
   } catch { /* logo not available */ }
 
-  // ═══════════════════════════════════════
-  // PAGE 1: COVER
-  // ═══════════════════════════════════════
-  // Full page white with decorative elements
-  // Top-left gold accents
-  setFill(SECONDARY);
-  doc.rect(12, 8, 4, 4, 'F');
-  doc.rect(20, 8, 4, 4, 'F');
-  doc.rect(28, 8, 4, 4, 'F');
+  const coverImgData = await loadImageAsBase64(pdfCoverImg);
+  const portfolioImgData = await loadImageAsBase64(pdfPortfolioImg);
 
-  // Logo
-  if (logoData) {
-    try { doc.addImage(logoData, 'PNG', M, 18, 55, 28); } catch {}
-  } else {
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(22);
-    setColor(PRIMARY);
-    doc.text('TRÊS LAGOAS', M, 32);
-    doc.setFontSize(28);
-    doc.text('Solar', M, 44);
+  // ═══════════════════════════════════════
+  // PAGE 1: COVER (using uploaded template image)
+  // ═══════════════════════════════════════
+  if (coverImgData) {
+    try {
+      doc.addImage(coverImgData, 'PNG', 0, 0, W, H);
+    } catch {}
   }
 
-  // Main title - styled like the template
-  let y = 85;
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(26);
-  setColor(DARK);
-  doc.text('meu', M + 10, y);
-  y += 12;
-  doc.text('projeto', M + 10, y);
-  y += 10;
-  doc.setFontSize(20);
-  doc.text('de', M + 10, y);
-
-  // Large "Energia solar" text
-  y += 18;
+  // Overlay dynamic text on the cover image
+  // Proposal number top-right
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(48);
-  setColor(PRIMARY);
-  doc.text('Energia', M, y);
-  y += 20;
-  doc.setFontSize(44);
-  setColor(PRIMARY);
-  doc.text('solar', M + 30, y);
-  y += 14;
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(22);
+  doc.setFontSize(9);
   setColor(GRAY);
-  doc.text('fotovoltaica', M + 50, y);
+  doc.text(numero, W - M, 12, { align: 'right' });
 
-  // Gold circle decoration (like template)
-  setFill(SECONDARY);
-  doc.circle(155, 120, 35, 'F');
-
-  // Client info box
-  y = 200;
+  // Client name on the green bar (approx y=200-224 in the template)
+  const barY = 210;
+  // White semi-transparent overlay on the green bar for text
   setFill(PRIMARY);
-  doc.roundedRect(M + 30, y, CW - 30, 24, 3, 3, 'F');
+  doc.rect(M + 20, barY, CW - 20, 22, 'F');
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(16);
   setColor(WHITE);
-  doc.text(proposal.clientData.name, M + 38, y + 10);
+  doc.text(proposal.clientData.name, M + 28, barY + 10);
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(10);
   setColor([220, 220, 220]);
-  doc.text(`${formatNumber(selectedCard?.dimensioning?.avgMonthlyKwh || 0, 0)} kWh por mês  •  ${proposal.clientData.city} — ${proposal.clientData.state || 'MS'}`, M + 38, y + 18);
+  doc.text(`${formatNumber(selectedCard?.dimensioning?.avgMonthlyKwh || 0, 0)} kWh/mês  •  ${proposal.clientData.city} — ${proposal.clientData.state || 'MS'}`, M + 28, barY + 18);
 
-  // Seller info
-  y = 238;
+  // Seller info at bottom
+  const sellerY = 245;
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);
-  setColor(GRAY);
-  doc.text('Representante:', M + 20, y);
-  y += 6;
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(12);
-  setColor(DARK);
-  doc.text(proposal.clientData.seller || '', M + 20, y);
-
-  y += 10;
+  setColor(WHITE);
+  doc.text(`Representante: ${proposal.clientData.seller || ''}`, M + 20, sellerY);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(8);
-  setColor(DARK);
-  doc.text(`${settings.company.phone}  |  ${settings.company.email}`, M + 20, y);
-  y += 5;
-  doc.setFont('helvetica', 'normal');
-  doc.text(`${settings.company.site || 'www.treslagoassolar.com.br'}  |  @treslagoassolar`, M + 20, y);
-
-  // Bottom-right gold accents
-  setFill(SECONDARY);
-  doc.rect(W - 32, H - 28, 4, 4, 'F');
-  doc.rect(W - 24, H - 28, 4, 4, 'F');
-  doc.rect(W - 16, H - 28, 4, 4, 'F');
+  doc.text(`${settings.company.phone}  |  ${settings.company.email}`, M + 20, sellerY + 6);
 
   // ═══════════════════════════════════════
-  // PAGE 2: SPECS + CHART
+  // PAGE 2: PORTFOLIO (using uploaded template image)
+  // ═══════════════════════════════════════
+  doc.addPage();
+  if (portfolioImgData) {
+    try {
+      doc.addImage(portfolioImgData, 'PNG', 0, 0, W, H);
+    } catch {}
+  } else {
+    drawPageHeader('Nossos Projetos');
+  }
+
+  // ═══════════════════════════════════════
+  // PAGE 3: SPECS + CHART
   // ═══════════════════════════════════════
   doc.addPage();
   drawPageHeader('Especificações do projeto');
-  y = 40;
+  let y = 40;
 
   // Two columns: Equipamentos | Rendimentos
   const halfW = CW / 2 - 3;
@@ -250,7 +225,8 @@ export async function generateProposalPDF(
   doc.setFontSize(8);
   doc.setFont('helvetica', 'normal');
   setColor(GRAY);
-  const inclusoText = 'Sistema solar + Material de instalação + Análise de sombreamento + Homologação + 3 Anos de garantia de instalação e acompanhamento';
+  const surplusPct = settings.surplusFactor ?? 20;
+  const inclusoText = `Sistema solar + Material de instalação + Análise de sombreamento + Homologação + 3 Anos de garantia de instalação e acompanhamento • Dimensionado com ${surplusPct}% de reserva para crescimento futuro`;
   const inclusoLines = doc.splitTextToSize(inclusoText, CW);
   doc.text(inclusoLines, W / 2, y, { align: 'center' });
 
@@ -645,108 +621,6 @@ export async function generateProposalPDF(
     doc.setFont('helvetica', 'normal');
     y += 6;
   });
-
-  drawFooter();
-
-  // ═══════════════════════════════════════
-  // PAGE 5: PORTFOLIO PHOTOS
-  // ═══════════════════════════════════════
-  doc.addPage();
-  drawPageHeader('Nossos Projetos');
-  y = 40;
-
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(10);
-  setColor(PRIMARY);
-  doc.text('Soluções Residenciais | Rurais | Comerciais', W / 2, y, { align: 'center' });
-  y += 8;
-
-  // Try to load portfolio photos from DB
-  let portfolioPhotos: string[] = [];
-  try {
-    const { data } = await supabase
-      .from('fotos_portfolio')
-      .select('url')
-      .eq('ativo', true)
-      .order('ordem', { ascending: true })
-      .limit(6);
-    if (data && data.length > 0) {
-      portfolioPhotos = data.map((f: any) => f.url);
-    }
-  } catch {}
-
-  if (portfolioPhotos.length > 0) {
-    // Load and add images in a grid
-    const photoW = (CW - 6) / 3;
-    const photoH = photoW * 0.7;
-
-    for (let i = 0; i < Math.min(portfolioPhotos.length, 6); i++) {
-      const col = i % 3;
-      const row = Math.floor(i / 3);
-      const px = M + col * (photoW + 3);
-      const py = y + row * (photoH + 4);
-
-      try {
-        const imgResp = await fetch(portfolioPhotos[i]);
-        const blob = await imgResp.blob();
-        const imgData = await new Promise<string>((resolve) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(reader.result as string);
-          reader.readAsDataURL(blob);
-        });
-
-        // Rounded border
-        setFill([240, 240, 240]);
-        doc.roundedRect(px, py, photoW, photoH, 2, 2, 'F');
-        doc.addImage(imgData, 'JPEG', px + 0.5, py + 0.5, photoW - 1, photoH - 1);
-      } catch {
-        // Placeholder
-        setFill([230, 230, 225]);
-        doc.roundedRect(px, py, photoW, photoH, 2, 2, 'F');
-        doc.setFontSize(7);
-        setColor(GRAY);
-        doc.text('Foto', px + photoW / 2, py + photoH / 2, { align: 'center' });
-      }
-    }
-
-    y += Math.ceil(Math.min(portfolioPhotos.length, 6) / 3) * (photoH + 4) + 5;
-  } else {
-    // No photos available message
-    y += 10;
-    setFill(LIGHT_BG);
-    doc.roundedRect(M, y, CW, 30, 3, 3, 'F');
-    doc.setFontSize(10);
-    setColor(GRAY);
-    doc.text('Portfólio de obras disponível em nosso site e redes sociais.', W / 2, y + 16, { align: 'center' });
-    y += 40;
-  }
-
-  // Company info section at bottom
-  y = Math.max(y, H - 80);
-  setFill(SECONDARY);
-  doc.rect(M, y, CW, 1.5, 'F');
-  y += 10;
-
-  if (logoData) {
-    try { doc.addImage(logoData, 'PNG', W / 2 - 25, y, 50, 26); } catch {}
-  }
-  y += 32;
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(10);
-  setColor(PRIMARY);
-  doc.text(settings.company.name, W / 2, y, { align: 'center' });
-  y += 6;
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8);
-  setColor(DARK);
-  doc.text(settings.company.phone, W / 2, y, { align: 'center' });
-  y += 5;
-  doc.text(settings.company.email, W / 2, y, { align: 'center' });
-  y += 5;
-  doc.text(settings.company.site || 'www.treslagoassolar.com.br', W / 2, y, { align: 'center' });
-  y += 5;
-  doc.text('@treslagoassolar', W / 2, y, { align: 'center' });
 
   drawFooter();
 

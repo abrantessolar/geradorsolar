@@ -35,19 +35,22 @@ export function calcDimensioning(
   kwhPrice: number,
   investmentTotal: number,
   systemLoss?: number,
+  surplusFactor?: number,
 ): DimensioningResult {
   const settings = getSettings();
   const loss = (systemLoss ?? settings.systemLoss) / 100;
+  const surplus_factor = 1 + (surplusFactor ?? settings.surplusFactor ?? 20) / 100;
 
   const monthValues = MONTH_KEYS.map(k => consumption[k]);
   const avgBase = monthValues.reduce((a, b) => a + b, 0) / 12;
   const eqTotal = equipment.reduce((s, e) => s + calcEquipmentMonthly(e), 0);
   const avgMonthlyKwh = avgBase + eqTotal;
-  const avgDailyKwh = avgMonthlyKwh / 30;
+  const adjustedMonthlyKwh = avgMonthlyKwh * surplus_factor;
+  const avgDailyKwh = adjustedMonthlyKwh / 30;
   const powerKwp = avgDailyKwh / (irradiation * (1 - loss));
   const panelCount = Math.ceil(powerKwp / 0.570);
   const monthlyGeneration = powerKwp * irradiation * 30 * (1 - loss);
-  const surplus = monthlyGeneration - avgMonthlyKwh;
+  const surplusKwh = monthlyGeneration - avgMonthlyKwh;
   const availabilityFee = AVAILABILITY_FEE[networkType] || 30;
   const monthlySavings = (avgMonthlyKwh - availabilityFee) * kwhPrice;
   const paybackYears = investmentTotal > 0 ? investmentTotal / (monthlySavings * 12) : 0;
@@ -60,7 +63,7 @@ export function calcDimensioning(
 
   return {
     avgMonthlyKwh, avgDailyKwh, powerKwp, panelCount,
-    monthlyGeneration, surplus, availabilityFee, monthlySavings, paybackYears,
+    monthlyGeneration, surplus: surplusKwh, availabilityFee, monthlySavings, paybackYears,
     return10: calcReturn(10), return15: calcReturn(15), return25: calcReturn(25),
   };
 }

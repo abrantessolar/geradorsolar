@@ -587,6 +587,9 @@ function PricingTab() {
           <div><label className="block text-sm font-medium mb-1">CET estimada padrão (% a.m.)</label>
             <input className="solar-input" type="number" step="0.001" value={settings.defaultCET} onChange={e => update('defaultCET', parseFloat(e.target.value) || 0)} />
             <p className="text-xs text-muted-foreground mt-1">Padrão: 2,214% a.m.</p></div>
+          <div><label className="block text-sm font-medium mb-1">Fator de sobra (%)</label>
+            <input className="solar-input" type="number" value={settings.surplusFactor ?? 20} onChange={e => update('surplusFactor', parseFloat(e.target.value) || 0)} />
+            <p className="text-xs text-muted-foreground mt-1">Dimensiona o sistema para cobrir {100 + (settings.surplusFactor ?? 20)}% do consumo. Padrão: 20%</p></div>
           <div><label className="block text-sm font-medium mb-1">Perda sistêmica (%)</label>
             <input className="solar-input" type="number" value={settings.systemLoss} onChange={e => update('systemLoss', parseFloat(e.target.value) || 0)} /></div>
         </div>
