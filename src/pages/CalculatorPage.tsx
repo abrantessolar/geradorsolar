@@ -342,7 +342,7 @@ export default function CalculatorPage() {
     setEquipment(prev => prev.map(e => e.id === id ? { ...e, [field]: value } : e));
   };
 
-  const generateProposal = (lineIdx: number) => {
+  const generateProposal = async (lineIdx: number) => {
     const card = systemCards[lineIdx];
     const consumerUnitsForProposal: ConsumerUnit[] = units.map(u => ({
       id: u.id,
@@ -353,13 +353,11 @@ export default function CalculatorPage() {
 
     const custom = customKits[card.line];
     const isCustom = custom?.enabled;
-
-    // Find seller details
     const sellerData = settings.sellers?.find(s => s.name === client.seller);
 
     const proposal: Proposal = {
-      id: crypto.randomUUID(),
-      clientData: { ...client, id: crypto.randomUUID() },
+      id: editMode && editProposalId ? editProposalId : crypto.randomUUID(),
+      clientData: { ...client, id: editMode ? (ep?.clientData?.id || crypto.randomUUID()) : crypto.randomUUID() },
       consumption, consumerUnits: consumerUnitsForProposal, equipment,
       selectedLine: card.line,
       selectedKit: isCustom
@@ -373,9 +371,9 @@ export default function CalculatorPage() {
       installmentValues: card.installments,
       cardInstallments: card.cardInstallments,
       costBreakdown: card.costBreakdown,
-      cetApplied: null,
-      status: 'enviada',
-      createdAt: new Date().toISOString(),
+      cetApplied: editMode ? (ep?.cetApplied || null) : null,
+      status: editMode ? (ep?.status || 'enviada') : 'enviada',
+      createdAt: editMode ? (ep?.createdAt || new Date().toISOString()) : new Date().toISOString(),
       dimensioning: card.dimensioning,
       irradiation,
       monthlyIrradiation: monthlyIrr || undefined,
@@ -387,14 +385,27 @@ export default function CalculatorPage() {
       panelBrand: card.panelBrand,
       panelPowerLabel: card.panelPowerLabel,
       customKit: isCustom ? custom : undefined,
+      numero_proposta: editNumero || undefined,
     };
-    // Save to localStorage (fallback) and Supabase
+
     saveProposal(proposal);
-    savePropostaDB(proposal).then(dbId => {
+    try {
+      const dbId = await savePropostaDB(proposal);
+      if (editMode) {
+        const { addHistoricoDB } = await import('@/data/supabaseStore');
+        await addHistoricoDB(dbId, 'editada', session?.user?.id || null, {
+          updatedAt: new Date().toISOString(),
+          updatedBy: session?.user?.email || 'desconhecido',
+        });
+        toast.success(`Proposta ${editNumero} atualizada!`);
+      } else {
+        const { addHistoricoDB } = await import('@/data/supabaseStore');
+        await addHistoricoDB(dbId, 'criada', session?.user?.id || null, {});
+      }
       navigate(`/proposta/${dbId}`);
-    }).catch(() => {
+    } catch {
       navigate(`/proposta/${proposal.id}`);
-    });
+    }
   };
 
   return (
