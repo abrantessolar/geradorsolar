@@ -498,7 +498,8 @@ export default function CalculatorPage() {
           <div>
             <label className="block text-sm font-medium mb-1">Vendedor</label>
             <select className="solar-input" value={client.seller} onChange={e => setClient(p => ({ ...p, seller: e.target.value }))}>
-              {activeSellers.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
+              <option value="">Selecione...</option>
+              {activeSellers.map(s => <option key={s.user_id} value={s.nome}>{s.nome}</option>)}
             </select>
           </div>
         </div>
