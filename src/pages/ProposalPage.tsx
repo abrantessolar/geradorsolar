@@ -451,8 +451,7 @@ export default function ProposalPage() {
               <p className="text-sm text-muted-foreground mt-4">
                 Representante: {proposal.clientData.seller}<br />
                 {proposal.sellerEmail ? <>{proposal.sellerEmail}<br /></> : null}
-                {proposal.sellerPhone ? <>{proposal.sellerPhone}<br /></> : null}
-                {settings.company.phone} • {settings.company.email}
+                {proposal.sellerPhone}
               </p>
             </div>
           </div>
