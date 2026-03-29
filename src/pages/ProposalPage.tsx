@@ -10,7 +10,7 @@ import {
 } from '@/data/calculations';
 import { MONTH_LABELS, MONTH_KEYS, SEASONAL_FACTORS, INSTALLMENT_OPTIONS, UC_COLORS, LINE_NAMES, LINE_SUBS } from '@/data/types';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, LineChart, Line, ReferenceLine } from 'recharts';
-import { Download, Share2, Edit, ArrowLeft, Sun, Zap, TrendingUp, Shield, X, Cpu, Check, MessageCircle, Calendar, AlertTriangle, ChevronDown, ChevronUp, BarChart3 } from 'lucide-react';
+import { Download, Share2, Edit, ArrowLeft, Sun, Zap, TrendingUp, Shield, X, Cpu, Check, MessageCircle, Calendar, AlertTriangle, ChevronDown, ChevronUp, BarChart3, Eye } from 'lucide-react';
 import { generateProposalPDF } from '@/lib/generatePDF';
 import { toast } from 'sonner';
 import logo from '@/assets/logo.png';
@@ -24,6 +24,8 @@ export default function ProposalPage() {
   const [proposal, setProposal] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [isPrinting, setIsPrinting] = useState(false);
+  const [pdfBlobUrl, setPdfBlobUrl] = useState<string | null>(null);
+  const [showPdfViewer, setShowPdfViewer] = useState(false);
   const settings = getSettings();
   const socialProofs = getSocialProofs().filter(s => s.active);
 
@@ -204,15 +206,43 @@ export default function ProposalPage() {
     setShowShareMenu(false);
   };
 
+  const getPdfDoc = async () => {
+    const doc = await generateProposalPDF(proposal, settings, lineCards, chartData, cashflowData);
+    return doc;
+  };
+
+  const getFileName = () => {
+    const numero = proposal.numero_proposta || 'TLS-0000';
+    const clientName = (proposal.clientData.name || 'Cliente').replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_');
+    return `Proposta_${numero}_${clientName}.pdf`;
+  };
+
   const handleDownloadPDF = async () => {
     try {
       toast.loading('Gerando PDF...');
-      await generateProposalPDF(proposal, settings, lineCards, chartData, cashflowData);
+      const doc = await getPdfDoc();
+      doc.save(getFileName());
       toast.dismiss();
       toast.success('PDF gerado com sucesso!');
     } catch (err) {
       toast.dismiss();
       toast.error('Erro ao gerar PDF');
+    }
+  };
+
+  const handlePreviewPDF = async () => {
+    try {
+      toast.loading('Gerando visualização...');
+      const doc = await getPdfDoc();
+      const blob = doc.output('blob');
+      const url = URL.createObjectURL(blob);
+      if (pdfBlobUrl) URL.revokeObjectURL(pdfBlobUrl);
+      setPdfBlobUrl(url);
+      setShowPdfViewer(true);
+      toast.dismiss();
+    } catch (err) {
+      toast.dismiss();
+      toast.error('Erro ao gerar visualização');
     }
   };
 
@@ -260,8 +290,11 @@ export default function ProposalPage() {
           <button onClick={() => navigate('/')} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
             <ArrowLeft className="w-4 h-4" /> Voltar
           </button>
-          <div className="flex gap-2">
-            <button onClick={handleDownloadPDF} className="solar-btn-outline text-sm py-2 px-3 flex items-center gap-1">
+          <div className="flex flex-col sm:flex-row gap-2">
+            <button onClick={handlePreviewPDF} className="solar-btn-outline text-sm py-2 px-3 flex items-center justify-center gap-1">
+              <Eye className="w-4 h-4" /> Visualizar PDF
+            </button>
+            <button onClick={handleDownloadPDF} className="solar-btn-primary text-sm py-2 px-3 flex items-center justify-center gap-1">
               <Download className="w-4 h-4" /> Baixar PDF
             </button>
             <div className="relative">
@@ -778,6 +811,27 @@ export default function ProposalPage() {
         <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center no-print" onClick={() => setVideoModal(null)}>
           <button className="absolute top-4 right-4 text-white"><X className="w-8 h-8" /></button>
           <iframe src={videoModal.replace('watch?v=', 'embed/')} className="w-[90vw] max-w-3xl aspect-video rounded-lg" allowFullScreen />
+        </div>
+      )}
+
+      {/* PDF Viewer Modal */}
+      {showPdfViewer && pdfBlobUrl && (
+        <div className="fixed inset-0 bg-black/80 z-[100] flex flex-col items-center justify-center">
+          <div className="w-full max-w-4xl h-[90vh] flex flex-col">
+            <div className="flex items-center justify-between p-3 bg-card rounded-t-xl">
+              <span className="text-sm font-medium text-foreground">Visualização do PDF</span>
+              <div className="flex gap-2">
+                <button onClick={handleDownloadPDF} className="solar-btn-primary text-xs py-1.5 px-3 flex items-center gap-1">
+                  <Download className="w-3.5 h-3.5" /> Baixar
+                </button>
+                <button onClick={() => { setShowPdfViewer(false); if (pdfBlobUrl) URL.revokeObjectURL(pdfBlobUrl); setPdfBlobUrl(null); }}
+                  className="p-1.5 rounded-lg hover:bg-muted transition-colors">
+                  <X className="w-5 h-5 text-muted-foreground" />
+                </button>
+              </div>
+            </div>
+            <iframe src={pdfBlobUrl} className="flex-1 w-full rounded-b-xl bg-white" title="PDF Preview" />
+          </div>
         </div>
       )}
     </div>

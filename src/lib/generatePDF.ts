@@ -20,8 +20,8 @@ type RGB = readonly [number, number, number];
 export async function generateProposalPDF(
   proposal: any, settings: any, lineCards: any[],
   chartData: any[], cashflowData: any[]
-) {
-  const doc = new jsPDF('p', 'mm', 'a4');
+): Promise<jsPDF> {
+  const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4', compress: true });
   const W = 210;
   const H = 297;
   const M = 15;
@@ -65,39 +65,41 @@ export async function generateProposalPDF(
     doc.text(numero, W - M, 18, { align: 'right' });
   };
 
-  // Load cover and portfolio images as base64
-  const loadImageAsBase64 = async (src: string): Promise<string | null> => {
+  // Compress image via canvas: resize + JPEG quality
+  const compressImage = async (src: string, maxWidth: number, quality: number): Promise<string | null> => {
     try {
       const response = await fetch(src);
       const blob = await response.blob();
-      return await new Promise<string>((resolve) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result as string);
-        reader.readAsDataURL(blob);
-      });
+      const bitmap = await createImageBitmap(blob);
+      const scale = Math.min(1, maxWidth / bitmap.width);
+      const w = Math.round(bitmap.width * scale);
+      const h = Math.round(bitmap.height * scale);
+      const canvas = document.createElement('canvas');
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d')!;
+      ctx.drawImage(bitmap, 0, 0, w, h);
+      bitmap.close();
+      return canvas.toDataURL('image/jpeg', quality);
     } catch { return null; }
   };
 
   let logoData: string | null = null;
   try {
-    const response = await fetch(new URL('/src/assets/logo.png', window.location.origin).href);
-    const blob = await response.blob();
-    logoData = await new Promise<string>((resolve) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
-      reader.readAsDataURL(blob);
-    });
+    logoData = await compressImage(new URL('/src/assets/logo.png', window.location.origin).href, 400, 0.75);
   } catch { /* logo not available */ }
 
-  const coverImgData = await loadImageAsBase64(pdfCoverImg);
-  const portfolioImgData = await loadImageAsBase64(pdfPortfolioImg);
+  // Cover: largest image — compress aggressively
+  const coverImgData = await compressImage(pdfCoverImg, 1200, 0.70);
+  // Portfolio: many photos — compress more
+  const portfolioImgData = await compressImage(pdfPortfolioImg, 1200, 0.60);
 
   // ═══════════════════════════════════════
   // PAGE 1: COVER (using uploaded template image)
   // ═══════════════════════════════════════
   if (coverImgData) {
     try {
-      doc.addImage(coverImgData, 'PNG', 0, 0, W, H);
+      doc.addImage(coverImgData, 'JPEG', 0, 0, W, H);
     } catch {}
   }
 
@@ -148,7 +150,7 @@ export async function generateProposalPDF(
   doc.addPage();
   if (portfolioImgData) {
     try {
-      doc.addImage(portfolioImgData, 'PNG', 0, 0, W, H);
+      doc.addImage(portfolioImgData, 'JPEG', 0, 0, W, H);
     } catch {}
   } else {
     drawPageHeader('Nossos Projetos');
@@ -566,8 +568,7 @@ export async function generateProposalPDF(
   drawFooter();
 
   // ═══════════════════════════════════════
-  // SAVE
+  // RETURN DOC (caller decides save vs blob)
   // ═══════════════════════════════════════
-  const clientName = (proposal.clientData.name || 'Cliente').replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_');
-  doc.save(`Proposta_${numero}_${clientName}.pdf`);
+  return doc;
 }
