@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useState, useMemo, useEffect, useRef } from 'react';
-import { getProposals, saveProposal, getSettings, getSocialProofs, lookupIrradiation } from '@/data/store';
+import { getProposals, saveProposal, getSettings, getSocialProofs, lookupIrradiation, getPriceTable } from '@/data/store';
 import { getPropostaByIdDB, markPropostaViewedDB, getSettingsDB } from '@/data/supabaseStore';
 import { getCidadesIrradianciaDB } from '@/data/supabaseStore';
 import {
