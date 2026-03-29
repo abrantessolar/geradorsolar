@@ -24,6 +24,10 @@ export async function generateProposalPDF(
   proposal: any, settings: any, lineCards: any[],
   chartData: any[], cashflowData: any[]
 ): Promise<jsPDF> {
+  // Load PDF template settings
+  const savedTemplate = await getConfigDB('pdf_template');
+  const tpl: PdfTemplateSettings = savedTemplate ? { ...DEFAULT_PDF_TEMPLATE, ...savedTemplate } : DEFAULT_PDF_TEMPLATE;
+
   const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4', compress: true });
   const W = 210;
   const H = 297;
