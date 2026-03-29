@@ -813,6 +813,27 @@ export default function ProposalPage() {
           <iframe src={videoModal.replace('watch?v=', 'embed/')} className="w-[90vw] max-w-3xl aspect-video rounded-lg" allowFullScreen />
         </div>
       )}
+
+      {/* PDF Viewer Modal */}
+      {showPdfViewer && pdfBlobUrl && (
+        <div className="fixed inset-0 bg-black/80 z-[100] flex flex-col items-center justify-center">
+          <div className="w-full max-w-4xl h-[90vh] flex flex-col">
+            <div className="flex items-center justify-between p-3 bg-card rounded-t-xl">
+              <span className="text-sm font-medium text-foreground">Visualização do PDF</span>
+              <div className="flex gap-2">
+                <button onClick={handleDownloadPDF} className="solar-btn-primary text-xs py-1.5 px-3 flex items-center gap-1">
+                  <Download className="w-3.5 h-3.5" /> Baixar
+                </button>
+                <button onClick={() => { setShowPdfViewer(false); if (pdfBlobUrl) URL.revokeObjectURL(pdfBlobUrl); setPdfBlobUrl(null); }}
+                  className="p-1.5 rounded-lg hover:bg-muted transition-colors">
+                  <X className="w-5 h-5 text-muted-foreground" />
+                </button>
+              </div>
+            </div>
+            <iframe src={pdfBlobUrl} className="flex-1 w-full rounded-b-xl bg-white" title="PDF Preview" />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
