@@ -315,6 +315,9 @@ export default function CalculatorPage() {
     const custom = customKits[card.line];
     const isCustom = custom?.enabled;
 
+    // Find seller details
+    const sellerData = settings.sellers?.find(s => s.name === client.seller);
+
     const proposal: Proposal = {
       id: crypto.randomUUID(),
       clientData: { ...client, id: crypto.randomUUID() },
@@ -329,12 +332,23 @@ export default function CalculatorPage() {
         : { inverter: card.inverter, panel: card.panel, panelCount: card.panelCount },
       totalPrice: card.totalPrice,
       installmentValues: card.installments,
+      cardInstallments: card.cardInstallments,
+      costBreakdown: card.costBreakdown,
       cetApplied: null,
       status: 'enviada',
       createdAt: new Date().toISOString(),
       dimensioning: card.dimensioning,
+      irradiation,
+      monthlyIrradiation: monthlyIrr || undefined,
+      sellerPhone: sellerData?.phone || '',
+      sellerEmail: sellerData?.email || '',
+      microInverterCount: card.microCount,
+      inverterBrand: card.inverterBrand,
+      inverterModel: card.inverterModel,
+      panelBrand: card.panelBrand,
+      panelPowerLabel: card.panelPowerLabel,
       customKit: isCustom ? custom : undefined,
-    } as any;
+    };
     // Save to localStorage (fallback) and Supabase
     saveProposal(proposal);
     savePropostaDB(proposal).then(dbId => {
@@ -632,6 +646,22 @@ export default function CalculatorPage() {
             +
           </button>
         </div>
+        {/* Indicators */}
+        {systemCards[0] && (() => {
+          const refCard = systemCards[0];
+          const gen = refCard.dimensioning.monthlyGeneration;
+          const cons = refCard.dimensioning.avgMonthlyKwh;
+          const exc = gen - cons;
+          return (
+            <div className="space-y-0.5 text-center" style={{ fontSize: '12px', color: '#888' }}>
+              <p>Consumo: {formatNumber(cons, 0)} kWh/mês</p>
+              <p>Geração estimada: {formatNumber(gen, 0)} kWh/mês</p>
+              <p style={{ color: exc >= 0 ? '#3BB273' : '#E84855' }}>
+                Excedente: {exc >= 0 ? '+' : '−'}{formatNumber(Math.abs(exc), 0)} kWh/mês
+              </p>
+            </div>
+          );
+        })()}
         {panelDelta !== 0 && (
           <p className="text-center text-xs text-muted-foreground">
             Mínimo recomendado: {basePanelCount} placas ({panelDelta > 0 ? '+' : ''}{panelDelta} ajuste)

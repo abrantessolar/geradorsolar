@@ -397,6 +397,21 @@ export default function ProposalPage() {
               +
             </button>
           </div>
+          {/* Indicators */}
+          {selectedCard && (() => {
+            const gen = selectedCard.dimensioning.monthlyGeneration;
+            const cons = selectedCard.dimensioning.avgMonthlyKwh;
+            const exc = gen - cons;
+            return (
+              <div className="space-y-0.5 text-center" style={{ fontSize: '12px', color: '#888' }}>
+                <p>Consumo: {formatNumber(cons, 0)} kWh/mês</p>
+                <p>Geração estimada: {formatNumber(gen, 0)} kWh/mês</p>
+                <p style={{ color: exc >= 0 ? '#3BB273' : '#E84855' }}>
+                  Excedente: {exc >= 0 ? '+' : '−'}{formatNumber(Math.abs(exc), 0)} kWh/mês
+                </p>
+              </div>
+            );
+          })()}
           <p className="text-center text-xs text-muted-foreground">
             Mínimo recomendado: {recommendedPanels} placas
             {panelDelta !== 0 && (
