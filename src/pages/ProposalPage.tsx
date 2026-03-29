@@ -85,11 +85,15 @@ export default function ProposalPage() {
   const lineCards = useMemo(() => {
     if (!proposal) return [];
     const savedData = proposal.dados_completos || proposal;
+    const selectedLine = savedData.selectedLine || proposal.selectedLine;
     
-    return LINES.map(line => {
-      const isSelectedLine = line === (savedData.selectedLine || proposal.selectedLine);
+    // Only compute the selected line card
+    const linesToShow = [selectedLine];
+    
+    return linesToShow.map(line => {
+      const isSelectedLine = line === selectedLine;
       
-      // For the selected line, use saved data from the proposal
+      // For the selected line with no panel delta, use saved data
       if (isSelectedLine && panelDelta === 0) {
         const savedKit = savedData.selectedKit;
         const savedDim = savedData.dimensioning || proposal.dimensioning;
@@ -124,7 +128,7 @@ export default function ProposalPage() {
         };
       }
       
-      // For non-selected line or when panels are adjusted, use price table data
+      // When panels are adjusted, recalculate from price table
       const priceTable = getPriceTable();
       const ptEntries = priceTable.filter(e => e[line] !== null && e[line]! > 0 && e.panels >= finalPanels);
       ptEntries.sort((a, b) => a.panels - b.panels);
@@ -479,12 +483,12 @@ export default function ProposalPage() {
           </p>
         </section>
 
-        {/* 3 LINE CARDS */}
+        {/* SELECTED LINE CARD */}
         <section className="space-y-4 print-page">
           <h2 className="text-2xl font-bold text-primary text-center flex items-center justify-center gap-2">
-            <Zap className="w-6 h-6 text-secondary" /> Compare as Linhas
+            <Zap className="w-6 h-6 text-secondary" /> Seu Sistema Solar
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 print-line-cards">
+          <div className="max-w-lg mx-auto print-line-cards">
             {lineCards.map(card => {
               const isPremium = card.line === 'premium';
               const maxP = card.maxPanels;
@@ -492,7 +496,7 @@ export default function ProposalPage() {
               const limitColor = isPremium ? undefined : (remaining <= 0 ? '#E84855' : remaining <= 2 ? '#E8B84B' : undefined);
 
               return (
-                <div key={card.line} className={`solar-card p-6 space-y-4 print-card ${card.line === proposal.selectedLine ? 'ring-2 ring-primary' : ''}`}>
+                <div key={card.line} className="solar-card p-6 space-y-4 print-card ring-2 ring-primary">
                   <div className="text-center">
                     <h3 className="text-lg font-bold text-primary">{LINE_NAMES[card.line]}</h3>
                     <p className="text-xs text-muted-foreground">{LINE_SUBS[card.line]}</p>
