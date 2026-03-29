@@ -529,10 +529,10 @@ export default function PublicSimulator() {
                     <Tooltip formatter={(v: number) => `${v} kWh`} />
                     <Legend wrapperStyle={{ fontSize: '11px' }} />
                     <Bar dataKey="Geração" fill="#4A5A2A" radius={[3, 3, 0, 0]} />
-                    <Bar dataKey="Consumo" fill="#E8B84B" radius={[3, 3, 0, 0]} />
+                    <Bar dataKey="Consumo" stackId="consumption" fill="#E8B84B" radius={[3, 3, 0, 0]} />
                     {equipments.map((eq, idx) => {
                       const eqLabel = eq.quantity > 1 ? `${eq.catalog.label} (x${eq.quantity})` : eq.catalog.label;
-                      return <Bar key={eq.id} dataKey={eqLabel} stackId="eq" fill={EQUIPMENT_COLORS[idx % EQUIPMENT_COLORS.length]} radius={[2, 2, 0, 0]} />;
+                      return <Bar key={eq.id} dataKey={eqLabel} stackId="consumption" fill={EQUIPMENT_COLORS[idx % EQUIPMENT_COLORS.length]} radius={[2, 2, 0, 0]} />;
                     })}
                   </BarChart>
                 </ResponsiveContainer>
