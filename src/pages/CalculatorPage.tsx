@@ -646,17 +646,72 @@ export default function CalculatorPage() {
                 </div>
 
                 <div className="text-center py-3 border-y border-border">
+                  <p className="text-xs text-muted-foreground mb-1">Investimento</p>
                   <p className="text-2xl font-bold text-primary">{formatCurrency(card.totalPrice)}</p>
                 </div>
 
-                <div className="space-y-1 text-xs">
-                  {Object.entries(card.installments).map(([n, v]) => (
-                    <div key={n} className="flex justify-between">
-                      <span className="text-muted-foreground">{n}×</span>
-                      <span className="font-medium">{formatCurrency(v)}</span>
+                {/* Payment tabs */}
+                <div className="space-y-2">
+                  <div className="flex gap-1">
+                    <button onClick={() => setPaymentTab('financing')}
+                      className={`flex-1 text-xs py-1.5 rounded font-medium transition-colors ${paymentTab === 'financing' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>
+                      Financiamento
+                    </button>
+                    <button onClick={() => setPaymentTab('card')}
+                      className={`flex-1 text-xs py-1.5 rounded font-medium transition-colors ${paymentTab === 'card' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>
+                      <CreditCard className="w-3 h-3 inline mr-1" />Cartão
+                    </button>
+                  </div>
+                  {paymentTab === 'financing' ? (
+                    <div className="space-y-1 text-xs">
+                      {Object.entries(card.installments).map(([n, v]) => (
+                        <div key={n} className="flex justify-between">
+                          <span className="text-muted-foreground">{n}×</span>
+                          <span className="font-medium">{formatCurrency(v as number)}</span>
+                        </div>
+                      ))}
+                      <p className="text-[10px] text-muted-foreground mt-1 italic">
+                        Valores sujeitos à aprovação de crédito
+                      </p>
                     </div>
-                  ))}
+                  ) : (
+                    <div className="space-y-1 text-xs max-h-48 overflow-y-auto">
+                      {Object.entries(card.cardInstallments).map(([n, v]) => (
+                        <div key={n} className="flex justify-between">
+                          <span className="text-muted-foreground">{n}×</span>
+                          <span className="font-medium">{formatCurrency((v as any).perMonth)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
+
+                {/* Internal cost breakdown - only for authenticated users */}
+                {isAuthenticated && (
+                  <div className="border-t border-border pt-3 space-y-2">
+                    <button onClick={() => setShowCostPanel(p => !p)}
+                      className="flex items-center gap-2 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors w-full">
+                      {showCostPanel ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                      {showCostPanel ? 'Ocultar custos internos' : 'Ver custos internos'}
+                    </button>
+                    {showCostPanel && (
+                      <div className="space-y-1.5 text-xs p-3 rounded-lg bg-muted/50 border border-border/50">
+                        <p className="font-semibold text-muted-foreground uppercase tracking-wide text-[10px] mb-2">Detalhamento interno</p>
+                        <div className="flex justify-between"><span className="text-muted-foreground">Equipamentos</span><span>{formatCurrency(card.costBreakdown.equipmentCost)}</span></div>
+                        <div className="flex justify-between"><span className="text-muted-foreground">Instalação ({card.panelCount}× R$100)</span><span>{formatCurrency(card.costBreakdown.installationCost)}</span></div>
+                        <div className="flex justify-between"><span className="text-muted-foreground">Homologação</span><span>{formatCurrency(card.costBreakdown.homologationCost)}</span></div>
+                        <div className="flex justify-between"><span className="text-muted-foreground">Material CA ({card.inverter?.power || 0} kW)</span><span>{formatCurrency(card.costBreakdown.caMaterialCost)}</span></div>
+                        {card.costBreakdown.trunkCableCost > 0 && (
+                          <div className="flex justify-between"><span className="text-muted-foreground">Cabo tronco</span><span>{formatCurrency(card.costBreakdown.trunkCableCost)}</span></div>
+                        )}
+                        <div className="flex justify-between pt-1.5 border-t border-border font-semibold"><span>Custo total</span><span>{formatCurrency(card.costBreakdown.totalCost)}</span></div>
+                        <div className="flex justify-between"><span className="text-muted-foreground">Margem</span><span>{card.costBreakdown.profitMargin}%</span></div>
+                        <div className="flex justify-between font-bold text-primary"><span>Preço de venda</span><span>{formatCurrency(card.costBreakdown.salePrice)}</span></div>
+                        <div className="flex justify-between text-green-600 font-semibold"><span>Lucro bruto</span><span>{formatCurrency(card.costBreakdown.grossProfit)}</span></div>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 <button onClick={() => generateProposal(idx)}
                   className="w-full solar-btn-primary flex items-center justify-center gap-2">
