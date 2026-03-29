@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { useLocation } from 'react-router-dom';
 import {
   getSettings, saveSettings, getKits, saveKits, getProposals,
   getSocialProofs, saveSocialProofs,
@@ -13,7 +14,9 @@ import {
 import { formatCurrency } from '@/data/calculations';
 import { AdminSettings, IrradiationEntry, PriceTableEntry, SocialProof, BRAZILIAN_STATES, CA_MATERIAL_TABLE_DEFAULT, LINE_NAMES } from '@/data/types';
 import type { Distributor, PriceTableLineDetails } from '@/data/types';
-import { Users, DollarSign, Settings, MapPin, Building2, FileText, Image, Plus, Trash2, Save, Eye, Wand2, AlertCircle, Upload, Check, ChevronDown, UserPlus, Edit2, X, Globe, CheckCircle, AlertTriangle, Share2 } from 'lucide-react';
+import { Users, DollarSign, Settings, MapPin, Building2, FileText, Image, Plus, Trash2, Save, Eye, Wand2, AlertCircle, Upload, Check, ChevronDown, UserPlus, Edit2, X, Globe, CheckCircle, AlertTriangle, Share2, Megaphone } from 'lucide-react';
+import LeadsTab from '@/components/admin/LeadsTab';
+import { useNewLeadsCount } from '@/components/LeadNotification';
 import { toast } from 'sonner';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import SiteContentTab from '@/components/admin/SiteContentTab';
@@ -27,9 +30,12 @@ const ROLE_LABELS: Record<string, string> = {
 
 export default function AdminPage() {
   const { isAdmin, isOrcamentista, profile } = useAuth();
+  const location = useLocation();
+  const newLeadsCount = useNewLeadsCount();
 
   const adminTabs = [
     { key: 'users' as const, label: 'Usuários', icon: Users, roles: ['admin'] },
+    { key: 'leads' as const, label: 'Leads', icon: Megaphone, roles: ['admin', 'orcamentista'], badge: newLeadsCount },
     { key: 'prices' as const, label: 'Tabela de Preços', icon: DollarSign, roles: ['admin'] },
     { key: 'pricing' as const, label: 'Precificação', icon: Settings, roles: ['admin'] },
     { key: 'irradiation' as const, label: 'Irradiação', icon: MapPin, roles: ['admin', 'orcamentista'] },
@@ -40,7 +46,8 @@ export default function AdminPage() {
   ];
 
   const visibleTabs = adminTabs.filter(t => t.roles.includes(profile?.role || ''));
-  const [tab, setTab] = useState(visibleTabs[0]?.key || 'proposals');
+  const initialTab = (location.state as any)?.tab || visibleTabs[0]?.key || 'proposals';
+  const [tab, setTab] = useState(initialTab);
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
@@ -51,13 +58,19 @@ export default function AdminPage() {
       <div className="flex gap-2 flex-wrap">
         {visibleTabs.map(t => (
           <button key={t.key} onClick={() => setTab(t.key)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${tab === t.key ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/70'}`}>
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors relative ${tab === t.key ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/70'}`}>
             <t.icon className="w-4 h-4" /> {t.label}
+            {(t as any).badge > 0 && (
+              <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                {(t as any).badge}
+              </span>
+            )}
           </button>
         ))}
       </div>
 
       {tab === 'users' && isAdmin && <UsersTab />}
+      {tab === 'leads' && <LeadsTab />}
       {tab === 'prices' && <PriceTableTab />}
       {tab === 'pricing' && <PricingTab />}
       {tab === 'irradiation' && <IrradiationTab />}
