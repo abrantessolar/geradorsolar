@@ -547,7 +547,7 @@ export async function generateProposalPDF(
   setColor(RED_SOFT);
   doc.text('Quanto você pagaria sem energia solar', M, y);
   y += 7;
-  const nCardW = CW / 3 - 2;
+  const nCardW = CW / Math.max(noSolarItems.length, 1) - 2;
   noSolarItems.forEach((item, i) => {
     const nx = M + i * (nCardW + 3);
     setFill([255, 245, 243]);
