@@ -20,8 +20,8 @@ type RGB = readonly [number, number, number];
 export async function generateProposalPDF(
   proposal: any, settings: any, lineCards: any[],
   chartData: any[], cashflowData: any[]
-) {
-  const doc = new jsPDF('p', 'mm', 'a4');
+): Promise<jsPDF> {
+  const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4', compress: true });
   const W = 210;
   const H = 297;
   const M = 15;
@@ -99,7 +99,7 @@ export async function generateProposalPDF(
   // ═══════════════════════════════════════
   if (coverImgData) {
     try {
-      doc.addImage(coverImgData, 'PNG', 0, 0, W, H);
+      doc.addImage(coverImgData, 'JPEG', 0, 0, W, H);
     } catch {}
   }
 
@@ -150,7 +150,7 @@ export async function generateProposalPDF(
   doc.addPage();
   if (portfolioImgData) {
     try {
-      doc.addImage(portfolioImgData, 'PNG', 0, 0, W, H);
+      doc.addImage(portfolioImgData, 'JPEG', 0, 0, W, H);
     } catch {}
   } else {
     drawPageHeader('Nossos Projetos');
@@ -568,8 +568,7 @@ export async function generateProposalPDF(
   drawFooter();
 
   // ═══════════════════════════════════════
-  // SAVE
+  // RETURN DOC (caller decides save vs blob)
   // ═══════════════════════════════════════
-  const clientName = (proposal.clientData.name || 'Cliente').replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_');
-  doc.save(`Proposta_${numero}_${clientName}.pdf`);
+  return doc;
 }
