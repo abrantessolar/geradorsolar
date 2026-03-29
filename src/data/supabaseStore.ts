@@ -286,7 +286,7 @@ export async function getEquipamentosDB(): Promise<Kit[]> {
   if (!data || data.length === 0) return [];
   return data.map(d => ({
     id: d.id,
-    line: d.linha,
+    line: d.linha as Kit['line'],
     type: d.tipo as 'inversor' | 'placa',
     brand: d.marca || '',
     model: d.modelo || '',
