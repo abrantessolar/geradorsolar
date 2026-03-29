@@ -2,6 +2,9 @@ import jsPDF from 'jspdf';
 import { formatCurrency, formatNumber } from '@/data/calculations';
 import { LINE_NAMES, INSTALLMENT_OPTIONS, MONTH_LABELS } from '@/data/types';
 import { supabase } from '@/integrations/supabase/client';
+import { getConfigDB } from '@/data/supabaseStore';
+import type { PdfTemplateSettings } from '@/data/pdfTemplateTypes';
+import { DEFAULT_PDF_TEMPLATE } from '@/data/pdfTemplateTypes';
 import pdfCoverImg from '@/assets/pdf-cover.png';
 import pdfPortfolioImg from '@/assets/pdf-portfolio.png';
 
