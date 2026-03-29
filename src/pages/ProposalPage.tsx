@@ -407,9 +407,6 @@ export default function ProposalPage() {
                     </div>
                   )}
                 </div>
-                <button onClick={() => setCetModal(true)} className="solar-btn-outline text-xs py-1 px-2.5 flex items-center gap-1">
-                  <Edit className="w-3.5 h-3.5" /> CET
-                </button>
               </div>
             </div>
           </div>
