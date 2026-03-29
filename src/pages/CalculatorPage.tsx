@@ -829,6 +829,28 @@ export default function CalculatorPage() {
             );
           })}
         </div>
+        {/* Central Generate Proposal Button */}
+        <div className="text-center pt-4">
+          {selectedLine === null ? (
+            <p className="text-sm text-muted-foreground mb-3">Clique em uma das opções acima para selecionar</p>
+          ) : (
+            <p className="text-sm text-muted-foreground mb-3">
+              Selecionado: <span className="font-semibold text-primary">{LINE_NAMES[systemCards[selectedLine].line]}</span>
+            </p>
+          )}
+          <button
+            onClick={() => {
+              if (selectedLine === null) {
+                toast.error('Selecione uma opção de sistema (TLS Plus ou TLS Prime Micro) antes de gerar a proposta.');
+                return;
+              }
+              generateProposal(selectedLine);
+            }}
+            className="solar-btn-primary px-8 py-3 text-base flex items-center justify-center gap-2 mx-auto"
+          >
+            Gerar Proposta <ArrowRight className="w-5 h-5" />
+          </button>
+        </div>
       </section>
 
       {/* Financial Summary */}
