@@ -113,27 +113,31 @@ export async function generateProposalPDF(
   const barY = 220;
   
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(18);
+  doc.setFontSize(20);
   setColor(WHITE);
   doc.text(proposal.clientData.name.toUpperCase(), W / 2, barY + 5, { align: 'center' });
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(10);
+  doc.setFontSize(11);
   setColor([230, 230, 220]);
   doc.text(`${formatNumber(selectedCard?.dimensioning?.avgMonthlyKwh || 0, 0)} kWh/mês  •  ${proposal.clientData.city} — ${proposal.clientData.state || 'MS'}`, W / 2, barY + 13, { align: 'center' });
 
-  // Representative info on cover — white text below client info
+  // Representative info — black text, 7.5% lower
   const sellerName = proposal.clientData.seller || '';
   const matchedSeller = settings.sellers?.find((s: any) => s.name === sellerName);
   const sellerPhone = matchedSeller?.phone || settings.company?.phone || '';
+  const sellerEmail = matchedSeller?.email || '';
+  const repY = barY + 26 + (H * 0.075);
   if (sellerName) {
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(10);
-    setColor(WHITE);
-    doc.text(`Representante: ${sellerName}`, W / 2, barY + 26, { align: 'center' });
-    if (sellerPhone) {
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(9);
-      doc.text(sellerPhone, W / 2, barY + 33, { align: 'center' });
+    setColor(DARK);
+    doc.text(sellerName, W / 2, repY, { align: 'center' });
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    setColor(GRAY);
+    const repDetails = [sellerPhone, sellerEmail].filter(Boolean).join('  •  ');
+    if (repDetails) {
+      doc.text(repDetails, W / 2, repY + 6, { align: 'center' });
     }
   }
 
