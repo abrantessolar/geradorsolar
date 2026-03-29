@@ -13,7 +13,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, Line
 import { Download, Share2, Edit, ArrowLeft, Sun, Zap, TrendingUp, Shield, X, Cpu, Check, MessageCircle, Calendar, AlertTriangle, ChevronDown, ChevronUp, BarChart3, Eye } from 'lucide-react';
 import { generateProposalPDF } from '@/lib/generatePDF';
 import { toast } from 'sonner';
-import logo from '@/assets/logo.png';
+
 
 const LINES = ['excellence', 'premium'] as const;
 const PERIOD_OPTIONS = [5, 10, 15, 20, 25];
@@ -344,7 +344,7 @@ export default function ProposalPage() {
             ))}
           </div>
           <div className="relative z-10">
-            <img src={logo} alt="Três Lagoas Solar" className="h-72 mx-auto mb-6 print-logo" />
+            <img src="/lovable-uploads/aec16b52-e652-47e3-8b88-abab197597dd.png" alt="Três Lagoas Solar" className="h-72 mx-auto mb-6 print-logo" />
             <p className="text-sm uppercase tracking-widest text-muted-foreground mb-2">{settings.company.name}</p>
             {proposal.numero_proposta && (
               <p className="text-sm font-mono font-bold text-secondary mb-2">{proposal.numero_proposta}</p>
