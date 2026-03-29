@@ -109,23 +109,17 @@ export async function generateProposalPDF(
   doc.text(numero, W - M, 16, { align: 'right' });
 
   // Client name — positioned on the green bar area of the template
-  // The green bar in the template is around Y=215-235
-  const barY = 218;
-  
-  // Semi-transparent dark overlay on the green bar for better readability
-  setFill(PRIMARY);
-  doc.setGState(new (doc as any).GState({ opacity: 0.7 }));
-  doc.rect(0, barY - 4, W, 28, 'F');
-  doc.setGState(new (doc as any).GState({ opacity: 1 }));
+  // The template's green bar is around Y=215-240, we place text there
+  const barY = 220;
   
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(18);
   setColor(WHITE);
-  doc.text(proposal.clientData.name.toUpperCase(), W / 2, barY + 7, { align: 'center' });
+  doc.text(proposal.clientData.name.toUpperCase(), W / 2, barY + 5, { align: 'center' });
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(10);
   setColor([230, 230, 220]);
-  doc.text(`${formatNumber(selectedCard?.dimensioning?.avgMonthlyKwh || 0, 0)} kWh/mês  •  ${proposal.clientData.city} — ${proposal.clientData.state || 'MS'}`, W / 2, barY + 15, { align: 'center' });
+  doc.text(`${formatNumber(selectedCard?.dimensioning?.avgMonthlyKwh || 0, 0)} kWh/mês  •  ${proposal.clientData.city} — ${proposal.clientData.state || 'MS'}`, W / 2, barY + 13, { align: 'center' });
 
   // ═══════════════════════════════════════
   // PAGE 2: PORTFOLIO (using uploaded template image)
