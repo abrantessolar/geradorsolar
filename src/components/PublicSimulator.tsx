@@ -184,7 +184,7 @@ export default function PublicSimulator() {
               className="flex items-center gap-2 text-sm font-bold text-primary hover:text-primary/80 transition-colors"
             >
               <Plus className="w-4 h-4" />
-              Equipamentos adicionais (opcional)
+              Clique aqui para adicionar +Ar condicionado, ou outros eletrodomésticos.
               <ChevronDown className={`w-4 h-4 transition-transform ${showEquipmentPanel ? 'rotate-180' : ''}`} />
             </button>
 
