@@ -322,7 +322,7 @@ export default function CalculatorPage() {
         dimensioning: { ...dim, panelCount: usedPanels, powerKwp, monthlyGeneration, surplus },
       };
     });
-  }, [consumption, equipment, client, irradiation, finalPanels, settings.systemLoss, settings.creditCardRates, findPriceTableEntry, customKits]);
+  }, [consumption, equipment, client, irradiation, finalPanels, settings.systemLoss, settings.creditCardRates, findPriceTableEntry, customKits, dbDataLoaded]);
 
   const chartData = useMemo(() => {
     const baseDim = systemCards[0]?.dimensioning;
