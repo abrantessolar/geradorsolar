@@ -1,7 +1,8 @@
 import { useState, useMemo, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import { Zap, ArrowRight, Search, Plus, Trash2, ChevronDown } from 'lucide-react';
+import { Zap, ArrowRight, Search, Plus, Trash2, ChevronDown, Lock, Shield } from 'lucide-react';
 import { searchCidadesDB } from '@/data/supabaseStore';
+import { supabase } from '@/integrations/supabase/client';
 import { MONTH_LABELS, MONTH_KEYS, SEASONAL_FACTORS, EQUIPMENT_CATALOG, EquipmentCatalogItem } from '@/data/types';
 
 const LOSS = 0.21;
@@ -23,6 +24,26 @@ interface SimEquipment {
 
 const CATEGORIES = [...new Set(EQUIPMENT_CATALOG.map(e => e.category))];
 
+const QUICK_CITIES = [
+  { cidade: 'TRES LAGOAS', uf: 'MS', label: 'Três Lagoas' },
+  { cidade: 'AGUA CLARA', uf: 'MS', label: 'Água Clara' },
+  { cidade: 'CASTILHO', uf: 'SP', label: 'Castilho' },
+  { cidade: 'ANDRADINA', uf: 'SP', label: 'Andradina' },
+];
+
+const LS_KEY = 'tls_lead_data';
+
+function getSavedLead(): { nome: string; telefone: string } | null {
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed.nome && parsed.telefone) return parsed;
+    }
+  } catch {}
+  return null;
+}
+
 export default function PublicSimulator() {
   const [avgConsumption, setAvgConsumption] = useState('');
   const [citySearch, setCitySearch] = useState('');
@@ -34,6 +55,13 @@ export default function PublicSimulator() {
   const [equipments, setEquipments] = useState<SimEquipment[]>([]);
   const [showEquipmentPanel, setShowEquipmentPanel] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(CATEGORIES[0]);
+
+  // Lead capture state
+  const savedLead = getSavedLead();
+  const [isUnlocked, setIsUnlocked] = useState(!!savedLead);
+  const [leadName, setLeadName] = useState(savedLead?.nome || '');
+  const [leadPhone, setLeadPhone] = useState(savedLead?.telefone || '');
+  const [savingLead, setSavingLead] = useState(false);
 
   useEffect(() => {
     if (citySearch.length < 2) {
@@ -91,6 +119,44 @@ export default function PublicSimulator() {
     }
   };
 
+  const handleQuickCity = async (city: typeof QUICK_CITIES[0]) => {
+    setCitySearch(`${city.label} - ${city.uf}`);
+    setShowCityDropdown(false);
+    // Load irradiation data
+    const results = await searchCidadesDB(city.cidade);
+    const match = results.find(r => r.uf === city.uf);
+    if (match) {
+      setSelectedCity(match);
+    }
+    setShowResults(false);
+  };
+
+  const handleUnlock = async () => {
+    if (!leadName.trim() || !leadPhone.trim()) return;
+    if (!results || !selectedCity) return;
+
+    setSavingLead(true);
+    try {
+      // Save lead to database
+      await supabase.from('leads').insert({
+        nome: leadName.trim(),
+        telefone: leadPhone.trim(),
+        cidade: selectedCity.cidade,
+        uf: selectedCity.uf,
+        consumo_kwh: parseFloat(avgConsumption) + equipmentMonthlyKwh,
+        resultado_placas: results.panelCount,
+        resultado_potencia_kwp: results.powerKwp,
+      });
+
+      // Save to localStorage
+      localStorage.setItem(LS_KEY, JSON.stringify({ nome: leadName.trim(), telefone: leadPhone.trim() }));
+      setIsUnlocked(true);
+    } catch (err) {
+      console.error('Error saving lead:', err);
+    }
+    setSavingLead(false);
+  };
+
   const addEquipment = (catalog: EquipmentCatalogItem) => {
     setEquipments(prev => [...prev, {
       id: crypto.randomUUID(),
@@ -125,21 +191,9 @@ export default function PublicSimulator() {
         </div>
 
         <div className="solar-card p-8 space-y-6">
-          {/* Consumo */}
-          <div>
-            <label className="block text-sm font-bold text-foreground mb-2">Consumo médio mensal (kWh)</label>
-            <input
-              type="number"
-              className="solar-input text-lg"
-              placeholder="Ex: 350"
-              value={avgConsumption}
-              onChange={e => { setAvgConsumption(e.target.value); setShowResults(false); }}
-            />
-          </div>
-
-          {/* Cidade */}
+          {/* Step 1: Cidade */}
           <div className="relative">
-            <label className="block text-sm font-bold text-foreground mb-2">Cidade</label>
+            <label className="block text-sm font-bold text-foreground mb-2">1. Sua cidade</label>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <input
@@ -154,6 +208,22 @@ export default function PublicSimulator() {
                 }}
                 onFocus={() => setShowCityDropdown(true)}
               />
+            </div>
+            {/* Quick city buttons */}
+            <div className="flex flex-wrap gap-2 mt-2">
+              {QUICK_CITIES.map(c => (
+                <button
+                  key={c.cidade}
+                  onClick={() => handleQuickCity(c)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors border ${
+                    selectedCity?.cidade === c.cidade && selectedCity?.uf === c.uf
+                      ? 'bg-primary text-primary-foreground border-primary'
+                      : 'bg-muted-foreground/5 text-muted-foreground hover:bg-muted-foreground/10 border-border'
+                  }`}
+                >
+                  {c.label}
+                </button>
+              ))}
             </div>
             {showCityDropdown && (cityResults.length > 0 || searching) && (
               <div className="absolute z-20 mt-1 w-full bg-card border border-border rounded-xl shadow-xl max-h-60 overflow-y-auto">
@@ -176,6 +246,18 @@ export default function PublicSimulator() {
             )}
           </div>
 
+          {/* Step 2: Consumo */}
+          <div>
+            <label className="block text-sm font-bold text-foreground mb-2">2. Consumo médio mensal (kWh)</label>
+            <input
+              type="number"
+              className="solar-input text-lg"
+              placeholder="Ex: 350"
+              value={avgConsumption}
+              onChange={e => { setAvgConsumption(e.target.value); setShowResults(false); }}
+            />
+          </div>
+
           {/* Equipamentos Adicionais */}
           <div>
             <button
@@ -194,7 +276,6 @@ export default function PublicSimulator() {
                   Adicione equipamentos que pretende instalar para um dimensionamento mais preciso.
                 </p>
 
-                {/* Category tabs */}
                 <div className="flex flex-wrap gap-2">
                   {CATEGORIES.map(cat => (
                     <button
@@ -211,7 +292,6 @@ export default function PublicSimulator() {
                   ))}
                 </div>
 
-                {/* Equipment list for selected category */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto">
                   {EQUIPMENT_CATALOG.filter(e => e.category === selectedCategory).map(eq => (
                     <button
@@ -226,7 +306,6 @@ export default function PublicSimulator() {
                   ))}
                 </div>
 
-                {/* Added equipments */}
                 {equipments.length > 0 && (
                   <div className="space-y-3 pt-2 border-t border-border">
                     <h4 className="text-sm font-bold text-foreground">Equipamentos adicionados</h4>
@@ -237,9 +316,7 @@ export default function PublicSimulator() {
                         <label className="flex items-center gap-1">
                           <span className="text-xs text-muted-foreground">Qtd:</span>
                           <input
-                            type="number"
-                            min={1}
-                            max={20}
+                            type="number" min={1} max={20}
                             className="w-14 px-2 py-1 rounded border border-border bg-background text-center text-sm"
                             value={eq.quantity}
                             onChange={e => updateEquipment(eq.id, 'quantity', Math.max(1, parseInt(e.target.value) || 1))}
@@ -250,8 +327,7 @@ export default function PublicSimulator() {
                           <label className="flex items-center gap-1">
                             <span className="text-xs text-muted-foreground">km/mês:</span>
                             <input
-                              type="number"
-                              min={0}
+                              type="number" min={0}
                               className="w-20 px-2 py-1 rounded border border-border bg-background text-center text-sm"
                               value={eq.kmPerMonth || 0}
                               onChange={e => updateEquipment(eq.id, 'kmPerMonth', Math.max(0, parseInt(e.target.value) || 0))}
@@ -262,10 +338,7 @@ export default function PublicSimulator() {
                             <label className="flex items-center gap-1">
                               <span className="text-xs text-muted-foreground">h/dia:</span>
                               <input
-                                type="number"
-                                min={0}
-                                max={24}
-                                step={0.5}
+                                type="number" min={0} max={24} step={0.5}
                                 className="w-16 px-2 py-1 rounded border border-border bg-background text-center text-sm"
                                 value={eq.hoursPerDay}
                                 onChange={e => updateEquipment(eq.id, 'hoursPerDay', Math.max(0, parseFloat(e.target.value) || 0))}
@@ -274,9 +347,7 @@ export default function PublicSimulator() {
                             <label className="flex items-center gap-1">
                               <span className="text-xs text-muted-foreground">dias/mês:</span>
                               <input
-                                type="number"
-                                min={0}
-                                max={30}
+                                type="number" min={0} max={30}
                                 className="w-16 px-2 py-1 rounded border border-border bg-background text-center text-sm"
                                 value={eq.daysPerMonth}
                                 onChange={e => updateEquipment(eq.id, 'daysPerMonth', Math.max(0, parseInt(e.target.value) || 0))}
@@ -321,8 +392,58 @@ export default function PublicSimulator() {
             <Zap className="w-5 h-5" /> Simular
           </button>
 
+          {/* Results */}
           {showResults && results && (
-            <div className="space-y-6 pt-6 border-t border-border animate-fade-in-up">
+            <div className="space-y-6 pt-6 border-t border-border animate-fade-in-up relative">
+              {/* Blurred overlay when not unlocked */}
+              {!isUnlocked && (
+                <>
+                  <div className="absolute inset-0 z-10" style={{ backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}>
+                    <div className="absolute inset-0 bg-background/40" />
+                  </div>
+                  {/* Unlock card */}
+                  <div className="absolute inset-0 z-20 flex items-center justify-center px-4">
+                    <div className="bg-card border border-border rounded-2xl shadow-2xl p-6 max-w-sm w-full space-y-4 text-center">
+                      <div className="text-4xl">🌞</div>
+                      <h3 className="text-xl font-black text-primary">Sua simulação está pronta!</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Para ver o resultado completo gratuitamente, informe:
+                      </p>
+                      <div className="space-y-3 text-left">
+                        <div>
+                          <label className="block text-sm font-medium mb-1">Nome</label>
+                          <input
+                            className="solar-input"
+                            placeholder="Seu nome completo"
+                            value={leadName}
+                            onChange={e => setLeadName(e.target.value)}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium mb-1">WhatsApp</label>
+                          <input
+                            className="solar-input"
+                            placeholder="(XX) XXXXX-XXXX"
+                            value={leadPhone}
+                            onChange={e => setLeadPhone(e.target.value)}
+                          />
+                        </div>
+                      </div>
+                      <button
+                        onClick={handleUnlock}
+                        disabled={!leadName.trim() || !leadPhone.trim() || savingLead}
+                        className="w-full solar-btn-primary py-3 flex items-center justify-center gap-2 disabled:opacity-50"
+                      >
+                        {savingLead ? 'Salvando...' : '🔓 Ver minha simulação grátis'}
+                      </button>
+                      <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">
+                        <Shield className="w-3 h-3" /> Seus dados estão seguros
+                      </p>
+                    </div>
+                  </div>
+                </>
+              )}
+
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <ResultCard label="Placas necessárias" value={`${results.panelCount}`} icon="🔆" />
                 <ResultCard label="Potência do sistema" value={`${results.powerKwp.toFixed(2)} kWp`} icon="⚡" />
@@ -343,19 +464,24 @@ export default function PublicSimulator() {
                 </ResponsiveContainer>
               </div>
 
-              <div className="text-center space-y-4 pt-4">
-                <p className="text-sm text-muted-foreground italic">
-                  Essa é uma estimativa informativa. Para receber uma proposta completa e personalizada, fale com um de nossos consultores!
-                </p>
-                <a
-                  href="https://wa.me/5567996448995?text=Fiz uma simulação no site e gostaria de uma proposta completa"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-8 py-4 rounded-xl bg-green-600 text-white font-bold hover:bg-green-700 transition-all"
-                >
-                  Quero minha proposta completa <ArrowRight className="w-5 h-5" />
-                </a>
-              </div>
+              {isUnlocked && (
+                <div className="text-center space-y-4 pt-4">
+                  <p className="text-sm text-muted-foreground italic">
+                    Essa é uma estimativa informativa. Para receber uma proposta completa e personalizada, fale com um de nossos consultores!
+                  </p>
+                  <a
+                    href="https://wa.me/5567996448995?text=Fiz uma simulação no site e gostaria de uma proposta completa"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 px-8 py-4 rounded-xl bg-green-600 text-white font-bold hover:bg-green-700 transition-all"
+                  >
+                    Quero minha proposta completa <ArrowRight className="w-5 h-5" />
+                  </a>
+                </div>
+              )}
+
+              {/* Min height to ensure blur area is big enough */}
+              {!isUnlocked && <div className="h-20" />}
             </div>
           )}
         </div>
