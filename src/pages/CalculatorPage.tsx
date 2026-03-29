@@ -229,14 +229,12 @@ export default function CalculatorPage() {
 
   const generateProposal = (lineIdx: number) => {
     const card = systemCards[lineIdx];
-    const consumerUnitsForProposal: ConsumerUnit[] = mode === 'average'
-      ? units
-      : monthlyUnits.map(mu => ({
-          id: mu.id,
-          name: mu.name,
-          averageKwh: MONTH_KEYS.reduce((s, k) => s + mu.values[k], 0) / 12,
-          monthlyValues: mu.values,
-        }));
+    const consumerUnitsForProposal: ConsumerUnit[] = units.map(u => ({
+      id: u.id,
+      name: u.name,
+      averageKwh: u.mode === 'monthly' ? MONTH_KEYS.reduce((s, k) => s + u.monthlyValues[k], 0) / 12 : u.averageKwh,
+      monthlyValues: u.mode === 'monthly' ? u.monthlyValues : undefined,
+    }));
 
     const proposal: Proposal = {
       id: crypto.randomUUID(),
@@ -352,103 +350,83 @@ export default function CalculatorPage() {
           <Zap className="w-5 h-5 text-secondary" /> Consumo de Energia
         </h2>
 
-        <div className="flex gap-2">
-          <button onClick={() => setMode('average')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${mode === 'average' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>
-            Média mensal
-          </button>
-          <button onClick={() => setMode('monthly')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${mode === 'monthly' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>
-            Mês a mês
-          </button>
-        </div>
-
-        {mode === 'average' ? (
-          <div className="space-y-3">
-            {units.map((u, i) => (
-              <div key={u.id} className="flex items-end gap-3">
-                <div className="flex-1">
-                  <label className="block text-sm font-medium mb-1 flex items-center gap-2">
-                    <span className="w-3 h-3 rounded-full inline-block" style={{ backgroundColor: UC_COLORS[i % UC_COLORS.length] }} />
-                    UC {i + 1}: {u.name}
-                  </label>
-                  <input className="solar-input" type="number" placeholder="kWh/mês" value={u.averageKwh || ''}
-                    style={{ borderLeftWidth: '4px', borderLeftColor: UC_COLORS[i % UC_COLORS.length] }}
-                    onChange={e => setUnits(prev => prev.map(x => x.id === u.id ? { ...x, averageKwh: parseFloat(e.target.value) || 0 } : x))} />
-                </div>
-                {units.length > 1 && (
-                  <button onClick={() => setUnits(prev => prev.filter(x => x.id !== u.id))}
-                    className="p-3 rounded-lg bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors">
-                    <Minus className="w-4 h-4" />
-                  </button>
-                )}
-              </div>
-            ))}
-            {units.length < 10 && (
-              <button onClick={() => setUnits(prev => [...prev, { id: Date.now().toString(), name: `UC ${prev.length + 1}`, averageKwh: 0 }])}
-                className="flex items-center gap-2 text-sm text-primary font-medium hover:underline">
-                <Plus className="w-4 h-4" /> Adicionar outra conta de luz
-              </button>
-            )}
-            <p className="text-sm text-muted-foreground">
-              Consumo total: <span className="font-semibold text-foreground">{formatNumber(totalAverage, 0)} kWh/mês</span>
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-6">
-            {monthlyUnits.map((mu, ucIdx) => (
-              <div key={mu.id} className="space-y-3 p-4 rounded-lg border border-border/50"
-                style={{ borderLeftWidth: '4px', borderLeftColor: UC_COLORS[ucIdx % UC_COLORS.length] }}>
-                <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-semibold flex items-center gap-2">
-                    <span className="w-3 h-3 rounded-full inline-block" style={{ backgroundColor: UC_COLORS[ucIdx % UC_COLORS.length] }} />
-                    {mu.name}
-                  </h3>
-                  {monthlyUnits.length > 1 && (
-                    <button onClick={() => setMonthlyUnits(prev => prev.filter(x => x.id !== mu.id))}
-                      className="p-1 rounded bg-destructive/10 text-destructive hover:bg-destructive/20">
+        <div className="space-y-4">
+          {units.map((u, i) => (
+            <div key={u.id} className="space-y-3 p-4 rounded-lg border border-border/50"
+              style={{ borderLeftWidth: '4px', borderLeftColor: UC_COLORS[i % UC_COLORS.length] }}>
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <h3 className="text-sm font-semibold flex items-center gap-2">
+                  <span className="w-3 h-3 rounded-full inline-block" style={{ backgroundColor: UC_COLORS[i % UC_COLORS.length] }} />
+                  UC {i + 1}: {u.name}
+                </h3>
+                <div className="flex items-center gap-2">
+                  <div className="flex gap-1">
+                    <button onClick={() => setUnits(prev => prev.map(x => x.id === u.id ? { ...x, mode: 'average' as ConsumptionMode, averageKwh: x.mode === 'monthly' ? Math.round(MONTH_KEYS.reduce((s, k) => s + x.monthlyValues[k], 0) / 12) : x.averageKwh } : x))}
+                      className={`px-3 py-1 rounded text-xs font-medium transition-all ${u.mode === 'average' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>
+                      Média
+                    </button>
+                    <button onClick={() => setUnits(prev => prev.map(x => x.id === u.id ? { ...x, mode: 'monthly' as ConsumptionMode } : x))}
+                      className={`px-3 py-1 rounded text-xs font-medium transition-all ${u.mode === 'monthly' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>
+                      Mês a mês
+                    </button>
+                  </div>
+                  {units.length > 1 && (
+                    <button onClick={() => setUnits(prev => prev.filter(x => x.id !== u.id))}
+                      className="p-1.5 rounded bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors">
                       <Minus className="w-4 h-4" />
                     </button>
                   )}
                 </div>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-                  {MONTH_KEYS.map((k, i) => (
-                    <div key={k}>
-                      <label className="block text-xs font-medium mb-1">{MONTH_LABELS[i]}</label>
-                      <input className="solar-input text-sm" type="number" placeholder="kWh"
-                        value={mu.values[k] || ''}
-                        onChange={e => {
-                          const val = parseFloat(e.target.value) || 0;
-                          setMonthlyUnits(prev => prev.map(x => x.id === mu.id
-                            ? { ...x, values: { ...x.values, [k]: val } }
-                            : x
-                          ));
-                        }} />
-                    </div>
-                  ))}
-                </div>
-                <button onClick={() => handleEstimate(ucIdx)} className="solar-btn-outline text-sm py-2 px-4">
-                  Estimar consumo completo
-                </button>
               </div>
-            ))}
-            {monthlyUnits.length < 10 && (
-              <button onClick={() => setMonthlyUnits(prev => [...prev, {
-                id: Date.now().toString(),
-                name: `UC ${prev.length + 1}`,
-                values: emptyMonthly(),
-              }])}
-                className="flex items-center gap-2 text-sm text-primary font-medium hover:underline">
-                <Plus className="w-4 h-4" /> Adicionar outra conta de luz
-              </button>
-            )}
-            <p className="text-sm text-muted-foreground">
-              Consumo total médio: <span className="font-semibold text-foreground">
-                {formatNumber(MONTH_KEYS.reduce((s, k) => s + combinedMonthly[k], 0) / 12, 0)} kWh/mês
-              </span>
-            </p>
-          </div>
-        )}
+
+              {u.mode === 'average' ? (
+                <input className="solar-input" type="number" placeholder="Consumo médio mensal (kWh)"
+                  value={u.averageKwh || ''}
+                  onChange={e => setUnits(prev => prev.map(x => x.id === u.id ? { ...x, averageKwh: parseFloat(e.target.value) || 0 } : x))} />
+              ) : (
+                <>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                    {MONTH_KEYS.map((k, mi) => (
+                      <div key={k}>
+                        <label className="block text-xs font-medium mb-1">{MONTH_LABELS[mi]}</label>
+                        <input className="solar-input text-sm" type="number" placeholder="kWh"
+                          value={u.monthlyValues[k] || ''}
+                          onChange={e => {
+                            const val = parseFloat(e.target.value) || 0;
+                            setUnits(prev => prev.map(x => x.id === u.id
+                              ? { ...x, monthlyValues: { ...x.monthlyValues, [k]: val } }
+                              : x
+                            ));
+                          }} />
+                      </div>
+                    ))}
+                  </div>
+                  <button onClick={() => handleEstimate(i)} className="solar-btn-outline text-sm py-2 px-4">
+                    Estimar meses faltantes
+                  </button>
+                </>
+              )}
+            </div>
+          ))}
+
+          {units.length < 10 && (
+            <button onClick={() => setUnits(prev => [...prev, {
+              id: Date.now().toString(),
+              name: `UC ${prev.length + 1}`,
+              averageKwh: 0,
+              mode: 'average' as ConsumptionMode,
+              monthlyValues: emptyMonthly(),
+            }])}
+              className="flex items-center gap-2 text-sm text-primary font-medium hover:underline">
+              <Plus className="w-4 h-4" /> Adicionar outra conta de luz
+            </button>
+          )}
+
+          <p className="text-sm text-muted-foreground">
+            Consumo total: <span className="font-semibold text-foreground">{formatNumber(totalAverage, 0)} kWh/mês</span>
+            <span className="ml-2 text-xs">(dimensionado com {settings.surplusFactor ?? 20}% de reserva)</span>
+          </p>
+        </div>
       </section>
 
       {/* Equipment */}
