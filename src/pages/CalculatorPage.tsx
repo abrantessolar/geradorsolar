@@ -13,9 +13,9 @@ import {
   findInverterForPanels, findPanel, calcTotalPrice, calcInstallments,
   formatCurrency, formatNumber, maxPanelsForInverter, calcMicroInverterCount,
 } from '@/data/calculations';
-import { getSettings, saveProposal, lookupIrradiation } from '@/data/store';
+import { getSettings, saveProposal, lookupIrradiation, getPriceTable } from '@/data/store';
 import { savePropostaDB, searchCidadesDB } from '@/data/supabaseStore';
-import type { Proposal } from '@/data/types';
+import type { Proposal, PriceTableEntry, PriceTableLineDetails } from '@/data/types';
 
 const EQUIPMENT_COLORS = [
   '#E67E22', '#3498DB', '#9B59B6', '#1ABC9C', '#E74C3C',
