@@ -643,11 +643,11 @@ export default function CalculatorPage() {
 
         {eqOpen && (
           <div className="space-y-4">
-            {Object.entries(EQUIPMENT_CATEGORIES).map(([category, items]) => (
+            {Object.entries(dbEquipmentCategories).map(([category, items]) => (
               <div key={category}>
                 <h3 className="text-sm font-semibold text-muted-foreground mb-2">{category}</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {items.map(cat => (
+                  {items.map((cat: EquipmentCatalogItem) => (
                     <button key={cat.type} onClick={() => addEquipment(cat)}
                       className="text-left text-sm px-3 py-2 rounded-lg bg-muted hover:bg-muted/70 transition-colors flex justify-between items-center">
                       <span>{cat.label} <span className="text-xs text-muted-foreground">({cat.powerKw} kW)</span></span>
@@ -660,37 +660,59 @@ export default function CalculatorPage() {
 
             {equipment.length > 0 && (
               <div className="space-y-3 border-t border-border pt-4">
-                {equipment.map((eq, idx) => (
-                  <div key={eq.id} className="flex flex-wrap items-center gap-3 p-3 rounded-lg bg-muted/50" style={{ borderLeft: `4px solid ${EQUIPMENT_COLORS[idx % EQUIPMENT_COLORS.length]}` }}>
-                    <span className="text-sm font-medium flex-1 min-w-[150px]">{eq.label}</span>
-                    {eq.unit === 'km' ? (
-                      <div className="flex items-center gap-1">
-                        <input type="number" className="solar-input w-24 text-sm py-1" value={eq.value}
-                          onChange={e => updateEquipment(eq.id, 'value', parseFloat(e.target.value) || 0)} />
-                        <span className="text-xs text-muted-foreground">km/mês</span>
+                {equipment.map((eq, idx) => {
+                  const qty = eq.quantity || 1;
+                  const eqMonthly = calcEquipmentMonthly(eq) * qty;
+                  return (
+                    <div key={eq.id} className="p-3 rounded-lg bg-muted/50 space-y-2" style={{ borderLeft: `4px solid ${EQUIPMENT_COLORS[idx % EQUIPMENT_COLORS.length]}` }}>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium">{eq.label}{qty > 1 ? ` (x${qty})` : ''}</span>
+                        <button onClick={() => removeEquipment(eq.id)} className="text-destructive hover:text-destructive/80">
+                          <Minus className="w-4 h-4" />
+                        </button>
                       </div>
-                    ) : (
-                      <>
+                      <div className="flex flex-wrap items-center gap-3">
+                        {eq.unit === 'km' ? (
+                          <div className="flex items-center gap-1">
+                            <input type="number" className="solar-input w-24 text-sm py-1" value={eq.value}
+                              onChange={e => updateEquipment(eq.id, 'value', parseFloat(e.target.value) || 0)} />
+                            <span className="text-xs text-muted-foreground">km/mês</span>
+                          </div>
+                        ) : (
+                          <>
+                            <div className="flex items-center gap-1">
+                              <span className="text-xs text-muted-foreground">h/dia:</span>
+                              <input type="number" className="solar-input w-16 text-sm py-1" value={eq.hoursPerDay}
+                                onChange={e => updateEquipment(eq.id, 'hoursPerDay', parseFloat(e.target.value) || 0)} />
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <span className="text-xs text-muted-foreground">dias/mês:</span>
+                              <input type="number" className="solar-input w-16 text-sm py-1" value={eq.daysPerMonth}
+                                onChange={e => updateEquipment(eq.id, 'daysPerMonth', parseFloat(e.target.value) || 0)} />
+                            </div>
+                          </>
+                        )}
+                        {/* Quantity controls */}
                         <div className="flex items-center gap-1">
-                          <input type="number" className="solar-input w-16 text-sm py-1" value={eq.hoursPerDay}
-                            onChange={e => updateEquipment(eq.id, 'hoursPerDay', parseFloat(e.target.value) || 0)} />
-                          <span className="text-xs text-muted-foreground">h/dia</span>
+                          <span className="text-xs text-muted-foreground">Qtd:</span>
+                          <button onClick={() => updateEquipment(eq.id, 'quantity', Math.max(1, qty - 1))}
+                            className="w-7 h-7 rounded bg-muted-foreground/10 flex items-center justify-center hover:bg-muted-foreground/20 transition-colors"
+                            disabled={qty <= 1}>
+                            <Minus className="w-3 h-3" />
+                          </button>
+                          <span className="w-8 text-center font-semibold text-sm">{qty}</span>
+                          <button onClick={() => updateEquipment(eq.id, 'quantity', Math.min(20, qty + 1))}
+                            className="w-7 h-7 rounded bg-muted-foreground/10 flex items-center justify-center hover:bg-muted-foreground/20 transition-colors">
+                            <Plus className="w-3 h-3" />
+                          </button>
                         </div>
-                        <div className="flex items-center gap-1">
-                          <input type="number" className="solar-input w-16 text-sm py-1" value={eq.daysPerMonth}
-                            onChange={e => updateEquipment(eq.id, 'daysPerMonth', parseFloat(e.target.value) || 0)} />
-                          <span className="text-xs text-muted-foreground">d/mês</span>
-                        </div>
-                      </>
-                    )}
-                    <span className="text-xs font-semibold text-primary min-w-[80px] text-right">
-                      {formatNumber(calcEquipmentMonthly(eq), 0)} kWh/mês
-                    </span>
-                    <button onClick={() => removeEquipment(eq.id)} className="text-destructive hover:text-destructive/80">
-                      <Minus className="w-4 h-4" />
-                    </button>
-                  </div>
-                ))}
+                      </div>
+                      <div className="text-xs font-semibold text-primary text-right">
+                        Consumo total: {formatNumber(eqMonthly, 0)} kWh/mês
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
