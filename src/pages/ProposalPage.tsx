@@ -290,8 +290,11 @@ export default function ProposalPage() {
           <button onClick={() => navigate('/')} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
             <ArrowLeft className="w-4 h-4" /> Voltar
           </button>
-          <div className="flex gap-2">
-            <button onClick={handleDownloadPDF} className="solar-btn-outline text-sm py-2 px-3 flex items-center gap-1">
+          <div className="flex flex-col sm:flex-row gap-2">
+            <button onClick={handlePreviewPDF} className="solar-btn-outline text-sm py-2 px-3 flex items-center justify-center gap-1">
+              <Eye className="w-4 h-4" /> Visualizar PDF
+            </button>
+            <button onClick={handleDownloadPDF} className="solar-btn-primary text-sm py-2 px-3 flex items-center justify-center gap-1">
               <Download className="w-4 h-4" /> Baixar PDF
             </button>
             <div className="relative">
