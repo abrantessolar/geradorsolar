@@ -197,18 +197,21 @@ export default function CalculatorPage() {
       const monthlyGeneration = powerKwp * irradiation * 30 * (1 - settings.systemLoss / 100);
       const surplus = monthlyGeneration - dim.avgMonthlyKwh;
 
-      return {
-        line, inverter, panel, panelCount: usedPanels, totalPrice, maxPanels, panelsRemaining, microCount,
-        ptDetails, ptEntry, hasPriceTableCost,
-        inverterBrand: ptDetails?.inverterBrand || inverter?.brand || '',
-        inverterModel: ptDetails?.inverterPower ? `${ptDetails.inverterPower} kW` : inverter?.model || '',
-        panelBrand: ptDetails?.panelBrand || panel?.brand || '',
-        panelPowerLabel: ptDetails?.panelPower ? `${ptDetails.panelPower} Wp` : `${panel?.power || 570} Wp`,
-        installments: calcInstallments(totalPrice),
-        dimensioning: { ...dim, panelCount: usedPanels, powerKwp, monthlyGeneration, surplus },
-      };
-    });
-  }, [consumption, equipment, client, irradiation, finalPanels, settings.systemLoss, findPriceTableEntry]);
+        const costBreakdown = calcCostBreakdown(inverter, panel, usedPanels, line);
+        const cardInstallments = calcCardInstallments(totalPrice, settings.creditCardRates);
+
+        return {
+          line, inverter, panel, panelCount: usedPanels, totalPrice, maxPanels, panelsRemaining, microCount,
+          ptDetails, ptEntry, hasPriceTableCost, costBreakdown, cardInstallments,
+          inverterBrand: ptDetails?.inverterBrand || inverter?.brand || '',
+          inverterModel: ptDetails?.inverterPower ? `${ptDetails.inverterPower} kW` : inverter?.model || '',
+          panelBrand: ptDetails?.panelBrand || panel?.brand || '',
+          panelPowerLabel: ptDetails?.panelPower ? `${ptDetails.panelPower} Wp` : `${panel?.power || 570} Wp`,
+          installments: calcInstallments(totalPrice),
+          dimensioning: { ...dim, panelCount: usedPanels, powerKwp, monthlyGeneration, surplus },
+        };
+      });
+    }, [consumption, equipment, client, irradiation, finalPanels, settings.systemLoss, settings.creditCardRates, findPriceTableEntry]);
 
   const chartData = useMemo(() => {
     const baseDim = systemCards[0]?.dimensioning;
