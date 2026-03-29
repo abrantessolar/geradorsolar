@@ -7,11 +7,11 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import {
-  saveSettingsDB, saveVendedoresDB, savePriceTableDB, saveSocialProofsDB,
+  saveSettingsDB, savePriceTableDB, saveSocialProofsDB,
   saveDistribuidorasDB, importCidadesIrradianciaDB, getPropostasDB,
 } from '@/data/supabaseStore';
 import { formatCurrency } from '@/data/calculations';
-import { AdminSettings, Seller, IrradiationEntry, PriceTableEntry, SocialProof, BRAZILIAN_STATES, CA_MATERIAL_TABLE_DEFAULT, LINE_NAMES } from '@/data/types';
+import { AdminSettings, IrradiationEntry, PriceTableEntry, SocialProof, BRAZILIAN_STATES, CA_MATERIAL_TABLE_DEFAULT, LINE_NAMES } from '@/data/types';
 import type { Distributor, PriceTableLineDetails } from '@/data/types';
 import { Users, DollarSign, Settings, MapPin, Building2, FileText, Image, Plus, Trash2, Save, Eye, Wand2, AlertCircle, Upload, Check, ChevronDown, UserPlus, Edit2, X, Globe, CheckCircle, AlertTriangle, Share2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -30,7 +30,6 @@ export default function AdminPage() {
 
   const adminTabs = [
     { key: 'users' as const, label: 'Usuários', icon: Users, roles: ['admin'] },
-    { key: 'sellers' as const, label: 'Vendedores', icon: Users, roles: ['admin'] },
     { key: 'prices' as const, label: 'Tabela de Preços', icon: DollarSign, roles: ['admin'] },
     { key: 'pricing' as const, label: 'Precificação', icon: Settings, roles: ['admin'] },
     { key: 'irradiation' as const, label: 'Irradiação', icon: MapPin, roles: ['admin', 'orcamentista'] },
@@ -59,7 +58,6 @@ export default function AdminPage() {
       </div>
 
       {tab === 'users' && isAdmin && <UsersTab />}
-      {tab === 'sellers' && <SellersTab />}
       {tab === 'prices' && <PriceTableTab />}
       {tab === 'pricing' && <PricingTab />}
       {tab === 'irradiation' && <IrradiationTab />}
@@ -77,7 +75,7 @@ function UsersTab() {
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [editUser, setEditUser] = useState<any>(null);
-  const [form, setForm] = useState({ nome: '', email: '', role: 'vendedor', password: '', confirmPassword: '' });
+  const [form, setForm] = useState({ nome: '', email: '', telefone: '', role: 'vendedor', password: '', confirmPassword: '' });
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
   const { session } = useAuth();
@@ -108,7 +106,7 @@ function UsersTab() {
     const { data, error: err } = await callApi({ action: 'create', ...form });
     if (err || data?.error) { setError(data?.error || 'Erro ao criar usuário.'); setSaving(false); return; }
     setShowCreate(false);
-    setForm({ nome: '', email: '', role: 'vendedor', password: '', confirmPassword: '' });
+    setForm({ nome: '', email: '', telefone: '', role: 'vendedor', password: '', confirmPassword: '' });
     setSaving(false);
     loadUsers();
   };
@@ -141,8 +139,10 @@ function UsersTab() {
             <div className="space-y-3">
               <div><label className="block text-sm font-medium mb-1">Nome completo</label>
                 <input className="solar-input" value={form.nome} onChange={e => setForm(p => ({ ...p, nome: e.target.value }))} /></div>
-              <div><label className="block text-sm font-medium mb-1">E-mail</label>
+             <div><label className="block text-sm font-medium mb-1">E-mail</label>
                 <input className="solar-input" type="email" value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))} /></div>
+              <div><label className="block text-sm font-medium mb-1">Telefone/WhatsApp</label>
+                <input className="solar-input" value={form.telefone} onChange={e => setForm(p => ({ ...p, telefone: e.target.value }))} placeholder="(XX) XXXXX-XXXX" /></div>
               <div><label className="block text-sm font-medium mb-1">Nível de permissão</label>
                 <select className="solar-input" value={form.role} onChange={e => setForm(p => ({ ...p, role: e.target.value }))}>
                   <option value="vendedor">Vendedor</option>
@@ -167,9 +167,10 @@ function UsersTab() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-border text-left text-muted-foreground">
+               <tr className="border-b border-border text-left text-muted-foreground">
                 <th className="py-2 px-2">Nome</th>
                 <th className="py-2 px-2">E-mail</th>
+                <th className="py-2 px-2">Telefone</th>
                 <th className="py-2 px-2">Nível</th>
                 <th className="py-2 px-2">Status</th>
                 <th className="py-2 px-2">Último acesso</th>
@@ -181,6 +182,7 @@ function UsersTab() {
                 <tr key={u.user_id} className="border-b border-border/50 hover:bg-muted/30">
                   <td className="py-2 px-2 font-medium">{u.nome}</td>
                   <td className="py-2 px-2">{u.email}</td>
+                  <td className="py-2 px-2 text-sm text-muted-foreground">{u.telefone || '—'}</td>
                   <td className="py-2 px-2">
                     <span className={`solar-badge text-xs ${u.role === 'admin' ? 'bg-primary/10 text-primary' : u.role === 'orcamentista' ? 'bg-blue-100 text-blue-800' : 'bg-amber-100 text-amber-800'}`}>
                       {ROLE_LABELS[u.role] || u.role}
@@ -231,6 +233,7 @@ function UsersTab() {
 function EditUserModal({ user, onClose, callApi }: { user: any; onClose: () => void; callApi: (body: any) => Promise<any> }) {
   const [nome, setNome] = useState(user.nome);
   const [email, setEmail] = useState(user.email);
+  const [telefone, setTelefone] = useState(user.telefone || '');
   const [role, setRole] = useState(user.role);
   const [password, setPassword] = useState('');
   const [saving, setSaving] = useState(false);
@@ -239,7 +242,7 @@ function EditUserModal({ user, onClose, callApi }: { user: any; onClose: () => v
   const handleSave = async () => {
     setSaving(true);
     setError('');
-    const updates: any = { nome, role };
+    const updates: any = { nome, role, telefone };
     if (email !== user.email) updates.email = email;
     if (password) updates.password = password;
     const { data, error: err } = await callApi({ action: 'update', user_id: user.user_id, ...updates });
@@ -265,6 +268,8 @@ function EditUserModal({ user, onClose, callApi }: { user: any; onClose: () => v
             <input className="solar-input" value={nome} onChange={e => setNome(e.target.value)} /></div>
           <div><label className="block text-sm font-medium mb-1">E-mail</label>
             <input className="solar-input" type="email" value={email} onChange={e => setEmail(e.target.value)} /></div>
+          <div><label className="block text-sm font-medium mb-1">Telefone/WhatsApp</label>
+            <input className="solar-input" value={telefone} onChange={e => setTelefone(e.target.value)} placeholder="(XX) XXXXX-XXXX" /></div>
           <div><label className="block text-sm font-medium mb-1">Nível</label>
             <select className="solar-input" value={role} onChange={e => setRole(e.target.value)}>
               <option value="vendedor">Vendedor</option>
@@ -277,65 +282,6 @@ function EditUserModal({ user, onClose, callApi }: { user: any; onClose: () => v
             {saving ? 'Salvando...' : 'Salvar'}
           </button>
         </div>
-      </div>
-    </div>
-  );
-}
-
-/* ─── VENDEDORES ─── */
-function SellersTab() {
-  const [settings, setSettings] = useState(getSettings());
-  const sellers = settings.sellers;
-
-  const update = (idx: number, field: keyof Seller, value: any) => {
-    const updated = [...sellers];
-    updated[idx] = { ...updated[idx], [field]: value };
-    setSettings(prev => ({ ...prev, sellers: updated }));
-  };
-
-  const add = () => {
-    const newSeller: Seller = { id: Date.now().toString(), name: '', phone: '', email: '', active: true };
-    setSettings(prev => ({ ...prev, sellers: [...prev.sellers, newSeller] }));
-  };
-
-  const remove = (idx: number) => {
-    setSettings(prev => ({ ...prev, sellers: prev.sellers.filter((_, i) => i !== idx) }));
-  };
-
-  const handleSave = () => { saveSettings(settings); saveSettingsDB(settings); saveVendedoresDB(settings.sellers); };
-
-  return (
-    <div className="solar-card p-6 space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-bold text-primary">Vendedores</h2>
-        <div className="flex gap-2">
-          <button onClick={add} className="solar-btn-outline text-sm py-2 px-3 flex items-center gap-1"><Plus className="w-4 h-4" /> Novo</button>
-          <button onClick={handleSave} className="solar-btn-primary text-sm py-2 px-3 flex items-center gap-1"><Save className="w-4 h-4" /> Salvar</button>
-        </div>
-      </div>
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-border text-left text-muted-foreground">
-              <th className="py-2 px-2">Nome completo</th>
-              <th className="py-2 px-2">Telefone</th>
-              <th className="py-2 px-2">E-mail</th>
-              <th className="py-2 px-2">Ativo</th>
-              <th className="py-2 px-2"></th>
-            </tr>
-          </thead>
-          <tbody>
-            {sellers.map((s, i) => (
-              <tr key={s.id} className="border-b border-border/50 hover:bg-muted/30">
-                <td className="py-2 px-2"><input className="solar-input py-1 text-sm" value={s.name} onChange={e => update(i, 'name', e.target.value)} /></td>
-                <td className="py-2 px-2"><input className="solar-input py-1 text-sm w-40" value={s.phone} onChange={e => update(i, 'phone', e.target.value)} /></td>
-                <td className="py-2 px-2"><input className="solar-input py-1 text-sm w-48" value={s.email || ''} onChange={e => update(i, 'email', e.target.value)} placeholder="email@exemplo.com" /></td>
-                <td className="py-2 px-2"><input type="checkbox" checked={s.active} onChange={e => update(i, 'active', e.target.checked)} className="accent-primary" /></td>
-                <td className="py-2 px-2"><button onClick={() => remove(i)} className="text-destructive hover:text-destructive/80"><Trash2 className="w-4 h-4" /></button></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
       </div>
     </div>
   );

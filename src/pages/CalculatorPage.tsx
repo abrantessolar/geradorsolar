@@ -47,7 +47,27 @@ export default function CalculatorPage() {
   const settings = getSettings();
   const navigate = useNavigate();
   const location = useLocation();
-  const activeSellers = settings.sellers.filter(s => s.active);
+
+  // Fetch active sellers from user_profiles (vendedor + orcamentista)
+  const [activeSellers, setActiveSellers] = useState<{ user_id: string; nome: string; telefone: string | null; email: string }[]>([]);
+  useEffect(() => {
+    const fetchSellers = async () => {
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { data } = await supabase
+        .from('user_profiles')
+        .select('user_id, nome, email, telefone, role, ativo')
+        .in('role', ['vendedor', 'orcamentista'])
+        .eq('ativo', true)
+        .order('nome');
+      const sellers = data || [];
+      setActiveSellers(sellers);
+      // Set default seller if not already set
+      if (!client.seller && sellers.length > 0) {
+        setClient(p => ({ ...p, seller: sellers[0].nome }));
+      }
+    };
+    fetchSellers();
+  }, []);
 
   // Edit mode: pre-fill from existing proposal
   const editProposal = (location.state as any)?.editProposal || null;
@@ -62,7 +82,7 @@ export default function CalculatorPage() {
   const [client, setClient] = useState<ClientData>(
     ep?.clientData || {
       id: '', name: '', state: 'MS', city: 'Três Lagoas', networkType: 'bifasica',
-      kwhPrice: defaultDist?.kwhPrice || 0.85, seller: activeSellers[0]?.name || '',
+      kwhPrice: defaultDist?.kwhPrice || 0.85, seller: '',
     }
   );
 
@@ -353,7 +373,7 @@ export default function CalculatorPage() {
 
     const custom = customKits[card.line];
     const isCustom = custom?.enabled;
-    const sellerData = settings.sellers?.find(s => s.name === client.seller);
+    const sellerData = activeSellers.find(s => s.nome === client.seller);
 
     const proposal: Proposal = {
       id: editMode && editProposalId ? editProposalId : crypto.randomUUID(),
@@ -377,7 +397,7 @@ export default function CalculatorPage() {
       dimensioning: card.dimensioning,
       irradiation,
       monthlyIrradiation: monthlyIrr || undefined,
-      sellerPhone: sellerData?.phone || '',
+      sellerPhone: sellerData?.telefone || '',
       sellerEmail: sellerData?.email || '',
       microInverterCount: card.microCount,
       inverterBrand: card.inverterBrand,
@@ -483,7 +503,8 @@ export default function CalculatorPage() {
           <div>
             <label className="block text-sm font-medium mb-1">Vendedor</label>
             <select className="solar-input" value={client.seller} onChange={e => setClient(p => ({ ...p, seller: e.target.value }))}>
-              {activeSellers.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
+              <option value="">Selecione...</option>
+              {activeSellers.map(s => <option key={s.user_id} value={s.nome}>{s.nome}</option>)}
             </select>
           </div>
         </div>
