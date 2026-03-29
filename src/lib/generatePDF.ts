@@ -110,7 +110,7 @@ export async function generateProposalPDF(
 
   // Client name — positioned on the green bar area of the template
   // The template's green bar is around Y=215-240, we place text there
-  const barY = 242;
+  const barY = 220;
   
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(18);
