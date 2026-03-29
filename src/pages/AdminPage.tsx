@@ -427,7 +427,7 @@ function PriceTableTab() {
     })
   );
 
-  const updateCell = (idx: number, field: 'acesso' | 'excellence' | 'premium', value: string) => {
+  const updateCell = (idx: number, field: 'acesso' | 'essencial' | 'excellence' | 'premium', value: string) => {
     const num = value === '' ? null : parseFloat(value);
     setTable(prev => prev.map((row, i) => i === idx ? {
       ...row,
