@@ -161,16 +161,60 @@ export async function generateProposalPDF(
   }
 
   // ═══════════════════════════════════════
-  // PAGE 2: PORTFOLIO (using uploaded template image)
+  // PAGE 2: DYNAMIC PORTFOLIO GRID
   // ═══════════════════════════════════════
   doc.addPage();
-  if (portfolioImgData) {
-    try {
-      doc.addImage(portfolioImgData, 'JPEG', 0, 0, W, H);
-    } catch {}
-  } else {
-    drawPageHeader('Nossos Projetos');
+  drawPageHeader('Alguns dos nossos projetos');
+  let portfolioY = 34;
+
+  // Subtitle
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9);
+  setColor(GRAY);
+  doc.text('Soluções Residenciais  |  Rurais  |  Comerciais', W / 2, portfolioY, { align: 'center' });
+  portfolioY += 8;
+
+  // 4x4 grid
+  const gridCols = 4;
+  const gridRows = 4;
+  const gap = 2;
+  const cellW = (CW - gap * (gridCols - 1)) / gridCols;
+  const cellH = cellW; // square
+
+  // Compress and load portfolio images
+  const portfolioImages: (string | null)[] = [];
+  for (let i = 0; i < gridCols * gridRows; i++) {
+    if (i < portfolioPhotos.length) {
+      const img = await compressImage(portfolioPhotos[i], 300, 0.65);
+      portfolioImages.push(img);
+    } else {
+      portfolioImages.push(null);
+    }
   }
+
+  for (let row = 0; row < gridRows; row++) {
+    for (let col = 0; col < gridCols; col++) {
+      const idx = row * gridCols + col;
+      const px = M + col * (cellW + gap);
+      const py = portfolioY + row * (cellH + gap);
+      
+      if (portfolioImages[idx]) {
+        try {
+          doc.addImage(portfolioImages[idx]!, 'JPEG', px, py, cellW, cellH);
+        } catch {
+          // Placeholder
+          setFill([245, 245, 245]);
+          doc.rect(px, py, cellW, cellH, 'F');
+        }
+      } else {
+        // Empty placeholder
+        setFill([245, 245, 245]);
+        doc.rect(px, py, cellW, cellH, 'F');
+      }
+    }
+  }
+
+  drawFooter();
 
   // ═══════════════════════════════════════
   // PAGE 3: SPECS + CHART + INVESTMENT + CARD INSTALLMENTS (all in one)
