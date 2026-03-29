@@ -283,12 +283,7 @@ export default function CalculatorPage() {
             <label className="block text-sm font-medium mb-1">Nome completo</label>
             <input className="solar-input" value={client.name} onChange={e => setClient(p => ({ ...p, name: e.target.value }))} />
           </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">Estado (UF)</label>
-            <select className="solar-input" value={client.state} onChange={e => setClient(p => ({ ...p, state: e.target.value }))}>
-              {BRAZILIAN_STATES.map(uf => <option key={uf} value={uf}>{uf}</option>)}
-            </select>
-          </div>
+          
           <div className="relative" ref={cityRef}>
             <label className="block text-sm font-medium mb-1">Cidade</label>
             <input className="solar-input" value={client.city}
