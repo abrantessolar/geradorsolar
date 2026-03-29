@@ -29,9 +29,6 @@ const EQUIPMENT_COLORS = [
 
 const LINES = ['essencial', 'excellence', 'premium'] as const;
 
-// Dynamic equipment categories (populated from DB)
-const [dbEquipmentCatalog, setDbEquipmentCatalog] = useState<EquipmentCatalogItem[]>([]);
-const [dbEquipmentCategories, setDbEquipmentCategories] = useState<Record<string, EquipmentCatalogItem[]>>({});
 
 const emptyMonthly = (): MonthlyConsumption => ({
   jan: 0, feb: 0, mar: 0, apr: 0, may: 0, jun: 0,
