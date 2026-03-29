@@ -509,8 +509,8 @@ export default function CalculatorPage() {
               <Legend wrapperStyle={{ fontSize: typeof window !== 'undefined' && window.innerWidth < 768 ? '11px' : '12px' }} />
               <Bar dataKey="geração" fill="#4A5A2A" radius={[4, 4, 0, 0]}
                 maxBarSize={typeof window !== 'undefined' && window.innerWidth < 768 ? 40 : undefined} />
-              {(mode === 'average' ? units.length > 1 : monthlyUnits.length > 1) ? (
-                (mode === 'average' ? units : monthlyUnits).map((_, j) => (
+              {units.length > 1 ? (
+                units.map((_, j) => (
                   <Bar key={j} dataKey={`UC ${j + 1}`} stackId="consumption"
                     fill={UC_COLORS[j % UC_COLORS.length]}
                     maxBarSize={typeof window !== 'undefined' && window.innerWidth < 768 ? 40 : undefined} />
