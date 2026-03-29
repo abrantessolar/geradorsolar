@@ -48,7 +48,7 @@ Deno.serve(async (req) => {
     const { action } = body;
 
     if (action === 'create') {
-      const { email, password, nome, role } = body;
+      const { email, password, nome, role, telefone } = body;
 
       const { data, error } = await supabaseAdmin.auth.admin.createUser({
         email,
@@ -67,6 +67,7 @@ Deno.serve(async (req) => {
         nome,
         email,
         role: role || 'vendedor',
+        telefone: telefone || null,
       });
 
       return new Response(JSON.stringify({ user: data.user }), {
@@ -82,6 +83,7 @@ Deno.serve(async (req) => {
       if (role !== undefined) updates.role = role;
       if (ativo !== undefined) updates.ativo = ativo;
       if (email !== undefined) updates.email = email;
+      if (body.telefone !== undefined) updates.telefone = body.telefone;
 
       if (Object.keys(updates).length > 0) {
         await supabaseAdmin.from('user_profiles').update(updates).eq('user_id', user_id);
