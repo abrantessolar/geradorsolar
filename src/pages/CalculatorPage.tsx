@@ -7,7 +7,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } fro
 import { toast } from 'sonner';
 import {
   ClientData, MonthlyConsumption, ConsumptionMode, ConsumerUnit, EquipmentItem,
-  MONTH_LABELS, MONTH_KEYS, EQUIPMENT_CATALOG, SEASONAL_FACTORS, UC_COLORS,
+  MONTH_LABELS, MONTH_KEYS, SEASONAL_FACTORS, UC_COLORS,
   BRAZILIAN_STATES, LINE_NAMES, LINE_SUBS,
 } from '@/data/types';
 import type { EquipmentCatalogItem } from '@/data/types';
