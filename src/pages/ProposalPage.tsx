@@ -1,4 +1,5 @@
 import { useParams, useNavigate } from 'react-router-dom';
+import logoTls from '@/assets/logo-tls.png';
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { getProposals, saveProposal, getSettings, getSocialProofs, lookupIrradiation, getPriceTable } from '@/data/store';
 import { getPropostaByIdDB, markPropostaViewedDB, getSettingsDB, addHistoricoDB } from '@/data/supabaseStore';
