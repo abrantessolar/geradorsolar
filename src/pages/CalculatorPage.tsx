@@ -750,7 +750,7 @@ export default function CalculatorPage() {
 
                 <div className="text-center py-3 border-y border-border">
                   <p className="text-xs text-muted-foreground mb-1">Investimento</p>
-                  <p className="text-2xl font-bold text-primary">{formatCurrency(card.totalPrice)}</p>
+                  <p className="text-2xl font-bold text-primary">{formatCurrency(card.costBreakdown.salePrice)}</p>
                 </div>
 
                 {/* Payment tabs */}
