@@ -1,19 +1,21 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Sun, Calculator, Settings, Menu, X, LogOut } from 'lucide-react';
+import { Sun, Calculator, Settings, Menu, X, LogOut, Megaphone } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useNewLeadsCount } from '@/components/LeadNotification';
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const { profile, signOut, isAdmin, isOrcamentista } = useAuth();
   const isProposal = location.pathname.startsWith('/proposta/');
+  const newLeadsCount = useNewLeadsCount();
 
   if (isProposal) return <>{children}</>;
 
   const navItems = [
-    { path: '/orcamentos', label: 'Calculadora', icon: Calculator },
-    ...((isAdmin || isOrcamentista) ? [{ path: '/admin', label: 'Admin', icon: Settings }] : []),
+    { path: '/orcamentos', label: 'Calculadora', icon: Calculator, badge: 0 },
+    ...((isAdmin || isOrcamentista) ? [{ path: '/admin', label: 'Admin', icon: Settings, badge: newLeadsCount }] : []),
   ];
 
   return (
@@ -36,7 +38,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 <Link
                   key={item.path}
                   to={item.path}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 ${
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 relative ${
                     location.pathname === item.path
                       ? 'bg-primary text-primary-foreground'
                       : 'text-foreground hover:bg-muted'
@@ -44,6 +46,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 >
                   <item.icon className="w-4 h-4" />
                   {item.label}
+                  {item.badge > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                      {item.badge}
+                    </span>
+                  )}
                 </Link>
               ))}
             </nav>

@@ -71,6 +71,7 @@ export default function CalculatorPage() {
 
   // Edit mode: pre-fill from existing proposal
   const editProposal = (location.state as any)?.editProposal || null;
+  const prefillLead = (location.state as any)?.prefillLead || null;
   const [editMode, setEditMode] = useState(!!editProposal);
   const [editProposalId, setEditProposalId] = useState<string | null>(editProposal?.id || null);
   const [editNumero, setEditNumero] = useState<string | null>(editProposal?.numero_proposta || null);
@@ -81,7 +82,8 @@ export default function CalculatorPage() {
   const ep = editProposal?.dados_completos || editProposal;
   const [client, setClient] = useState<ClientData>(
     ep?.clientData || {
-      id: '', name: '', state: 'MS', city: 'Três Lagoas', networkType: 'bifasica',
+      id: '', name: prefillLead?.name || '', state: prefillLead?.state || 'MS',
+      city: prefillLead?.city || 'Três Lagoas', networkType: 'bifasica',
       kwhPrice: defaultDist?.kwhPrice || 0.85, seller: '',
     }
   );
@@ -94,7 +96,8 @@ export default function CalculatorPage() {
         monthlyValues: u.monthlyValues || emptyMonthly(),
       }));
     }
-    return [{ id: '1', name: 'Principal', averageKwh: 350, mode: 'average' as const, monthlyValues: emptyMonthly() }];
+    const defaultKwh = prefillLead?.avgKwh || 350;
+    return [{ id: '1', name: 'Principal', averageKwh: defaultKwh, mode: 'average' as const, monthlyValues: emptyMonthly() }];
   });
   const [equipment, setEquipment] = useState<EquipmentItem[]>(ep?.equipment || []);
   const [eqOpen, setEqOpen] = useState(false);

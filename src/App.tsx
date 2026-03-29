@@ -12,6 +12,7 @@ import CalculatorPage from "@/pages/CalculatorPage";
 import AdminPage from "@/pages/AdminPage";
 import ProposalPage from "@/pages/ProposalPage";
 import ResetPasswordPage from "@/pages/ResetPasswordPage";
+import LeadNotification from "@/components/LeadNotification";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -62,6 +63,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
+          <LeadNotification />
           <Routes>
             <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<AuthRedirect />} />

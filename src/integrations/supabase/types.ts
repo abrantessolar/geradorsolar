@@ -211,6 +211,54 @@ export type Database = {
           },
         ]
       }
+      leads: {
+        Row: {
+          atribuido_para: string | null
+          atualizado_em: string
+          cidade: string
+          consumo_kwh: number
+          criado_em: string
+          id: string
+          nome: string
+          observacoes: string | null
+          resultado_placas: number
+          resultado_potencia_kwp: number
+          status: string
+          telefone: string
+          uf: string
+        }
+        Insert: {
+          atribuido_para?: string | null
+          atualizado_em?: string
+          cidade: string
+          consumo_kwh: number
+          criado_em?: string
+          id?: string
+          nome: string
+          observacoes?: string | null
+          resultado_placas: number
+          resultado_potencia_kwp: number
+          status?: string
+          telefone: string
+          uf?: string
+        }
+        Update: {
+          atribuido_para?: string | null
+          atualizado_em?: string
+          cidade?: string
+          consumo_kwh?: number
+          criado_em?: string
+          id?: string
+          nome?: string
+          observacoes?: string | null
+          resultado_placas?: number
+          resultado_potencia_kwp?: number
+          status?: string
+          telefone?: string
+          uf?: string
+        }
+        Relationships: []
+      }
       logos_parceiros: {
         Row: {
           ativo: boolean
