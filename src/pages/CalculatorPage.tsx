@@ -171,29 +171,56 @@ export default function CalculatorPage() {
 
   const systemCards = useMemo(() => {
     return LINES.map(line => {
+      const custom = customKits[line];
+      const isCustom = custom?.enabled;
+
       const panel = findPanel(line);
       const panelPowerKwp = (panel?.power || 570) / 1000;
 
-      // Try to find from price table first
+      // Custom mode
+      if (isCustom && custom) {
+        const customPanelKwp = (custom.panelPowerWp / 1000) * custom.panelCount;
+        const customBreakdown = calcCustomBreakdown(custom, line);
+        const customPrice = customBreakdown.salePrice;
+        const isPremium = line === 'premium';
+        const microCount = isPremium ? calcMicroInverterCount(custom.panelCount) : 0;
+        const maxPanels = isPremium ? 999 : Math.floor((custom.inverterPower * 1.5) / (custom.panelPowerWp / 1000));
+        const panelsRemaining = isPremium ? 999 : maxPanels - custom.panelCount;
+        const monthlyGen = customPanelKwp * irradiation * 30 * (1 - settings.systemLoss / 100);
+        const dim = calcDimensioning(consumption, equipment, client.networkType, irradiation, client.kwhPrice, customPrice, settings.systemLoss);
+
+        return {
+          line, inverter: null, panel: null, panelCount: custom.panelCount, totalPrice: customPrice,
+          maxPanels, panelsRemaining, microCount, isCustom: true,
+          ptDetails: null, ptEntry: null, hasPriceTableCost: false,
+          costBreakdown: {
+            equipmentCost: customBreakdown.equipmentCost, installationCost: customBreakdown.installationCost,
+            homologationCost: customBreakdown.homologationCost, caMaterialCost: customBreakdown.caMaterialCost,
+            trunkCableCost: customBreakdown.trunkCableCost, totalCost: customBreakdown.totalCost,
+            profitMargin: customBreakdown.profitMargin, salePrice: customBreakdown.salePrice,
+            grossProfit: customBreakdown.grossProfit,
+          },
+          cardInstallments: calcCardInstallments(customPrice, settings.creditCardRates),
+          inverterBrand: custom.inverterBrand || '—',
+          inverterModel: custom.inverterModel || `${custom.inverterPower} kW`,
+          panelBrand: custom.panelBrand || '—',
+          panelPowerLabel: `${custom.panelPowerWp} Wp`,
+          installments: calcInstallments(customPrice),
+          dimensioning: { ...dim, panelCount: custom.panelCount, powerKwp: customPanelKwp, monthlyGeneration: monthlyGen, surplus: monthlyGen - dim.avgMonthlyKwh },
+        };
+      }
+
+      // Table mode (original)
       const ptEntry = findPriceTableEntry(line, finalPanels);
       const ptDetails = (ptEntry?.details as any)?.[line] as PriceTableLineDetails | undefined;
-
-      // Use price table panel count if available, otherwise use calculated
       const usedPanels = ptEntry ? ptEntry.panels : finalPanels;
-
       const inverter = findInverterForPanels(line, usedPanels, panelPowerKwp);
       const powerKwp = usedPanels * panelPowerKwp;
-
-      // Use price table cost if available, otherwise calculate
       const hasPriceTableCost = ptEntry && ptEntry[line] !== null && ptEntry[line]! > 0;
       const totalPrice = hasPriceTableCost ? ptEntry[line]! : calcTotalPrice(inverter, panel, usedPanels, line);
-
       const dim = calcDimensioning(consumption, equipment, client.networkType, irradiation, client.kwhPrice, totalPrice, settings.systemLoss);
-
       const isPremium = line === 'premium';
       const microCount = isPremium ? calcMicroInverterCount(usedPanels) : 0;
-
-      // Calculate inverter limit from price table or kit data
       const ptInverterPower = ptDetails?.inverterPower ? parseFloat(ptDetails.inverterPower) : null;
       const ptPanelPower = ptDetails?.panelPower ? parseFloat(ptDetails.panelPower) : null;
       const effectiveInverterKw = ptInverterPower || inverter?.power || 0;
@@ -201,25 +228,23 @@ export default function CalculatorPage() {
       const effectivePanelKwp = effectivePanelWp / 1000;
       const maxPanels = isPremium ? 999 : Math.floor((effectiveInverterKw * 1.5) / effectivePanelKwp);
       const panelsRemaining = isPremium ? 999 : maxPanels - usedPanels;
-
       const monthlyGeneration = powerKwp * irradiation * 30 * (1 - settings.systemLoss / 100);
       const surplus = monthlyGeneration - dim.avgMonthlyKwh;
+      const costBreakdown = calcCostBreakdown(inverter, panel, usedPanels, line);
+      const cardInstallments = calcCardInstallments(totalPrice, settings.creditCardRates);
 
-        const costBreakdown = calcCostBreakdown(inverter, panel, usedPanels, line);
-        const cardInstallments = calcCardInstallments(totalPrice, settings.creditCardRates);
-
-        return {
-          line, inverter, panel, panelCount: usedPanels, totalPrice, maxPanels, panelsRemaining, microCount,
-          ptDetails, ptEntry, hasPriceTableCost, costBreakdown, cardInstallments,
-          inverterBrand: ptDetails?.inverterBrand || inverter?.brand || '',
-          inverterModel: ptDetails?.inverterPower ? `${ptDetails.inverterPower} kW` : inverter?.model || '',
-          panelBrand: ptDetails?.panelBrand || panel?.brand || '',
-          panelPowerLabel: ptDetails?.panelPower ? `${ptDetails.panelPower} Wp` : `${panel?.power || 570} Wp`,
-          installments: calcInstallments(totalPrice),
-          dimensioning: { ...dim, panelCount: usedPanels, powerKwp, monthlyGeneration, surplus },
-        };
-      });
-    }, [consumption, equipment, client, irradiation, finalPanels, settings.systemLoss, settings.creditCardRates, findPriceTableEntry]);
+      return {
+        line, inverter, panel, panelCount: usedPanels, totalPrice, maxPanels, panelsRemaining, microCount,
+        isCustom: false, ptDetails, ptEntry, hasPriceTableCost, costBreakdown, cardInstallments,
+        inverterBrand: ptDetails?.inverterBrand || inverter?.brand || '',
+        inverterModel: ptDetails?.inverterPower ? `${ptDetails.inverterPower} kW` : inverter?.model || '',
+        panelBrand: ptDetails?.panelBrand || panel?.brand || '',
+        panelPowerLabel: ptDetails?.panelPower ? `${ptDetails.panelPower} Wp` : `${panel?.power || 570} Wp`,
+        installments: calcInstallments(totalPrice),
+        dimensioning: { ...dim, panelCount: usedPanels, powerKwp, monthlyGeneration, surplus },
+      };
+    });
+  }, [consumption, equipment, client, irradiation, finalPanels, settings.systemLoss, settings.creditCardRates, findPriceTableEntry, customKits]);
 
   const chartData = useMemo(() => {
     const baseDim = systemCards[0]?.dimensioning;
