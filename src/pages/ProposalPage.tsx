@@ -82,15 +82,55 @@ export default function ProposalPage() {
 
   const lineCards = useMemo(() => {
     if (!proposal) return [];
+    const savedData = proposal.dados_completos || proposal;
+    
     return LINES.map(line => {
+      const isSelectedLine = line === (savedData.selectedLine || proposal.selectedLine);
+      
+      // For the selected line, use saved data from the proposal
+      if (isSelectedLine && panelDelta === 0) {
+        const savedKit = savedData.selectedKit;
+        const savedDim = savedData.dimensioning || proposal.dimensioning;
+        const savedCostBreakdown = savedData.costBreakdown || proposal.costBreakdown;
+        const savedInstallments = savedData.installmentValues || proposal.installmentValues;
+        const savedCardInstallments = savedData.cardInstallments || proposal.cardInstallments;
+        
+        const inverter = savedKit?.inverter || null;
+        const panel = savedKit?.panel || null;
+        const panelCount = savedKit?.panelCount || finalPanels;
+        const isPremium = line === 'premium';
+        const microCount = savedData.microInverterCount ?? (isPremium ? calcMicroInverterCount(panelCount) : 0);
+        const panelPowerKwp = (panel?.power || 570) / 1000;
+        const maxPanels = isPremium ? 999 : (inverter ? maxPanelsForInverter(inverter.power, panelPowerKwp) : 0);
+        const panelsRemaining = isPremium ? 999 : maxPanels - panelCount;
+        
+        const totalPrice = savedCostBreakdown?.salePrice || savedData.totalPrice || proposal.totalPrice;
+        const installments = savedInstallments || (proposal.cetApplied
+          ? calcInstallments(totalPrice, proposal.cetApplied)
+          : calcInstallments(totalPrice));
+        const cardInstallments = savedCardInstallments || calcCardInstallments(totalPrice, settings.creditCardRates);
+        const costBreakdown = savedCostBreakdown || calcCostBreakdown(inverter, panel, panelCount, line);
+
+        return {
+          line, inverter, panel, panelCount, totalPrice, maxPanels, panelsRemaining, microCount,
+          installments, cardInstallments, costBreakdown,
+          inverterBrand: savedData.inverterBrand || inverter?.brand || '',
+          inverterModel: savedData.inverterModel || inverter?.model || '',
+          panelBrand: savedData.panelBrand || panel?.brand || '',
+          panelPowerLabel: savedData.panelPowerLabel || `${panel?.power || 570} Wp`,
+          dimensioning: { ...savedDim, panelCount, powerKwp: savedDim.powerKwp, monthlyGeneration: savedDim.monthlyGeneration, surplus: savedDim.surplus },
+        };
+      }
+      
+      // For non-selected line or when panels are adjusted, recalculate
       const panel = findPanel(line);
       const panelPowerKwp = (panel?.power || 570) / 1000;
       const inverter = findInverterForPanels(line, finalPanels, panelPowerKwp);
       const powerKwp = finalPanels * panelPowerKwp;
       const totalPrice = calcTotalPrice(inverter, panel, finalPanels, line);
       const dim = calcDimensioning(
-        proposal.consumption, proposal.equipment, proposal.clientData.networkType,
-        irradiation, proposal.clientData.kwhPrice, totalPrice, settings.systemLoss
+        proposal.consumption || savedData.consumption, proposal.equipment || savedData.equipment || [], proposal.clientData?.networkType || savedData.clientData?.networkType,
+        irradiation, proposal.clientData?.kwhPrice || savedData.clientData?.kwhPrice, totalPrice, settings.systemLoss
       );
       const isPremium = line === 'premium';
       const microCount = isPremium ? calcMicroInverterCount(finalPanels) : 0;
@@ -107,10 +147,14 @@ export default function ProposalPage() {
       return {
         line, inverter, panel, panelCount: finalPanels, totalPrice, maxPanels, panelsRemaining, microCount,
         installments, cardInstallments, costBreakdown,
+        inverterBrand: inverter?.brand || '',
+        inverterModel: inverter?.model || '',
+        panelBrand: panel?.brand || '',
+        panelPowerLabel: `${panel?.power || 570} Wp`,
         dimensioning: { ...dim, panelCount: finalPanels, powerKwp, monthlyGeneration, surplus },
       };
     });
-  }, [finalPanels, proposal, irradiation, settings.systemLoss, settings.creditCardRates]);
+  }, [finalPanels, proposal, irradiation, settings.systemLoss, settings.creditCardRates, panelDelta]);
 
   const chartData = useMemo(() => {
     if (!proposal || lineCards.length === 0) return [];
