@@ -93,8 +93,31 @@ export default function CalculatorPage() {
     const defaultKwh = prefillLead?.avgKwh || 350;
     return [{ id: '1', name: 'Principal', averageKwh: defaultKwh, mode: 'average' as const, monthlyValues: emptyMonthly() }];
   });
-  const [equipment, setEquipment] = useState<EquipmentItem[]>(ep?.equipment || []);
+  const [equipment, setEquipment] = useState<(EquipmentItem & { quantity?: number })[]>(ep?.equipment || []);
   const [eqOpen, setEqOpen] = useState(false);
+
+  // Dynamic equipment catalog from DB
+  const [dbEquipmentCategories, setDbEquipmentCategories] = useState<Record<string, EquipmentCatalogItem[]>>({});
+  useEffect(() => {
+    const loadEq = async () => {
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { data } = await supabase.from('equipamentos_calculadora').select('*').eq('ativo', true).order('categoria').order('nome');
+      if (data && data.length > 0) {
+        const mapped: EquipmentCatalogItem[] = (data as any[]).map(d => ({
+          type: d.id, label: d.nome, category: d.categoria, powerKw: Number(d.potencia_kw),
+          defaultHoursPerDay: Number(d.horas_dia_padrao) || 0, defaultDaysPerMonth: d.dias_mes_padrao,
+          unit: d.tipo_medicao === 'km' ? 'km' as const : 'day' as const,
+        }));
+        const cats = mapped.reduce<Record<string, EquipmentCatalogItem[]>>((acc, item) => {
+          if (!acc[item.category]) acc[item.category] = [];
+          acc[item.category].push(item);
+          return acc;
+        }, {});
+        setDbEquipmentCategories(cats);
+      }
+    };
+    loadEq();
+  }, []);
   const [panelDelta, setPanelDelta] = useState(0);
   const [paymentTab, setPaymentTab] = useState<'financing' | 'card'>('financing');
   const [showCostPanel, setShowCostPanel] = useState(false);
