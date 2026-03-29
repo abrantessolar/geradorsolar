@@ -152,8 +152,8 @@ export async function getHistoricoDB(propostaId: string) {
 export async function duplicatePropostaDB(originalId: string, userId: string | null): Promise<string | null> {
   const original = await getPropostaByIdDB(originalId);
   if (!original) return null;
-  const newProposal = { ...original, id: crypto.randomUUID(), status: 'enviada', cetApplied: null };
-  const newId = await savePropostaDB(newProposal);
+  const newProposal = { ...original, id: crypto.randomUUID(), status: 'enviada' as const, cetApplied: null };
+  const newId = await savePropostaDB(newProposal as any);
   await addHistoricoDB(newId, 'criada', userId, { origem: 'duplicacao', proposta_original: originalId });
   return newId;
 }
