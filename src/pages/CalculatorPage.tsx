@@ -96,7 +96,8 @@ export default function CalculatorPage() {
         monthlyValues: u.monthlyValues || emptyMonthly(),
       }));
     }
-    return [{ id: '1', name: 'Principal', averageKwh: 350, mode: 'average' as const, monthlyValues: emptyMonthly() }];
+    const defaultKwh = prefillLead?.avgKwh || 350;
+    return [{ id: '1', name: 'Principal', averageKwh: defaultKwh, mode: 'average' as const, monthlyValues: emptyMonthly() }];
   });
   const [equipment, setEquipment] = useState<EquipmentItem[]>(ep?.equipment || []);
   const [eqOpen, setEqOpen] = useState(false);
