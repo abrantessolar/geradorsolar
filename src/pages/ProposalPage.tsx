@@ -598,41 +598,6 @@ export default function ProposalPage() {
           </div>
         </section>
 
-        {/* INTERNAL COST BREAKDOWN - Only for authenticated users, NOT in public view */}
-        {isAuthenticated && selectedCard && (
-          <section className="solar-card p-6 space-y-4 no-print">
-            <button onClick={() => setShowCostPanel(p => !p)}
-              className="w-full flex items-center justify-between">
-              <h2 className="text-lg font-bold text-primary flex items-center gap-2">
-                {showCostPanel ? <EyeOff className="w-5 h-5 text-secondary" /> : <Eye className="w-5 h-5 text-secondary" />}
-                Custos Internos ({LINE_NAMES[selectedCard.line]})
-              </h2>
-              {showCostPanel ? <ChevronUp className="w-5 h-5 text-muted-foreground" /> : <ChevronDown className="w-5 h-5 text-muted-foreground" />}
-            </button>
-            {showCostPanel && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {lineCards.map(card => (
-                  <div key={card.line} className={`space-y-2 p-4 rounded-lg border ${card.line === proposal.selectedLine ? 'border-primary bg-primary/5' : 'border-border bg-muted/30'}`}>
-                    <h3 className="font-semibold text-sm text-primary">{LINE_NAMES[card.line]}</h3>
-                    <div className="space-y-1.5 text-sm">
-                      <div className="flex justify-between"><span className="text-muted-foreground">Equipamentos</span><span>{formatCurrency(card.costBreakdown.equipmentCost)}</span></div>
-                      <div className="flex justify-between"><span className="text-muted-foreground">Instalação ({card.panelCount}× R$100)</span><span>{formatCurrency(card.costBreakdown.installationCost)}</span></div>
-                      <div className="flex justify-between"><span className="text-muted-foreground">Homologação</span><span>{formatCurrency(card.costBreakdown.homologationCost)}</span></div>
-                      <div className="flex justify-between"><span className="text-muted-foreground">Material CA ({card.inverter?.power || 0} kW)</span><span>{formatCurrency(card.costBreakdown.caMaterialCost)}</span></div>
-                      {card.costBreakdown.trunkCableCost > 0 && (
-                        <div className="flex justify-between"><span className="text-muted-foreground">Cabo tronco</span><span>{formatCurrency(card.costBreakdown.trunkCableCost)}</span></div>
-                      )}
-                      <div className="flex justify-between pt-2 border-t border-border font-semibold"><span>Custo total</span><span>{formatCurrency(card.costBreakdown.totalCost)}</span></div>
-                      <div className="flex justify-between"><span className="text-muted-foreground">Margem aplicada</span><span>{card.costBreakdown.profitMargin}%</span></div>
-                      <div className="flex justify-between font-bold text-primary text-base"><span>Preço de venda</span><span>{formatCurrency(card.costBreakdown.salePrice)}</span></div>
-                      <div className="flex justify-between text-green-600 font-semibold"><span>Lucro bruto</span><span>{formatCurrency(card.costBreakdown.grossProfit)}</span></div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
-        )}
 
         {/* CHART */}
         <section className="solar-card p-4 sm:p-8 space-y-6 print-page print-chart-section">
