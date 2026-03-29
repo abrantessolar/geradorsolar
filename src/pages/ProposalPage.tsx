@@ -1,4 +1,5 @@
 import { useParams, useNavigate } from 'react-router-dom';
+import logoTls from '@/assets/logo-tls.png';
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { getProposals, saveProposal, getSettings, getSocialProofs, lookupIrradiation, getPriceTable } from '@/data/store';
 import { getPropostaByIdDB, markPropostaViewedDB, getSettingsDB, addHistoricoDB } from '@/data/supabaseStore';
@@ -438,7 +439,7 @@ export default function ProposalPage() {
             ))}
           </div>
           <div className="relative z-10">
-            <img src="/lovable-uploads/aec16b52-e652-47e3-8b88-abab197597dd.png" alt="Três Lagoas Solar" className="h-72 mx-auto mb-6 print-logo" />
+            <img src={logoTls} alt="Três Lagoas Solar" className="h-72 mx-auto mb-6 print-logo" />
             <p className="text-sm uppercase tracking-widest text-muted-foreground mb-2">{settings.company.name}</p>
             {proposal.numero_proposta && (
               <p className="text-sm font-mono font-bold text-secondary mb-2">{proposal.numero_proposta}</p>
