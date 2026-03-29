@@ -65,7 +65,19 @@ export async function generateProposalPDF(
     doc.text(numero, W - M, 18, { align: 'right' });
   };
 
-  // Try to load logo as base64
+  // Load cover and portfolio images as base64
+  const loadImageAsBase64 = async (src: string): Promise<string | null> => {
+    try {
+      const response = await fetch(src);
+      const blob = await response.blob();
+      return await new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.readAsDataURL(blob);
+      });
+    } catch { return null; }
+  };
+
   let logoData: string | null = null;
   try {
     const response = await fetch(new URL('/src/assets/logo.png', window.location.origin).href);
@@ -77,99 +89,60 @@ export async function generateProposalPDF(
     });
   } catch { /* logo not available */ }
 
-  // ═══════════════════════════════════════
-  // PAGE 1: COVER
-  // ═══════════════════════════════════════
-  // Full page white with decorative elements
-  // Top-left gold accents
-  setFill(SECONDARY);
-  doc.rect(12, 8, 4, 4, 'F');
-  doc.rect(20, 8, 4, 4, 'F');
-  doc.rect(28, 8, 4, 4, 'F');
+  const coverImgData = await loadImageAsBase64(pdfCoverImg);
+  const portfolioImgData = await loadImageAsBase64(pdfPortfolioImg);
 
-  // Logo
-  if (logoData) {
-    try { doc.addImage(logoData, 'PNG', M, 18, 55, 28); } catch {}
-  } else {
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(22);
-    setColor(PRIMARY);
-    doc.text('TRÊS LAGOAS', M, 32);
-    doc.setFontSize(28);
-    doc.text('Solar', M, 44);
+  // ═══════════════════════════════════════
+  // PAGE 1: COVER (using uploaded template image)
+  // ═══════════════════════════════════════
+  if (coverImgData) {
+    try {
+      doc.addImage(coverImgData, 'PNG', 0, 0, W, H);
+    } catch {}
   }
 
-  // Main title - styled like the template
-  let y = 85;
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(26);
-  setColor(DARK);
-  doc.text('meu', M + 10, y);
-  y += 12;
-  doc.text('projeto', M + 10, y);
-  y += 10;
-  doc.setFontSize(20);
-  doc.text('de', M + 10, y);
-
-  // Large "Energia solar" text
-  y += 18;
+  // Overlay dynamic text on the cover image
+  // Proposal number top-right
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(48);
-  setColor(PRIMARY);
-  doc.text('Energia', M, y);
-  y += 20;
-  doc.setFontSize(44);
-  setColor(PRIMARY);
-  doc.text('solar', M + 30, y);
-  y += 14;
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(22);
+  doc.setFontSize(9);
   setColor(GRAY);
-  doc.text('fotovoltaica', M + 50, y);
+  doc.text(numero, W - M, 12, { align: 'right' });
 
-  // Gold circle decoration (like template)
-  setFill(SECONDARY);
-  doc.circle(155, 120, 35, 'F');
-
-  // Client info box
-  y = 200;
+  // Client name on the green bar (approx y=200-224 in the template)
+  const barY = 210;
+  // White semi-transparent overlay on the green bar for text
   setFill(PRIMARY);
-  doc.roundedRect(M + 30, y, CW - 30, 24, 3, 3, 'F');
+  doc.rect(M + 20, barY, CW - 20, 22, 'F');
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(16);
   setColor(WHITE);
-  doc.text(proposal.clientData.name, M + 38, y + 10);
+  doc.text(proposal.clientData.name, M + 28, barY + 10);
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(10);
   setColor([220, 220, 220]);
-  doc.text(`${formatNumber(selectedCard?.dimensioning?.avgMonthlyKwh || 0, 0)} kWh por mês  •  ${proposal.clientData.city} — ${proposal.clientData.state || 'MS'}`, M + 38, y + 18);
+  doc.text(`${formatNumber(selectedCard?.dimensioning?.avgMonthlyKwh || 0, 0)} kWh/mês  •  ${proposal.clientData.city} — ${proposal.clientData.state || 'MS'}`, M + 28, barY + 18);
 
-  // Seller info
-  y = 238;
+  // Seller info at bottom
+  const sellerY = 245;
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);
-  setColor(GRAY);
-  doc.text('Representante:', M + 20, y);
-  y += 6;
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(12);
-  setColor(DARK);
-  doc.text(proposal.clientData.seller || '', M + 20, y);
-
-  y += 10;
+  setColor(WHITE);
+  doc.text(`Representante: ${proposal.clientData.seller || ''}`, M + 20, sellerY);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(8);
-  setColor(DARK);
-  doc.text(`${settings.company.phone}  |  ${settings.company.email}`, M + 20, y);
-  y += 5;
-  doc.setFont('helvetica', 'normal');
-  doc.text(`${settings.company.site || 'www.treslagoassolar.com.br'}  |  @treslagoassolar`, M + 20, y);
+  doc.text(`${settings.company.phone}  |  ${settings.company.email}`, M + 20, sellerY + 6);
 
-  // Bottom-right gold accents
-  setFill(SECONDARY);
-  doc.rect(W - 32, H - 28, 4, 4, 'F');
-  doc.rect(W - 24, H - 28, 4, 4, 'F');
-  doc.rect(W - 16, H - 28, 4, 4, 'F');
+  // ═══════════════════════════════════════
+  // PAGE 2: PORTFOLIO (using uploaded template image)
+  // ═══════════════════════════════════════
+  doc.addPage();
+  if (portfolioImgData) {
+    try {
+      doc.addImage(portfolioImgData, 'PNG', 0, 0, W, H);
+    } catch {}
+  } else {
+    drawPageHeader('Nossos Projetos');
+  }
 
   // ═══════════════════════════════════════
   // PAGE 2: SPECS + CHART
