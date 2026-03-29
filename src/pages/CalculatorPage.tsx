@@ -18,7 +18,7 @@ import {
   formatCurrency, formatNumber, maxPanelsForInverter, calcMicroInverterCount,
 } from '@/data/calculations';
 import { getSettings, saveProposal, lookupIrradiation, getPriceTable } from '@/data/store';
-import { savePropostaDB, searchCidadesDB } from '@/data/supabaseStore';
+import { savePropostaDB, searchCidadesDB, syncKitsFromDB, syncPriceTableFromDB } from '@/data/supabaseStore';
 import type { Proposal, PriceTableEntry, PriceTableLineDetails } from '@/data/types';
 import { useAuth } from '@/contexts/AuthContext';
 
