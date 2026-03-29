@@ -21,6 +21,7 @@ const DEFAULT_DISTRIBUTORS = [
 const DEFAULT_SETTINGS: AdminSettings = {
   profitMargin: 30,
   defaultCET: 2.214,
+  surplusFactor: 20,
   defaultKwhPrice: { 'MS': 0.85, 'SP': 0.90, 'MG': 0.88 },
   irradiationEntries: [
     { id: '1', state: 'MS', city: 'Três Lagoas', value: 5.0 },
@@ -100,6 +101,7 @@ export function getSettings(): AdminSettings {
   if (s.homologationPrice === undefined) s.homologationPrice = 70;
   if (s.trunkCablePrice === undefined) s.trunkCablePrice = 300;
   if (s.homologationDays === undefined) s.homologationDays = 10;
+  if (s.surplusFactor === undefined) s.surplusFactor = 20;
   if (s.sellers && s.sellers.length > 0 && typeof s.sellers[0] === 'string') {
     s.sellers = (s.sellers as unknown as string[]).map((name, i) => ({
       id: String(i + 1), name, phone: '', email: '', active: true,

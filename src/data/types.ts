@@ -77,6 +77,7 @@ export interface Distributor {
 export interface AdminSettings {
   profitMargin: number;
   defaultCET: number;
+  surplusFactor: number;
   defaultKwhPrice: Record<string, number>;
   irradiationEntries: IrradiationEntry[];
   proposalValidity: number;
