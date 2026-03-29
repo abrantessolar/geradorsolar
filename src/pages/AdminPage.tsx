@@ -7,11 +7,11 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import {
-  saveSettingsDB, saveVendedoresDB, savePriceTableDB, saveSocialProofsDB,
+  saveSettingsDB, savePriceTableDB, saveSocialProofsDB,
   saveDistribuidorasDB, importCidadesIrradianciaDB, getPropostasDB,
 } from '@/data/supabaseStore';
 import { formatCurrency } from '@/data/calculations';
-import { AdminSettings, Seller, IrradiationEntry, PriceTableEntry, SocialProof, BRAZILIAN_STATES, CA_MATERIAL_TABLE_DEFAULT, LINE_NAMES } from '@/data/types';
+import { AdminSettings, IrradiationEntry, PriceTableEntry, SocialProof, BRAZILIAN_STATES, CA_MATERIAL_TABLE_DEFAULT, LINE_NAMES } from '@/data/types';
 import type { Distributor, PriceTableLineDetails } from '@/data/types';
 import { Users, DollarSign, Settings, MapPin, Building2, FileText, Image, Plus, Trash2, Save, Eye, Wand2, AlertCircle, Upload, Check, ChevronDown, UserPlus, Edit2, X, Globe, CheckCircle, AlertTriangle, Share2 } from 'lucide-react';
 import { toast } from 'sonner';
