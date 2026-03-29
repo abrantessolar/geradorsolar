@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Minus, ChevronDown, ChevronUp, Zap, Sun, TrendingUp, ArrowRight, AlertTriangle, Eye, EyeOff, CreditCard, Settings2 } from 'lucide-react';
+import { Plus, Minus, ChevronDown, ChevronUp, Zap, Sun, TrendingUp, ArrowRight, AlertTriangle, Eye, EyeOff, CreditCard, Settings2, Check } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import CustomKitForm, { CustomKitData, defaultCustomKit, calcCustomBreakdown } from '@/components/CustomKitForm';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
@@ -681,7 +681,10 @@ export default function CalculatorPage() {
             const remaining = card.panelsRemaining;
             const limitColor = isPremium ? undefined : (remaining <= 0 ? '#E84855' : remaining <= 2 ? '#E8B84B' : undefined);
             return (
-              <div key={card.line} className="solar-card p-6 space-y-4 relative">
+              <div key={card.line} 
+                className={`solar-card p-6 space-y-4 relative cursor-pointer transition-all ${selectedLine === idx ? 'ring-2 ring-primary shadow-lg' : 'hover:shadow-md'}`}
+                onClick={() => setSelectedLine(idx)}
+              >
                 <div className="text-center">
                   <h3 className="text-lg font-bold text-primary">{LINE_NAMES[card.line]}</h3>
                   <p className="text-xs text-muted-foreground">{LINE_SUBS[card.line]}</p>
