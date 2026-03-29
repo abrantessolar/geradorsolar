@@ -13,9 +13,9 @@ import {
   findInverterForPanels, findPanel, calcTotalPrice, calcInstallments,
   formatCurrency, formatNumber, maxPanelsForInverter, calcMicroInverterCount,
 } from '@/data/calculations';
-import { getSettings, saveProposal, lookupIrradiation } from '@/data/store';
+import { getSettings, saveProposal, lookupIrradiation, getPriceTable } from '@/data/store';
 import { savePropostaDB, searchCidadesDB } from '@/data/supabaseStore';
-import type { Proposal } from '@/data/types';
+import type { Proposal, PriceTableEntry, PriceTableLineDetails } from '@/data/types';
 
 const EQUIPMENT_COLORS = [
   '#E67E22', '#3498DB', '#9B59B6', '#1ABC9C', '#E74C3C',
@@ -145,30 +145,66 @@ export default function CalculatorPage() {
 
   const finalPanels = Math.max(1, basePanelCount + panelDelta);
 
+  const priceTable = useMemo(() => getPriceTable(), []);
+
+  // Find best price table entry for a given line and panel count
+  const findPriceTableEntry = useCallback((line: 'excellence' | 'premium', panels: number): PriceTableEntry | null => {
+    const entries = priceTable.filter(e => e[line] !== null && e[line]! > 0 && e.panels >= panels);
+    entries.sort((a, b) => a.panels - b.panels);
+    // Exact match first, then next available
+    const exact = entries.find(e => e.panels === panels);
+    if (exact) return exact;
+    return entries[0] || null;
+  }, [priceTable]);
+
   const systemCards = useMemo(() => {
     return LINES.map(line => {
       const panel = findPanel(line);
       const panelPowerKwp = (panel?.power || 570) / 1000;
-      const inverter = findInverterForPanels(line, finalPanels, panelPowerKwp);
-      const powerKwp = finalPanels * panelPowerKwp;
-      const totalPrice = calcTotalPrice(inverter, panel, finalPanels, line);
+
+      // Try to find from price table first
+      const ptEntry = findPriceTableEntry(line, finalPanels);
+      const ptDetails = (ptEntry?.details as any)?.[line] as PriceTableLineDetails | undefined;
+
+      // Use price table panel count if available, otherwise use calculated
+      const usedPanels = ptEntry ? ptEntry.panels : finalPanels;
+
+      const inverter = findInverterForPanels(line, usedPanels, panelPowerKwp);
+      const powerKwp = usedPanels * panelPowerKwp;
+
+      // Use price table cost if available, otherwise calculate
+      const hasPriceTableCost = ptEntry && ptEntry[line] !== null && ptEntry[line]! > 0;
+      const totalPrice = hasPriceTableCost ? ptEntry[line]! : calcTotalPrice(inverter, panel, usedPanels, line);
+
       const dim = calcDimensioning(consumption, equipment, client.networkType, irradiation, client.kwhPrice, totalPrice, settings.systemLoss);
 
       const isPremium = line === 'premium';
-      const microCount = isPremium ? calcMicroInverterCount(finalPanels) : 0;
-      const maxPanels = isPremium ? 999 : (inverter ? maxPanelsForInverter(inverter.power, panelPowerKwp) : 0);
-      const panelsRemaining = isPremium ? 999 : maxPanels - finalPanels;
+      const microCount = isPremium ? calcMicroInverterCount(usedPanels) : 0;
+
+      // Calculate inverter limit from price table or kit data
+      const ptInverterPower = ptDetails?.inverterPower ? parseFloat(ptDetails.inverterPower) : null;
+      const ptPanelPower = ptDetails?.panelPower ? parseFloat(ptDetails.panelPower) : null;
+      const effectiveInverterKw = ptInverterPower || inverter?.power || 0;
+      const effectivePanelWp = ptPanelPower || panel?.power || 570;
+      const effectivePanelKwp = effectivePanelWp / 1000;
+      const maxPanels = isPremium ? 999 : Math.floor((effectiveInverterKw * 1.5) / effectivePanelKwp);
+      const panelsRemaining = isPremium ? 999 : maxPanels - usedPanels;
 
       const monthlyGeneration = powerKwp * irradiation * 30 * (1 - settings.systemLoss / 100);
       const surplus = monthlyGeneration - dim.avgMonthlyKwh;
 
       return {
-        line, inverter, panel, panelCount: finalPanels, totalPrice, maxPanels, panelsRemaining, microCount,
+        line, inverter, panel, panelCount: usedPanels, totalPrice, maxPanels, panelsRemaining, microCount,
+        ptDetails, ptEntry, hasPriceTableCost,
+        inverterBrand: ptDetails?.inverterBrand || inverter?.brand || '',
+        inverterModel: ptDetails?.inverterPower ? `${ptDetails.inverterPower} kW` : inverter?.model || '',
+        panelBrand: ptDetails?.panelBrand || panel?.brand || '',
+        panelPowerLabel: ptDetails?.panelPower ? `${ptDetails.panelPower} Wp` : `${panel?.power || 570} Wp`,
         installments: calcInstallments(totalPrice),
-        dimensioning: { ...dim, panelCount: finalPanels, powerKwp, monthlyGeneration, surplus },
+        dimensioning: { ...dim, panelCount: usedPanels, powerKwp, monthlyGeneration, surplus },
       };
     });
-  }, [consumption, equipment, client, irradiation, finalPanels, settings.systemLoss]);
+  }, [consumption, equipment, client, irradiation, finalPanels, settings.systemLoss, findPriceTableEntry]);
 
   const chartData = useMemo(() => {
     const baseDim = systemCards[0]?.dimensioning;
@@ -574,23 +610,30 @@ export default function CalculatorPage() {
                   {isPremium ? (
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Micro inversores</span>
-                      <span className="font-medium">{card.microCount}× {card.inverter?.brand} {card.inverter?.model}</span>
+                      <span className="font-medium">{card.microCount}× {card.inverterBrand} {card.inverterModel}</span>
                     </div>
                   ) : (
                     <>
-                      <div className="flex justify-between"><span className="text-muted-foreground">Inversor</span><span className="font-medium">{card.inverter?.brand} {card.inverter?.model}</span></div>
+                      <div className="flex justify-between"><span className="text-muted-foreground">Inversor</span><span className="font-medium">{card.inverterBrand} {card.inverterModel}</span></div>
                       <div className="flex justify-between items-start">
                         <span className="text-muted-foreground">Suporta até</span>
                         <span className="font-medium text-right" style={limitColor ? { color: limitColor } : undefined}>
-                          {maxP} placas
-                          {remaining <= 0 && <span className="block text-xs">Limite atingido — inversor será atualizado na próxima placa</span>}
+                          {maxP} placas de {card.panelPowerLabel}
+                          {remaining <= 2 && remaining > 0 && <span className="block text-xs" style={{ color: '#E8B84B' }}>Quase no limite do inversor</span>}
+                          {remaining <= 0 && <span className="block text-xs text-destructive">Limite atingido — próximo kit usa inversor maior</span>}
                         </span>
                       </div>
                     </>
                   )}
-                  <div className="flex justify-between"><span className="text-muted-foreground">Placas</span><span className="font-medium">{card.panelCount}× {card.panel?.brand}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Placas</span><span className="font-medium">{card.panelCount}× {card.panelBrand} ({card.panelPowerLabel})</span></div>
                   <div className="flex justify-between"><span className="text-muted-foreground">Potência</span><span className="font-medium">{formatNumber(card.dimensioning.powerKwp)} kWp</span></div>
                   <div className="flex justify-between"><span className="text-muted-foreground">Geração/mês</span><span className="font-medium">{formatNumber(card.dimensioning.monthlyGeneration, 0)} kWh</span></div>
+                  {card.hasPriceTableCost && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground text-xs">Fonte</span>
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700">Tabela de preços</span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="text-center py-3 border-y border-border">
