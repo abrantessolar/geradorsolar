@@ -122,8 +122,9 @@ export async function generateProposalPDF(
   doc.text(`${formatNumber(selectedCard?.dimensioning?.avgMonthlyKwh || 0, 0)} kWh/mês  •  ${proposal.clientData.city} — ${proposal.clientData.state || 'MS'}`, W / 2, barY + 13, { align: 'center' });
 
   // Representative info on cover — white text below client info
-  const sellerName = proposal.clientData.sellerName || settings.company?.sellerName || '';
-  const sellerPhone = proposal.clientData.sellerPhone || settings.company?.phone || '';
+  const sellerName = proposal.clientData.seller || '';
+  const matchedSeller = settings.sellers?.find((s: any) => s.name === sellerName);
+  const sellerPhone = matchedSeller?.phone || settings.company?.phone || '';
   if (sellerName) {
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(10);
