@@ -817,10 +817,11 @@ export default function CalculatorPage() {
                   </div>
                 )}
 
-                <button onClick={() => generateProposal(idx)}
-                  className="w-full solar-btn-primary flex items-center justify-center gap-2">
-                  Gerar Proposta <ArrowRight className="w-4 h-4" />
-                </button>
+                {selectedLine === idx && (
+                  <div className="absolute top-3 right-3 w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center">
+                    <Check className="w-4 h-4" />
+                  </div>
+                )}
               </div>
             );
           })}
