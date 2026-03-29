@@ -139,8 +139,10 @@ function UsersTab() {
             <div className="space-y-3">
               <div><label className="block text-sm font-medium mb-1">Nome completo</label>
                 <input className="solar-input" value={form.nome} onChange={e => setForm(p => ({ ...p, nome: e.target.value }))} /></div>
-              <div><label className="block text-sm font-medium mb-1">E-mail</label>
+             <div><label className="block text-sm font-medium mb-1">E-mail</label>
                 <input className="solar-input" type="email" value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))} /></div>
+              <div><label className="block text-sm font-medium mb-1">Telefone/WhatsApp</label>
+                <input className="solar-input" value={form.telefone} onChange={e => setForm(p => ({ ...p, telefone: e.target.value }))} placeholder="(XX) XXXXX-XXXX" /></div>
               <div><label className="block text-sm font-medium mb-1">Nível de permissão</label>
                 <select className="solar-input" value={form.role} onChange={e => setForm(p => ({ ...p, role: e.target.value }))}>
                   <option value="vendedor">Vendedor</option>
