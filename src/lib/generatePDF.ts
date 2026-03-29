@@ -2,6 +2,9 @@ import jsPDF from 'jspdf';
 import { formatCurrency, formatNumber } from '@/data/calculations';
 import { LINE_NAMES, INSTALLMENT_OPTIONS, MONTH_LABELS } from '@/data/types';
 import { supabase } from '@/integrations/supabase/client';
+import { getConfigDB } from '@/data/supabaseStore';
+import type { PdfTemplateSettings } from '@/data/pdfTemplateTypes';
+import { DEFAULT_PDF_TEMPLATE } from '@/data/pdfTemplateTypes';
 import pdfCoverImg from '@/assets/pdf-cover.png';
 import pdfPortfolioImg from '@/assets/pdf-portfolio.png';
 
@@ -21,6 +24,10 @@ export async function generateProposalPDF(
   proposal: any, settings: any, lineCards: any[],
   chartData: any[], cashflowData: any[]
 ): Promise<jsPDF> {
+  // Load PDF template settings
+  const savedTemplate = await getConfigDB('pdf_template');
+  const tpl: PdfTemplateSettings = savedTemplate ? { ...DEFAULT_PDF_TEMPLATE, ...savedTemplate } : DEFAULT_PDF_TEMPLATE;
+
   const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4', compress: true });
   const W = 210;
   const H = 297;
@@ -43,7 +50,14 @@ export async function generateProposalPDF(
     doc.setFontSize(7);
     doc.setFont('helvetica', 'normal');
     setColor(WHITE);
-    const footerText = `${settings.company.phone}  |  ${settings.company.email}  |  CNPJ: ${settings.company.cnpj || ''}  |  ${settings.company.site || 'www.treslagoassolar.com.br'}  |  @treslagoassolar`;
+    const fp = tpl.footer;
+    const phone = fp.showPhone ? (fp.customPhone || settings.company.phone) : '';
+    const email = fp.showEmail ? (fp.customEmail || settings.company.email) : '';
+    const cnpj = fp.showCnpj ? `CNPJ: ${fp.customCnpj || settings.company.cnpj || ''}` : '';
+    const site = fp.showSite ? (fp.customSite || settings.company.site || 'www.treslagoassolar.com.br') : '';
+    const social = fp.showSocial ? (fp.customSocial || '@treslagoassolar') : '';
+    const footerParts = [phone, email, cnpj, site, social].filter(Boolean);
+    const footerText = footerParts.join('  |  ');
     doc.text(footerText, W / 2, fy + 5, { align: 'center' });
   };
 
@@ -105,14 +119,24 @@ export async function generateProposalPDF(
 
   // Overlay dynamic text on the cover image — NO green rectangle behind text
   // Proposal number top-right
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(9);
-  setColor(PRIMARY);
-  doc.text(numero, W - M, 16, { align: 'right' });
+  if (tpl.cover.showProposalNumber) {
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    setColor(PRIMARY);
+    doc.text(numero, W - M, 16, { align: 'right' });
+  }
 
   // Client name — positioned on the green bar area of the template
   // The template's green bar is around Y=215-240, we place text there
   const barY = 220 + (H * 0.02);
+
+  // Optional header text above client name
+  if (tpl.cover.headerText) {
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    setColor([230, 230, 220]);
+    doc.text(tpl.cover.headerText, W / 2, barY - 4, { align: 'center' });
+  }
   
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(20);
@@ -120,8 +144,10 @@ export async function generateProposalPDF(
   doc.text(proposal.clientData.name.toUpperCase(), W / 2, barY + 5, { align: 'center' });
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(11);
-  setColor([230, 230, 220]);
-  doc.text(`${formatNumber(selectedCard?.dimensioning?.avgMonthlyKwh || 0, 0)} kWh/mês  •  ${proposal.clientData.city} — ${proposal.clientData.state || 'MS'}`, W / 2, barY + 13, { align: 'center' });
+  const cityLine = tpl.cover.showCity
+    ? `${formatNumber(selectedCard?.dimensioning?.avgMonthlyKwh || 0, 0)} kWh/mês  •  ${proposal.clientData.city} — ${proposal.clientData.state || 'MS'}`
+    : `${formatNumber(selectedCard?.dimensioning?.avgMonthlyKwh || 0, 0)} kWh/mês`;
+  doc.text(cityLine, W / 2, barY + 13, { align: 'center' });
 
   // Representative info — black text, 25% to the left
   const sellerName = proposal.clientData.seller || '';
@@ -239,13 +265,19 @@ export async function generateProposalPDF(
     ry += 6;
   });
 
-  // "Incluso" text (compact)
+  // "Incluso" text (compact) — uses template toggles
   y += 52;
   doc.setFontSize(6.5);
   doc.setFont('helvetica', 'normal');
   setColor(GRAY);
   const surplusPct = settings.surplusFactor ?? 20;
-  const inclusoText = `Incluso: Sistema solar + Instalação + Análise de sombreamento + Homologação + 3 Anos de garantia • ${surplusPct}% de reserva`;
+  const inclusoItems = ['Sistema solar + Instalação'];
+  if (tpl.specs.showMaterial) inclusoItems.push('Material de instalação');
+  if (tpl.specs.showShadowAnalysis) inclusoItems.push('Análise de sombreamento');
+  if (tpl.specs.showHomologation) inclusoItems.push('Homologação');
+  if (tpl.specs.showMonitoring) inclusoItems.push('Monitoramento');
+  if (tpl.specs.showWarranty) inclusoItems.push('3 Anos de garantia');
+  const inclusoText = `Incluso: ${inclusoItems.join(' + ')} • ${surplusPct}% de reserva`;
   doc.text(inclusoText, W / 2, y, { align: 'center' });
 
   // ── Chart: Geração vs Consumo (compact) ──
@@ -321,9 +353,11 @@ export async function generateProposalPDF(
   doc.text('sistema completo de energia solar fotovoltaica', M + 42, y);
   y += 6;
 
-  // Installment boxes — 30% larger
-  const installW = CW / 5;
-  INSTALLMENT_OPTIONS.forEach((n, i) => {
+  // Filter installments based on template settings
+  const installmentMap: Record<number, string> = { 72: 'show72x', 60: 'show60x', 48: 'show48x', 36: 'show36x', 24: 'show24x' };
+  const visibleInstallments = INSTALLMENT_OPTIONS.filter(n => (tpl.specs.installments as any)[installmentMap[n]] !== false);
+  const installW = CW / Math.max(visibleInstallments.length, 1);
+  visibleInstallments.forEach((n, i) => {
     const ix = M + i * installW;
     setFill([252, 251, 246]);
     doc.roundedRect(ix + 2, y, installW - 4, 23, 3, 3, 'F');
@@ -440,14 +474,15 @@ export async function generateProposalPDF(
     return total;
   };
 
-  // KPI cards with softer styling
-  const kpiData = [
-    { label: 'Economia Mensal', value: formatCurrency(selectedCard?.dimensioning?.monthlySavings || 0), color: PRIMARY },
-    { label: 'Payback', value: `${formatNumber(selectedCard?.dimensioning?.paybackYears || 0)} anos`, color: PRIMARY },
-    { label: 'Retorno 25 anos', value: formatCurrency(selectedCard?.dimensioning?.return25 || 0), color: PRIMARY },
-  ];
+  // KPI cards with softer styling — filtered by template
+  const kpiData: { label: string; value: string; color: RGB }[] = [];
+  if (tpl.financial.showPayback) kpiData.push({ label: 'Payback', value: `${formatNumber(selectedCard?.dimensioning?.paybackYears || 0)} anos`, color: PRIMARY });
+  if (tpl.financial.showMonthlyLoss) kpiData.push({ label: 'Economia Mensal', value: formatCurrency(selectedCard?.dimensioning?.monthlySavings || 0), color: PRIMARY });
+  if (tpl.financial.showReturn25) kpiData.push({ label: 'Retorno 25 anos', value: formatCurrency(selectedCard?.dimensioning?.return25 || 0), color: PRIMARY });
+  // Always show at least the monthly savings if nothing else
+  if (kpiData.length === 0) kpiData.push({ label: 'Economia Mensal', value: formatCurrency(selectedCard?.dimensioning?.monthlySavings || 0), color: PRIMARY });
 
-  const kpiW = CW / 3;
+  const kpiW = CW / Math.max(kpiData.length, 1);
   kpiData.forEach((kpi, i) => {
     const kx = M + i * kpiW;
     setFill([250, 252, 245]);
@@ -468,19 +503,19 @@ export async function generateProposalPDF(
   y += 32;
 
   // Savings cards with softer edges
+  const savingsItems: { years: number; value: number }[] = [];
+  if (tpl.financial.showReturn5) savingsItems.push({ years: 5, value: calcSavings(5) });
+  if (tpl.financial.showReturn10) savingsItems.push({ years: 10, value: calcSavings(10) });
+  if (tpl.financial.showReturn15) savingsItems.push({ years: 15, value: calcSavings(15) });
+
+  if (savingsItems.length > 0) {
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(11);
   setColor(PRIMARY);
   doc.text('Sua economia com energia solar', M, y);
   y += 7;
 
-  const savingsItems = [
-    { years: 5, value: calcSavings(5) },
-    { years: 10, value: calcSavings(10) },
-    { years: 15, value: calcSavings(15) },
-  ];
-
-  const cardW = CW / 3 - 2;
+  const cardW = CW / Math.max(savingsItems.length, 1) - 2;
   savingsItems.forEach((item, i) => {
     const sx = M + i * (cardW + 3);
     setFill([245, 250, 238]);
@@ -499,20 +534,20 @@ export async function generateProposalPDF(
     doc.text(formatCurrency(item.value), sx + 10, y + 20);
   });
   y += 32;
+  } // end savings if
 
   // "Without solar" cards with softer edges
+  const noSolarItems: { years: number; value: number }[] = [];
+  if (tpl.financial.showWithout5) noSolarItems.push({ years: 5, value: calcWithout(5) });
+  if (tpl.financial.showWithout10) noSolarItems.push({ years: 10, value: calcWithout(10) });
+
+  if (noSolarItems.length > 0) {
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(11);
   setColor(RED_SOFT);
   doc.text('Quanto você pagaria sem energia solar', M, y);
   y += 7;
-
-  const noSolarItems = [
-    { years: 5, value: calcWithout(5) },
-    { years: 10, value: calcWithout(10) },
-    { years: 15, value: calcWithout(15) },
-  ];
-  const nCardW = CW / 3 - 2;
+  const nCardW = CW / Math.max(noSolarItems.length, 1) - 2;
   noSolarItems.forEach((item, i) => {
     const nx = M + i * (nCardW + 3);
     setFill([255, 245, 243]);
@@ -530,6 +565,16 @@ export async function generateProposalPDF(
     doc.text(formatCurrency(item.value), nx + 10, y + 20);
   });
   y += 34;
+  } // end noSolar if
+
+  // Custom footer text from template
+  if (tpl.financial.footerText) {
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'normal');
+    setColor(GRAY);
+    doc.text(tpl.financial.footerText, W / 2, y, { align: 'center' });
+    y += 5;
+  }
 
   // Cash flow table with softer header
   doc.setFont('helvetica', 'bold');
