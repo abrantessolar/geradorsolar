@@ -39,6 +39,8 @@ const emptyMonthly = (): MonthlyConsumption => ({
 });
 
 export default function CalculatorPage() {
+  const { session } = useAuth();
+  const isAuthenticated = !!session;
   const settings = getSettings();
   const navigate = useNavigate();
   const activeSellers = settings.sellers.filter(s => s.active);
