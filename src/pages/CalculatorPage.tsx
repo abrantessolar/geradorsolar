@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Minus, ChevronDown, ChevronUp, Zap, Sun, TrendingUp, ArrowRight, AlertTriangle } from 'lucide-react';
+import { Plus, Minus, ChevronDown, ChevronUp, Zap, Sun, TrendingUp, ArrowRight, AlertTriangle, Eye, EyeOff, CreditCard } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import {
   ClientData, MonthlyConsumption, ConsumptionMode, ConsumerUnit, EquipmentItem,
@@ -11,11 +11,13 @@ import type { EquipmentCatalogItem } from '@/data/types';
 import {
   estimateFullConsumption, calcEquipmentMonthly, calcDimensioning,
   findInverterForPanels, findPanel, calcTotalPrice, calcInstallments,
+  calcCardInstallments, calcCostBreakdown,
   formatCurrency, formatNumber, maxPanelsForInverter, calcMicroInverterCount,
 } from '@/data/calculations';
 import { getSettings, saveProposal, lookupIrradiation, getPriceTable } from '@/data/store';
 import { savePropostaDB, searchCidadesDB } from '@/data/supabaseStore';
 import type { Proposal, PriceTableEntry, PriceTableLineDetails } from '@/data/types';
+import { useAuth } from '@/contexts/AuthContext';
 
 const EQUIPMENT_COLORS = [
   '#E67E22', '#3498DB', '#9B59B6', '#1ABC9C', '#E74C3C',
