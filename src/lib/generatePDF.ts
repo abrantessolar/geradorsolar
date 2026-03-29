@@ -105,30 +105,27 @@ export async function generateProposalPDF(
   // Proposal number top-right
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(9);
-  setColor(WHITE);
-  doc.text(numero, W - M, 12, { align: 'right' });
+  setColor(PRIMARY);
+  doc.text(numero, W - M, 16, { align: 'right' });
 
-  // Client name directly on the template (the template already has the green bar)
-  const barY = 210;
+  // Client name — positioned on the green bar area of the template
+  // The green bar in the template is around Y=215-235
+  const barY = 218;
+  
+  // Semi-transparent dark overlay on the green bar for better readability
+  setFill(PRIMARY);
+  doc.setGState(new (doc as any).GState({ opacity: 0.7 }));
+  doc.rect(0, barY - 4, W, 28, 'F');
+  doc.setGState(new (doc as any).GState({ opacity: 1 }));
+  
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(18);
   setColor(WHITE);
-  doc.text(proposal.clientData.name.toUpperCase(), W / 2, barY + 8, { align: 'center' });
+  doc.text(proposal.clientData.name.toUpperCase(), W / 2, barY + 7, { align: 'center' });
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(10);
-  setColor([220, 220, 220]);
-  doc.text(`${formatNumber(selectedCard?.dimensioning?.avgMonthlyKwh || 0, 0)} kWh/mês  •  ${proposal.clientData.city} — ${proposal.clientData.state || 'MS'}`, W / 2, barY + 16, { align: 'center' });
-
-  // Seller info at bottom
-  const sellerY = 248;
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(9);
-  setColor(DARK);
-  doc.text(`Representante: ${proposal.clientData.seller || ''}`, W / 2, sellerY, { align: 'center' });
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(8);
-  setColor(DARK);
-  doc.text(`${settings.company.phone}  |  ${settings.company.email}`, W / 2, sellerY + 6, { align: 'center' });
+  setColor([230, 230, 220]);
+  doc.text(`${formatNumber(selectedCard?.dimensioning?.avgMonthlyKwh || 0, 0)} kWh/mês  •  ${proposal.clientData.city} — ${proposal.clientData.state || 'MS'}`, W / 2, barY + 15, { align: 'center' });
 
   // ═══════════════════════════════════════
   // PAGE 2: PORTFOLIO (using uploaded template image)
@@ -616,7 +613,12 @@ export async function generateProposalPDF(
     setColor(eco > 0 ? GREEN : RED_SOFT);
     doc.setFont('helvetica', 'bold');
     doc.text(formatCurrency(eco), M + CW * 0.82, y + 1, { align: 'right' });
-    doc.text(eco > 0 ? '✓' : '—', M + CW - 3, y + 1, { align: 'right' });
+    // Use simple ASCII indicators instead of unicode symbols (helvetica doesn't support ✓)
+    setFill(eco > 0 ? GREEN : RED_SOFT);
+    doc.circle(M + CW - 5, y - 0.5, 2, 'F');
+    doc.setFontSize(5.5);
+    setColor(WHITE);
+    doc.text(eco > 0 ? '+' : '-', M + CW - 5, y + 0.5, { align: 'center' });
     doc.setFont('helvetica', 'normal');
     y += 6;
   });
