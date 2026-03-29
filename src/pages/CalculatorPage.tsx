@@ -63,6 +63,7 @@ export default function CalculatorPage() {
   const [panelDelta, setPanelDelta] = useState(0);
   const [paymentTab, setPaymentTab] = useState<'financing' | 'card'>('financing');
   const [showCostPanel, setShowCostPanel] = useState(false);
+  const [selectedLine, setSelectedLine] = useState<number | null>(null);
   const [customKits, setCustomKits] = useState<Record<string, CustomKitData>>({
     excellence: defaultCustomKit(0),
     premium: defaultCustomKit(0),
