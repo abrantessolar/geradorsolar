@@ -110,7 +110,7 @@ export async function generateProposalPDF(
 
   // Client name — positioned on the green bar area of the template
   // The template's green bar is around Y=215-240, we place text there
-  const barY = 220;
+  const barY = 220 + (H * 0.02);
   
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(20);
@@ -121,23 +121,24 @@ export async function generateProposalPDF(
   setColor([230, 230, 220]);
   doc.text(`${formatNumber(selectedCard?.dimensioning?.avgMonthlyKwh || 0, 0)} kWh/mês  •  ${proposal.clientData.city} — ${proposal.clientData.state || 'MS'}`, W / 2, barY + 13, { align: 'center' });
 
-  // Representative info — black text, 7.5% lower
+  // Representative info — black text, 25% to the left
   const sellerName = proposal.clientData.seller || '';
   const matchedSeller = settings.sellers?.find((s: any) => s.name === sellerName);
   const sellerPhone = matchedSeller?.phone || settings.company?.phone || '';
   const sellerEmail = matchedSeller?.email || '';
   const repY = barY + 26 + (H * 0.075);
+  const repX = W * 0.25;
   if (sellerName) {
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(10);
     setColor(DARK);
-    doc.text(sellerName, W / 2, repY, { align: 'center' });
+    doc.text(sellerName, repX, repY, { align: 'left' });
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(9);
     setColor(GRAY);
     const repDetails = [sellerPhone, sellerEmail].filter(Boolean).join('  •  ');
     if (repDetails) {
-      doc.text(repDetails, W / 2, repY + 6, { align: 'center' });
+      doc.text(repDetails, repX, repY + 6, { align: 'left' });
     }
   }
 
