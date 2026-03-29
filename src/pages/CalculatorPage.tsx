@@ -389,6 +389,7 @@ export default function CalculatorPage() {
       unit: cat.unit,
       value: cat.unit === 'km' ? 1000 : cat.defaultHoursPerDay,
       powerKw: cat.powerKw,
+      quantity: 1,
     }]);
   };
 
