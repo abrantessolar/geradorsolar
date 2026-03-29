@@ -856,15 +856,15 @@ export default function CalculatorPage() {
       </section>
 
       {/* Financial Summary */}
-      {systemCards[0] && (
+      {selectedLine !== null && systemCards[selectedLine] && (
         <section className="solar-card p-6 space-y-4 animate-fade-in-up" style={{ animationDelay: '600ms' }}>
-          <h2 className="text-xl font-bold text-primary">Viabilidade Financeira ({LINE_NAMES['excellence']})</h2>
+          <h2 className="text-xl font-bold text-primary">Viabilidade Financeira ({LINE_NAMES[systemCards[selectedLine].line]})</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
-              { label: 'Economia mensal', value: formatCurrency(systemCards[0].dimensioning.monthlySavings) },
-              { label: 'Payback', value: `${formatNumber(systemCards[0].dimensioning.paybackYears)} anos` },
-              { label: 'Retorno 10 anos', value: formatCurrency(systemCards[0].dimensioning.return10) },
-              { label: 'Retorno 25 anos', value: formatCurrency(systemCards[0].dimensioning.return25) },
+              { label: 'Economia mensal', value: formatCurrency(systemCards[selectedLine].dimensioning.monthlySavings) },
+              { label: 'Payback', value: `${formatNumber(systemCards[selectedLine].dimensioning.paybackYears)} anos` },
+              { label: 'Retorno 10 anos', value: formatCurrency(systemCards[selectedLine].dimensioning.return10) },
+              { label: 'Retorno 25 anos', value: formatCurrency(systemCards[selectedLine].dimensioning.return25) },
             ].map(item => (
               <div key={item.label} className="text-center p-4 rounded-lg bg-muted/50">
                 <p className="text-xs text-muted-foreground mb-1">{item.label}</p>
