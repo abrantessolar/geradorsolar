@@ -107,6 +107,45 @@ export type Database = {
         }
         Relationships: []
       }
+      equipamentos_calculadora: {
+        Row: {
+          ativo: boolean
+          atualizado_em: string
+          categoria: string
+          criado_em: string
+          dias_mes_padrao: number
+          horas_dia_padrao: number | null
+          id: string
+          nome: string
+          potencia_kw: number
+          tipo_medicao: string
+        }
+        Insert: {
+          ativo?: boolean
+          atualizado_em?: string
+          categoria: string
+          criado_em?: string
+          dias_mes_padrao?: number
+          horas_dia_padrao?: number | null
+          id?: string
+          nome: string
+          potencia_kw: number
+          tipo_medicao?: string
+        }
+        Update: {
+          ativo?: boolean
+          atualizado_em?: string
+          categoria?: string
+          criado_em?: string
+          dias_mes_padrao?: number
+          horas_dia_padrao?: number | null
+          id?: string
+          nome?: string
+          potencia_kw?: number
+          tipo_medicao?: string
+        }
+        Relationships: []
+      }
       equipamentos_kits: {
         Row: {
           ativo: boolean

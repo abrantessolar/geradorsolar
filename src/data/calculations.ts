@@ -43,7 +43,7 @@ export function calcDimensioning(
 
   const monthValues = MONTH_KEYS.map(k => consumption[k]);
   const avgBase = monthValues.reduce((a, b) => a + b, 0) / 12;
-  const eqTotal = equipment.reduce((s, e) => s + calcEquipmentMonthly(e), 0);
+  const eqTotal = equipment.reduce((s, e) => s + calcEquipmentMonthly(e) * ((e as any).quantity || 1), 0);
   const avgMonthlyKwh = avgBase + eqTotal;
   const adjustedMonthlyKwh = avgMonthlyKwh * surplus_factor;
   const avgDailyKwh = adjustedMonthlyKwh / 30;

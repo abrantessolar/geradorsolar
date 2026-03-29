@@ -7,7 +7,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } fro
 import { toast } from 'sonner';
 import {
   ClientData, MonthlyConsumption, ConsumptionMode, ConsumerUnit, EquipmentItem,
-  MONTH_LABELS, MONTH_KEYS, EQUIPMENT_CATALOG, SEASONAL_FACTORS, UC_COLORS,
+  MONTH_LABELS, MONTH_KEYS, SEASONAL_FACTORS, UC_COLORS,
   BRAZILIAN_STATES, LINE_NAMES, LINE_SUBS,
 } from '@/data/types';
 import type { EquipmentCatalogItem } from '@/data/types';
@@ -29,12 +29,6 @@ const EQUIPMENT_COLORS = [
 
 const LINES = ['essencial', 'excellence', 'premium'] as const;
 
-// Group equipment catalog by category
-const EQUIPMENT_CATEGORIES = EQUIPMENT_CATALOG.reduce<Record<string, EquipmentCatalogItem[]>>((acc, item) => {
-  if (!acc[item.category]) acc[item.category] = [];
-  acc[item.category].push(item);
-  return acc;
-}, {});
 
 const emptyMonthly = (): MonthlyConsumption => ({
   jan: 0, feb: 0, mar: 0, apr: 0, may: 0, jun: 0,
@@ -99,8 +93,31 @@ export default function CalculatorPage() {
     const defaultKwh = prefillLead?.avgKwh || 350;
     return [{ id: '1', name: 'Principal', averageKwh: defaultKwh, mode: 'average' as const, monthlyValues: emptyMonthly() }];
   });
-  const [equipment, setEquipment] = useState<EquipmentItem[]>(ep?.equipment || []);
+  const [equipment, setEquipment] = useState<(EquipmentItem & { quantity?: number })[]>(ep?.equipment || []);
   const [eqOpen, setEqOpen] = useState(false);
+
+  // Dynamic equipment catalog from DB
+  const [dbEquipmentCategories, setDbEquipmentCategories] = useState<Record<string, EquipmentCatalogItem[]>>({});
+  useEffect(() => {
+    const loadEq = async () => {
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { data } = await supabase.from('equipamentos_calculadora').select('*').eq('ativo', true).order('categoria').order('nome');
+      if (data && data.length > 0) {
+        const mapped: EquipmentCatalogItem[] = (data as any[]).map(d => ({
+          type: d.id, label: d.nome, category: d.categoria, powerKw: Number(d.potencia_kw),
+          defaultHoursPerDay: Number(d.horas_dia_padrao) || 0, defaultDaysPerMonth: d.dias_mes_padrao,
+          unit: d.tipo_medicao === 'km' ? 'km' as const : 'day' as const,
+        }));
+        const cats = mapped.reduce<Record<string, EquipmentCatalogItem[]>>((acc, item) => {
+          if (!acc[item.category]) acc[item.category] = [];
+          acc[item.category].push(item);
+          return acc;
+        }, {});
+        setDbEquipmentCategories(cats);
+      }
+    };
+    loadEq();
+  }, []);
   const [panelDelta, setPanelDelta] = useState(0);
   const [paymentTab, setPaymentTab] = useState<'financing' | 'card'>('financing');
   const [showCostPanel, setShowCostPanel] = useState(false);
@@ -348,7 +365,9 @@ export default function CalculatorPage() {
         }
       }
       equipment.forEach((eq, idx) => {
-        row[eq.label || `Equip ${idx + 1}`] = Math.round(calcEquipmentMonthly(eq) * SEASONAL_FACTORS[k]);
+        const qty = (eq as any).quantity || 1;
+        const eqLabel = qty > 1 ? `${eq.label} (x${qty})` : (eq.label || `Equip ${idx + 1}`);
+        row[eqLabel] = Math.round(calcEquipmentMonthly(eq) * qty * SEASONAL_FACTORS[k]);
       });
       return row;
     });
@@ -372,6 +391,7 @@ export default function CalculatorPage() {
       unit: cat.unit,
       value: cat.unit === 'km' ? 1000 : cat.defaultHoursPerDay,
       powerKw: cat.powerKw,
+      quantity: 1,
     }]);
   };
 
@@ -477,6 +497,7 @@ export default function CalculatorPage() {
             <label className="block text-sm font-medium mb-1">Cidade</label>
             <input className="solar-input" value={client.city}
               onChange={e => handleCityChange(e.target.value)}
+              placeholder="Clique ou escreva a cidade"
               onFocus={() => { if (citySuggestions.length > 0) setShowCitySuggestions(true); }}
               onBlur={() => setTimeout(() => setShowCitySuggestions(false), 200)}
             />
@@ -625,11 +646,11 @@ export default function CalculatorPage() {
 
         {eqOpen && (
           <div className="space-y-4">
-            {Object.entries(EQUIPMENT_CATEGORIES).map(([category, items]) => (
+            {Object.entries(dbEquipmentCategories).map(([category, items]) => (
               <div key={category}>
                 <h3 className="text-sm font-semibold text-muted-foreground mb-2">{category}</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {items.map(cat => (
+                  {items.map((cat: EquipmentCatalogItem) => (
                     <button key={cat.type} onClick={() => addEquipment(cat)}
                       className="text-left text-sm px-3 py-2 rounded-lg bg-muted hover:bg-muted/70 transition-colors flex justify-between items-center">
                       <span>{cat.label} <span className="text-xs text-muted-foreground">({cat.powerKw} kW)</span></span>
@@ -642,37 +663,59 @@ export default function CalculatorPage() {
 
             {equipment.length > 0 && (
               <div className="space-y-3 border-t border-border pt-4">
-                {equipment.map((eq, idx) => (
-                  <div key={eq.id} className="flex flex-wrap items-center gap-3 p-3 rounded-lg bg-muted/50" style={{ borderLeft: `4px solid ${EQUIPMENT_COLORS[idx % EQUIPMENT_COLORS.length]}` }}>
-                    <span className="text-sm font-medium flex-1 min-w-[150px]">{eq.label}</span>
-                    {eq.unit === 'km' ? (
-                      <div className="flex items-center gap-1">
-                        <input type="number" className="solar-input w-24 text-sm py-1" value={eq.value}
-                          onChange={e => updateEquipment(eq.id, 'value', parseFloat(e.target.value) || 0)} />
-                        <span className="text-xs text-muted-foreground">km/mês</span>
+                {equipment.map((eq, idx) => {
+                  const qty = eq.quantity || 1;
+                  const eqMonthly = calcEquipmentMonthly(eq) * qty;
+                  return (
+                    <div key={eq.id} className="p-3 rounded-lg bg-muted/50 space-y-2" style={{ borderLeft: `4px solid ${EQUIPMENT_COLORS[idx % EQUIPMENT_COLORS.length]}` }}>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium">{eq.label}{qty > 1 ? ` (x${qty})` : ''}</span>
+                        <button onClick={() => removeEquipment(eq.id)} className="text-destructive hover:text-destructive/80">
+                          <Minus className="w-4 h-4" />
+                        </button>
                       </div>
-                    ) : (
-                      <>
+                      <div className="flex flex-wrap items-center gap-3">
+                        {eq.unit === 'km' ? (
+                          <div className="flex items-center gap-1">
+                            <input type="number" className="solar-input w-24 text-sm py-1" value={eq.value}
+                              onChange={e => updateEquipment(eq.id, 'value', parseFloat(e.target.value) || 0)} />
+                            <span className="text-xs text-muted-foreground">km/mês</span>
+                          </div>
+                        ) : (
+                          <>
+                            <div className="flex items-center gap-1">
+                              <span className="text-xs text-muted-foreground">h/dia:</span>
+                              <input type="number" className="solar-input w-16 text-sm py-1" value={eq.hoursPerDay}
+                                onChange={e => updateEquipment(eq.id, 'hoursPerDay', parseFloat(e.target.value) || 0)} />
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <span className="text-xs text-muted-foreground">dias/mês:</span>
+                              <input type="number" className="solar-input w-16 text-sm py-1" value={eq.daysPerMonth}
+                                onChange={e => updateEquipment(eq.id, 'daysPerMonth', parseFloat(e.target.value) || 0)} />
+                            </div>
+                          </>
+                        )}
+                        {/* Quantity controls */}
                         <div className="flex items-center gap-1">
-                          <input type="number" className="solar-input w-16 text-sm py-1" value={eq.hoursPerDay}
-                            onChange={e => updateEquipment(eq.id, 'hoursPerDay', parseFloat(e.target.value) || 0)} />
-                          <span className="text-xs text-muted-foreground">h/dia</span>
+                          <span className="text-xs text-muted-foreground">Qtd:</span>
+                          <button onClick={() => updateEquipment(eq.id, 'quantity', Math.max(1, qty - 1))}
+                            className="w-7 h-7 rounded bg-muted-foreground/10 flex items-center justify-center hover:bg-muted-foreground/20 transition-colors"
+                            disabled={qty <= 1}>
+                            <Minus className="w-3 h-3" />
+                          </button>
+                          <span className="w-8 text-center font-semibold text-sm">{qty}</span>
+                          <button onClick={() => updateEquipment(eq.id, 'quantity', Math.min(20, qty + 1))}
+                            className="w-7 h-7 rounded bg-muted-foreground/10 flex items-center justify-center hover:bg-muted-foreground/20 transition-colors">
+                            <Plus className="w-3 h-3" />
+                          </button>
                         </div>
-                        <div className="flex items-center gap-1">
-                          <input type="number" className="solar-input w-16 text-sm py-1" value={eq.daysPerMonth}
-                            onChange={e => updateEquipment(eq.id, 'daysPerMonth', parseFloat(e.target.value) || 0)} />
-                          <span className="text-xs text-muted-foreground">d/mês</span>
-                        </div>
-                      </>
-                    )}
-                    <span className="text-xs font-semibold text-primary min-w-[80px] text-right">
-                      {formatNumber(calcEquipmentMonthly(eq), 0)} kWh/mês
-                    </span>
-                    <button onClick={() => removeEquipment(eq.id)} className="text-destructive hover:text-destructive/80">
-                      <Minus className="w-4 h-4" />
-                    </button>
-                  </div>
-                ))}
+                      </div>
+                      <div className="text-xs font-semibold text-primary text-right">
+                        Consumo total: {formatNumber(eqMonthly, 0)} kWh/mês
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -704,11 +747,15 @@ export default function CalculatorPage() {
                 <Bar dataKey="consumo" stackId="consumption" fill="#E8B84B"
                   maxBarSize={typeof window !== 'undefined' && window.innerWidth < 768 ? 40 : undefined} />
               )}
-              {equipment.map((eq, idx) => (
-                <Bar key={eq.id} dataKey={eq.label} stackId="consumption"
-                  fill={EQUIPMENT_COLORS[idx % EQUIPMENT_COLORS.length]}
-                  maxBarSize={typeof window !== 'undefined' && window.innerWidth < 768 ? 40 : undefined} />
-              ))}
+              {equipment.map((eq, idx) => {
+                const qty = (eq as any).quantity || 1;
+                const eqLabel = qty > 1 ? `${eq.label} (x${qty})` : eq.label;
+                return (
+                  <Bar key={eq.id} dataKey={eqLabel} stackId="consumption"
+                    fill={EQUIPMENT_COLORS[idx % EQUIPMENT_COLORS.length]}
+                    maxBarSize={typeof window !== 'undefined' && window.innerWidth < 768 ? 40 : undefined} />
+                );
+              })}
             </BarChart>
           </ResponsiveContainer>
         </div>
