@@ -17,7 +17,7 @@ import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 
 
-const LINES = ['excellence', 'premium'] as const;
+const LINES = ['essencial', 'excellence', 'premium'] as const;
 const PERIOD_OPTIONS = [5, 10, 15, 20, 25];
 
 export default function ProposalPage() {

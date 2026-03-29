@@ -343,10 +343,11 @@ function SellersTab() {
 /* ─── TABELA DE PREÇOS ─── */
 function PriceTableTab() {
   const stored = getPriceTable();
-  const initial: PriceTableEntry[] = stored.length > 0 ? stored :
+  const initial: PriceTableEntry[] = stored.length > 0 ? stored.map(r => ({ ...r, essencial: (r as any).essencial ?? null })) :
     Array.from({ length: 97 }, (_, i) => ({
       panels: i + 4,
       acesso: null,
+      essencial: null,
       excellence: null,
       premium: null,
       estimated: {},
@@ -367,6 +368,7 @@ function PriceTableTab() {
   }, []);
 
   const LINES_ARR = [
+    { key: 'essencial' as const, name: LINE_NAMES.essencial },
     { key: 'excellence' as const, name: LINE_NAMES.excellence },
     { key: 'premium' as const, name: LINE_NAMES.premium },
   ];
@@ -378,7 +380,7 @@ function PriceTableTab() {
     { key: 'panelPower', label: 'Pot. Placa', short: 'P.Plc' },
   ];
 
-  // Total columns per line: 1 cost + 4 detail = 5; total cols = 5 * 2 = 10
+  // Total columns per line: 1 cost + 4 detail = 5; total cols = 5 * 3 = 15
   const TOTAL_COLS = LINES_ARR.length * 5;
 
   const focusCell = (row: number, col: number) => {
@@ -468,7 +470,7 @@ function PriceTableTab() {
   };
 
   const generateEstimates = () => {
-    const lines: ('acesso' | 'excellence' | 'premium')[] = ['acesso', 'excellence', 'premium'];
+    const lines: ('acesso' | 'essencial' | 'excellence' | 'premium')[] = ['acesso', 'essencial', 'excellence', 'premium'];
     const newTable = [...table.map(r => ({ ...r, estimated: { ...r.estimated } }))];
     lines.forEach(line => {
       const filled = newTable.filter(r => r[line] !== null && r[line]! > 0).map(r => ({ panels: r.panels, value: r[line]! }));
