@@ -29,12 +29,9 @@ const EQUIPMENT_COLORS = [
 
 const LINES = ['essencial', 'excellence', 'premium'] as const;
 
-// Group equipment catalog by category
-const EQUIPMENT_CATEGORIES = EQUIPMENT_CATALOG.reduce<Record<string, EquipmentCatalogItem[]>>((acc, item) => {
-  if (!acc[item.category]) acc[item.category] = [];
-  acc[item.category].push(item);
-  return acc;
-}, {});
+// Dynamic equipment categories (populated from DB)
+const [dbEquipmentCatalog, setDbEquipmentCatalog] = useState<EquipmentCatalogItem[]>([]);
+const [dbEquipmentCategories, setDbEquipmentCategories] = useState<Record<string, EquipmentCatalogItem[]>>({});
 
 const emptyMonthly = (): MonthlyConsumption => ({
   jan: 0, feb: 0, mar: 0, apr: 0, may: 0, jun: 0,
