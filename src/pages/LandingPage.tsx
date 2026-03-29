@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { MessageCircle, Phone, Mail, MapPin, Facebook, Instagram, ChevronDown, X, Sun, Zap, Leaf, Tractor, Building, Home, ArrowRight } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import PublicSimulator from '@/components/PublicSimulator';
+import LazyImage from '@/components/LazyImage';
 
 const LOGO_URL = 'https://static.wixstatic.com/media/c2ae0d_30cd8efa4a3c4fbab3622fcd674c4d02~mv2.png';
 const HERO_BG = 'https://static.wixstatic.com/media/c2ae0d_0fc9044d218948a585d2170345d4ce87~mv2.jpg';
@@ -39,7 +40,6 @@ const SOLUTIONS = [
   },
 ];
 
-// Fallback static data (used when DB is empty)
 const STATIC_PARTNER_NAMES = ['Parceiro fabricante de inversores solares', 'Parceiro distribuidor de equipamentos solares', 'Parceiro financiamento energia solar'];
 const STATIC_PARTNERS = [
   'https://static.wixstatic.com/media/c2ae0d_e25309823c3f4aaa8742595e14b12485~mv2.png',
@@ -62,6 +62,8 @@ const STATIC_PORTFOLIO = [
   'https://static.wixstatic.com/media/c2ae0d_894355b5cb6445ba9c1277ddecfb6ec6~mv2.png',
 ];
 
+const INITIAL_PORTFOLIO_COUNT = 6;
+
 const fadeUp = {
   hidden: { opacity: 0, y: 30 },
   visible: { opacity: 1, y: 0, transition: { duration: 0.6 } },
@@ -70,25 +72,30 @@ const fadeUp = {
 export default function LandingPage() {
   const simulatorRef = useRef<HTMLDivElement>(null);
   const [lightboxImg, setLightboxImg] = useState<string | null>(null);
+  const [heroLoaded, setHeroLoaded] = useState(false);
 
   // Dynamic content from database
   const [portfolioPhotos, setPortfolioPhotos] = useState<{ url: string; descricao: string | null }[]>([]);
   const [partnerLogos, setPartnerLogos] = useState<{ url: string; nome: string; url_site: string | null }[]>([]);
 
   useEffect(() => {
-    // Load portfolio photos
     supabase.from('fotos_portfolio').select('url, descricao').eq('ativo', true).order('ordem')
       .then(({ data }) => {
         if (data && data.length > 0) setPortfolioPhotos(data as any);
       });
-    // Load partner logos
     supabase.from('logos_parceiros').select('url, nome, url_site').eq('ativo', true).order('ordem')
       .then(({ data }) => {
         if (data && data.length > 0) setPartnerLogos(data as any);
       });
   }, []);
 
-  // Use DB data if available, else fallback to static
+  // Preload hero image
+  useEffect(() => {
+    const img = new Image();
+    img.onload = () => setHeroLoaded(true);
+    img.src = HERO_BG;
+  }, []);
+
   const portfolio = portfolioPhotos.length > 0 ? portfolioPhotos.map(p => p.url) : STATIC_PORTFOLIO;
   const portfolioDescs = portfolioPhotos.length > 0 ? portfolioPhotos.map(p => p.descricao) : null;
   const partners = partnerLogos.length > 0 ? partnerLogos : STATIC_PARTNERS.map((url, i) => ({ url, nome: STATIC_PARTNER_NAMES[i], url_site: null }));
@@ -103,7 +110,7 @@ export default function LandingPage() {
       <header className="fixed top-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-md border-b border-border/30 shadow-sm">
         <div className="container flex items-center justify-between h-16">
           <a href="/" className="flex items-center gap-3">
-            <img src={LOGO_URL} alt="Três Lagoas Solar" className="h-10 w-auto" />
+            <img src={LOGO_URL} alt="Três Lagoas Solar" className="h-10 w-auto" width={120} height={40} />
           </a>
           <nav className="hidden md:flex items-center gap-6 text-sm font-medium">
             <a href="#missao" className="text-foreground/80 hover:text-primary transition-colors">Nossa Missão</a>
@@ -122,8 +129,13 @@ export default function LandingPage() {
 
       {/* ─── HERO ─── */}
       <section className="relative min-h-screen flex items-center justify-center pt-16">
+        {/* Solid color placeholder + image */}
         <div
-          className="absolute inset-0 bg-cover bg-center"
+          className="absolute inset-0 transition-opacity duration-700"
+          style={{ backgroundColor: 'hsl(var(--primary))' }}
+        />
+        <div
+          className={`absolute inset-0 bg-cover bg-center transition-opacity duration-700 ${heroLoaded ? 'opacity-100' : 'opacity-0'}`}
           style={{ backgroundImage: `url(${HERO_BG})` }}
         />
         <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/70" />
@@ -204,11 +216,13 @@ export default function LandingPage() {
               </div>
             </div>
             <div className="relative">
-              <img
+              <LazyImage
                 src={MISSION_IMG}
                 alt="Instalação de painéis solares residencial em Três Lagoas"
                 className="rounded-2xl shadow-2xl w-full object-cover aspect-[4/3]"
-                loading="lazy"
+                wrapperClassName="rounded-2xl aspect-[4/3]"
+                width={800}
+                height={600}
               />
               <div className="absolute -bottom-4 -left-4 w-24 h-24 rounded-2xl bg-secondary flex items-center justify-center shadow-lg">
                 <Leaf className="w-10 h-10 text-secondary-foreground" />
@@ -242,7 +256,14 @@ export default function LandingPage() {
                 className="group solar-card overflow-hidden"
               >
                 <div className="relative h-56 overflow-hidden">
-                  <img src={sol.image} alt={sol.alt} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />
+                  <LazyImage
+                    src={sol.image}
+                    alt={sol.alt}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    wrapperClassName="h-full"
+                    width={600}
+                    height={224}
+                  />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                   <div className="absolute bottom-4 left-4 flex items-center gap-2">
                     <div className="w-10 h-10 rounded-lg bg-secondary flex items-center justify-center">
@@ -274,22 +295,21 @@ export default function LandingPage() {
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} className="text-center mb-10">
             <h2 className="text-2xl md:text-3xl font-black text-primary">NOSSOS PARCEIROS</h2>
           </motion.div>
-           <div className="flex items-center justify-center gap-12 flex-wrap">
+          <div className="flex items-center justify-center gap-12 flex-wrap">
             {partners.map((p, i) => {
               const img = (
-                <motion.img
+                <LazyImage
                   key={i}
                   src={p.url}
                   alt={p.nome}
                   className="h-16 md:h-20 w-auto object-contain grayscale hover:grayscale-0 transition-all duration-300"
-                  loading="lazy"
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  whileInView={{ opacity: 1, scale: 1 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: i * 0.1 }}
+                  wrapperClassName="h-16 md:h-20"
+                  skeleton={false}
+                  width={200}
+                  height={80}
                 />
               );
-              return p.url_site ? <a key={i} href={p.url_site} target="_blank" rel="noopener noreferrer">{img}</a> : img;
+              return p.url_site ? <a key={i} href={p.url_site} target="_blank" rel="noopener noreferrer">{img}</a> : <div key={i}>{img}</div>;
             })}
           </div>
         </div>
@@ -312,11 +332,19 @@ export default function LandingPage() {
                 initial={{ opacity: 0, scale: 0.9 }}
                 whileInView={{ opacity: 1, scale: 1 }}
                 viewport={{ once: true }}
-                transition={{ delay: i * 0.05 }}
+                transition={{ delay: Math.min(i, INITIAL_PORTFOLIO_COUNT) * 0.05 }}
                 className="relative aspect-square overflow-hidden rounded-xl cursor-pointer group"
                 onClick={() => setLightboxImg(img)}
               >
-                <img src={img} alt={portfolioDescs?.[i] || `Projeto de energia solar ${i + 1} em Três Lagoas MS`} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" loading="lazy" />
+                <LazyImage
+                  src={img}
+                  alt={portfolioDescs?.[i] || `Projeto de energia solar ${i + 1} em Três Lagoas MS`}
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                  wrapperClassName="w-full h-full"
+                  loading={i < INITIAL_PORTFOLIO_COUNT ? 'eager' : 'lazy'}
+                  width={400}
+                  height={400}
+                />
                 <div className="absolute inset-0 bg-primary/0 group-hover:bg-primary/30 transition-colors duration-300" />
               </motion.div>
             ))}
@@ -365,7 +393,7 @@ export default function LandingPage() {
         <div className="container">
           <div className="grid md:grid-cols-3 gap-12">
             <div>
-              <img src={LOGO_URL} alt="Logo Três Lagoas Solar energia solar" className="h-12 w-auto mb-4 brightness-200" />
+              <img src={LOGO_URL} alt="Logo Três Lagoas Solar energia solar" className="h-12 w-auto mb-4 brightness-200" width={144} height={48} loading="lazy" />
               <p className="text-background/60 text-sm leading-relaxed">
                 Energia solar eficiente e sustentável para residências, comércios e propriedades rurais.
               </p>
