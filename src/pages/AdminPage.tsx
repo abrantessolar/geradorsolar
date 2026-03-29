@@ -287,65 +287,6 @@ function EditUserModal({ user, onClose, callApi }: { user: any; onClose: () => v
   );
 }
 
-/* ─── VENDEDORES ─── */
-function SellersTab() {
-  const [settings, setSettings] = useState(getSettings());
-  const sellers = settings.sellers;
-
-  const update = (idx: number, field: keyof Seller, value: any) => {
-    const updated = [...sellers];
-    updated[idx] = { ...updated[idx], [field]: value };
-    setSettings(prev => ({ ...prev, sellers: updated }));
-  };
-
-  const add = () => {
-    const newSeller: Seller = { id: Date.now().toString(), name: '', phone: '', email: '', active: true };
-    setSettings(prev => ({ ...prev, sellers: [...prev.sellers, newSeller] }));
-  };
-
-  const remove = (idx: number) => {
-    setSettings(prev => ({ ...prev, sellers: prev.sellers.filter((_, i) => i !== idx) }));
-  };
-
-  const handleSave = () => { saveSettings(settings); saveSettingsDB(settings); saveVendedoresDB(settings.sellers); };
-
-  return (
-    <div className="solar-card p-6 space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-bold text-primary">Vendedores</h2>
-        <div className="flex gap-2">
-          <button onClick={add} className="solar-btn-outline text-sm py-2 px-3 flex items-center gap-1"><Plus className="w-4 h-4" /> Novo</button>
-          <button onClick={handleSave} className="solar-btn-primary text-sm py-2 px-3 flex items-center gap-1"><Save className="w-4 h-4" /> Salvar</button>
-        </div>
-      </div>
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-border text-left text-muted-foreground">
-              <th className="py-2 px-2">Nome completo</th>
-              <th className="py-2 px-2">Telefone</th>
-              <th className="py-2 px-2">E-mail</th>
-              <th className="py-2 px-2">Ativo</th>
-              <th className="py-2 px-2"></th>
-            </tr>
-          </thead>
-          <tbody>
-            {sellers.map((s, i) => (
-              <tr key={s.id} className="border-b border-border/50 hover:bg-muted/30">
-                <td className="py-2 px-2"><input className="solar-input py-1 text-sm" value={s.name} onChange={e => update(i, 'name', e.target.value)} /></td>
-                <td className="py-2 px-2"><input className="solar-input py-1 text-sm w-40" value={s.phone} onChange={e => update(i, 'phone', e.target.value)} /></td>
-                <td className="py-2 px-2"><input className="solar-input py-1 text-sm w-48" value={s.email || ''} onChange={e => update(i, 'email', e.target.value)} placeholder="email@exemplo.com" /></td>
-                <td className="py-2 px-2"><input type="checkbox" checked={s.active} onChange={e => update(i, 'active', e.target.checked)} className="accent-primary" /></td>
-                <td className="py-2 px-2"><button onClick={() => remove(i)} className="text-destructive hover:text-destructive/80"><Trash2 className="w-4 h-4" /></button></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-}
-
 /* ─── TABELA DE PREÇOS ─── */
 function PriceTableTab() {
   const stored = getPriceTable();
