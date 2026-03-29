@@ -126,6 +126,10 @@ export async function generateProposalPDF(
     doc.text(numero, W - M, 16, { align: 'right' });
   }
 
+  // Client name — positioned on the green bar area of the template
+  // The template's green bar is around Y=215-240, we place text there
+  const barY = 220 + (H * 0.02);
+
   // Optional header text above client name
   if (tpl.cover.headerText) {
     doc.setFont('helvetica', 'normal');
@@ -133,10 +137,6 @@ export async function generateProposalPDF(
     setColor([230, 230, 220]);
     doc.text(tpl.cover.headerText, W / 2, barY - 4, { align: 'center' });
   }
-
-  // Client name — positioned on the green bar area of the template
-  // The template's green bar is around Y=215-240, we place text there
-  const barY = 220 + (H * 0.02);
   
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(20);
