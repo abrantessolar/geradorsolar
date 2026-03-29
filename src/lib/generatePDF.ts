@@ -265,13 +265,19 @@ export async function generateProposalPDF(
     ry += 6;
   });
 
-  // "Incluso" text (compact)
+  // "Incluso" text (compact) — uses template toggles
   y += 52;
   doc.setFontSize(6.5);
   doc.setFont('helvetica', 'normal');
   setColor(GRAY);
   const surplusPct = settings.surplusFactor ?? 20;
-  const inclusoText = `Incluso: Sistema solar + Instalação + Análise de sombreamento + Homologação + 3 Anos de garantia • ${surplusPct}% de reserva`;
+  const inclusoItems = ['Sistema solar + Instalação'];
+  if (tpl.specs.showMaterial) inclusoItems.push('Material de instalação');
+  if (tpl.specs.showShadowAnalysis) inclusoItems.push('Análise de sombreamento');
+  if (tpl.specs.showHomologation) inclusoItems.push('Homologação');
+  if (tpl.specs.showMonitoring) inclusoItems.push('Monitoramento');
+  if (tpl.specs.showWarranty) inclusoItems.push('3 Anos de garantia');
+  const inclusoText = `Incluso: ${inclusoItems.join(' + ')} • ${surplusPct}% de reserva`;
   doc.text(inclusoText, W / 2, y, { align: 'center' });
 
   // ── Chart: Geração vs Consumo (compact) ──
