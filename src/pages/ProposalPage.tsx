@@ -234,7 +234,8 @@ export default function ProposalPage() {
     try {
       toast.loading('Gerando visualização...');
       const doc = await getPdfDoc();
-      const blob = doc.output('blob');
+      const arrayBuffer = doc.output('arraybuffer');
+      const blob = new Blob([arrayBuffer], { type: 'application/pdf' });
       const url = URL.createObjectURL(blob);
       if (pdfBlobUrl) URL.revokeObjectURL(pdfBlobUrl);
       setPdfBlobUrl(url);
