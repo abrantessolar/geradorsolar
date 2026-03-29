@@ -357,56 +357,74 @@ function DiferenciaisSection() {
       </div>
 
       <div className="space-y-4">
-        {DIFERENCIAIS_ITEMS.map(item => {
-          const currentUrl = images[item.key] || '';
-          const displayUrl = currentUrl || item.defaultUrl;
-          const isDefault = !currentUrl;
-          const [editingUrl, setEditingUrl] = useState(false);
-          const [urlInput, setUrlInput] = useState(currentUrl);
+        {DIFERENCIAIS_ITEMS.map(item => (
+          <DiferencialImageItem
+            key={item.key}
+            item={item}
+            currentUrl={images[item.key] || ''}
+            uploading={uploading === item.key}
+            onUpload={(file) => handleUpload(item.key, file)}
+            onUrlChange={(url) => handleUrlChange(item.key, url)}
+            onRemove={() => handleRemove(item.key)}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
 
-          return (
-            <div key={item.key} className="rounded-xl border border-border p-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <h3 className="font-semibold text-sm">{item.title}</h3>
-                {isDefault && <span className="text-xs bg-muted px-2 py-0.5 rounded-full text-muted-foreground">Imagem padrão</span>}
-                {!isDefault && <span className="text-xs bg-primary/10 px-2 py-0.5 rounded-full text-primary">Personalizada</span>}
-              </div>
+function DiferencialImageItem({ item, currentUrl, uploading, onUpload, onUrlChange, onRemove }: {
+  item: { key: string; title: string; defaultUrl: string };
+  currentUrl: string;
+  uploading: boolean;
+  onUpload: (file: File) => void;
+  onUrlChange: (url: string) => void;
+  onRemove: () => void;
+}) {
+  const [editingUrl, setEditingUrl] = useState(false);
+  const [urlInput, setUrlInput] = useState(currentUrl);
+  const displayUrl = currentUrl || item.defaultUrl;
+  const isDefault = !currentUrl;
 
-              <div className="flex gap-4 items-start">
-                <img src={displayUrl} alt={item.title} className="w-32 h-24 rounded-lg object-cover border border-border" />
-                <div className="flex-1 space-y-2">
-                  <div className="flex gap-2 flex-wrap">
-                    <label className="solar-btn-outline text-xs py-1.5 px-3 flex items-center gap-1 cursor-pointer">
-                      <Upload className="w-3.5 h-3.5" /> Upload
-                      <input type="file" accept="image/*" className="hidden" onChange={e => {
-                        const f = e.target.files?.[0];
-                        if (f) handleUpload(item.key, f);
-                      }} disabled={uploading === item.key} />
-                    </label>
-                    <button onClick={() => { setEditingUrl(!editingUrl); setUrlInput(currentUrl); }}
-                      className="solar-btn-outline text-xs py-1.5 px-3 flex items-center gap-1">
-                      <LinkIcon className="w-3.5 h-3.5" /> URL
-                    </button>
-                    {!isDefault && (
-                      <button onClick={() => handleRemove(item.key)}
-                        className="text-xs py-1.5 px-3 rounded-lg border border-destructive/30 text-destructive hover:bg-destructive/10 flex items-center gap-1">
-                        <Trash2 className="w-3.5 h-3.5" /> Remover
-                      </button>
-                    )}
-                  </div>
-                  {uploading === item.key && <p className="text-xs text-muted-foreground">Enviando...</p>}
-                  {editingUrl && (
-                    <div className="flex gap-2">
-                      <input className="solar-input text-xs flex-1" value={urlInput} onChange={e => setUrlInput(e.target.value)} placeholder="https://..." />
-                      <button onClick={() => { handleUrlChange(item.key, urlInput); setEditingUrl(false); }}
-                        className="solar-btn-primary text-xs py-1.5 px-3"><Save className="w-3.5 h-3.5" /></button>
-                    </div>
-                  )}
-                </div>
-              </div>
+  return (
+    <div className="rounded-xl border border-border p-4 space-y-3">
+      <div className="flex items-center justify-between">
+        <h3 className="font-semibold text-sm">{item.title}</h3>
+        {isDefault && <span className="text-xs bg-muted px-2 py-0.5 rounded-full text-muted-foreground">Imagem padrão</span>}
+        {!isDefault && <span className="text-xs bg-primary/10 px-2 py-0.5 rounded-full text-primary">Personalizada</span>}
+      </div>
+
+      <div className="flex gap-4 items-start">
+        <img src={displayUrl} alt={item.title} className="w-32 h-24 rounded-lg object-cover border border-border" />
+        <div className="flex-1 space-y-2">
+          <div className="flex gap-2 flex-wrap">
+            <label className="solar-btn-outline text-xs py-1.5 px-3 flex items-center gap-1 cursor-pointer">
+              <Upload className="w-3.5 h-3.5" /> Upload
+              <input type="file" accept="image/*" className="hidden" onChange={e => {
+                const f = e.target.files?.[0];
+                if (f) onUpload(f);
+              }} disabled={uploading} />
+            </label>
+            <button onClick={() => { setEditingUrl(!editingUrl); setUrlInput(currentUrl); }}
+              className="solar-btn-outline text-xs py-1.5 px-3 flex items-center gap-1">
+              <LinkIcon className="w-3.5 h-3.5" /> URL
+            </button>
+            {!isDefault && (
+              <button onClick={onRemove}
+                className="text-xs py-1.5 px-3 rounded-lg border border-destructive/30 text-destructive hover:bg-destructive/10 flex items-center gap-1">
+                <Trash2 className="w-3.5 h-3.5" /> Remover
+              </button>
+            )}
+          </div>
+          {uploading && <p className="text-xs text-muted-foreground">Enviando...</p>}
+          {editingUrl && (
+            <div className="flex gap-2">
+              <input className="solar-input text-xs flex-1" value={urlInput} onChange={e => setUrlInput(e.target.value)} placeholder="https://..." />
+              <button onClick={() => { onUrlChange(urlInput); setEditingUrl(false); }}
+                className="solar-btn-primary text-xs py-1.5 px-3"><Save className="w-3.5 h-3.5" /></button>
             </div>
-          );
-        })}
+          )}
+        </div>
       </div>
     </div>
   );
