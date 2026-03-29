@@ -321,42 +321,42 @@ export async function generateProposalPDF(
   doc.text('sistema completo de energia solar fotovoltaica', M + 42, y);
   y += 6;
 
-  // Compact installment boxes
+  // Installment boxes — 30% larger
   const installW = CW / 5;
   INSTALLMENT_OPTIONS.forEach((n, i) => {
     const ix = M + i * installW;
     setFill([252, 251, 246]);
-    doc.roundedRect(ix + 2, y, installW - 4, 18, 3, 3, 'F');
+    doc.roundedRect(ix + 2, y, installW - 4, 23, 3, 3, 'F');
 
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(18);
+    doc.setFontSize(23);
     setColor(SECONDARY);
-    doc.text(`${n}X`, ix + installW / 2, y + 8, { align: 'center' });
+    doc.text(`${n}X`, ix + installW / 2, y + 10, { align: 'center' });
 
     setFill(SECONDARY);
-    doc.roundedRect(ix + 6, y + 10, installW - 12, 0.6, 0.3, 0.3, 'F');
+    doc.roundedRect(ix + 6, y + 13, installW - 12, 0.7, 0.3, 0.3, 'F');
 
-    doc.setFontSize(7);
+    doc.setFontSize(9);
     doc.setFont('helvetica', 'bold');
     setColor(DARK);
-    doc.text(formatCurrency(selectedCard?.installments?.[n] || 0), ix + installW / 2, y + 15, { align: 'center' });
+    doc.text(formatCurrency(selectedCard?.installments?.[n] || 0), ix + installW / 2, y + 20, { align: 'center' });
   });
 
-  y += 21;
+  y += 27;
 
-  // À vista compact
+  // "Investimento" price box — 30% larger
   setFill([245, 248, 240]);
-  doc.roundedRect(W / 2 - 35, y - 3, 70, 11, 3, 3, 'F');
-  doc.setFontSize(9);
+  doc.roundedRect(W / 2 - 45, y - 4, 90, 15, 3, 3, 'F');
+  doc.setFontSize(11);
   doc.setFont('helvetica', 'normal');
   setColor(DARK);
-  doc.text('À vista:', W / 2 - 3, y + 3, { align: 'right' });
+  doc.text('Investimento:', W / 2 - 3, y + 4, { align: 'right' });
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(11);
+  doc.setFontSize(14);
   setColor(PRIMARY);
-  doc.text(formatCurrency(selectedCard?.totalPrice || 0), W / 2, y + 3);
+  doc.text(formatCurrency(selectedCard?.totalPrice || 0), W / 2, y + 4);
 
-  y += 11;
+  y += 14;
   doc.setFontSize(6.5);
   doc.setFont('helvetica', 'normal');
   setColor(GRAY);
@@ -367,7 +367,7 @@ export async function generateProposalPDF(
     doc.text(`CET aplicada: ${proposal.cetApplied}% a.m.`, W / 2, y, { align: 'center' });
   }
 
-  // Card installments (compact)
+  // Card installments — 2 columns
   if (selectedCard?.cardInstallments && Object.keys(selectedCard.cardInstallments).length > 0) {
     y += 6;
     doc.setFont('helvetica', 'bold');
@@ -376,30 +376,43 @@ export async function generateProposalPDF(
     doc.text('Parcelamento no Cartão', M, y);
     y += 5;
 
-    setFill(PRIMARY);
-    doc.roundedRect(M, y - 2.5, CW, 7, 2, 2, 'F');
-    doc.setFontSize(7);
-    doc.setFont('helvetica', 'bold');
-    setColor(WHITE);
-    doc.text('Parcelas', M + 8, y + 1.5);
-    doc.text('Valor/Mês', M + CW - 8, y + 1.5, { align: 'right' });
-    y += 7;
-
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(7);
+    const colW = CW / 2 - 2;
     const cardEntries = Object.entries(selectedCard.cardInstallments);
-    cardEntries.forEach(([n, v]: [string, any], i: number) => {
-      if (i % 2 === 0) {
-        setFill([250, 252, 246]);
-        doc.roundedRect(M, y - 2.5, CW, 5.5, 1, 1, 'F');
-      }
-      setColor(DARK);
-      doc.text(`${n}×`, M + 8, y + 1);
+    const half = Math.ceil(cardEntries.length / 2);
+    const col1 = cardEntries.slice(0, half);
+    const col2 = cardEntries.slice(half);
+
+    // Headers for both columns
+    [0, 1].forEach(col => {
+      const cx = M + col * (colW + 4);
+      setFill(PRIMARY);
+      doc.roundedRect(cx, y - 2.5, colW, 6.5, 2, 2, 'F');
+      doc.setFontSize(6.5);
       doc.setFont('helvetica', 'bold');
-      doc.text(formatCurrency(v.perMonth), M + CW - 8, y + 1, { align: 'right' });
-      doc.setFont('helvetica', 'normal');
-      y += 5.5;
+      setColor(WHITE);
+      doc.text('Parcelas', cx + 6, y + 1.5);
+      doc.text('Valor/Mês', cx + colW - 6, y + 1.5, { align: 'right' });
     });
+    const startY = y + 6.5;
+
+    [col1, col2].forEach((entries, col) => {
+      let rowY = startY;
+      const cx = M + col * (colW + 4);
+      entries.forEach(([n, v]: [string, any], i: number) => {
+        if (i % 2 === 0) {
+          setFill([250, 252, 246]);
+          doc.roundedRect(cx, rowY - 2.5, colW, 5.5, 1, 1, 'F');
+        }
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(6.5);
+        setColor(DARK);
+        doc.text(`${n}×`, cx + 6, rowY + 1);
+        doc.setFont('helvetica', 'bold');
+        doc.text(formatCurrency((v as any).perMonth), cx + colW - 6, rowY + 1, { align: 'right' });
+        rowY += 5.5;
+      });
+    });
+    y = startY + Math.max(col1.length, col2.length) * 5.5;
   }
 
   drawFooter();
