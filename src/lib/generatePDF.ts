@@ -2,6 +2,8 @@ import jsPDF from 'jspdf';
 import { formatCurrency, formatNumber } from '@/data/calculations';
 import { LINE_NAMES, INSTALLMENT_OPTIONS, MONTH_LABELS } from '@/data/types';
 import { supabase } from '@/integrations/supabase/client';
+import pdfCoverImg from '@/assets/pdf-cover.png';
+import pdfPortfolioImg from '@/assets/pdf-portfolio.png';
 
 // Brand colors
 const PRIMARY = [74, 90, 42] as const;    // #4A5A2A
