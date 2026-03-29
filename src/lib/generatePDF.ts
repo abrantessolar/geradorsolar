@@ -503,17 +503,17 @@ export async function generateProposalPDF(
   y += 32;
 
   // Savings cards with softer edges
+  const savingsItems: { years: number; value: number }[] = [];
+  if (tpl.financial.showReturn5) savingsItems.push({ years: 5, value: calcSavings(5) });
+  if (tpl.financial.showReturn10) savingsItems.push({ years: 10, value: calcSavings(10) });
+  if (tpl.financial.showReturn15) savingsItems.push({ years: 15, value: calcSavings(15) });
+
   if (savingsItems.length > 0) {
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(11);
   setColor(PRIMARY);
   doc.text('Sua economia com energia solar', M, y);
   y += 7;
-
-  const savingsItems: { years: number; value: number }[] = [];
-  if (tpl.financial.showReturn5) savingsItems.push({ years: 5, value: calcSavings(5) });
-  if (tpl.financial.showReturn10) savingsItems.push({ years: 10, value: calcSavings(10) });
-  if (tpl.financial.showReturn15) savingsItems.push({ years: 15, value: calcSavings(15) });
 
   const cardW = CW / 3 - 2;
   savingsItems.forEach((item, i) => {
