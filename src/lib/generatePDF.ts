@@ -155,72 +155,70 @@ export async function generateProposalPDF(
   }
 
   // ═══════════════════════════════════════
-  // PAGE 3: SPECS + CHART + CARD INSTALLMENTS
+  // PAGE 3: SPECS + CHART + INVESTMENT + CARD INSTALLMENTS (all in one)
   // ═══════════════════════════════════════
   doc.addPage();
-  drawPageHeader('Especificações do projeto');
-  let y = 40;
+  drawPageHeader('Especificações e Investimento');
+  let y = 34;
 
-  // Soft card container for Equipamentos + Rendimentos
+  // Compact two-column: Equipamentos | Rendimentos
   const halfW = CW / 2 - 4;
 
   // ── Equipamentos card ──
-  setFill([250, 252, 245]); // very soft green-tinted bg
-  doc.roundedRect(M, y, halfW, 62, 4, 4, 'F');
-  // Soft top accent
+  setFill([250, 252, 245]);
+  doc.roundedRect(M, y, halfW, 48, 4, 4, 'F');
   setFill(SECONDARY);
-  doc.roundedRect(M, y, halfW, 3, 4, 4, 'F');
-  doc.rect(M, y + 2, halfW, 1, 'F'); // fill bottom corners of accent
+  doc.roundedRect(M, y, halfW, 2.5, 4, 4, 'F');
+  doc.rect(M, y + 1.5, halfW, 1, 'F');
 
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(10);
-  setColor(PRIMARY);
-  doc.text('Equipamentos', M + 8, y + 12);
-
-  let ly = y + 20;
   doc.setFontSize(9);
+  setColor(PRIMARY);
+  doc.text('Equipamentos', M + 6, y + 9);
+
+  let ly = y + 15;
+  doc.setFontSize(8);
   doc.setFont('helvetica', 'normal');
   setColor(DARK);
 
   if (isPremium) {
     const microCount = selectedCard?.microCount || 0;
-    doc.text(`Micro Inversores: ${microCount}×`, M + 8, ly);
-    ly += 5.5;
+    doc.text(`Micro Inversores: ${microCount}×`, M + 6, ly);
+    ly += 4.5;
     doc.setFont('helvetica', 'bold');
-    doc.text(`${selectedCard?.inverter?.brand || ''} ${selectedCard?.inverter?.model || ''}`, M + 8, ly);
+    doc.text(`${selectedCard?.inverter?.brand || ''} ${selectedCard?.inverter?.model || ''}`, M + 6, ly);
     doc.setFont('helvetica', 'normal');
-    ly += 5.5;
-    doc.text(`${selectedCard?.inverter?.power || ''} W cada`, M + 8, ly);
+    ly += 4.5;
+    doc.text(`${selectedCard?.inverter?.power || ''} W cada`, M + 6, ly);
   } else {
-    doc.text('Inversor:', M + 8, ly);
-    ly += 5.5;
+    doc.text('Inversor:', M + 6, ly);
+    ly += 4.5;
     doc.setFont('helvetica', 'bold');
-    doc.text(`${selectedCard?.inverter?.brand || ''} ${selectedCard?.inverter?.model || ''}`, M + 8, ly);
+    doc.text(`${selectedCard?.inverter?.brand || ''} ${selectedCard?.inverter?.model || ''}`, M + 6, ly);
     doc.setFont('helvetica', 'normal');
-    ly += 5.5;
-    doc.text(`${selectedCard?.inverter?.power || ''} kW`, M + 8, ly);
+    ly += 4.5;
+    doc.text(`${selectedCard?.inverter?.power || ''} kW`, M + 6, ly);
   }
-
-  ly += 8;
-  doc.text('Placas:', M + 8, ly);
-  ly += 5.5;
+  ly += 6;
+  doc.text('Placas:', M + 6, ly);
+  ly += 4.5;
   doc.setFont('helvetica', 'bold');
-  doc.text(`${selectedCard?.panelCount || 0}× ${selectedCard?.panel?.brand || ''} ${selectedCard?.panel?.power || ''}Wp`, M + 8, ly);
+  doc.text(`${selectedCard?.panelCount || 0}× ${selectedCard?.panel?.brand || ''} ${selectedCard?.panel?.power || ''}Wp`, M + 6, ly);
 
   // ── Rendimentos card ──
   const rx = M + halfW + 8;
   setFill([250, 252, 245]);
-  doc.roundedRect(rx, y, halfW, 62, 4, 4, 'F');
+  doc.roundedRect(rx, y, halfW, 48, 4, 4, 'F');
   setFill(SECONDARY);
-  doc.roundedRect(rx, y, halfW, 3, 4, 4, 'F');
-  doc.rect(rx, y + 2, halfW, 1, 'F');
+  doc.roundedRect(rx, y, halfW, 2.5, 4, 4, 'F');
+  doc.rect(rx, y + 1.5, halfW, 1, 'F');
 
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(10);
+  doc.setFontSize(9);
   setColor(PRIMARY);
-  doc.text('Rendimentos', rx + 8, y + 12);
+  doc.text('Rendimentos', rx + 6, y + 9);
 
-  let ry = y + 20;
+  let ry = y + 15;
   const rendimentos = [
     ['Geração:', `${formatNumber(selectedCard?.dimensioning?.monthlyGeneration || 0, 0)} kWh/mês`],
     ['Consumo:', `${formatNumber(selectedCard?.dimensioning?.avgMonthlyKwh || 0, 0)} kWh/mês`],
@@ -228,55 +226,49 @@ export async function generateProposalPDF(
     ['Potência:', `${formatNumber(selectedCard?.dimensioning?.powerKwp || 0)} kWp`],
   ];
 
-  doc.setFontSize(9);
+  doc.setFontSize(8);
   rendimentos.forEach(([label, value]) => {
     doc.setFont('helvetica', 'normal');
     setColor(GRAY);
-    doc.text(label, rx + 8, ry);
+    doc.text(label, rx + 6, ry);
     doc.setFont('helvetica', 'bold');
     setColor(PRIMARY);
-    doc.text(value, rx + halfW - 8, ry, { align: 'right' });
-    ry += 7;
+    doc.text(value, rx + halfW - 6, ry, { align: 'right' });
+    ry += 6;
   });
 
-  // "Incluso" section - softer
-  y += 68;
-  setFill([248, 248, 243]);
-  doc.roundedRect(M, y, CW, 16, 3, 3, 'F');
-  doc.setFontSize(7.5);
+  // "Incluso" text (compact)
+  y += 52;
+  doc.setFontSize(6.5);
   doc.setFont('helvetica', 'normal');
   setColor(GRAY);
   const surplusPct = settings.surplusFactor ?? 20;
-  const inclusoText = `Sistema solar + Material de instalação + Análise de sombreamento + Homologação + 3 Anos de garantia de instalação e acompanhamento • Dimensionado com ${surplusPct}% de reserva para crescimento futuro`;
-  const inclusoLines = doc.splitTextToSize(inclusoText, CW - 10);
-  doc.text(inclusoLines, W / 2, y + 6, { align: 'center' });
+  const inclusoText = `Incluso: Sistema solar + Instalação + Análise de sombreamento + Homologação + 3 Anos de garantia • ${surplusPct}% de reserva`;
+  doc.text(inclusoText, W / 2, y, { align: 'center' });
 
-  // ── Chart: Geração vs Consumo ──
-  y += 22;
+  // ── Chart: Geração vs Consumo (compact) ──
+  y += 7;
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(10);
+  doc.setFontSize(9);
   setColor(PRIMARY);
   doc.text('Geração vs Consumo Mensal (kWh)', W / 2, y, { align: 'center' });
-  y += 6;
+  y += 5;
 
-  const chartH = 50;
+  const chartH = 38;
   const barGroupW = CW / 12;
   const maxVal = Math.max(...chartData.map((d: any) => Math.max(d.geração || 0, d.consumo || 0, 1)));
 
-  // Legend
-  doc.roundedRect(M + CW / 2 - 40, y - 1, 80, 6, 2, 2, 'S');
-  setDraw([220, 220, 215]);
-  doc.setLineWidth(0.2);
+  // Compact legend
   setFill(PRIMARY);
-  doc.roundedRect(M + CW / 2 - 35, y, 5, 3, 1, 1, 'F');
-  doc.setFontSize(7);
+  doc.roundedRect(M + CW / 2 - 32, y, 5, 2.5, 1, 1, 'F');
+  doc.setFontSize(6);
   doc.setFont('helvetica', 'normal');
   setColor(DARK);
-  doc.text('Geração', M + CW / 2 - 28, y + 2.5);
+  doc.text('Geração', M + CW / 2 - 25, y + 2);
   setFill(SECONDARY);
-  doc.roundedRect(M + CW / 2 + 8, y, 5, 3, 1, 1, 'F');
-  doc.text('Consumo', M + CW / 2 + 15, y + 2.5);
-  y += 8;
+  doc.roundedRect(M + CW / 2 + 8, y, 5, 2.5, 1, 1, 'F');
+  doc.text('Consumo', M + CW / 2 + 15, y + 2);
+  y += 5;
 
   const chartY = y;
   setDraw([220, 220, 215]);
@@ -292,194 +284,121 @@ export async function generateProposalPDF(
 
     setFill(PRIMARY);
     doc.roundedRect(cx + barGroupW * 0.15, chartY + chartH - genH, barW, genH, 1, 1, 'F');
-
     setFill(SECONDARY);
     doc.roundedRect(cx + barGroupW * 0.5, chartY + chartH - conH, barW, conH, 1, 1, 'F');
 
-    doc.setFontSize(5);
+    doc.setFontSize(4.5);
     doc.setFont('helvetica', 'bold');
     setColor(PRIMARY);
-    if (genH > 5) doc.text(String(d.geração || 0), cx + barGroupW * 0.15 + barW / 2, chartY + chartH - genH - 1.5, { align: 'center' });
+    if (genH > 4) doc.text(String(d.geração || 0), cx + barGroupW * 0.15 + barW / 2, chartY + chartH - genH - 1, { align: 'center' });
     setColor(DARK);
-    if (conH > 5) doc.text(String(d.consumo || 0), cx + barGroupW * 0.5 + barW / 2, chartY + chartH - conH - 1.5, { align: 'center' });
+    if (conH > 4) doc.text(String(d.consumo || 0), cx + barGroupW * 0.5 + barW / 2, chartY + chartH - conH - 1, { align: 'center' });
 
-    doc.setFontSize(6);
+    doc.setFontSize(5.5);
     doc.setFont('helvetica', 'normal');
     setColor(DARK);
-    doc.text(MONTH_LABELS[i], cx + barGroupW / 2, chartY + chartH + 4, { align: 'center' });
+    doc.text(MONTH_LABELS[i], cx + barGroupW / 2, chartY + chartH + 3.5, { align: 'center' });
   });
 
   // ═══════════════════════════════════════
-  // INVESTMENT section (on same page below chart)
+  // INVESTMENT section
   // ═══════════════════════════════════════
-  y = chartY + chartH + 10;
+  y = chartY + chartH + 8;
 
-  // Soft divider
   setFill([230, 225, 210]);
-  doc.roundedRect(W / 2 - 30, y, 60, 0.8, 0.4, 0.4, 'F');
-  y += 5;
+  doc.roundedRect(W / 2 - 25, y, 50, 0.6, 0.3, 0.3, 'F');
+  y += 4;
 
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(14);
+  doc.setFontSize(12);
   setColor(PRIMARY);
   doc.text('Investimento', M, y);
-  doc.setFontSize(8);
+  doc.setFontSize(7);
   doc.setFont('helvetica', 'normal');
   setColor(GRAY);
-  doc.text('sistema completo de energia solar fotovoltaica', M + 48, y);
-  y += 8;
+  doc.text('sistema completo de energia solar fotovoltaica', M + 42, y);
+  y += 6;
 
-  // Installment boxes with soft cards
+  // Compact installment boxes
   const installW = CW / 5;
   INSTALLMENT_OPTIONS.forEach((n, i) => {
     const ix = M + i * installW;
-    // Soft card bg
     setFill([252, 251, 246]);
-    doc.roundedRect(ix + 2, y, installW - 4, 24, 3, 3, 'F');
+    doc.roundedRect(ix + 2, y, installW - 4, 18, 3, 3, 'F');
 
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(22);
+    doc.setFontSize(18);
     setColor(SECONDARY);
-    doc.text(`${n}X`, ix + installW / 2, y + 10, { align: 'center' });
+    doc.text(`${n}X`, ix + installW / 2, y + 8, { align: 'center' });
 
-    // Rounded accent underline
     setFill(SECONDARY);
-    doc.roundedRect(ix + 6, y + 12, installW - 12, 0.8, 0.4, 0.4, 'F');
+    doc.roundedRect(ix + 6, y + 10, installW - 12, 0.6, 0.3, 0.3, 'F');
 
-    doc.setFontSize(8);
+    doc.setFontSize(7);
     doc.setFont('helvetica', 'bold');
     setColor(DARK);
-    doc.text(formatCurrency(selectedCard?.installments?.[n] || 0), ix + installW / 2, y + 19, { align: 'center' });
+    doc.text(formatCurrency(selectedCard?.installments?.[n] || 0), ix + installW / 2, y + 15, { align: 'center' });
   });
 
-  y += 28;
+  y += 21;
 
-  // À vista price in soft card
+  // À vista compact
   setFill([245, 248, 240]);
-  doc.roundedRect(W / 2 - 40, y - 4, 80, 14, 3, 3, 'F');
-  doc.setFontSize(10);
+  doc.roundedRect(W / 2 - 35, y - 3, 70, 11, 3, 3, 'F');
+  doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
   setColor(DARK);
-  doc.text('À vista:', W / 2 - 5, y + 3, { align: 'right' });
+  doc.text('À vista:', W / 2 - 3, y + 3, { align: 'right' });
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(13);
+  doc.setFontSize(11);
   setColor(PRIMARY);
-  doc.text(formatCurrency(selectedCard?.totalPrice || 0), W / 2 - 2, y + 3);
+  doc.text(formatCurrency(selectedCard?.totalPrice || 0), W / 2, y + 3);
 
-  y += 14;
-  doc.setFontSize(7.5);
+  y += 11;
+  doc.setFontSize(6.5);
   doc.setFont('helvetica', 'normal');
   setColor(GRAY);
   doc.text(`Proposta válida por ${settings.proposalValidity || 15} dias  •  ${numero}  •  ${new Date(proposal.createdAt).toLocaleDateString('pt-BR')}`, W / 2, y, { align: 'center' });
 
   if (proposal.cetApplied) {
-    y += 4;
+    y += 3.5;
     doc.text(`CET aplicada: ${proposal.cetApplied}% a.m.`, W / 2, y, { align: 'center' });
   }
 
-  // Card installments (simplified: qty + per-month only) on this page
+  // Card installments (compact)
   if (selectedCard?.cardInstallments && Object.keys(selectedCard.cardInstallments).length > 0) {
-    y += 8;
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(10);
-    setColor(PRIMARY);
-    doc.text('Parcelamento no Cartão de Crédito', M, y);
     y += 6;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    setColor(PRIMARY);
+    doc.text('Parcelamento no Cartão', M, y);
+    y += 5;
 
-    // Soft rounded header
     setFill(PRIMARY);
-    doc.roundedRect(M, y - 3, CW, 8, 2, 2, 'F');
-    doc.setFontSize(8);
+    doc.roundedRect(M, y - 2.5, CW, 7, 2, 2, 'F');
+    doc.setFontSize(7);
     doc.setFont('helvetica', 'bold');
     setColor(WHITE);
-    doc.text('Parcelas', M + 10, y + 2);
-    doc.text('Valor/Mês', M + CW - 10, y + 2, { align: 'right' });
-    y += 8;
+    doc.text('Parcelas', M + 8, y + 1.5);
+    doc.text('Valor/Mês', M + CW - 8, y + 1.5, { align: 'right' });
+    y += 7;
 
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(7.5);
+    doc.setFontSize(7);
     const cardEntries = Object.entries(selectedCard.cardInstallments);
     cardEntries.forEach(([n, v]: [string, any], i: number) => {
       if (i % 2 === 0) {
         setFill([250, 252, 246]);
-        doc.roundedRect(M, y - 3, CW, 6.5, 1, 1, 'F');
+        doc.roundedRect(M, y - 2.5, CW, 5.5, 1, 1, 'F');
       }
       setColor(DARK);
-      doc.text(`${n}×`, M + 10, y + 1.5);
+      doc.text(`${n}×`, M + 8, y + 1);
       doc.setFont('helvetica', 'bold');
-      doc.text(formatCurrency(v.perMonth), M + CW - 10, y + 1.5, { align: 'right' });
+      doc.text(formatCurrency(v.perMonth), M + CW - 8, y + 1, { align: 'right' });
       doc.setFont('helvetica', 'normal');
-      y += 6.5;
+      y += 5.5;
     });
   }
-
-  drawFooter();
-
-  // ═══════════════════════════════════════
-  // PAGE 4: COMPARATIVO DE LINHAS
-  // ═══════════════════════════════════════
-  doc.addPage();
-  drawPageHeader('Comparativo de Linhas');
-  y = 40;
-
-  const lineColW = CW / lineCards.length;
-  lineCards.forEach((card: any, i: number) => {
-    const x = M + i * lineColW;
-    const isSelected = card.line === proposal.selectedLine;
-
-    if (isSelected) {
-      setFill(PRIMARY);
-      doc.roundedRect(x + 2, y, lineColW - 4, 72, 5, 5, 'F');
-      setFill(SECONDARY);
-      doc.roundedRect(x + lineColW / 2 - 15, y - 3, 30, 8, 3, 3, 'F');
-      doc.setFontSize(6);
-      doc.setFont('helvetica', 'bold');
-      setColor(DARK);
-      doc.text('SELECIONADA', x + lineColW / 2, y + 2, { align: 'center' });
-    } else {
-      setFill([250, 252, 245]);
-      doc.roundedRect(x + 2, y, lineColW - 4, 72, 5, 5, 'F');
-      setDraw([215, 215, 210]);
-      doc.setLineWidth(0.3);
-      doc.roundedRect(x + 2, y, lineColW - 4, 72, 5, 5, 'S');
-    }
-
-    const textColor: RGB = isSelected ? WHITE : DARK;
-    const subColor: RGB = isSelected ? [200, 210, 190] : GRAY;
-
-    let cy = y + 12;
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(10);
-    setColor(textColor);
-    doc.text(LINE_NAMES[card.line] || card.line, x + lineColW / 2, cy, { align: 'center' });
-
-    cy += 10;
-    doc.setFontSize(16);
-    doc.text(formatCurrency(card.totalPrice), x + lineColW / 2, cy, { align: 'center' });
-
-    cy += 8;
-    doc.setFontSize(7);
-    doc.setFont('helvetica', 'normal');
-    setColor(subColor);
-    doc.text(`${formatNumber(card.dimensioning.powerKwp)} kWp`, x + lineColW / 2, cy, { align: 'center' });
-    cy += 5;
-    doc.text(`${formatNumber(card.dimensioning.monthlyGeneration, 0)} kWh/mês`, x + lineColW / 2, cy, { align: 'center' });
-    cy += 5;
-    doc.text(`Payback: ${formatNumber(card.dimensioning.paybackYears)} anos`, x + lineColW / 2, cy, { align: 'center' });
-    cy += 5;
-    doc.text(`Economia: ${formatCurrency(card.dimensioning.monthlySavings)}/mês`, x + lineColW / 2, cy, { align: 'center' });
-
-    cy += 6;
-    doc.setFontSize(6);
-    const isPrem = card.line === 'premium';
-    if (isPrem) {
-      doc.text(`${card.microCount}× ${card.inverter?.brand || ''} ${card.inverter?.model || ''}`, x + lineColW / 2, cy, { align: 'center' });
-    } else {
-      doc.text(`${card.inverter?.brand || ''} ${card.inverter?.model || ''}`, x + lineColW / 2, cy, { align: 'center' });
-    }
-    cy += 4;
-    doc.text(`${card.panelCount}× ${card.panel?.brand || ''} ${card.panel?.power || ''}Wp`, x + lineColW / 2, cy, { align: 'center' });
-  });
 
   drawFooter();
 
