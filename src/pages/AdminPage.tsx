@@ -35,7 +35,7 @@ export default function AdminPage() {
     { key: 'pricing' as const, label: 'Precificação', icon: Settings, roles: ['admin'] },
     { key: 'irradiation' as const, label: 'Irradiação', icon: MapPin, roles: ['admin', 'orcamentista'] },
     { key: 'company' as const, label: 'Empresa', icon: Building2, roles: ['admin', 'orcamentista'] },
-    { key: 'proposals' as const, label: 'Propostas', icon: FileText, roles: ['admin', 'orcamentista'] },
+    { key: 'proposals' as const, label: 'Propostas', icon: FileText, roles: ['admin', 'orcamentista', 'vendedor'] },
     { key: 'social' as const, label: 'Provas Sociais', icon: Image, roles: ['admin'] },
     { key: 'site_content' as const, label: 'Conteúdo do Site', icon: Globe, roles: ['admin'] },
   ];
