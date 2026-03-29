@@ -82,15 +82,55 @@ export default function ProposalPage() {
 
   const lineCards = useMemo(() => {
     if (!proposal) return [];
+    const savedData = proposal.dados_completos || proposal;
+    
     return LINES.map(line => {
+      const isSelectedLine = line === (savedData.selectedLine || proposal.selectedLine);
+      
+      // For the selected line, use saved data from the proposal
+      if (isSelectedLine && panelDelta === 0) {
+        const savedKit = savedData.selectedKit;
+        const savedDim = savedData.dimensioning || proposal.dimensioning;
+        const savedCostBreakdown = savedData.costBreakdown || proposal.costBreakdown;
+        const savedInstallments = savedData.installmentValues || proposal.installmentValues;
+        const savedCardInstallments = savedData.cardInstallments || proposal.cardInstallments;
+        
+        const inverter = savedKit?.inverter || null;
+        const panel = savedKit?.panel || null;
+        const panelCount = savedKit?.panelCount || finalPanels;
+        const isPremium = line === 'premium';
+        const microCount = savedData.microInverterCount ?? (isPremium ? calcMicroInverterCount(panelCount) : 0);
+        const panelPowerKwp = (panel?.power || 570) / 1000;
+        const maxPanels = isPremium ? 999 : (inverter ? maxPanelsForInverter(inverter.power, panelPowerKwp) : 0);
+        const panelsRemaining = isPremium ? 999 : maxPanels - panelCount;
+        
+        const totalPrice = savedCostBreakdown?.salePrice || savedData.totalPrice || proposal.totalPrice;
+        const installments = savedInstallments || (proposal.cetApplied
+          ? calcInstallments(totalPrice, proposal.cetApplied)
+          : calcInstallments(totalPrice));
+        const cardInstallments = savedCardInstallments || calcCardInstallments(totalPrice, settings.creditCardRates);
+        const costBreakdown = savedCostBreakdown || calcCostBreakdown(inverter, panel, panelCount, line);
+
+        return {
+          line, inverter, panel, panelCount, totalPrice, maxPanels, panelsRemaining, microCount,
+          installments, cardInstallments, costBreakdown,
+          inverterBrand: savedData.inverterBrand || inverter?.brand || '',
+          inverterModel: savedData.inverterModel || inverter?.model || '',
+          panelBrand: savedData.panelBrand || panel?.brand || '',
+          panelPowerLabel: savedData.panelPowerLabel || `${panel?.power || 570} Wp`,
+          dimensioning: { ...savedDim, panelCount, powerKwp: savedDim.powerKwp, monthlyGeneration: savedDim.monthlyGeneration, surplus: savedDim.surplus },
+        };
+      }
+      
+      // For non-selected line or when panels are adjusted, recalculate
       const panel = findPanel(line);
       const panelPowerKwp = (panel?.power || 570) / 1000;
       const inverter = findInverterForPanels(line, finalPanels, panelPowerKwp);
       const powerKwp = finalPanels * panelPowerKwp;
       const totalPrice = calcTotalPrice(inverter, panel, finalPanels, line);
       const dim = calcDimensioning(
-        proposal.consumption, proposal.equipment, proposal.clientData.networkType,
-        irradiation, proposal.clientData.kwhPrice, totalPrice, settings.systemLoss
+        proposal.consumption || savedData.consumption, proposal.equipment || savedData.equipment || [], proposal.clientData?.networkType || savedData.clientData?.networkType,
+        irradiation, proposal.clientData?.kwhPrice || savedData.clientData?.kwhPrice, totalPrice, settings.systemLoss
       );
       const isPremium = line === 'premium';
       const microCount = isPremium ? calcMicroInverterCount(finalPanels) : 0;
@@ -107,10 +147,14 @@ export default function ProposalPage() {
       return {
         line, inverter, panel, panelCount: finalPanels, totalPrice, maxPanels, panelsRemaining, microCount,
         installments, cardInstallments, costBreakdown,
+        inverterBrand: inverter?.brand || '',
+        inverterModel: inverter?.model || '',
+        panelBrand: panel?.brand || '',
+        panelPowerLabel: `${panel?.power || 570} Wp`,
         dimensioning: { ...dim, panelCount: finalPanels, powerKwp, monthlyGeneration, surplus },
       };
     });
-  }, [finalPanels, proposal, irradiation, settings.systemLoss, settings.creditCardRates]);
+  }, [finalPanels, proposal, irradiation, settings.systemLoss, settings.creditCardRates, panelDelta]);
 
   const chartData = useMemo(() => {
     if (!proposal || lineCards.length === 0) return [];
@@ -151,7 +195,7 @@ export default function ProposalPage() {
         yearlyWithSolar = year === 0 ? selectedCard.totalPrice + minFee * 12 : minFee * 12;
       } else if (cashflowMode === 'card') {
         const bestCard = Object.values(selectedCard.cardInstallments).pop();
-        const cardMonthly = bestCard ? bestCard.perMonth : selectedCard.totalPrice / 12;
+        const cardMonthly = bestCard ? (bestCard as any).perMonth : selectedCard.totalPrice / 12;
         const cardMonths = bestCard ? Number(Object.keys(selectedCard.cardInstallments).pop()) : 12;
         yearlyWithSolar = year === 0 ? (cardMonthly * Math.min(cardMonths, 12) + minFee * 12) : (year * 12 < cardMonths ? (cardMonthly * 12 + minFee * 12) : minFee * 12);
       } else {
@@ -443,11 +487,11 @@ export default function ProposalPage() {
                     {isPremium ? (
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Micro inversores</span>
-                        <span className="font-medium text-right">{card.microCount}× {card.inverter?.brand} {card.inverter?.model}</span>
+                        <span className="font-medium text-right">{card.microCount}× {card.inverterBrand || card.inverter?.brand} {card.inverterModel || card.inverter?.model}</span>
                       </div>
                     ) : (
                       <>
-                        <div className="flex justify-between"><span className="text-muted-foreground">Inversor</span><span className="font-medium text-right">{card.inverter?.brand} {card.inverter?.model}</span></div>
+                        <div className="flex justify-between"><span className="text-muted-foreground">Inversor</span><span className="font-medium text-right">{card.inverterBrand || card.inverter?.brand} {card.inverterModel || card.inverter?.model}</span></div>
                         <div className="flex justify-between items-start">
                           <span className="text-muted-foreground">Suporta até</span>
                           <span className="font-medium text-right" style={limitColor ? { color: limitColor } : undefined}>
@@ -457,7 +501,7 @@ export default function ProposalPage() {
                         </div>
                       </>
                     )}
-                    <div className="flex justify-between"><span className="text-muted-foreground">Placas</span><span className="font-medium">{card.panelCount}× {card.panel?.brand} {card.panel?.power}Wp</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">Placas</span><span className="font-medium">{card.panelCount}× {card.panelBrand || card.panel?.brand} {card.panelPowerLabel || `${card.panel?.power || 570}Wp`}</span></div>
                     <div className="flex justify-between"><span className="text-muted-foreground">Potência</span><span className="font-medium">{formatNumber(card.dimensioning.powerKwp)} kWp</span></div>
                     <div className="flex justify-between"><span className="text-muted-foreground">Geração/mês</span><span className="font-semibold text-primary">{formatNumber(card.dimensioning.monthlyGeneration, 0)} kWh</span></div>
                     <div className="flex justify-between"><span className="text-muted-foreground">Excedente</span><span className="font-medium">{formatNumber(card.dimensioning.surplus, 0)} kWh</span></div>
@@ -496,7 +540,7 @@ export default function ProposalPage() {
                         {Object.entries(card.cardInstallments).map(([n, v]) => (
                           <div key={n} className="flex justify-between">
                             <span className="text-muted-foreground">{n}×</span>
-                            <span className="font-medium">{formatCurrency(v.perMonth)}</span>
+                            <span className="font-medium">{formatCurrency((v as any).perMonth)}</span>
                           </div>
                         ))}
                       </div>
