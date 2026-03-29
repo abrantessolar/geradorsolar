@@ -167,9 +167,10 @@ function UsersTab() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-border text-left text-muted-foreground">
+               <tr className="border-b border-border text-left text-muted-foreground">
                 <th className="py-2 px-2">Nome</th>
                 <th className="py-2 px-2">E-mail</th>
+                <th className="py-2 px-2">Telefone</th>
                 <th className="py-2 px-2">Nível</th>
                 <th className="py-2 px-2">Status</th>
                 <th className="py-2 px-2">Último acesso</th>
@@ -181,6 +182,7 @@ function UsersTab() {
                 <tr key={u.user_id} className="border-b border-border/50 hover:bg-muted/30">
                   <td className="py-2 px-2 font-medium">{u.nome}</td>
                   <td className="py-2 px-2">{u.email}</td>
+                  <td className="py-2 px-2 text-sm text-muted-foreground">{u.telefone || '—'}</td>
                   <td className="py-2 px-2">
                     <span className={`solar-badge text-xs ${u.role === 'admin' ? 'bg-primary/10 text-primary' : u.role === 'orcamentista' ? 'bg-blue-100 text-blue-800' : 'bg-amber-100 text-amber-800'}`}>
                       {ROLE_LABELS[u.role] || u.role}
