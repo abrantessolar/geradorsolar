@@ -565,6 +565,16 @@ export async function generateProposalPDF(
     doc.text(formatCurrency(item.value), nx + 10, y + 20);
   });
   y += 34;
+  } // end noSolar if
+
+  // Custom footer text from template
+  if (tpl.financial.footerText) {
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'normal');
+    setColor(GRAY);
+    doc.text(tpl.financial.footerText, W / 2, y, { align: 'center' });
+    y += 5;
+  }
 
   // Cash flow table with softer header
   doc.setFont('helvetica', 'bold');
