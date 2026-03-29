@@ -353,9 +353,11 @@ export async function generateProposalPDF(
   doc.text('sistema completo de energia solar fotovoltaica', M + 42, y);
   y += 6;
 
-  // Installment boxes — 30% larger
-  const installW = CW / 5;
-  INSTALLMENT_OPTIONS.forEach((n, i) => {
+  // Filter installments based on template settings
+  const installmentMap: Record<number, string> = { 72: 'show72x', 60: 'show60x', 48: 'show48x', 36: 'show36x', 24: 'show24x' };
+  const visibleInstallments = INSTALLMENT_OPTIONS.filter(n => (tpl.specs.installments as any)[installmentMap[n]] !== false);
+  const installW = CW / Math.max(visibleInstallments.length, 1);
+  visibleInstallments.forEach((n, i) => {
     const ix = M + i * installW;
     setFill([252, 251, 246]);
     doc.roundedRect(ix + 2, y, installW - 4, 23, 3, 3, 'F');
