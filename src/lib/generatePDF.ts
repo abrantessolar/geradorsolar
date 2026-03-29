@@ -184,28 +184,28 @@ export async function generateProposalPDF(
   setColor(DARK);
 
   if (isPremium) {
-    const microCount = selectedCard?.microCount || 0;
+    const microCount = selectedCard?.microCount || proposal?.microInverterCount || 0;
     doc.text(`Micro Inversores: ${microCount}×`, M + 6, ly);
     ly += 4.5;
     doc.setFont('helvetica', 'bold');
-    doc.text(`${selectedCard?.inverter?.brand || ''} ${selectedCard?.inverter?.model || ''}`, M + 6, ly);
+    doc.text(`${selectedCard?.inverterBrand || proposal?.inverterBrand || selectedCard?.inverter?.brand || ''} ${selectedCard?.inverterModel || proposal?.inverterModel || selectedCard?.inverter?.model || ''}`, M + 6, ly);
     doc.setFont('helvetica', 'normal');
     ly += 4.5;
-    doc.text(`${selectedCard?.inverter?.power || ''} W cada`, M + 6, ly);
+    doc.text(`${selectedCard?.inverter?.power || proposal?.selectedKit?.inverter?.power || ''} W cada`, M + 6, ly);
   } else {
     doc.text('Inversor:', M + 6, ly);
     ly += 4.5;
     doc.setFont('helvetica', 'bold');
-    doc.text(`${selectedCard?.inverter?.brand || ''} ${selectedCard?.inverter?.model || ''}`, M + 6, ly);
+    doc.text(`${selectedCard?.inverterBrand || proposal?.inverterBrand || selectedCard?.inverter?.brand || ''} ${selectedCard?.inverterModel || proposal?.inverterModel || selectedCard?.inverter?.model || ''}`, M + 6, ly);
     doc.setFont('helvetica', 'normal');
     ly += 4.5;
-    doc.text(`${selectedCard?.inverter?.power || ''} kW`, M + 6, ly);
+    doc.text(`${selectedCard?.inverter?.power || proposal?.selectedKit?.inverter?.power || ''} kW`, M + 6, ly);
   }
   ly += 6;
   doc.text('Placas:', M + 6, ly);
   ly += 4.5;
   doc.setFont('helvetica', 'bold');
-  doc.text(`${selectedCard?.panelCount || 0}× ${selectedCard?.panel?.brand || ''} ${selectedCard?.panel?.power || ''}Wp`, M + 6, ly);
+  doc.text(`${selectedCard?.panelCount || proposal?.selectedKit?.panelCount || 0}× ${selectedCard?.panelBrand || proposal?.panelBrand || selectedCard?.panel?.brand || ''} ${selectedCard?.panelPowerLabel || proposal?.panelPowerLabel || `${selectedCard?.panel?.power || proposal?.selectedKit?.panel?.power || ''}Wp`}`, M + 6, ly);
 
   // ── Rendimentos card ──
   const rx = M + halfW + 8;

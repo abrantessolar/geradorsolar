@@ -65,11 +65,12 @@ export default function ProposalPage() {
   const [showShareMenu, setShowShareMenu] = useState(false);
   const [showCashflow, setShowCashflow] = useState(false);
 
-  const basePanelCount = proposal?.selectedKit.panelCount ?? 0;
+  const savedProposal = proposal?.dados_completos || proposal;
+  const basePanelCount = savedProposal?.selectedKit?.panelCount ?? proposal?.selectedKit?.panelCount ?? 0;
   const finalPanels = Math.max(Math.max(1, basePanelCount - 2), basePanelCount + panelDelta);
-  const irradiationLookup = proposal ? lookupIrradiation(proposal.clientData.state || 'MS', proposal.clientData.city) : { value: 5.0, found: false, monthly: null };
-  const irradiation = irradiationLookup.value;
-  const monthlyIrr = irradiationLookup.monthly;
+  const irradiationLookup = proposal ? lookupIrradiation(savedProposal?.clientData?.state || proposal.clientData.state || 'MS', savedProposal?.clientData?.city || proposal.clientData.city) : { value: 5.0, found: false, monthly: null };
+  const irradiation = savedProposal?.irradiation || irradiationLookup.value;
+  const monthlyIrr = savedProposal?.monthlyIrradiation || irradiationLookup.monthly;
 
   const recommendedPanels = useMemo(() => {
     if (!proposal) return 0;
