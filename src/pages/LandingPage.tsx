@@ -5,6 +5,7 @@ import { MessageCircle, Phone, Mail, MapPin, Facebook, Instagram, ChevronDown, X
 import { supabase } from '@/integrations/supabase/client';
 import PublicSimulator from '@/components/PublicSimulator';
 import LazyImage from '@/components/LazyImage';
+import Diferenciais from '@/components/Diferenciais';
 
 const LOGO_URL = 'https://static.wixstatic.com/media/c2ae0d_30cd8efa4a3c4fbab3622fcd674c4d02~mv2.png';
 const HERO_BG = 'https://static.wixstatic.com/media/c2ae0d_0fc9044d218948a585d2170345d4ce87~mv2.jpg';
@@ -288,6 +289,9 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+
+      {/* ─── DIFERENCIAIS ─── */}
+      <Diferenciais />
 
       {/* ─── PARCEIROS ─── */}
       <section className="py-16 bg-card border-y border-border/30">
