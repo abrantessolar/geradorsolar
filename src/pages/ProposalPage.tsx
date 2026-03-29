@@ -344,7 +344,7 @@ export default function ProposalPage() {
             ))}
           </div>
           <div className="relative z-10">
-            <img src={logo} alt="Três Lagoas Solar" className="h-24 mx-auto mb-6 print-logo" />
+            <img src={logo} alt="Três Lagoas Solar" className="h-72 mx-auto mb-6 print-logo" />
             <p className="text-sm uppercase tracking-widest text-muted-foreground mb-2">{settings.company.name}</p>
             {proposal.numero_proposta && (
               <p className="text-sm font-mono font-bold text-secondary mb-2">{proposal.numero_proposta}</p>
