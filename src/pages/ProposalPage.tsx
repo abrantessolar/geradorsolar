@@ -16,6 +16,7 @@ import { Download, Share2, Edit, ArrowLeft, Sun, Zap, TrendingUp, Shield, X, Cpu
 import { generateProposalPDF } from '@/lib/generatePDF';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
+import Diferenciais from '@/components/Diferenciais';
 
 
 const LINES = ['essencial', 'excellence', 'premium'] as const;
@@ -849,6 +850,9 @@ export default function ProposalPage() {
             </section>
           );
         })()}
+
+        {/* DIFERENCIAIS */}
+        <Diferenciais compact />
 
         {/* SOCIAL PROOF */}
         {socialProofs.length > 0 && (
