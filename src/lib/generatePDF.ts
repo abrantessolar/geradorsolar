@@ -126,8 +126,8 @@ export async function generateProposalPDF(
   const matchedSeller = settings.sellers?.find((s: any) => s.name === sellerName);
   const sellerPhone = matchedSeller?.phone || settings.company?.phone || '';
   const sellerEmail = matchedSeller?.email || '';
-  const repY = barY + 26 + (H * 0.075);
-  const repX = W * 0.25;
+  const repY = barY + 26 + (H * 0.075) - (H * 0.028);
+  const repX = W * 0.25 + (W * 0.05);
   if (sellerName) {
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(10);
