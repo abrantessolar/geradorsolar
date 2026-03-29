@@ -75,7 +75,7 @@ function UsersTab() {
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [editUser, setEditUser] = useState<any>(null);
-  const [form, setForm] = useState({ nome: '', email: '', role: 'vendedor', password: '', confirmPassword: '' });
+  const [form, setForm] = useState({ nome: '', email: '', telefone: '', role: 'vendedor', password: '', confirmPassword: '' });
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
   const { session } = useAuth();
@@ -106,7 +106,7 @@ function UsersTab() {
     const { data, error: err } = await callApi({ action: 'create', ...form });
     if (err || data?.error) { setError(data?.error || 'Erro ao criar usuário.'); setSaving(false); return; }
     setShowCreate(false);
-    setForm({ nome: '', email: '', role: 'vendedor', password: '', confirmPassword: '' });
+    setForm({ nome: '', email: '', telefone: '', role: 'vendedor', password: '', confirmPassword: '' });
     setSaving(false);
     loadUsers();
   };
