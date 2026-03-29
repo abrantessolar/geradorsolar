@@ -17,6 +17,7 @@ import { generateProposalPDF } from '@/lib/generatePDF';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import Diferenciais from '@/components/Diferenciais';
+import ProposalPortfolio from '@/components/ProposalPortfolio';
 
 
 const LINES = ['essencial', 'excellence', 'premium'] as const;
