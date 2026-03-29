@@ -145,30 +145,66 @@ export default function CalculatorPage() {
 
   const finalPanels = Math.max(1, basePanelCount + panelDelta);
 
+  const priceTable = useMemo(() => getPriceTable(), []);
+
+  // Find best price table entry for a given line and panel count
+  const findPriceTableEntry = useCallback((line: 'excellence' | 'premium', panels: number): PriceTableEntry | null => {
+    const entries = priceTable.filter(e => e[line] !== null && e[line]! > 0 && e.panels >= panels);
+    entries.sort((a, b) => a.panels - b.panels);
+    // Exact match first, then next available
+    const exact = entries.find(e => e.panels === panels);
+    if (exact) return exact;
+    return entries[0] || null;
+  }, [priceTable]);
+
   const systemCards = useMemo(() => {
     return LINES.map(line => {
       const panel = findPanel(line);
       const panelPowerKwp = (panel?.power || 570) / 1000;
-      const inverter = findInverterForPanels(line, finalPanels, panelPowerKwp);
-      const powerKwp = finalPanels * panelPowerKwp;
-      const totalPrice = calcTotalPrice(inverter, panel, finalPanels, line);
+
+      // Try to find from price table first
+      const ptEntry = findPriceTableEntry(line, finalPanels);
+      const ptDetails = (ptEntry?.details as any)?.[line] as PriceTableLineDetails | undefined;
+
+      // Use price table panel count if available, otherwise use calculated
+      const usedPanels = ptEntry ? ptEntry.panels : finalPanels;
+
+      const inverter = findInverterForPanels(line, usedPanels, panelPowerKwp);
+      const powerKwp = usedPanels * panelPowerKwp;
+
+      // Use price table cost if available, otherwise calculate
+      const hasPriceTableCost = ptEntry && ptEntry[line] !== null && ptEntry[line]! > 0;
+      const totalPrice = hasPriceTableCost ? ptEntry[line]! : calcTotalPrice(inverter, panel, usedPanels, line);
+
       const dim = calcDimensioning(consumption, equipment, client.networkType, irradiation, client.kwhPrice, totalPrice, settings.systemLoss);
 
       const isPremium = line === 'premium';
-      const microCount = isPremium ? calcMicroInverterCount(finalPanels) : 0;
-      const maxPanels = isPremium ? 999 : (inverter ? maxPanelsForInverter(inverter.power, panelPowerKwp) : 0);
-      const panelsRemaining = isPremium ? 999 : maxPanels - finalPanels;
+      const microCount = isPremium ? calcMicroInverterCount(usedPanels) : 0;
+
+      // Calculate inverter limit from price table or kit data
+      const ptInverterPower = ptDetails?.inverterPower ? parseFloat(ptDetails.inverterPower) : null;
+      const ptPanelPower = ptDetails?.panelPower ? parseFloat(ptDetails.panelPower) : null;
+      const effectiveInverterKw = ptInverterPower || inverter?.power || 0;
+      const effectivePanelWp = ptPanelPower || panel?.power || 570;
+      const effectivePanelKwp = effectivePanelWp / 1000;
+      const maxPanels = isPremium ? 999 : Math.floor((effectiveInverterKw * 1.5) / effectivePanelKwp);
+      const panelsRemaining = isPremium ? 999 : maxPanels - usedPanels;
 
       const monthlyGeneration = powerKwp * irradiation * 30 * (1 - settings.systemLoss / 100);
       const surplus = monthlyGeneration - dim.avgMonthlyKwh;
 
       return {
-        line, inverter, panel, panelCount: finalPanels, totalPrice, maxPanels, panelsRemaining, microCount,
+        line, inverter, panel, panelCount: usedPanels, totalPrice, maxPanels, panelsRemaining, microCount,
+        ptDetails, ptEntry, hasPriceTableCost,
+        inverterBrand: ptDetails?.inverterBrand || inverter?.brand || '',
+        inverterModel: ptDetails?.inverterPower ? `${ptDetails.inverterPower} kW` : inverter?.model || '',
+        panelBrand: ptDetails?.panelBrand || panel?.brand || '',
+        panelPowerLabel: ptDetails?.panelPower ? `${ptDetails.panelPower} Wp` : `${panel?.power || 570} Wp`,
         installments: calcInstallments(totalPrice),
-        dimensioning: { ...dim, panelCount: finalPanels, powerKwp, monthlyGeneration, surplus },
+        dimensioning: { ...dim, panelCount: usedPanels, powerKwp, monthlyGeneration, surplus },
       };
     });
-  }, [consumption, equipment, client, irradiation, finalPanels, settings.systemLoss]);
+  }, [consumption, equipment, client, irradiation, finalPanels, settings.systemLoss, findPriceTableEntry]);
 
   const chartData = useMemo(() => {
     const baseDim = systemCards[0]?.dimensioning;
