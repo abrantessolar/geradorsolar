@@ -1,9 +1,10 @@
 import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Minus, ChevronDown, ChevronUp, Zap, Sun, TrendingUp, ArrowRight, AlertTriangle, Eye, EyeOff, CreditCard, Settings2 } from 'lucide-react';
+import { Plus, Minus, ChevronDown, ChevronUp, Zap, Sun, TrendingUp, ArrowRight, AlertTriangle, Eye, EyeOff, CreditCard, Settings2, Check } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import CustomKitForm, { CustomKitData, defaultCustomKit, calcCustomBreakdown } from '@/components/CustomKitForm';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { toast } from 'sonner';
 import {
   ClientData, MonthlyConsumption, ConsumptionMode, ConsumerUnit, EquipmentItem,
   MONTH_LABELS, MONTH_KEYS, EQUIPMENT_CATALOG, SEASONAL_FACTORS, UC_COLORS,
@@ -63,6 +64,7 @@ export default function CalculatorPage() {
   const [panelDelta, setPanelDelta] = useState(0);
   const [paymentTab, setPaymentTab] = useState<'financing' | 'card'>('financing');
   const [showCostPanel, setShowCostPanel] = useState(false);
+  const [selectedLine, setSelectedLine] = useState<number | null>(null);
   const [customKits, setCustomKits] = useState<Record<string, CustomKitData>>({
     excellence: defaultCustomKit(0),
     premium: defaultCustomKit(0),
@@ -680,7 +682,10 @@ export default function CalculatorPage() {
             const remaining = card.panelsRemaining;
             const limitColor = isPremium ? undefined : (remaining <= 0 ? '#E84855' : remaining <= 2 ? '#E8B84B' : undefined);
             return (
-              <div key={card.line} className="solar-card p-6 space-y-4 relative">
+              <div key={card.line} 
+                className={`solar-card p-6 space-y-4 relative cursor-pointer transition-all ${selectedLine === idx ? 'ring-2 ring-primary shadow-lg' : 'hover:shadow-md'}`}
+                onClick={() => setSelectedLine(idx)}
+              >
                 <div className="text-center">
                   <h3 className="text-lg font-bold text-primary">{LINE_NAMES[card.line]}</h3>
                   <p className="text-xs text-muted-foreground">{LINE_SUBS[card.line]}</p>
@@ -816,13 +821,36 @@ export default function CalculatorPage() {
                   </div>
                 )}
 
-                <button onClick={() => generateProposal(idx)}
-                  className="w-full solar-btn-primary flex items-center justify-center gap-2">
-                  Gerar Proposta <ArrowRight className="w-4 h-4" />
-                </button>
+                {selectedLine === idx && (
+                  <div className="absolute top-3 right-3 w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center">
+                    <Check className="w-4 h-4" />
+                  </div>
+                )}
               </div>
             );
           })}
+        </div>
+        {/* Central Generate Proposal Button */}
+        <div className="text-center pt-4">
+          {selectedLine === null ? (
+            <p className="text-sm text-muted-foreground mb-3">Clique em uma das opções acima para selecionar</p>
+          ) : (
+            <p className="text-sm text-muted-foreground mb-3">
+              Selecionado: <span className="font-semibold text-primary">{LINE_NAMES[systemCards[selectedLine].line]}</span>
+            </p>
+          )}
+          <button
+            onClick={() => {
+              if (selectedLine === null) {
+                toast.error('Selecione uma opção de sistema (TLS Plus ou TLS Prime Micro) antes de gerar a proposta.');
+                return;
+              }
+              generateProposal(selectedLine);
+            }}
+            className="solar-btn-primary px-8 py-3 text-base flex items-center justify-center gap-2 mx-auto"
+          >
+            Gerar Proposta <ArrowRight className="w-5 h-5" />
+          </button>
         </div>
       </section>
 
