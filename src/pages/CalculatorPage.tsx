@@ -368,7 +368,7 @@ export default function CalculatorPage() {
 
     const custom = customKits[card.line];
     const isCustom = custom?.enabled;
-    const sellerData = settings.sellers?.find(s => s.name === client.seller);
+    const sellerData = activeSellers.find(s => s.nome === client.seller);
 
     const proposal: Proposal = {
       id: editMode && editProposalId ? editProposalId : crypto.randomUUID(),
@@ -392,7 +392,7 @@ export default function CalculatorPage() {
       dimensioning: card.dimensioning,
       irradiation,
       monthlyIrradiation: monthlyIrr || undefined,
-      sellerPhone: sellerData?.phone || '',
+      sellerPhone: sellerData?.telefone || '',
       sellerEmail: sellerData?.email || '',
       microInverterCount: card.microCount,
       inverterBrand: card.inverterBrand,
