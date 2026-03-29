@@ -289,3 +289,125 @@ function PartnersSection() {
     </div>
   );
 }
+
+const DIFERENCIAIS_ITEMS = [
+  { key: 'empresa_solida', title: 'Empresa sólida', defaultUrl: 'https://static.wixstatic.com/media/c2ae0d_a39bd5c40b7548248101a986677e534a~mv2.jpg' },
+  { key: 'sistema_completo', title: 'Sistema solar completo', defaultUrl: 'https://static.wixstatic.com/media/c2ae0d_894355b5cb6445ba9c1277ddecfb6ec6~mv2.png' },
+  { key: 'analise_drone', title: 'Análise 3D com drone', defaultUrl: 'https://static.wixstatic.com/media/c2ae0d_3e01f00f92804e79ac321e54ad8f4d75~mv2.jpg' },
+];
+
+function DiferenciaisSection() {
+  const [images, setImages] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState<string | null>(null);
+
+  const loadImages = async () => {
+    const { data } = await supabase.from('configuracoes').select('*').eq('chave', 'diferenciais_images').maybeSingle();
+    if (data?.valor && typeof data.valor === 'object') {
+      setImages(data.valor as Record<string, string>);
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => { loadImages(); }, []);
+
+  const saveImages = async (updated: Record<string, string>) => {
+    const { data: existing } = await supabase.from('configuracoes').select('id').eq('chave', 'diferenciais_images').maybeSingle();
+    if (existing) {
+      await supabase.from('configuracoes').update({ valor: updated as any }).eq('chave', 'diferenciais_images');
+    } else {
+      await supabase.from('configuracoes').insert({ chave: 'diferenciais_images', valor: updated as any });
+    }
+    setImages(updated);
+  };
+
+  const handleUpload = async (key: string, file: File) => {
+    setUploading(key);
+    const ext = file.name.split('.').pop();
+    const path = `diferenciais/${key}_${Date.now()}.${ext}`;
+    const { error } = await supabase.storage.from('site-content').upload(path, file);
+    if (error) { toast.error('Erro ao fazer upload'); setUploading(null); return; }
+    const { data: urlData } = supabase.storage.from('site-content').getPublicUrl(path);
+    const updated = { ...images, [key]: urlData.publicUrl };
+    await saveImages(updated);
+    setUploading(null);
+    toast.success('Imagem atualizada!');
+  };
+
+  const handleUrlChange = async (key: string, url: string) => {
+    const updated = { ...images, [key]: url };
+    await saveImages(updated);
+    toast.success('URL atualizada!');
+  };
+
+  const handleRemove = async (key: string) => {
+    const updated = { ...images };
+    delete updated[key];
+    await saveImages(updated);
+    toast.success('Imagem removida!');
+  };
+
+  if (loading) return <div className="flex justify-center py-8"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary" /></div>;
+
+  return (
+    <div className="solar-card p-6 space-y-6">
+      <div>
+        <h2 className="text-lg font-bold text-primary">Imagens dos Diferenciais</h2>
+        <p className="text-sm text-muted-foreground mt-1">Gerencie as imagens que aparecem ao clicar nos cards de diferenciais na landing page e proposta.</p>
+      </div>
+
+      <div className="space-y-4">
+        {DIFERENCIAIS_ITEMS.map(item => {
+          const currentUrl = images[item.key] || '';
+          const displayUrl = currentUrl || item.defaultUrl;
+          const isDefault = !currentUrl;
+          const [editingUrl, setEditingUrl] = useState(false);
+          const [urlInput, setUrlInput] = useState(currentUrl);
+
+          return (
+            <div key={item.key} className="rounded-xl border border-border p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="font-semibold text-sm">{item.title}</h3>
+                {isDefault && <span className="text-xs bg-muted px-2 py-0.5 rounded-full text-muted-foreground">Imagem padrão</span>}
+                {!isDefault && <span className="text-xs bg-primary/10 px-2 py-0.5 rounded-full text-primary">Personalizada</span>}
+              </div>
+
+              <div className="flex gap-4 items-start">
+                <img src={displayUrl} alt={item.title} className="w-32 h-24 rounded-lg object-cover border border-border" />
+                <div className="flex-1 space-y-2">
+                  <div className="flex gap-2 flex-wrap">
+                    <label className="solar-btn-outline text-xs py-1.5 px-3 flex items-center gap-1 cursor-pointer">
+                      <Upload className="w-3.5 h-3.5" /> Upload
+                      <input type="file" accept="image/*" className="hidden" onChange={e => {
+                        const f = e.target.files?.[0];
+                        if (f) handleUpload(item.key, f);
+                      }} disabled={uploading === item.key} />
+                    </label>
+                    <button onClick={() => { setEditingUrl(!editingUrl); setUrlInput(currentUrl); }}
+                      className="solar-btn-outline text-xs py-1.5 px-3 flex items-center gap-1">
+                      <LinkIcon className="w-3.5 h-3.5" /> URL
+                    </button>
+                    {!isDefault && (
+                      <button onClick={() => handleRemove(item.key)}
+                        className="text-xs py-1.5 px-3 rounded-lg border border-destructive/30 text-destructive hover:bg-destructive/10 flex items-center gap-1">
+                        <Trash2 className="w-3.5 h-3.5" /> Remover
+                      </button>
+                    )}
+                  </div>
+                  {uploading === item.key && <p className="text-xs text-muted-foreground">Enviando...</p>}
+                  {editingUrl && (
+                    <div className="flex gap-2">
+                      <input className="solar-input text-xs flex-1" value={urlInput} onChange={e => setUrlInput(e.target.value)} placeholder="https://..." />
+                      <button onClick={() => { handleUrlChange(item.key, urlInput); setEditingUrl(false); }}
+                        className="solar-btn-primary text-xs py-1.5 px-3"><Save className="w-3.5 h-3.5" /></button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
