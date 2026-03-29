@@ -21,11 +21,11 @@ interface PartnerLogo {
 }
 
 export default function SiteContentTab() {
-  const [section, setSection] = useState<'portfolio' | 'partners'>('portfolio');
+  const [section, setSection] = useState<'portfolio' | 'partners' | 'diferenciais'>('portfolio');
 
   return (
     <div className="space-y-4">
-      <div className="flex gap-2">
+      <div className="flex gap-2 flex-wrap">
         <button onClick={() => setSection('portfolio')}
           className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${section === 'portfolio' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/70'}`}>
           Portfólio de Obras
@@ -34,9 +34,15 @@ export default function SiteContentTab() {
           className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${section === 'partners' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/70'}`}>
           Parceiros
         </button>
+        <button onClick={() => setSection('diferenciais')}
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${section === 'diferenciais' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/70'}`}>
+          Diferenciais
+        </button>
       </div>
 
-      {section === 'portfolio' ? <PortfolioSection /> : <PartnersSection />}
+      {section === 'portfolio' && <PortfolioSection />}
+      {section === 'partners' && <PartnersSection />}
+      {section === 'diferenciais' && <DiferenciaisSection />}
     </div>
   );
 }
