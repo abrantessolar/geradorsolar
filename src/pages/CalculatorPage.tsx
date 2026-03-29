@@ -897,7 +897,7 @@ export default function CalculatorPage() {
             }}
             className="solar-btn-primary px-8 py-3 text-base flex items-center justify-center gap-2 mx-auto"
           >
-            Gerar Proposta <ArrowRight className="w-5 h-5" />
+            {editMode ? 'Atualizar Proposta' : 'Gerar Proposta'} <ArrowRight className="w-5 h-5" />
           </button>
         </div>
       </section>
