@@ -127,6 +127,35 @@ export async function updatePropostaStatusDB(id: string, status: string) {
 
 export async function markPropostaViewedDB(id: string) {
   await supabase.from('propostas').update({ visualizado_em: new Date().toISOString(), status: 'visualizada' }).eq('id', id);
+  await addHistoricoDB(id, 'visualizada_cliente', null, { timestamp: new Date().toISOString() });
+}
+
+// ─── HISTÓRICO ───
+export async function addHistoricoDB(propostaId: string, acao: string, usuarioId: string | null, detalhes?: any) {
+  await supabase.from('historico_propostas' as any).insert({
+    proposta_id: propostaId,
+    acao,
+    usuario_id: usuarioId,
+    detalhes: detalhes || {},
+  });
+}
+
+export async function getHistoricoDB(propostaId: string) {
+  const { data } = await supabase
+    .from('historico_propostas' as any)
+    .select('*')
+    .eq('proposta_id', propostaId)
+    .order('criado_em', { ascending: false });
+  return data || [];
+}
+
+export async function duplicatePropostaDB(originalId: string, userId: string | null): Promise<string | null> {
+  const original = await getPropostaByIdDB(originalId);
+  if (!original) return null;
+  const newProposal = { ...original, id: crypto.randomUUID(), status: 'enviada' as const, cetApplied: null };
+  const newId = await savePropostaDB(newProposal as any);
+  await addHistoricoDB(newId, 'criada', userId, { origem: 'duplicacao', proposta_original: originalId });
+  return newId;
 }
 
 // ─── TABELA DE PREÇOS ───

@@ -176,6 +176,41 @@ export type Database = {
         }
         Relationships: []
       }
+      historico_propostas: {
+        Row: {
+          acao: string
+          criado_em: string
+          detalhes: Json | null
+          id: string
+          proposta_id: string
+          usuario_id: string | null
+        }
+        Insert: {
+          acao: string
+          criado_em?: string
+          detalhes?: Json | null
+          id?: string
+          proposta_id: string
+          usuario_id?: string | null
+        }
+        Update: {
+          acao?: string
+          criado_em?: string
+          detalhes?: Json | null
+          id?: string
+          proposta_id?: string
+          usuario_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "historico_propostas_proposta_id_fkey"
+            columns: ["proposta_id"]
+            isOneToOne: false
+            referencedRelation: "propostas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       logos_parceiros: {
         Row: {
           ativo: boolean

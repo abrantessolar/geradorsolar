@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Plus, Minus, ChevronDown, ChevronUp, Zap, Sun, TrendingUp, ArrowRight, AlertTriangle, Eye, EyeOff, CreditCard, Settings2, Check } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import CustomKitForm, { CustomKitData, defaultCustomKit, calcCustomBreakdown } from '@/components/CustomKitForm';
@@ -46,30 +46,66 @@ export default function CalculatorPage() {
   const isAuthenticated = !!session;
   const settings = getSettings();
   const navigate = useNavigate();
+  const location = useLocation();
   const activeSellers = settings.sellers.filter(s => s.active);
+
+  // Edit mode: pre-fill from existing proposal
+  const editProposal = (location.state as any)?.editProposal || null;
+  const [editMode, setEditMode] = useState(!!editProposal);
+  const [editProposalId, setEditProposalId] = useState<string | null>(editProposal?.id || null);
+  const [editNumero, setEditNumero] = useState<string | null>(editProposal?.numero_proposta || null);
 
   const defaultDist = settings.distributors?.find(d => d.name === settings.defaultDistributor);
   const [selectedDistributor, setSelectedDistributor] = useState(settings.defaultDistributor || 'ELEKTRO');
 
-  const [client, setClient] = useState<ClientData>({
-    id: '', name: '', state: 'MS', city: 'Três Lagoas', networkType: 'bifasica',
-    kwhPrice: defaultDist?.kwhPrice || 0.85, seller: activeSellers[0]?.name || '',
-  });
+  const ep = editProposal?.dados_completos || editProposal;
+  const [client, setClient] = useState<ClientData>(
+    ep?.clientData || {
+      id: '', name: '', state: 'MS', city: 'Três Lagoas', networkType: 'bifasica',
+      kwhPrice: defaultDist?.kwhPrice || 0.85, seller: activeSellers[0]?.name || '',
+    }
+  );
 
-  const [units, setUnits] = useState<(ConsumerUnit & { mode: ConsumptionMode; monthlyValues: MonthlyConsumption })[]>([
-    { id: '1', name: 'Principal', averageKwh: 350, mode: 'average', monthlyValues: emptyMonthly() },
-  ]);
-  const [equipment, setEquipment] = useState<EquipmentItem[]>([]);
+  const [units, setUnits] = useState<(ConsumerUnit & { mode: ConsumptionMode; monthlyValues: MonthlyConsumption })[]>(() => {
+    if (ep?.consumerUnits && ep.consumerUnits.length > 0) {
+      return ep.consumerUnits.map((u: any) => ({
+        id: u.id, name: u.name, averageKwh: u.averageKwh,
+        mode: u.monthlyValues ? 'monthly' as const : 'average' as const,
+        monthlyValues: u.monthlyValues || emptyMonthly(),
+      }));
+    }
+    return [{ id: '1', name: 'Principal', averageKwh: 350, mode: 'average' as const, monthlyValues: emptyMonthly() }];
+  });
+  const [equipment, setEquipment] = useState<EquipmentItem[]>(ep?.equipment || []);
   const [eqOpen, setEqOpen] = useState(false);
   const [panelDelta, setPanelDelta] = useState(0);
   const [paymentTab, setPaymentTab] = useState<'financing' | 'card'>('financing');
   const [showCostPanel, setShowCostPanel] = useState(false);
-  const [selectedLine, setSelectedLine] = useState<number | null>(null);
-  const [customKits, setCustomKits] = useState<Record<string, CustomKitData>>({
-    essencial: defaultCustomKit(0),
-    excellence: defaultCustomKit(0),
-    premium: defaultCustomKit(0),
+  const [selectedLine, setSelectedLine] = useState<number | null>(() => {
+    if (ep?.selectedLine) {
+      const idx = LINES.indexOf(ep.selectedLine as any);
+      return idx >= 0 ? idx : null;
+    }
+    return null;
   });
+  const [customKits, setCustomKits] = useState<Record<string, CustomKitData>>(() => {
+    const base = {
+      essencial: defaultCustomKit(0),
+      excellence: defaultCustomKit(0),
+      premium: defaultCustomKit(0),
+    };
+    if (ep?.customKit) {
+      base[ep.selectedLine] = ep.customKit;
+    }
+    return base;
+  });
+
+  // Show toast when loading from edit
+  useEffect(() => {
+    if (editProposal && editNumero) {
+      toast.success(`Calculadora carregada com os dados da proposta ${editNumero}`);
+    }
+  }, []);
 
   // City autocomplete
   const [citySuggestions, setCitySuggestions] = useState<{ cidade: string; uf: string }[]>([]);
@@ -306,7 +342,7 @@ export default function CalculatorPage() {
     setEquipment(prev => prev.map(e => e.id === id ? { ...e, [field]: value } : e));
   };
 
-  const generateProposal = (lineIdx: number) => {
+  const generateProposal = async (lineIdx: number) => {
     const card = systemCards[lineIdx];
     const consumerUnitsForProposal: ConsumerUnit[] = units.map(u => ({
       id: u.id,
@@ -317,13 +353,11 @@ export default function CalculatorPage() {
 
     const custom = customKits[card.line];
     const isCustom = custom?.enabled;
-
-    // Find seller details
     const sellerData = settings.sellers?.find(s => s.name === client.seller);
 
     const proposal: Proposal = {
-      id: crypto.randomUUID(),
-      clientData: { ...client, id: crypto.randomUUID() },
+      id: editMode && editProposalId ? editProposalId : crypto.randomUUID(),
+      clientData: { ...client, id: editMode ? (ep?.clientData?.id || crypto.randomUUID()) : crypto.randomUUID() },
       consumption, consumerUnits: consumerUnitsForProposal, equipment,
       selectedLine: card.line,
       selectedKit: isCustom
@@ -337,9 +371,9 @@ export default function CalculatorPage() {
       installmentValues: card.installments,
       cardInstallments: card.cardInstallments,
       costBreakdown: card.costBreakdown,
-      cetApplied: null,
-      status: 'enviada',
-      createdAt: new Date().toISOString(),
+      cetApplied: editMode ? (ep?.cetApplied || null) : null,
+      status: editMode ? (ep?.status || 'enviada') : 'enviada',
+      createdAt: editMode ? (ep?.createdAt || new Date().toISOString()) : new Date().toISOString(),
       dimensioning: card.dimensioning,
       irradiation,
       monthlyIrradiation: monthlyIrr || undefined,
@@ -351,14 +385,27 @@ export default function CalculatorPage() {
       panelBrand: card.panelBrand,
       panelPowerLabel: card.panelPowerLabel,
       customKit: isCustom ? custom : undefined,
+      numero_proposta: editNumero || undefined,
     };
-    // Save to localStorage (fallback) and Supabase
+
     saveProposal(proposal);
-    savePropostaDB(proposal).then(dbId => {
+    try {
+      const dbId = await savePropostaDB(proposal);
+      if (editMode) {
+        const { addHistoricoDB } = await import('@/data/supabaseStore');
+        await addHistoricoDB(dbId, 'editada', session?.user?.id || null, {
+          updatedAt: new Date().toISOString(),
+          updatedBy: session?.user?.email || 'desconhecido',
+        });
+        toast.success(`Proposta ${editNumero} atualizada!`);
+      } else {
+        const { addHistoricoDB } = await import('@/data/supabaseStore');
+        await addHistoricoDB(dbId, 'criada', session?.user?.id || null, {});
+      }
       navigate(`/proposta/${dbId}`);
-    }).catch(() => {
+    } catch {
       navigate(`/proposta/${proposal.id}`);
-    });
+    }
   };
 
   return (
@@ -850,7 +897,7 @@ export default function CalculatorPage() {
             }}
             className="solar-btn-primary px-8 py-3 text-base flex items-center justify-center gap-2 mx-auto"
           >
-            Gerar Proposta <ArrowRight className="w-5 h-5" />
+            {editMode ? 'Atualizar Proposta' : 'Gerar Proposta'} <ArrowRight className="w-5 h-5" />
           </button>
         </div>
       </section>

@@ -1,7 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { getProposals, saveProposal, getSettings, getSocialProofs, lookupIrradiation, getPriceTable } from '@/data/store';
-import { getPropostaByIdDB, markPropostaViewedDB, getSettingsDB } from '@/data/supabaseStore';
+import { getPropostaByIdDB, markPropostaViewedDB, getSettingsDB, addHistoricoDB } from '@/data/supabaseStore';
 import { getCidadesIrradianciaDB } from '@/data/supabaseStore';
 import {
   formatCurrency, formatNumber, calcInstallments, calcDimensioning,
@@ -34,16 +34,30 @@ export default function ProposalPage() {
   const settings = getSettings();
   const socialProofs = getSocialProofs().filter(s => s.active);
 
+  // Header scroll behavior for authenticated users
+  const [headerVisible, setHeaderVisible] = useState(true);
+  const lastScrollY = useRef(0);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    const handleScroll = () => {
+      const currentY = window.scrollY;
+      setHeaderVisible(currentY < lastScrollY.current || currentY < 50);
+      lastScrollY.current = currentY;
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [isAuthenticated]);
+
   useEffect(() => {
     async function loadProposal() {
-      // Try Supabase first
       const dbProposal = await getPropostaByIdDB(id || '');
       if (dbProposal) {
         setProposal(dbProposal);
-        // Mark as viewed
-        markPropostaViewedDB(id || '');
+        if (!isAuthenticated) {
+          markPropostaViewedDB(id || '');
+        }
       } else {
-        // Fallback to localStorage
         const proposals = getProposals();
         const localProposal = proposals.find(p => p.id === id);
         setProposal(localProposal || null);
@@ -86,14 +100,11 @@ export default function ProposalPage() {
     if (!proposal) return [];
     const savedData = proposal.dados_completos || proposal;
     const selectedLine = savedData.selectedLine || proposal.selectedLine;
-    
-    // Only compute the selected line card
     const linesToShow = [selectedLine];
     
     return linesToShow.map(line => {
       const isSelectedLine = line === selectedLine;
       
-      // For the selected line with no panel delta, use saved data
       if (isSelectedLine && panelDelta === 0) {
         const savedKit = savedData.selectedKit;
         const savedDim = savedData.dimensioning || proposal.dimensioning;
@@ -128,7 +139,6 @@ export default function ProposalPage() {
         };
       }
       
-      // When panels are adjusted, recalculate from price table
       const priceTable = getPriceTable();
       const ptEntries = priceTable.filter(e => e[line] !== null && e[line]! > 0 && e.panels >= finalPanels);
       ptEntries.sort((a, b) => a.panels - b.panels);
@@ -245,7 +255,6 @@ export default function ProposalPage() {
     return null;
   }, [cashflowData]);
 
-  // Share functions
   const proposalUrl = typeof window !== 'undefined' ? `${window.location.origin}/proposta/${id}` : '';
 
   const handleCopyLink = async () => {
@@ -253,7 +262,6 @@ export default function ProposalPage() {
       await navigator.clipboard.writeText(proposalUrl);
       toast.success('Link copiado!', { description: 'Cole o link e envie para o cliente.' });
     } catch {
-      // Fallback
       const input = document.createElement('input');
       input.value = proposalUrl;
       document.body.appendChild(input);
@@ -292,6 +300,8 @@ export default function ProposalPage() {
       doc.save(getFileName());
       toast.dismiss();
       toast.success('PDF gerado com sucesso!');
+      // Track download
+      addHistoricoDB(id || '', 'pdf_baixado', session?.user?.id || null, {});
     } catch (err) {
       toast.dismiss();
       toast.error('Erro ao gerar PDF');
@@ -312,6 +322,15 @@ export default function ProposalPage() {
     } catch (err) {
       toast.dismiss();
       toast.error('Erro ao gerar visualização');
+    }
+  };
+
+  const handleGoBack = () => {
+    if (isAuthenticated && proposal) {
+      // Navigate to calculator with proposal data for editing
+      navigate('/orcamentos', { state: { editProposal: proposal } });
+    } else {
+      navigate('/');
     }
   };
 
@@ -340,6 +359,7 @@ export default function ProposalPage() {
     if (cet > 0) {
       const updated = { ...proposal, cetApplied: cet, installmentValues: calcInstallments(proposal.totalPrice, cet) };
       saveProposal(updated);
+      addHistoricoDB(id || '', 'cet_atualizada', session?.user?.id || null, { cet_anterior: proposal.cetApplied, cet_nova: cet });
       setCetModal(false);
       window.location.reload();
     }
@@ -353,56 +373,62 @@ export default function ProposalPage() {
 
   return (
     <div className={`min-h-screen bg-background ${isPrinting ? 'print-mode' : ''}`}>
-      {/* Action bar */}
-      <div className="no-print sticky top-0 z-50 bg-card border-b border-border/50 shadow-sm">
-        <div className="container flex items-center justify-between py-3">
-          <button onClick={() => navigate('/')} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
-            <ArrowLeft className="w-4 h-4" /> Voltar
-          </button>
-          <div className="flex flex-col sm:flex-row gap-2">
-            <button onClick={handlePreviewPDF} className="solar-btn-outline text-sm py-2 px-3 flex items-center justify-center gap-1">
-              <Eye className="w-4 h-4" /> Visualizar PDF
-            </button>
-            <button onClick={handleDownloadPDF} className="solar-btn-primary text-sm py-2 px-3 flex items-center justify-center gap-1">
-              <Download className="w-4 h-4" /> Baixar PDF
-            </button>
-            <div className="relative">
-              <button onClick={() => setShowShareMenu(!showShareMenu)}
-                className="solar-btn-outline text-sm py-2 px-3 flex items-center gap-1">
-                <Share2 className="w-4 h-4" /> Compartilhar
+      {/* AUTHENTICATED: Compact collapsible header */}
+      {isAuthenticated && (
+        <div className={`no-print fixed top-0 left-0 right-0 z-50 transition-transform duration-300 ${headerVisible ? 'translate-y-0' : '-translate-y-full'}`}>
+          <div className="bg-card/90 backdrop-blur-sm border-b border-border/30 shadow-sm">
+            <div className="container flex items-center justify-between h-12">
+              <button onClick={handleGoBack} className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors">
+                <ArrowLeft className="w-3.5 h-3.5" /> Voltar à calculadora
               </button>
-              {showShareMenu && (
-                <div className="absolute right-0 mt-2 w-56 bg-card border border-border rounded-xl shadow-xl z-50 overflow-hidden">
-                  <button onClick={handleCopyLink}
-                    className="w-full text-left px-4 py-3 hover:bg-muted flex items-center gap-3 text-sm transition-colors">
-                    <Share2 className="w-4 h-4 text-primary" />
-                    <div>
-                      <p className="font-medium">Copiar link</p>
-                      <p className="text-xs text-muted-foreground">Cole onde quiser</p>
-                    </div>
+              <div className="flex gap-1.5">
+                <button onClick={handlePreviewPDF} className="solar-btn-outline text-xs py-1 px-2.5 flex items-center gap-1">
+                  <Eye className="w-3.5 h-3.5" /> PDF
+                </button>
+                <button onClick={handleDownloadPDF} className="solar-btn-primary text-xs py-1 px-2.5 flex items-center gap-1">
+                  <Download className="w-3.5 h-3.5" /> Baixar
+                </button>
+                <div className="relative">
+                  <button onClick={() => setShowShareMenu(!showShareMenu)}
+                    className="solar-btn-outline text-xs py-1 px-2.5 flex items-center gap-1">
+                    <Share2 className="w-3.5 h-3.5" />
                   </button>
-                  <button onClick={handleShareWhatsApp}
-                    className="w-full text-left px-4 py-3 hover:bg-muted flex items-center gap-3 text-sm transition-colors border-t border-border">
-                    <MessageCircle className="w-4 h-4 text-green-600" />
-                    <div>
-                      <p className="font-medium">Enviar via WhatsApp</p>
-                      <p className="text-xs text-muted-foreground">Escolha o contato</p>
+                  {showShareMenu && (
+                    <div className="absolute right-0 mt-1 w-48 bg-card border border-border rounded-lg shadow-xl z-50 overflow-hidden">
+                      <button onClick={handleCopyLink}
+                        className="w-full text-left px-3 py-2 hover:bg-muted flex items-center gap-2 text-xs transition-colors">
+                        <Share2 className="w-3 h-3 text-primary" /> Copiar link
+                      </button>
+                      <button onClick={handleShareWhatsApp}
+                        className="w-full text-left px-3 py-2 hover:bg-muted flex items-center gap-2 text-xs transition-colors border-t border-border">
+                        <MessageCircle className="w-3 h-3 text-green-600" /> WhatsApp
+                      </button>
                     </div>
-                  </button>
+                  )}
                 </div>
-              )}
+                <button onClick={() => setCetModal(true)} className="solar-btn-outline text-xs py-1 px-2.5 flex items-center gap-1">
+                  <Edit className="w-3.5 h-3.5" /> CET
+                </button>
+              </div>
             </div>
-            <button onClick={() => setCetModal(true)} className="solar-btn-outline text-sm py-2 px-3 flex items-center gap-1">
-              <Edit className="w-4 h-4" /> Editar CET
-            </button>
           </div>
         </div>
-      </div>
+      )}
+
+      {/* PUBLIC: Floating download button only */}
+      {!isAuthenticated && (
+        <button
+          onClick={handleDownloadPDF}
+          className="no-print fixed bottom-6 right-6 z-50 bg-muted/80 hover:bg-muted text-foreground text-xs py-2 px-3 rounded-lg shadow-md backdrop-blur-sm flex items-center gap-1.5 transition-colors"
+        >
+          <Download className="w-3.5 h-3.5" /> Baixar PDF
+        </button>
+      )}
 
       {/* Click outside to close share menu */}
       {showShareMenu && <div className="fixed inset-0 z-40" onClick={() => setShowShareMenu(false)} />}
 
-      <div className="max-w-5xl mx-auto py-4 sm:py-8 px-2 sm:px-4 space-y-8 sm:space-y-12 print-container">
+      <div className={`max-w-5xl mx-auto py-4 sm:py-8 px-2 sm:px-4 space-y-8 sm:space-y-12 print-container ${isAuthenticated ? 'pt-16' : ''}`}>
         {/* COVER */}
         <section className="text-center space-y-6 py-16 relative overflow-hidden print-page print-cover">
           <div className="absolute inset-0 opacity-5 no-print">
@@ -433,55 +459,56 @@ export default function ProposalPage() {
           </div>
         </section>
 
-        {/* PANEL ADJUSTMENT */}
-        <section className="solar-card p-6 space-y-4 no-print">
-          <h2 className="text-xl font-bold text-primary text-center flex items-center justify-center gap-2">
-            <Zap className="w-5 h-5 text-secondary" /> Ajuste seu Sistema
-          </h2>
-          <div className="flex items-center justify-center gap-6">
-            <button
-              onClick={() => setPanelDelta(d => {
-                const next = basePanelCount + d - 1;
-                return next >= basePanelCount - 2 && next >= 1 ? d - 1 : d;
-              })}
-              disabled={finalPanels <= Math.max(1, basePanelCount - 2)}
-              className="w-12 h-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xl font-bold hover:bg-primary/90 disabled:opacity-40 transition-all active:scale-95"
-            >
-              −
-            </button>
-            <div className="text-center">
-              <p className="text-4xl font-bold text-primary">{finalPanels}</p>
-              <p className="text-sm text-muted-foreground">placas</p>
-            </div>
-            <button
-              onClick={() => setPanelDelta(d => d + 1)}
-              className="w-12 h-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xl font-bold hover:bg-primary/90 transition-all active:scale-95"
-            >
-              +
-            </button>
-          </div>
-          {/* Indicators */}
-          {selectedCard && (() => {
-            const gen = selectedCard.dimensioning.monthlyGeneration;
-            const cons = selectedCard.dimensioning.avgMonthlyKwh;
-            const exc = gen - cons;
-            return (
-              <div className="space-y-0.5 text-center" style={{ fontSize: '12px', color: '#888' }}>
-                <p>Consumo: {formatNumber(cons, 0)} kWh/mês</p>
-                <p>Geração estimada: {formatNumber(gen, 0)} kWh/mês</p>
-                <p style={{ color: exc >= 0 ? '#3BB273' : '#E84855' }}>
-                  Excedente: {exc >= 0 ? '+' : '−'}{formatNumber(Math.abs(exc), 0)} kWh/mês
-                </p>
+        {/* PANEL ADJUSTMENT - only for authenticated */}
+        {isAuthenticated && (
+          <section className="solar-card p-6 space-y-4 no-print">
+            <h2 className="text-xl font-bold text-primary text-center flex items-center justify-center gap-2">
+              <Zap className="w-5 h-5 text-secondary" /> Ajuste seu Sistema
+            </h2>
+            <div className="flex items-center justify-center gap-6">
+              <button
+                onClick={() => setPanelDelta(d => {
+                  const next = basePanelCount + d - 1;
+                  return next >= basePanelCount - 2 && next >= 1 ? d - 1 : d;
+                })}
+                disabled={finalPanels <= Math.max(1, basePanelCount - 2)}
+                className="w-12 h-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xl font-bold hover:bg-primary/90 disabled:opacity-40 transition-all active:scale-95"
+              >
+                −
+              </button>
+              <div className="text-center">
+                <p className="text-4xl font-bold text-primary">{finalPanels}</p>
+                <p className="text-sm text-muted-foreground">placas</p>
               </div>
-            );
-          })()}
-          <p className="text-center text-xs text-muted-foreground">
-            Mínimo recomendado: {recommendedPanels} placas
-            {panelDelta !== 0 && (
-              <button onClick={() => setPanelDelta(0)} className="ml-2 text-primary underline">Resetar</button>
-            )}
-          </p>
-        </section>
+              <button
+                onClick={() => setPanelDelta(d => d + 1)}
+                className="w-12 h-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xl font-bold hover:bg-primary/90 transition-all active:scale-95"
+              >
+                +
+              </button>
+            </div>
+            {selectedCard && (() => {
+              const gen = selectedCard.dimensioning.monthlyGeneration;
+              const cons = selectedCard.dimensioning.avgMonthlyKwh;
+              const exc = gen - cons;
+              return (
+                <div className="space-y-0.5 text-center" style={{ fontSize: '12px', color: '#888' }}>
+                  <p>Consumo: {formatNumber(cons, 0)} kWh/mês</p>
+                  <p>Geração estimada: {formatNumber(gen, 0)} kWh/mês</p>
+                  <p style={{ color: exc >= 0 ? '#3BB273' : '#E84855' }}>
+                    Excedente: {exc >= 0 ? '+' : '−'}{formatNumber(Math.abs(exc), 0)} kWh/mês
+                  </p>
+                </div>
+              );
+            })()}
+            <p className="text-center text-xs text-muted-foreground">
+              Mínimo recomendado: {recommendedPanels} placas
+              {panelDelta !== 0 && (
+                <button onClick={() => setPanelDelta(0)} className="ml-2 text-primary underline">Resetar</button>
+              )}
+            </p>
+          </section>
+        )}
 
         {/* SELECTED LINE CARD */}
         <section className="space-y-4 print-page">
@@ -571,7 +598,7 @@ export default function ProposalPage() {
           </div>
         </section>
 
-        {/* INTERNAL COST BREAKDOWN - Only for authenticated users */}
+        {/* INTERNAL COST BREAKDOWN - Only for authenticated users, NOT in public view */}
         {isAuthenticated && selectedCard && (
           <section className="solar-card p-6 space-y-4 no-print">
             <button onClick={() => setShowCostPanel(p => !p)}
