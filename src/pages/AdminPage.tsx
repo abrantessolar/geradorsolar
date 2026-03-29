@@ -1034,7 +1034,7 @@ function ProposalsTab() {
           <table className="w-full text-sm">
             <thead><tr className="border-b border-border text-left text-muted-foreground">
               <th className="py-2 px-2">Nº</th><th className="py-2 px-2">Cliente</th><th className="py-2 px-2">Vendedor</th>
-              <th className="py-2 px-2">Data</th><th className="py-2 px-2">Valor</th>
+              <th className="py-2 px-2">Data</th><th className="py-2 px-2">Linha</th><th className="py-2 px-2">Valor</th>
               <th className="py-2 px-2">Status</th><th className="py-2 px-2"></th>
             </tr></thead>
             <tbody>
@@ -1044,6 +1044,14 @@ function ProposalsTab() {
                   <td className="py-2 px-2 font-medium">{p.clientData?.name || 'Sem nome'}</td>
                   <td className="py-2 px-2">{p.clientData?.seller}</td>
                   <td className="py-2 px-2">{new Date(p.createdAt).toLocaleDateString('pt-BR')}</td>
+                  <td className="py-2 px-2">
+                    <span className="solar-badge bg-primary/10 text-primary text-xs">
+                      {LINE_NAMES[p.selectedLine || p.dados_completos?.selectedLine] || p.selectedLine || '—'}
+                    </span>
+                    {(p.customKit || p.dados_completos?.customKit) && (
+                      <span className="solar-badge bg-secondary/20 text-secondary-foreground text-xs ml-1">Personalizada</span>
+                    )}
+                  </td>
                   <td className="py-2 px-2 font-medium">{formatCurrency(p.totalPrice)}</td>
                   <td className="py-2 px-2"><span className={`solar-badge ${STATUS_COLORS[p.status]}`}>{STATUS_LABELS[p.status]}</span></td>
                   <td className="py-2 px-2">

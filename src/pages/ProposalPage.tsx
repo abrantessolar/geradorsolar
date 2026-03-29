@@ -61,7 +61,7 @@ export default function ProposalPage() {
   const [cashflowInstallments, setCashflowInstallments] = useState(60);
   const [paymentTab, setPaymentTab] = useState<'financing' | 'card'>('financing');
   const [cashflowMode, setCashflowMode] = useState<'financing' | 'card' | 'cash'>('financing');
-  const [cashflowLine, setCashflowLine] = useState<string>(proposal?.selectedLine || 'excellence');
+  const [cashflowLine, setCashflowLine] = useState<string>(proposal?.selectedLine || 'essencial');
   const [cashflowPeriod, setCashflowPeriod] = useState(15);
   const [showShareMenu, setShowShareMenu] = useState(false);
   const [showCashflow, setShowCashflow] = useState(false);
@@ -775,17 +775,10 @@ export default function ProposalPage() {
                     <Shield className="w-5 h-5 text-secondary" /> Fluxo de Caixa Comparativo
                   </h3>
 
-                  {/* Line selector */}
+                  {/* Line info */}
                   <div className="space-y-1">
                     <label className="text-xs font-medium text-muted-foreground">Linha</label>
-                    <div className="grid grid-cols-2 gap-1">
-                      {LINES.map(line => (
-                        <button key={line} onClick={() => setCashflowLine(line)}
-                          className={`px-2 py-2 rounded text-xs sm:text-sm font-medium transition-colors text-center ${cashflowLine === line ? 'bg-secondary text-secondary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/70'}`}>
-                          {LINE_NAMES[line]}
-                        </button>
-                      ))}
-                    </div>
+                    <p className="text-sm font-semibold text-primary">{LINE_NAMES[proposal.selectedLine] || proposal.selectedLine}</p>
                   </div>
 
                   {/* Mode selector */}
