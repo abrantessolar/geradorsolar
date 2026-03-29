@@ -206,15 +206,43 @@ export default function ProposalPage() {
     setShowShareMenu(false);
   };
 
+  const getPdfDoc = async () => {
+    const doc = await generateProposalPDF(proposal, settings, lineCards, chartData, cashflowData);
+    return doc;
+  };
+
+  const getFileName = () => {
+    const numero = proposal.numero_proposta || 'TLS-0000';
+    const clientName = (proposal.clientData.name || 'Cliente').replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_');
+    return `Proposta_${numero}_${clientName}.pdf`;
+  };
+
   const handleDownloadPDF = async () => {
     try {
       toast.loading('Gerando PDF...');
-      await generateProposalPDF(proposal, settings, lineCards, chartData, cashflowData);
+      const doc = await getPdfDoc();
+      doc.save(getFileName());
       toast.dismiss();
       toast.success('PDF gerado com sucesso!');
     } catch (err) {
       toast.dismiss();
       toast.error('Erro ao gerar PDF');
+    }
+  };
+
+  const handlePreviewPDF = async () => {
+    try {
+      toast.loading('Gerando visualização...');
+      const doc = await getPdfDoc();
+      const blob = doc.output('blob');
+      const url = URL.createObjectURL(blob);
+      if (pdfBlobUrl) URL.revokeObjectURL(pdfBlobUrl);
+      setPdfBlobUrl(url);
+      setShowPdfViewer(true);
+      toast.dismiss();
+    } catch (err) {
+      toast.dismiss();
+      toast.error('Erro ao gerar visualização');
     }
   };
 
