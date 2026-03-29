@@ -534,19 +534,19 @@ export async function generateProposalPDF(
     doc.text(formatCurrency(item.value), sx + 10, y + 20);
   });
   y += 32;
+  } // end savings if
 
   // "Without solar" cards with softer edges
+  const noSolarItems: { years: number; value: number }[] = [];
+  if (tpl.financial.showWithout5) noSolarItems.push({ years: 5, value: calcWithout(5) });
+  if (tpl.financial.showWithout10) noSolarItems.push({ years: 10, value: calcWithout(10) });
+
+  if (noSolarItems.length > 0) {
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(11);
   setColor(RED_SOFT);
   doc.text('Quanto você pagaria sem energia solar', M, y);
   y += 7;
-
-  const noSolarItems = [
-    { years: 5, value: calcWithout(5) },
-    { years: 10, value: calcWithout(10) },
-    { years: 15, value: calcWithout(15) },
-  ];
   const nCardW = CW / 3 - 2;
   noSolarItems.forEach((item, i) => {
     const nx = M + i * (nCardW + 3);
