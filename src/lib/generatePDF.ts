@@ -50,7 +50,14 @@ export async function generateProposalPDF(
     doc.setFontSize(7);
     doc.setFont('helvetica', 'normal');
     setColor(WHITE);
-    const footerText = `${settings.company.phone}  |  ${settings.company.email}  |  CNPJ: ${settings.company.cnpj || ''}  |  ${settings.company.site || 'www.treslagoassolar.com.br'}  |  @treslagoassolar`;
+    const fp = tpl.footer;
+    const phone = fp.showPhone ? (fp.customPhone || settings.company.phone) : '';
+    const email = fp.showEmail ? (fp.customEmail || settings.company.email) : '';
+    const cnpj = fp.showCnpj ? `CNPJ: ${fp.customCnpj || settings.company.cnpj || ''}` : '';
+    const site = fp.showSite ? (fp.customSite || settings.company.site || 'www.treslagoassolar.com.br') : '';
+    const social = fp.showSocial ? (fp.customSocial || '@treslagoassolar') : '';
+    const footerParts = [phone, email, cnpj, site, social].filter(Boolean);
+    const footerText = footerParts.join('  |  ');
     doc.text(footerText, W / 2, fy + 5, { align: 'center' });
   };
 
@@ -112,10 +119,20 @@ export async function generateProposalPDF(
 
   // Overlay dynamic text on the cover image — NO green rectangle behind text
   // Proposal number top-right
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(9);
-  setColor(PRIMARY);
-  doc.text(numero, W - M, 16, { align: 'right' });
+  if (tpl.cover.showProposalNumber) {
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    setColor(PRIMARY);
+    doc.text(numero, W - M, 16, { align: 'right' });
+  }
+
+  // Optional header text above client name
+  if (tpl.cover.headerText) {
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    setColor([230, 230, 220]);
+    doc.text(tpl.cover.headerText, W / 2, barY - 4, { align: 'center' });
+  }
 
   // Client name — positioned on the green bar area of the template
   // The template's green bar is around Y=215-240, we place text there
@@ -127,8 +144,10 @@ export async function generateProposalPDF(
   doc.text(proposal.clientData.name.toUpperCase(), W / 2, barY + 5, { align: 'center' });
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(11);
-  setColor([230, 230, 220]);
-  doc.text(`${formatNumber(selectedCard?.dimensioning?.avgMonthlyKwh || 0, 0)} kWh/mês  •  ${proposal.clientData.city} — ${proposal.clientData.state || 'MS'}`, W / 2, barY + 13, { align: 'center' });
+  const cityLine = tpl.cover.showCity
+    ? `${formatNumber(selectedCard?.dimensioning?.avgMonthlyKwh || 0, 0)} kWh/mês  •  ${proposal.clientData.city} — ${proposal.clientData.state || 'MS'}`
+    : `${formatNumber(selectedCard?.dimensioning?.avgMonthlyKwh || 0, 0)} kWh/mês`;
+  doc.text(cityLine, W / 2, barY + 13, { align: 'center' });
 
   // Representative info — black text, 25% to the left
   const sellerName = proposal.clientData.seller || '';
