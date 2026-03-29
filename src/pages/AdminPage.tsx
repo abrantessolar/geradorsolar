@@ -30,7 +30,6 @@ export default function AdminPage() {
 
   const adminTabs = [
     { key: 'users' as const, label: 'Usuários', icon: Users, roles: ['admin'] },
-    { key: 'sellers' as const, label: 'Vendedores', icon: Users, roles: ['admin'] },
     { key: 'prices' as const, label: 'Tabela de Preços', icon: DollarSign, roles: ['admin'] },
     { key: 'pricing' as const, label: 'Precificação', icon: Settings, roles: ['admin'] },
     { key: 'irradiation' as const, label: 'Irradiação', icon: MapPin, roles: ['admin', 'orcamentista'] },
@@ -59,7 +58,6 @@ export default function AdminPage() {
       </div>
 
       {tab === 'users' && isAdmin && <UsersTab />}
-      {tab === 'sellers' && <SellersTab />}
       {tab === 'prices' && <PriceTableTab />}
       {tab === 'pricing' && <PricingTab />}
       {tab === 'irradiation' && <IrradiationTab />}
