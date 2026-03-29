@@ -855,27 +855,8 @@ export default function ProposalPage() {
         {/* DIFERENCIAIS */}
         <Diferenciais compact />
 
-        {/* SOCIAL PROOF */}
-        {socialProofs.length > 0 && (
-          <section className="solar-card p-8 space-y-6 no-print">
-            <h2 className="text-2xl font-bold text-primary">Nossos Projetos</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              {socialProofs.slice(0, 3).map(sp => (
-                <div key={sp.id} className="cursor-pointer group"
-                  onClick={() => sp.type === 'video' ? setVideoModal(sp.url) : setLightbox(sp.url)}>
-                  <div className="aspect-video rounded-lg bg-muted flex items-center justify-center overflow-hidden">
-                    {sp.type === 'video' ? (
-                      <div className="text-center"><Sun className="w-10 h-10 text-secondary mx-auto" /><p className="text-xs mt-2">▶ Assistir</p></div>
-                    ) : (
-                      <img src={sp.url} alt={sp.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                    )}
-                  </div>
-                  <p className="text-sm font-medium mt-2">{sp.title}</p>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
+        {/* PORTFÓLIO DE OBRAS */}
+        <ProposalPortfolio />
 
         {/* PRINT FOOTER */}
         <div className="hidden print-only-block text-center py-8 border-t border-border mt-8">
