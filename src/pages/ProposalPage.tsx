@@ -234,7 +234,8 @@ export default function ProposalPage() {
     try {
       toast.loading('Gerando visualização...');
       const doc = await getPdfDoc();
-      const blob = doc.output('blob');
+      const arrayBuffer = doc.output('arraybuffer');
+      const blob = new Blob([arrayBuffer], { type: 'application/pdf' });
       const url = URL.createObjectURL(blob);
       if (pdfBlobUrl) URL.revokeObjectURL(pdfBlobUrl);
       setPdfBlobUrl(url);
@@ -830,7 +831,9 @@ export default function ProposalPage() {
                 </button>
               </div>
             </div>
-            <iframe src={pdfBlobUrl} className="flex-1 w-full rounded-b-xl bg-white" title="PDF Preview" />
+            <object data={`${pdfBlobUrl}#toolbar=1&navpanes=1&scrollbar=1`} type="application/pdf" className="flex-1 w-full rounded-b-xl bg-white">
+              <iframe src={`${pdfBlobUrl}#toolbar=1&navpanes=1&scrollbar=1`} className="w-full h-full rounded-b-xl bg-white" title="PDF Preview" />
+            </object>
           </div>
         </div>
       )}
