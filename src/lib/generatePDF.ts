@@ -66,19 +66,37 @@ export async function generateProposalPDF(
   };
 
   // Compress image via canvas: resize + JPEG quality
-  const compressImage = async (src: string, maxWidth: number, quality: number): Promise<string | null> => {
+  // When targetRatio is provided, crops to that aspect ratio (object-fit: cover behavior)
+  const compressImage = async (src: string, maxWidth: number, quality: number, targetRatio?: number): Promise<string | null> => {
     try {
       const response = await fetch(src);
       const blob = await response.blob();
       const bitmap = await createImageBitmap(blob);
-      const scale = Math.min(1, maxWidth / bitmap.width);
-      const w = Math.round(bitmap.width * scale);
-      const h = Math.round(bitmap.height * scale);
+
+      let sx = 0, sy = 0, sw = bitmap.width, sh = bitmap.height;
+
+      if (targetRatio) {
+        // Cover crop: fill target ratio, center-crop the excess
+        const srcRatio = bitmap.width / bitmap.height;
+        if (srcRatio > targetRatio) {
+          // Image is wider than target — crop sides
+          sw = Math.round(bitmap.height * targetRatio);
+          sx = Math.round((bitmap.width - sw) / 2);
+        } else {
+          // Image is taller than target — crop top/bottom
+          sh = Math.round(bitmap.width / targetRatio);
+          sy = Math.round((bitmap.height - sh) / 2);
+        }
+      }
+
+      const scale = Math.min(1, maxWidth / sw);
+      const w = Math.round(sw * scale);
+      const h = Math.round(sh * scale);
       const canvas = document.createElement('canvas');
       canvas.width = w;
       canvas.height = h;
       const ctx = canvas.getContext('2d')!;
-      ctx.drawImage(bitmap, 0, 0, w, h);
+      ctx.drawImage(bitmap, sx, sy, sw, sh, 0, 0, w, h);
       bitmap.close();
       return canvas.toDataURL('image/jpeg', quality);
     } catch { return null; }
