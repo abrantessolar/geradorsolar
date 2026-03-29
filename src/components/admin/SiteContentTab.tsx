@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Plus, Trash2, Save, GripVertical, Eye, EyeOff, Upload, Image, Link as LinkIcon } from 'lucide-react';
+import { Plus, Trash2, Save, GripVertical, Eye, EyeOff, Upload, Image, Link as LinkIcon, FileText } from 'lucide-react';
+import PdfTemplateEditor from './PdfTemplateEditor';
 import { toast } from 'sonner';
 
 interface PortfolioPhoto {
