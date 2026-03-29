@@ -136,10 +136,23 @@ export interface Proposal {
   selectedKit: { inverter: Kit | null; panel: Kit | null; panelCount: number };
   totalPrice: number;
   installmentValues: Record<number, number>;
+  cardInstallments?: Record<number, { total: number; perMonth: number }>;
+  costBreakdown?: import('./calculations').CostBreakdown;
   cetApplied: number | null;
   status: 'enviada' | 'visualizada' | 'aprovada' | 'financiamento' | 'fechada';
   createdAt: string;
   dimensioning: DimensioningResult;
+  irradiation?: number;
+  monthlyIrradiation?: number[];
+  sellerPhone?: string;
+  sellerEmail?: string;
+  microInverterCount?: number;
+  inverterBrand?: string;
+  inverterModel?: string;
+  panelBrand?: string;
+  panelPowerLabel?: string;
+  customKit?: any;
+  numero_proposta?: string;
 }
 
 export interface DimensioningResult {

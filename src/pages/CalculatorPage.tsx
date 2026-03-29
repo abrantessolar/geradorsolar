@@ -315,6 +315,9 @@ export default function CalculatorPage() {
     const custom = customKits[card.line];
     const isCustom = custom?.enabled;
 
+    // Find seller details
+    const sellerData = settings.sellers?.find(s => s.name === client.seller);
+
     const proposal: Proposal = {
       id: crypto.randomUUID(),
       clientData: { ...client, id: crypto.randomUUID() },
@@ -329,12 +332,23 @@ export default function CalculatorPage() {
         : { inverter: card.inverter, panel: card.panel, panelCount: card.panelCount },
       totalPrice: card.totalPrice,
       installmentValues: card.installments,
+      cardInstallments: card.cardInstallments,
+      costBreakdown: card.costBreakdown,
       cetApplied: null,
       status: 'enviada',
       createdAt: new Date().toISOString(),
       dimensioning: card.dimensioning,
+      irradiation,
+      monthlyIrradiation: monthlyIrr || undefined,
+      sellerPhone: sellerData?.phone || '',
+      sellerEmail: sellerData?.email || '',
+      microInverterCount: card.microCount,
+      inverterBrand: card.inverterBrand,
+      inverterModel: card.inverterModel,
+      panelBrand: card.panelBrand,
+      panelPowerLabel: card.panelPowerLabel,
       customKit: isCustom ? custom : undefined,
-    } as any;
+    };
     // Save to localStorage (fallback) and Supabase
     saveProposal(proposal);
     savePropostaDB(proposal).then(dbId => {
