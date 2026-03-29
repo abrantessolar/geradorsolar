@@ -1,6 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import type { AdminSettings, Kit, Proposal, SocialProof, PriceTableEntry, Seller, Distributor } from './types';
 import { CA_MATERIAL_TABLE_DEFAULT, DEFAULT_CARD_RATES } from './types';
+import { saveKits, savePriceTable } from './store';
 
 // ─── VENDEDORES ───
 export async function getVendedoresDB(): Promise<Seller[]> {
