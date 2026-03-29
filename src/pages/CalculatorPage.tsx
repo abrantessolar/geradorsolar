@@ -59,7 +59,12 @@ export default function CalculatorPage() {
         .in('role', ['vendedor', 'orcamentista'])
         .eq('ativo', true)
         .order('nome');
-      setActiveSellers(data || []);
+      const sellers = data || [];
+      setActiveSellers(sellers);
+      // Set default seller if not already set
+      if (!client.seller && sellers.length > 0) {
+        setClient(p => ({ ...p, seller: sellers[0].nome }));
+      }
     };
     fetchSellers();
   }, []);
