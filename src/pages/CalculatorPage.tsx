@@ -63,6 +63,10 @@ export default function CalculatorPage() {
   const [panelDelta, setPanelDelta] = useState(0);
   const [paymentTab, setPaymentTab] = useState<'financing' | 'card'>('financing');
   const [showCostPanel, setShowCostPanel] = useState(false);
+  const [customKits, setCustomKits] = useState<Record<string, CustomKitData>>({
+    excellence: defaultCustomKit(0),
+    premium: defaultCustomKit(0),
+  });
 
   // City autocomplete
   const [citySuggestions, setCitySuggestions] = useState<{ cidade: string; uf: string }[]>([]);
