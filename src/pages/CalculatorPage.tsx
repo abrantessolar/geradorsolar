@@ -93,27 +93,25 @@ export default function CalculatorPage() {
     }
   };
 
-  const totalAverage = units.reduce((s, u) => s + u.averageKwh, 0);
+  const totalAverage = units.reduce((s, u) => {
+    if (u.mode === 'monthly') {
+      return s + MONTH_KEYS.reduce((ms, k) => ms + u.monthlyValues[k], 0) / 12;
+    }
+    return s + u.averageKwh;
+  }, 0);
 
-  // Combine all monthly UCs into a single consumption object
-  const combinedMonthly = useMemo<MonthlyConsumption>(() => {
+  // Combine all UCs into a single consumption object (respecting per-UC mode)
+  const consumption = useMemo<MonthlyConsumption>(() => {
     const result = emptyMonthly();
-    monthlyUnits.forEach(mu => {
-      MONTH_KEYS.forEach(k => {
-        (result as any)[k] += mu.values[k];
-      });
+    units.forEach(u => {
+      if (u.mode === 'monthly') {
+        MONTH_KEYS.forEach(k => { (result as any)[k] += u.monthlyValues[k]; });
+      } else {
+        MONTH_KEYS.forEach(k => { (result as any)[k] += Math.round(u.averageKwh * SEASONAL_FACTORS[k]); });
+      }
     });
     return result;
-  }, [monthlyUnits]);
-
-  const consumption = useMemo<MonthlyConsumption>(() => {
-    if (mode === 'average') {
-      const result = {} as any;
-      MONTH_KEYS.forEach(k => result[k] = Math.round(totalAverage * SEASONAL_FACTORS[k]));
-      return result;
-    }
-    return combinedMonthly;
-  }, [mode, totalAverage, combinedMonthly]);
+  }, [units]);
 
   // Try local first, then async DB lookup
   const localLookup = lookupIrradiation(client.state, client.city);
@@ -176,25 +174,23 @@ export default function CalculatorPage() {
     const baseDim = systemCards[0]?.dimensioning;
     if (!baseDim) return [];
     return MONTH_KEYS.map((k, i) => {
-      // Use monthly irradiance if available
       const irrMonth = monthlyIrr ? monthlyIrr[i] : irradiation * SEASONAL_FACTORS[k];
       const gen = baseDim.powerKwp * irrMonth * 30 * (1 - settings.systemLoss / 100);
       const row: any = { month: MONTH_LABELS[i], geração: Math.round(gen) };
-      if (mode === 'average') {
-        if (units.length > 1) {
-          units.forEach((u, j) => {
+      if (units.length > 1) {
+        units.forEach((u, j) => {
+          if (u.mode === 'monthly') {
+            row[`UC ${j + 1}`] = u.monthlyValues[k];
+          } else {
             row[`UC ${j + 1}`] = Math.round(u.averageKwh * SEASONAL_FACTORS[k]);
-          });
-        } else {
-          row['consumo'] = Math.round(totalAverage * SEASONAL_FACTORS[k]);
-        }
+          }
+        });
       } else {
-        if (monthlyUnits.length > 1) {
-          monthlyUnits.forEach((mu, j) => {
-            row[`UC ${j + 1}`] = mu.values[k];
-          });
+        const u = units[0];
+        if (u?.mode === 'monthly') {
+          row['consumo'] = u.monthlyValues[k];
         } else {
-          row['consumo'] = combinedMonthly[k];
+          row['consumo'] = Math.round((u?.averageKwh || 0) * SEASONAL_FACTORS[k]);
         }
       }
       equipment.forEach((eq, idx) => {
@@ -202,12 +198,12 @@ export default function CalculatorPage() {
       });
       return row;
     });
-  }, [consumption, equipment, systemCards, irradiation, monthlyIrr, settings.systemLoss, units, mode, monthlyUnits, combinedMonthly, totalAverage]);
+  }, [consumption, equipment, systemCards, irradiation, monthlyIrr, settings.systemLoss, units, totalAverage]);
 
   const handleEstimate = (unitIdx: number) => {
-    setMonthlyUnits(prev => prev.map((mu, i) => {
-      if (i !== unitIdx) return mu;
-      return { ...mu, values: estimateFullConsumption(mu.values) };
+    setUnits(prev => prev.map((u, i) => {
+      if (i !== unitIdx) return u;
+      return { ...u, monthlyValues: estimateFullConsumption(u.monthlyValues) };
     }));
   };
 
