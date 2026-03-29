@@ -610,23 +610,30 @@ export default function CalculatorPage() {
                   {isPremium ? (
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Micro inversores</span>
-                      <span className="font-medium">{card.microCount}× {card.inverter?.brand} {card.inverter?.model}</span>
+                      <span className="font-medium">{card.microCount}× {card.inverterBrand} {card.inverterModel}</span>
                     </div>
                   ) : (
                     <>
-                      <div className="flex justify-between"><span className="text-muted-foreground">Inversor</span><span className="font-medium">{card.inverter?.brand} {card.inverter?.model}</span></div>
+                      <div className="flex justify-between"><span className="text-muted-foreground">Inversor</span><span className="font-medium">{card.inverterBrand} {card.inverterModel}</span></div>
                       <div className="flex justify-between items-start">
                         <span className="text-muted-foreground">Suporta até</span>
                         <span className="font-medium text-right" style={limitColor ? { color: limitColor } : undefined}>
-                          {maxP} placas
-                          {remaining <= 0 && <span className="block text-xs">Limite atingido — inversor será atualizado na próxima placa</span>}
+                          {maxP} placas de {card.panelPowerLabel}
+                          {remaining <= 2 && remaining > 0 && <span className="block text-xs" style={{ color: '#E8B84B' }}>Quase no limite do inversor</span>}
+                          {remaining <= 0 && <span className="block text-xs text-destructive">Limite atingido — próximo kit usa inversor maior</span>}
                         </span>
                       </div>
                     </>
                   )}
-                  <div className="flex justify-between"><span className="text-muted-foreground">Placas</span><span className="font-medium">{card.panelCount}× {card.panel?.brand}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Placas</span><span className="font-medium">{card.panelCount}× {card.panelBrand} ({card.panelPowerLabel})</span></div>
                   <div className="flex justify-between"><span className="text-muted-foreground">Potência</span><span className="font-medium">{formatNumber(card.dimensioning.powerKwp)} kWp</span></div>
                   <div className="flex justify-between"><span className="text-muted-foreground">Geração/mês</span><span className="font-medium">{formatNumber(card.dimensioning.monthlyGeneration, 0)} kWh</span></div>
+                  {card.hasPriceTableCost && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground text-xs">Fonte</span>
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700">Tabela de preços</span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="text-center py-3 border-y border-border">
