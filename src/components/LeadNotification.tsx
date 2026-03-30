@@ -30,7 +30,7 @@ export function useNewLeadsCount() {
 
     loadCount();
 
-    const channelName = `leads-count-${Date.now()}`;
+    const channelName = `leads-count-${crypto.randomUUID()}`;
     const channel = supabase
       .channel(channelName)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'leads' }, () => {
