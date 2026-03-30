@@ -467,7 +467,12 @@ export default function CalculatorPage() {
         toast.success(`Proposta ${editNumero} atualizada!`);
       } else {
         const { addHistoricoDB } = await import('@/data/supabaseStore');
-        await addHistoricoDB(dbId, 'criada', session?.user?.id || null, {});
+        const sellerName = client.seller;
+        const creatorName = profile?.nome || session?.user?.email || 'desconhecido';
+        const isOnBehalf = profile && profile.role !== 'vendedor' && sellerName && sellerName !== profile.nome;
+        await addHistoricoDB(dbId, 'criada', session?.user?.id || null, {
+          ...(isOnBehalf ? { geradaPor: creatorName, emNomeDe: sellerName } : {}),
+        });
       }
       navigate(`/proposta/${dbId}`);
     } catch {
