@@ -108,10 +108,11 @@ export default function PublicSimulator() {
 
   const equipmentMonthlyKwh = useMemo(() => {
     return equipments.reduce((total, eq) => {
+      const fator = eq.catalog.fatorServico ?? 1;
       if (eq.catalog.unit === 'km') {
-        return total + eq.catalog.powerKw * (eq.kmPerMonth || 0) * eq.quantity;
+        return total + eq.catalog.powerKw * fator * (eq.kmPerMonth || 0) * eq.quantity;
       }
-      return total + eq.catalog.powerKw * eq.hoursPerDay * eq.daysPerMonth * eq.quantity;
+      return total + eq.catalog.powerKw * fator * eq.hoursPerDay * eq.daysPerMonth * eq.quantity;
     }, 0);
   }, [equipments]);
 
