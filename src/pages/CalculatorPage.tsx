@@ -712,8 +712,13 @@ export default function CalculatorPage() {
                           </button>
                         </div>
                       </div>
-                      <div className="text-xs font-semibold text-primary text-right">
-                        Consumo total: {formatNumber(eqMonthly, 0)} kWh/mês
+                      <div className="text-xs text-primary text-right space-y-0.5">
+                        <div className="font-semibold">Consumo total: {formatNumber(eqMonthly, 0)} kWh/mês</div>
+                        {(eq as any).fatorServico && (eq as any).fatorServico < 1 && (
+                          <div className="text-muted-foreground font-normal">
+                            Potência: {eq.powerKw.toFixed(2)} kW × {Math.round(((eq as any).fatorServico || 1) * 100)}% = {(eq.powerKw * ((eq as any).fatorServico || 1)).toFixed(2)} kW efetivo
+                          </div>
+                        )}
                       </div>
                     </div>
                   );

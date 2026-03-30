@@ -427,8 +427,13 @@ export default function PublicSimulator() {
                             </div>
                           </div>
 
-                          <div className="text-xs font-semibold text-secondary text-right">
-                            Consumo total: +{Math.round(eqKwh)} kWh/mês
+                          <div className="text-xs font-semibold text-secondary text-right space-y-0.5">
+                            <div>Consumo total: +{Math.round(eqKwh)} kWh/mês</div>
+                            {fator < 1 && (
+                              <div className="font-normal text-muted-foreground">
+                                Potência: {eq.catalog.powerKw.toFixed(2)} kW × {Math.round(fator * 100)}% = {(eq.catalog.powerKw * fator).toFixed(2)} kW efetivo
+                              </div>
+                            )}
                           </div>
                         </div>
                       );
