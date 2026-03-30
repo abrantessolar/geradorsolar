@@ -393,6 +393,7 @@ export default function CalculatorPage() {
       value: cat.unit === 'km' ? 1000 : cat.defaultHoursPerDay,
       powerKw: cat.powerKw,
       quantity: 1,
+      fatorServico: cat.fatorServico,
     }]);
   };
 
