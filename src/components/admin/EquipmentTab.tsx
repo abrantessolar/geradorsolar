@@ -11,6 +11,7 @@ interface EquipmentRow {
   tipo_medicao: string;
   dias_mes_padrao: number;
   horas_dia_padrao: number | null;
+  fator_servico: number;
   ativo: boolean;
 }
 
