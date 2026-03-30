@@ -196,6 +196,9 @@ export default function EquipmentTab() {
               )}
               <div><label className="block text-sm font-medium mb-1">Dias/mês padrão</label>
                 <input className="solar-input" type="number" value={form.dias_mes_padrao} onChange={e => setForm(p => ({ ...p, dias_mes_padrao: e.target.value }))} /></div>
+              <div><label className="block text-sm font-medium mb-1">Fator de Serviço (%)</label>
+                <input className="solar-input" type="number" min="10" max="100" value={form.fator_servico} onChange={e => setForm(p => ({ ...p, fator_servico: e.target.value }))} />
+                <p className="text-xs text-muted-foreground mt-1">Quanto o equipamento trabalha em relação à potência nominal (10-100%)</p></div>
               <button className="w-full solar-btn-primary flex items-center justify-center gap-2" onClick={handleSave} disabled={saving}>
                 <Save className="w-4 h-4" /> {saving ? 'Salvando...' : 'Salvar'}
               </button>
