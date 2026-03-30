@@ -51,6 +51,7 @@ export default function EquipmentTab() {
       tipo_medicao: item.tipo_medicao,
       dias_mes_padrao: String(item.dias_mes_padrao),
       horas_dia_padrao: item.horas_dia_padrao != null ? String(item.horas_dia_padrao) : '',
+      fator_servico: String(Math.round((item.fator_servico || 0.80) * 100)),
     });
     setShowForm(true);
   };
