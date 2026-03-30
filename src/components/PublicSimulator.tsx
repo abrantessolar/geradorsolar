@@ -71,6 +71,7 @@ export default function PublicSimulator() {
           defaultHoursPerDay: Number(d.horas_dia_padrao) || 0,
           defaultDaysPerMonth: d.dias_mes_padrao,
           unit: d.tipo_medicao === 'km' ? 'km' as const : 'day' as const,
+          fatorServico: Number(d.fator_servico) || 0.80,
         }));
         setDbEquipment(mapped);
         const cats = [...new Set(mapped.map(e => e.category))];

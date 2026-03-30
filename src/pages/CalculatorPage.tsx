@@ -107,6 +107,7 @@ export default function CalculatorPage() {
           type: d.id, label: d.nome, category: d.categoria, powerKw: Number(d.potencia_kw),
           defaultHoursPerDay: Number(d.horas_dia_padrao) || 0, defaultDaysPerMonth: d.dias_mes_padrao,
           unit: d.tipo_medicao === 'km' ? 'km' as const : 'day' as const,
+          fatorServico: Number(d.fator_servico) || 0.80,
         }));
         const cats = mapped.reduce<Record<string, EquipmentCatalogItem[]>>((acc, item) => {
           if (!acc[item.category]) acc[item.category] = [];
