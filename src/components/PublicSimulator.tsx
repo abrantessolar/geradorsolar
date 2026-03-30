@@ -370,9 +370,10 @@ export default function PublicSimulator() {
                   <div className="space-y-3 pt-2 border-t border-border">
                     <h4 className="text-sm font-bold text-foreground">Equipamentos adicionados</h4>
                     {equipments.map(eq => {
+                      const fator = eq.catalog.fatorServico ?? 1;
                       const eqKwh = eq.catalog.unit === 'km'
-                        ? eq.catalog.powerKw * (eq.kmPerMonth || 0) * eq.quantity
-                        : eq.catalog.powerKw * eq.hoursPerDay * eq.daysPerMonth * eq.quantity;
+                        ? eq.catalog.powerKw * fator * (eq.kmPerMonth || 0) * eq.quantity
+                        : eq.catalog.powerKw * fator * eq.hoursPerDay * eq.daysPerMonth * eq.quantity;
                       return (
                         <div key={eq.id} className="p-3 rounded-lg bg-muted text-sm space-y-2">
                           <div className="flex items-center justify-between">
