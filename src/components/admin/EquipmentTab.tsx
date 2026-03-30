@@ -125,6 +125,7 @@ export default function EquipmentTab() {
                 <th className="py-2 px-2">Nome</th>
                 <th className="py-2 px-2">Categoria</th>
                 <th className="py-2 px-2">Potência (kW)</th>
+                <th className="py-2 px-2">Fator Serv.</th>
                 <th className="py-2 px-2">Tipo</th>
                 <th className="py-2 px-2">h/dia</th>
                 <th className="py-2 px-2">dias/mês</th>
