@@ -205,6 +205,7 @@ export interface EquipmentCatalogItem {
   defaultHoursPerDay: number;
   defaultDaysPerMonth: number;
   unit: 'day' | 'use' | 'km';
+  fatorServico: number;
 }
 
 export const EQUIPMENT_CATALOG: EquipmentCatalogItem[] = [
