@@ -136,9 +136,10 @@ export default function PublicSimulator() {
       const row: any = { name: label, Geração: gen, Consumo: cons };
       // Add equipment bars
       equipments.forEach(eq => {
+        const fator = eq.catalog.fatorServico ?? 1;
         const eqKwh = eq.catalog.unit === 'km'
-          ? eq.catalog.powerKw * (eq.kmPerMonth || 0) * eq.quantity
-          : eq.catalog.powerKw * eq.hoursPerDay * eq.daysPerMonth * eq.quantity;
+          ? eq.catalog.powerKw * fator * (eq.kmPerMonth || 0) * eq.quantity
+          : eq.catalog.powerKw * fator * eq.hoursPerDay * eq.daysPerMonth * eq.quantity;
         const eqLabel = eq.quantity > 1 ? `${eq.catalog.label} (x${eq.quantity})` : eq.catalog.label;
         row[eqLabel] = Math.round(eqKwh * SEASONAL_FACTORS[MONTH_KEYS[i]]);
       });
