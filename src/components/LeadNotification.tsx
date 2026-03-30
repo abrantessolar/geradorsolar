@@ -30,8 +30,9 @@ export function useNewLeadsCount() {
 
     loadCount();
 
+    const channelName = `leads-count-${Date.now()}`;
     const channel = supabase
-      .channel('leads-count')
+      .channel(channelName)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'leads' }, () => {
         loadCount();
       })
