@@ -66,6 +66,7 @@ export default function EquipmentTab() {
       tipo_medicao: form.tipo_medicao,
       dias_mes_padrao: parseInt(form.dias_mes_padrao) || 30,
       horas_dia_padrao: form.horas_dia_padrao ? parseFloat(form.horas_dia_padrao) : null,
+      fator_servico: Math.max(0.10, Math.min(1.00, (parseInt(form.fator_servico) || 80) / 100)),
     };
 
     if (editItem) {
