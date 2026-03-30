@@ -38,7 +38,7 @@ export default function EquipmentTab() {
 
   const openCreate = () => {
     setEditItem(null);
-    setForm({ nome: '', categoria: CATEGORIES[0], potencia_kw: '', tipo_medicao: 'hora', dias_mes_padrao: '30', horas_dia_padrao: '8' });
+    setForm({ nome: '', categoria: CATEGORIES[0], potencia_kw: '', tipo_medicao: 'hora', dias_mes_padrao: '30', horas_dia_padrao: '8', fator_servico: '80' });
     setShowForm(true);
   };
 
