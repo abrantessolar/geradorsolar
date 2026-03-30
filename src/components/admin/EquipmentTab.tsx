@@ -23,7 +23,7 @@ export default function EquipmentTab() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editItem, setEditItem] = useState<EquipmentRow | null>(null);
-  const [form, setForm] = useState({ nome: '', categoria: CATEGORIES[0], potencia_kw: '', tipo_medicao: 'hora', dias_mes_padrao: '30', horas_dia_padrao: '8' });
+  const [form, setForm] = useState({ nome: '', categoria: CATEGORIES[0], potencia_kw: '', tipo_medicao: 'hora', dias_mes_padrao: '30', horas_dia_padrao: '8', fator_servico: '80' });
   const [saving, setSaving] = useState(false);
   const [filter, setFilter] = useState('all');
 
