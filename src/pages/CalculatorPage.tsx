@@ -43,7 +43,8 @@ export default function CalculatorPage() {
   const location = useLocation();
 
   // Fetch active sellers from user_profiles (vendedor + orcamentista)
-  const [activeSellers, setActiveSellers] = useState<{ user_id: string; nome: string; telefone: string | null; email: string }[]>([]);
+  const [activeSellers, setActiveSellers] = useState<{ user_id: string; nome: string; telefone: string | null; email: string; role: string }[]>([]);
+  const { profile } = useAuth();
   useEffect(() => {
     const fetchSellers = async () => {
       const { supabase } = await import('@/integrations/supabase/client');
@@ -55,13 +56,18 @@ export default function CalculatorPage() {
         .order('nome');
       const sellers = data || [];
       setActiveSellers(sellers);
-      // Set default seller if not already set
+      // For vendedor: fix to own name; for others: default to first
       if (!client.seller && sellers.length > 0) {
-        setClient(p => ({ ...p, seller: sellers[0].nome }));
+        if (profile?.role === 'vendedor') {
+          const own = sellers.find(s => s.user_id === profile.user_id);
+          if (own) setClient(p => ({ ...p, seller: own.nome }));
+        } else {
+          setClient(p => ({ ...p, seller: sellers[0].nome }));
+        }
       }
     };
     fetchSellers();
-  }, []);
+  }, [profile]);
 
   // Edit mode: pre-fill from existing proposal
   const editProposal = (location.state as any)?.editProposal || null;
