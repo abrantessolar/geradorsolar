@@ -139,6 +139,7 @@ export default function EquipmentTab() {
                   <td className="py-2 px-2 font-medium">{item.nome}</td>
                   <td className="py-2 px-2 text-muted-foreground">{item.categoria}</td>
                   <td className="py-2 px-2">{item.potencia_kw}</td>
+                  <td className="py-2 px-2">{Math.round((item.fator_servico || 0.80) * 100)}%</td>
                   <td className="py-2 px-2 text-xs text-muted-foreground">{TIPO_LABELS[item.tipo_medicao] || item.tipo_medicao}</td>
                   <td className="py-2 px-2">{item.horas_dia_padrao ?? '—'}</td>
                   <td className="py-2 px-2">{item.dias_mes_padrao}</td>
