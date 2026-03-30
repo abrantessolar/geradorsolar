@@ -43,7 +43,8 @@ export default function CalculatorPage() {
   const location = useLocation();
 
   // Fetch active sellers from user_profiles (vendedor + orcamentista)
-  const [activeSellers, setActiveSellers] = useState<{ user_id: string; nome: string; telefone: string | null; email: string }[]>([]);
+  const [activeSellers, setActiveSellers] = useState<{ user_id: string; nome: string; telefone: string | null; email: string; role: string }[]>([]);
+  const { profile } = useAuth();
   useEffect(() => {
     const fetchSellers = async () => {
       const { supabase } = await import('@/integrations/supabase/client');
@@ -55,13 +56,18 @@ export default function CalculatorPage() {
         .order('nome');
       const sellers = data || [];
       setActiveSellers(sellers);
-      // Set default seller if not already set
+      // For vendedor: fix to own name; for others: default to first
       if (!client.seller && sellers.length > 0) {
-        setClient(p => ({ ...p, seller: sellers[0].nome }));
+        if (profile?.role === 'vendedor') {
+          const own = sellers.find(s => s.user_id === profile.user_id);
+          if (own) setClient(p => ({ ...p, seller: own.nome }));
+        } else {
+          setClient(p => ({ ...p, seller: sellers[0].nome }));
+        }
       }
     };
     fetchSellers();
-  }, []);
+  }, [profile]);
 
   // Edit mode: pre-fill from existing proposal
   const editProposal = (location.state as any)?.editProposal || null;
@@ -107,6 +113,7 @@ export default function CalculatorPage() {
           type: d.id, label: d.nome, category: d.categoria, powerKw: Number(d.potencia_kw),
           defaultHoursPerDay: Number(d.horas_dia_padrao) || 0, defaultDaysPerMonth: d.dias_mes_padrao,
           unit: d.tipo_medicao === 'km' ? 'km' as const : 'day' as const,
+          fatorServico: Number(d.fator_servico) || 0.80,
         }));
         const cats = mapped.reduce<Record<string, EquipmentCatalogItem[]>>((acc, item) => {
           if (!acc[item.category]) acc[item.category] = [];
@@ -392,6 +399,7 @@ export default function CalculatorPage() {
       value: cat.unit === 'km' ? 1000 : cat.defaultHoursPerDay,
       powerKw: cat.powerKw,
       quantity: 1,
+      fatorServico: cat.fatorServico,
     }]);
   };
 
@@ -459,7 +467,12 @@ export default function CalculatorPage() {
         toast.success(`Proposta ${editNumero} atualizada!`);
       } else {
         const { addHistoricoDB } = await import('@/data/supabaseStore');
-        await addHistoricoDB(dbId, 'criada', session?.user?.id || null, {});
+        const sellerName = client.seller;
+        const creatorName = profile?.nome || session?.user?.email || 'desconhecido';
+        const isOnBehalf = profile && profile.role !== 'vendedor' && sellerName && sellerName !== profile.nome;
+        await addHistoricoDB(dbId, 'criada', session?.user?.id || null, {
+          ...(isOnBehalf ? { geradaPor: creatorName, emNomeDe: sellerName } : {}),
+        });
       }
       navigate(`/proposta/${dbId}`);
     } catch {
@@ -542,10 +555,14 @@ export default function CalculatorPage() {
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">Vendedor</label>
-            <select className="solar-input" value={client.seller} onChange={e => setClient(p => ({ ...p, seller: e.target.value }))}>
-              <option value="">Selecione...</option>
-              {activeSellers.map(s => <option key={s.user_id} value={s.nome}>{s.nome}</option>)}
-            </select>
+            {profile?.role === 'vendedor' ? (
+              <input className="solar-input bg-muted" value={client.seller} readOnly disabled />
+            ) : (
+              <select className="solar-input" value={client.seller} onChange={e => setClient(p => ({ ...p, seller: e.target.value }))}>
+                <option value="">Selecione...</option>
+                {activeSellers.map(s => <option key={s.user_id} value={s.nome}>{s.nome}</option>)}
+              </select>
+            )}
           </div>
         </div>
       </section>
@@ -710,8 +727,13 @@ export default function CalculatorPage() {
                           </button>
                         </div>
                       </div>
-                      <div className="text-xs font-semibold text-primary text-right">
-                        Consumo total: {formatNumber(eqMonthly, 0)} kWh/mês
+                      <div className="text-xs text-primary text-right space-y-0.5">
+                        <div className="font-semibold">Consumo total: {formatNumber(eqMonthly, 0)} kWh/mês</div>
+                        {(eq as any).fatorServico && (eq as any).fatorServico < 1 && (
+                          <div className="text-muted-foreground font-normal">
+                            Potência: {eq.powerKw.toFixed(2)} kW × {Math.round(((eq as any).fatorServico || 1) * 100)}% = {(eq.powerKw * ((eq as any).fatorServico || 1)).toFixed(2)} kW efetivo
+                          </div>
+                        )}
                       </div>
                     </div>
                   );

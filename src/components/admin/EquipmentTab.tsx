@@ -11,6 +11,7 @@ interface EquipmentRow {
   tipo_medicao: string;
   dias_mes_padrao: number;
   horas_dia_padrao: number | null;
+  fator_servico: number;
   ativo: boolean;
 }
 
@@ -22,7 +23,7 @@ export default function EquipmentTab() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editItem, setEditItem] = useState<EquipmentRow | null>(null);
-  const [form, setForm] = useState({ nome: '', categoria: CATEGORIES[0], potencia_kw: '', tipo_medicao: 'hora', dias_mes_padrao: '30', horas_dia_padrao: '8' });
+  const [form, setForm] = useState({ nome: '', categoria: CATEGORIES[0], potencia_kw: '', tipo_medicao: 'hora', dias_mes_padrao: '30', horas_dia_padrao: '8', fator_servico: '80' });
   const [saving, setSaving] = useState(false);
   const [filter, setFilter] = useState('all');
 
@@ -37,7 +38,7 @@ export default function EquipmentTab() {
 
   const openCreate = () => {
     setEditItem(null);
-    setForm({ nome: '', categoria: CATEGORIES[0], potencia_kw: '', tipo_medicao: 'hora', dias_mes_padrao: '30', horas_dia_padrao: '8' });
+    setForm({ nome: '', categoria: CATEGORIES[0], potencia_kw: '', tipo_medicao: 'hora', dias_mes_padrao: '30', horas_dia_padrao: '8', fator_servico: '80' });
     setShowForm(true);
   };
 
@@ -50,6 +51,7 @@ export default function EquipmentTab() {
       tipo_medicao: item.tipo_medicao,
       dias_mes_padrao: String(item.dias_mes_padrao),
       horas_dia_padrao: item.horas_dia_padrao != null ? String(item.horas_dia_padrao) : '',
+      fator_servico: String(Math.round((item.fator_servico || 0.80) * 100)),
     });
     setShowForm(true);
   };
@@ -64,6 +66,7 @@ export default function EquipmentTab() {
       tipo_medicao: form.tipo_medicao,
       dias_mes_padrao: parseInt(form.dias_mes_padrao) || 30,
       horas_dia_padrao: form.horas_dia_padrao ? parseFloat(form.horas_dia_padrao) : null,
+      fator_servico: Math.max(0.10, Math.min(1.00, (parseInt(form.fator_servico) || 80) / 100)),
     };
 
     if (editItem) {
@@ -122,6 +125,7 @@ export default function EquipmentTab() {
                 <th className="py-2 px-2">Nome</th>
                 <th className="py-2 px-2">Categoria</th>
                 <th className="py-2 px-2">Potência (kW)</th>
+                <th className="py-2 px-2">Fator Serv.</th>
                 <th className="py-2 px-2">Tipo</th>
                 <th className="py-2 px-2">h/dia</th>
                 <th className="py-2 px-2">dias/mês</th>
@@ -135,6 +139,7 @@ export default function EquipmentTab() {
                   <td className="py-2 px-2 font-medium">{item.nome}</td>
                   <td className="py-2 px-2 text-muted-foreground">{item.categoria}</td>
                   <td className="py-2 px-2">{item.potencia_kw}</td>
+                  <td className="py-2 px-2">{Math.round((item.fator_servico || 0.80) * 100)}%</td>
                   <td className="py-2 px-2 text-xs text-muted-foreground">{TIPO_LABELS[item.tipo_medicao] || item.tipo_medicao}</td>
                   <td className="py-2 px-2">{item.horas_dia_padrao ?? '—'}</td>
                   <td className="py-2 px-2">{item.dias_mes_padrao}</td>
@@ -191,6 +196,9 @@ export default function EquipmentTab() {
               )}
               <div><label className="block text-sm font-medium mb-1">Dias/mês padrão</label>
                 <input className="solar-input" type="number" value={form.dias_mes_padrao} onChange={e => setForm(p => ({ ...p, dias_mes_padrao: e.target.value }))} /></div>
+              <div><label className="block text-sm font-medium mb-1">Fator de Serviço (%)</label>
+                <input className="solar-input" type="number" min="10" max="100" value={form.fator_servico} onChange={e => setForm(p => ({ ...p, fator_servico: e.target.value }))} />
+                <p className="text-xs text-muted-foreground mt-1">Quanto o equipamento trabalha em relação à potência nominal (10-100%)</p></div>
               <button className="w-full solar-btn-primary flex items-center justify-center gap-2" onClick={handleSave} disabled={saving}>
                 <Save className="w-4 h-4" /> {saving ? 'Salvando...' : 'Salvar'}
               </button>

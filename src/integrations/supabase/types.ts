@@ -114,6 +114,7 @@ export type Database = {
           categoria: string
           criado_em: string
           dias_mes_padrao: number
+          fator_servico: number
           horas_dia_padrao: number | null
           id: string
           nome: string
@@ -126,6 +127,7 @@ export type Database = {
           categoria: string
           criado_em?: string
           dias_mes_padrao?: number
+          fator_servico?: number
           horas_dia_padrao?: number | null
           id?: string
           nome: string
@@ -138,6 +140,7 @@ export type Database = {
           categoria?: string
           criado_em?: string
           dias_mes_padrao?: number
+          fator_servico?: number
           horas_dia_padrao?: number | null
           id?: string
           nome?: string

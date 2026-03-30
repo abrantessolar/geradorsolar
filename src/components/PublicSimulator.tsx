@@ -71,6 +71,7 @@ export default function PublicSimulator() {
           defaultHoursPerDay: Number(d.horas_dia_padrao) || 0,
           defaultDaysPerMonth: d.dias_mes_padrao,
           unit: d.tipo_medicao === 'km' ? 'km' as const : 'day' as const,
+          fatorServico: Number(d.fator_servico) || 0.80,
         }));
         setDbEquipment(mapped);
         const cats = [...new Set(mapped.map(e => e.category))];
@@ -107,10 +108,11 @@ export default function PublicSimulator() {
 
   const equipmentMonthlyKwh = useMemo(() => {
     return equipments.reduce((total, eq) => {
+      const fator = eq.catalog.fatorServico ?? 1;
       if (eq.catalog.unit === 'km') {
-        return total + eq.catalog.powerKw * (eq.kmPerMonth || 0) * eq.quantity;
+        return total + eq.catalog.powerKw * fator * (eq.kmPerMonth || 0) * eq.quantity;
       }
-      return total + eq.catalog.powerKw * eq.hoursPerDay * eq.daysPerMonth * eq.quantity;
+      return total + eq.catalog.powerKw * fator * eq.hoursPerDay * eq.daysPerMonth * eq.quantity;
     }, 0);
   }, [equipments]);
 
@@ -134,9 +136,10 @@ export default function PublicSimulator() {
       const row: any = { name: label, Geração: gen, Consumo: cons };
       // Add equipment bars
       equipments.forEach(eq => {
+        const fator = eq.catalog.fatorServico ?? 1;
         const eqKwh = eq.catalog.unit === 'km'
-          ? eq.catalog.powerKw * (eq.kmPerMonth || 0) * eq.quantity
-          : eq.catalog.powerKw * eq.hoursPerDay * eq.daysPerMonth * eq.quantity;
+          ? eq.catalog.powerKw * fator * (eq.kmPerMonth || 0) * eq.quantity
+          : eq.catalog.powerKw * fator * eq.hoursPerDay * eq.daysPerMonth * eq.quantity;
         const eqLabel = eq.quantity > 1 ? `${eq.catalog.label} (x${eq.quantity})` : eq.catalog.label;
         row[eqLabel] = Math.round(eqKwh * SEASONAL_FACTORS[MONTH_KEYS[i]]);
       });
@@ -367,9 +370,10 @@ export default function PublicSimulator() {
                   <div className="space-y-3 pt-2 border-t border-border">
                     <h4 className="text-sm font-bold text-foreground">Equipamentos adicionados</h4>
                     {equipments.map(eq => {
+                      const fator = eq.catalog.fatorServico ?? 1;
                       const eqKwh = eq.catalog.unit === 'km'
-                        ? eq.catalog.powerKw * (eq.kmPerMonth || 0) * eq.quantity
-                        : eq.catalog.powerKw * eq.hoursPerDay * eq.daysPerMonth * eq.quantity;
+                        ? eq.catalog.powerKw * fator * (eq.kmPerMonth || 0) * eq.quantity
+                        : eq.catalog.powerKw * fator * eq.hoursPerDay * eq.daysPerMonth * eq.quantity;
                       return (
                         <div key={eq.id} className="p-3 rounded-lg bg-muted text-sm space-y-2">
                           <div className="flex items-center justify-between">
@@ -423,8 +427,13 @@ export default function PublicSimulator() {
                             </div>
                           </div>
 
-                          <div className="text-xs font-semibold text-secondary text-right">
-                            Consumo total: +{Math.round(eqKwh)} kWh/mês
+                          <div className="text-xs font-semibold text-secondary text-right space-y-0.5">
+                            <div>Consumo total: +{Math.round(eqKwh)} kWh/mês</div>
+                            {fator < 1 && (
+                              <div className="font-normal text-muted-foreground">
+                                Potência: {eq.catalog.powerKw.toFixed(2)} kW × {Math.round(fator * 100)}% = {(eq.catalog.powerKw * fator).toFixed(2)} kW efetivo
+                              </div>
+                            )}
                           </div>
                         </div>
                       );

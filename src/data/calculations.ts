@@ -23,8 +23,9 @@ export function estimateFullConsumption(partial: Partial<MonthlyConsumption>): M
 }
 
 export function calcEquipmentMonthly(eq: EquipmentItem): number {
-  if (eq.unit === 'km') return (eq.powerKw || eq.dailyKwh) * eq.value;
-  return (eq.powerKw || eq.dailyKwh) * eq.hoursPerDay * eq.daysPerMonth;
+  const fator = (eq as any).fatorServico ?? 1;
+  if (eq.unit === 'km') return (eq.powerKw || eq.dailyKwh) * eq.value * fator;
+  return (eq.powerKw || eq.dailyKwh) * fator * eq.hoursPerDay * eq.daysPerMonth;
 }
 
 export function calcDimensioning(
