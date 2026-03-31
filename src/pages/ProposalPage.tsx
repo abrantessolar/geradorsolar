@@ -231,7 +231,8 @@ export default function ProposalPage() {
         const cardMonths = bestCard ? Number(Object.keys(selectedCard.cardInstallments).pop()) : 12;
         yearlyWithSolar = year === 0 ? (cardMonthly * Math.min(cardMonths, 12) + minFee * 12) : (year * 12 < cardMonths ? (cardMonthly * 12 + minFee * 12) : minFee * 12);
       } else {
-        const monthlyInstallment = selectedCard.installments[cashflowInstallments] || selectedCard.totalPrice / cashflowInstallments;
+        const instVal = selectedCard.installments[cashflowInstallments];
+        const monthlyInstallment = instVal ? (typeof instVal === 'number' ? instVal : (instVal as any).perMonth) : selectedCard.totalPrice / cashflowInstallments;
         const financingYears = cashflowInstallments / 12;
         yearlyWithSolar = year < financingYears
           ? (monthlyInstallment + minFee) * 12
