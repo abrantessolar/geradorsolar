@@ -171,9 +171,7 @@ export default function ProposalPage() {
       const panelsRemaining = isPremium ? 999 : maxPanels - usedPanels;
       const monthlyGeneration = powerKwp * irradiation * 30 * (1 - settings.systemLoss / 100);
       const surplus = monthlyGeneration - dim.avgMonthlyKwh;
-      const installments = proposal.cetApplied
-        ? calcInstallments(totalPrice, proposal.cetApplied)
-        : calcInstallments(totalPrice);
+      const installments = calcInstallments(totalPrice);
       const cardInstallments = calcCardInstallments(totalPrice, settings.creditCardRates);
 
       return {
