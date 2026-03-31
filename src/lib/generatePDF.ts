@@ -472,7 +472,8 @@ export async function generateProposalPDF(
     y += 5;
 
     const colW = CW / 2 - 2;
-    const cardEntries = Object.entries(selectedCard.cardInstallments);
+    const cardEntries = Object.entries(selectedCard.cardInstallments)
+      .sort(([a], [b]) => Number(b) - Number(a));
     const half = Math.ceil(cardEntries.length / 2);
     const col1 = cardEntries.slice(0, half);
     const col2 = cardEntries.slice(half);
