@@ -305,9 +305,11 @@ function EditUserModal({ user, onClose, callApi }: { user: any; onClose: () => v
 
 /* ─── TABELA DE PREÇOS ─── */
 function PriceTableTab() {
+  const MAX_PANELS = 25;
   const stored = getPriceTable();
-  const initial: PriceTableEntry[] = stored.length > 0 ? stored.map(r => ({ ...r, essencial: (r as any).essencial ?? null })) :
-    Array.from({ length: 97 }, (_, i) => ({
+  const filteredStored = stored.filter(r => r.panels <= MAX_PANELS);
+  const initial: PriceTableEntry[] = filteredStored.length > 0 ? filteredStored.map(r => ({ ...r, essencial: (r as any).essencial ?? null })) :
+    Array.from({ length: MAX_PANELS - 3 }, (_, i) => ({
       panels: i + 4,
       acesso: null,
       essencial: null,
