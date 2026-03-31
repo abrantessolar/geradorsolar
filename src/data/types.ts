@@ -137,7 +137,7 @@ export interface Proposal {
   selectedLine: 'acesso' | 'essencial' | 'excellence' | 'premium';
   selectedKit: { inverter: Kit | null; panel: Kit | null; panelCount: number };
   totalPrice: number;
-  installmentValues: Record<number, number>;
+  installmentValues: Record<number, number | { perMonth: number; total: number }>;
   cardInstallments?: Record<number, { total: number; perMonth: number }>;
   costBreakdown?: import('./calculations').CostBreakdown;
   cetApplied: number | null;
