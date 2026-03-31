@@ -360,7 +360,8 @@ export default function ProposalPage() {
   const applyCet = () => {
     const cet = parseFloat(cetValue);
     if (cet > 0) {
-      const updated = { ...proposal, cetApplied: cet, installmentValues: calcInstallments(proposal.totalPrice, cet) };
+      const newInstallments = calcInstallments(proposal.totalPrice, cet);
+      const updated = { ...proposal, cetApplied: cet, installmentValues: newInstallments };
       saveProposal(updated);
       addHistoricoDB(id || '', 'cet_atualizada', session?.user?.id || null, { cet_anterior: proposal.cetApplied, cet_nova: cet });
       setCetModal(false);
