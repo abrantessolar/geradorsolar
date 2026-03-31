@@ -1127,7 +1127,7 @@ function ProposalsTab() {
                     )}
                   </td>
                   <td className="py-2 px-2 font-medium text-xs">{formatCurrency(p.totalPrice)}</td>
-                  <td className="py-2 px-2 text-xs">{p.cetApplied ? `${p.cetApplied}%` : '—'}</td>
+                  
                   <td className="py-2 px-2"><span className={`solar-badge text-xs ${STATUS_COLORS[p.status] || 'bg-muted text-muted-foreground'}`}>{STATUS_LABELS[p.status] || p.status}</span></td>
                   <td className="py-2 px-2 text-xs text-muted-foreground">{p.dados_completos?.updatedAt ? new Date(p.dados_completos.updatedAt).toLocaleDateString('pt-BR') : '—'}</td>
                   <td className="py-2 px-2">
