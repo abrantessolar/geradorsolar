@@ -456,11 +456,6 @@ export async function generateProposalPDF(
   setColor(GRAY);
   doc.text('* Estimativa. Sujeito à aprovação de crédito.', W / 2, y, { align: 'center' });
 
-  if (proposal.cetApplied) {
-    y += 3.5;
-    doc.setFont('helvetica', 'normal');
-    doc.text(`CET aplicada: ${proposal.cetApplied}% a.m.`, W / 2, y, { align: 'center' });
-  }
 
   // Card installments — 2 columns
   if (selectedCard?.cardInstallments && Object.keys(selectedCard.cardInstallments).length > 0) {

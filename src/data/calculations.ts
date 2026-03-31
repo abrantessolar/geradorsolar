@@ -145,16 +145,21 @@ export function calcTotalPrice(inverter: Kit | null, panel: Kit | null, panelCou
   return totalCost / (1 - settings.profitMargin / 100);
 }
 
-export function calcInstallments(totalPrice: number, cetMonthly?: number | null): Record<number, { perMonth: number; total: number }> {
+const FINANCING_MULTIPLIERS: Record<number, number> = {
+  24: 1.4496,
+  36: 1.6008,
+  48: 1.7600,
+  60: 1.9520,
+  72: 2.1792,
+};
+
+export function calcInstallments(totalPrice: number): Record<number, { perMonth: number; total: number }> {
   const result: Record<number, { perMonth: number; total: number }> = {};
   INSTALLMENT_OPTIONS.forEach(n => {
-    if (cetMonthly && cetMonthly > 0) {
-      const r = cetMonthly / 100;
-      const pmt = totalPrice * (r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
-      result[n] = { perMonth: pmt, total: pmt * n };
-    } else {
-      result[n] = { perMonth: totalPrice / n, total: totalPrice };
-    }
+    const multiplier = FINANCING_MULTIPLIERS[n] || 1;
+    const total = Math.round(totalPrice * multiplier * 100) / 100;
+    const perMonth = Math.round((total / n) * 100) / 100;
+    result[n] = { perMonth, total };
   });
   return result;
 }

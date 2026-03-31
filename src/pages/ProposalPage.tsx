@@ -872,22 +872,6 @@ export default function ProposalPage() {
         </div>
       </div>
 
-      {/* CET Modal */}
-      {cetModal && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center no-print" onClick={() => setCetModal(false)}>
-          <div className="bg-card rounded-xl p-6 max-w-md w-full mx-4 space-y-4" onClick={e => e.stopPropagation()}>
-            <h3 className="text-lg font-bold text-primary">Editar CET</h3>
-            <div>
-              <label className="block text-sm font-medium mb-1">CET real (% a.m.)</label>
-              <input className="solar-input" type="number" step="0.01" value={cetValue} onChange={e => setCetValue(e.target.value)} />
-            </div>
-            <div className="flex gap-2 justify-end">
-              <button onClick={() => setCetModal(false)} className="solar-btn-outline text-sm py-2">Cancelar</button>
-              <button onClick={applyCet} className="solar-btn-primary text-sm py-2">Aplicar</button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Lightbox */}
       {lightbox && (

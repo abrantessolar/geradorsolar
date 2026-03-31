@@ -1130,37 +1130,6 @@ function ProposalsTab() {
         </div>
       )}
 
-      {/* CET Modal */}
-      {cetModal && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center" onClick={() => setCetModal(null)}>
-          <div className="bg-card rounded-xl p-6 max-w-md w-full mx-4 space-y-4" onClick={e => e.stopPropagation()}>
-            <h3 className="text-lg font-bold text-primary">Atualizar CET</h3>
-            <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <div><span className="text-muted-foreground">Nº Proposta:</span><p className="font-mono font-bold">{cetModal.numero_proposta || '—'}</p></div>
-                <div><span className="text-muted-foreground">Cliente:</span><p className="font-medium">{cetModal.clientData?.name}</p></div>
-              </div>
-              <div><span className="text-xs text-muted-foreground">CET atual: {cetModal.cetApplied ? `${cetModal.cetApplied}% a.m.` : 'Padrão estimada'}</span></div>
-              <div><label className="block text-sm font-medium mb-1">Nova CET (% a.m.)</label>
-                <input className="solar-input" type="number" step="0.001" value={cetValue} onChange={e => setCetValue(e.target.value)} /></div>
-              <div><label className="block text-sm font-medium mb-1">Parcelas aprovadas</label>
-                <select className="solar-input" value={cetParcelas} onChange={e => setCetParcelas(Number(e.target.value))}>
-                  {[24, 36, 48, 60, 72].map(n => <option key={n} value={n}>{n}×</option>)}
-                </select></div>
-              {cetValue && parseFloat(cetValue) > 0 && (
-                <div className="p-3 rounded-lg bg-primary/5 text-sm">
-                  <span className="text-muted-foreground">Parcela calculada:</span>
-                  <span className="font-bold text-primary ml-2">{formatCurrency(cetParcela)}</span>
-                </div>
-              )}
-              <div className="flex gap-2 justify-end">
-                <button onClick={() => setCetModal(null)} className="solar-btn-outline text-sm py-2">Cancelar</button>
-                <button onClick={handleApplyCet} className="solar-btn-primary text-sm py-2">Aplicar CET</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
