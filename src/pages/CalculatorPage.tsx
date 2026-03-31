@@ -951,7 +951,6 @@ export default function CalculatorPage() {
                           <span className="text-muted-foreground">{n}×</span>
                           <span className="font-medium">
                             {formatCurrency((v as any).perMonth)}
-                            <span className="text-muted-foreground ml-1">— total {formatCurrency((v as any).total)}</span>
                           </span>
                         </div>
                       ))}
