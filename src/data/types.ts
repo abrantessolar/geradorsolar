@@ -137,7 +137,7 @@ export interface Proposal {
   selectedLine: 'acesso' | 'essencial' | 'excellence' | 'premium';
   selectedKit: { inverter: Kit | null; panel: Kit | null; panelCount: number };
   totalPrice: number;
-  installmentValues: Record<number, number>;
+  installmentValues: Record<number, number | { perMonth: number; total: number }>;
   cardInstallments?: Record<number, { total: number; perMonth: number }>;
   costBreakdown?: import('./calculations').CostBreakdown;
   cetApplied: number | null;
@@ -266,22 +266,22 @@ export const BRAZILIAN_STATES = [
 ];
 
 export const DEFAULT_CARD_RATES = [
-  { installments: 1, rate: 3.20 },
-  { installments: 2, rate: 4.30 },
-  { installments: 3, rate: 5.40 },
-  { installments: 4, rate: 6.50 },
-  { installments: 5, rate: 7.60 },
-  { installments: 6, rate: 8.70 },
-  { installments: 7, rate: 9.80 },
-  { installments: 8, rate: 10.90 },
-  { installments: 9, rate: 12.00 },
-  { installments: 10, rate: 13.10 },
-  { installments: 11, rate: 14.20 },
-  { installments: 12, rate: 15.30 },
-  { installments: 13, rate: 16.40 },
-  { installments: 14, rate: 17.50 },
-  { installments: 15, rate: 18.60 },
-  { installments: 16, rate: 19.70 },
-  { installments: 17, rate: 20.80 },
-  { installments: 18, rate: 21.90 },
+  { installments: 1, rate: 3.50 },
+  { installments: 2, rate: 5.00 },
+  { installments: 3, rate: 6.08 },
+  { installments: 4, rate: 7.18 },
+  { installments: 5, rate: 8.28 },
+  { installments: 6, rate: 9.40 },
+  { installments: 7, rate: 10.34 },
+  { installments: 8, rate: 11.47 },
+  { installments: 9, rate: 12.58 },
+  { installments: 10, rate: 13.69 },
+  { installments: 11, rate: 14.89 },
+  { installments: 12, rate: 16.05 },
+  { installments: 13, rate: 17.14 },
+  { installments: 14, rate: 18.32 },
+  { installments: 15, rate: 19.49 },
+  { installments: 16, rate: 20.67 },
+  { installments: 17, rate: 21.88 },
+  { installments: 18, rate: 23.08 },
 ];

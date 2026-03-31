@@ -231,7 +231,8 @@ export default function ProposalPage() {
         const cardMonths = bestCard ? Number(Object.keys(selectedCard.cardInstallments).pop()) : 12;
         yearlyWithSolar = year === 0 ? (cardMonthly * Math.min(cardMonths, 12) + minFee * 12) : (year * 12 < cardMonths ? (cardMonthly * 12 + minFee * 12) : minFee * 12);
       } else {
-        const monthlyInstallment = selectedCard.installments[cashflowInstallments] || selectedCard.totalPrice / cashflowInstallments;
+        const instVal = selectedCard.installments[cashflowInstallments];
+        const monthlyInstallment = instVal ? (typeof instVal === 'number' ? instVal : (instVal as any).perMonth) : selectedCard.totalPrice / cashflowInstallments;
         const financingYears = cashflowInstallments / 12;
         yearlyWithSolar = year < financingYears
           ? (monthlyInstallment + minFee) * 12
@@ -360,7 +361,8 @@ export default function ProposalPage() {
   const applyCet = () => {
     const cet = parseFloat(cetValue);
     if (cet > 0) {
-      const updated = { ...proposal, cetApplied: cet, installmentValues: calcInstallments(proposal.totalPrice, cet) };
+      const newInstallments = calcInstallments(proposal.totalPrice, cet);
+      const updated = { ...proposal, cetApplied: cet, installmentValues: newInstallments };
       saveProposal(updated);
       addHistoricoDB(id || '', 'cet_atualizada', session?.user?.id || null, { cet_anterior: proposal.cetApplied, cet_nova: cet });
       setCetModal(false);
@@ -572,21 +574,33 @@ export default function ProposalPage() {
                     {paymentTab === 'financing' ? (
                       <div className="space-y-1 text-xs">
                         <p className="font-semibold text-muted-foreground print-only-block hidden">Financiamento:</p>
-                        {INSTALLMENT_OPTIONS.map(n => (
-                          <div key={n} className="flex justify-between">
-                            <span className="text-muted-foreground">{n}×</span>
-                            <span className="font-medium">{formatCurrency(card.installments[n])}</span>
-                          </div>
-                        ))}
+                        {INSTALLMENT_OPTIONS.map(n => {
+                          const v = card.installments[n];
+                          const inst = typeof v === 'number' ? { perMonth: v, total: v * n } : v as { perMonth: number; total: number };
+                          return (
+                            <div key={n} className="flex justify-between">
+                              <span className="text-muted-foreground">{n}×</span>
+                              <span className="font-medium">{formatCurrency(inst.perMonth)}</span>
+                            </div>
+                          );
+                        })}
                         {proposal.cetApplied && <p className="text-xs text-muted-foreground mt-1">CET {proposal.cetApplied}% a.m.</p>}
+                        <p className="text-[10px] text-muted-foreground mt-1 italic">
+                          * Estimativa. Sujeito à aprovação de crédito.
+                        </p>
                       </div>
                     ) : (
                       <div className="space-y-1 text-xs max-h-48 overflow-y-auto">
                         <p className="font-semibold text-muted-foreground print-only-block hidden">Cartão:</p>
-                        {Object.entries(card.cardInstallments).map(([n, v]) => (
+                        {Object.entries(card.cardInstallments)
+                          .sort(([a], [b]) => Number(b) - Number(a))
+                          .map(([n, v]) => (
                           <div key={n} className="flex justify-between">
                             <span className="text-muted-foreground">{n}×</span>
-                            <span className="font-medium">{formatCurrency((v as any).perMonth)}</span>
+                            <span className="font-medium">
+                              {formatCurrency((v as any).perMonth)}
+                              <span className="text-muted-foreground ml-1">— total {formatCurrency((v as any).total)}</span>
+                            </span>
                           </div>
                         ))}
                       </div>

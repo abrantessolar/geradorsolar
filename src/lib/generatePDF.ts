@@ -404,7 +404,7 @@ export async function generateProposalPDF(
   INSTALLMENT_OPTIONS.forEach((n, i) => {
     const ix = M + i * installW;
     setFill([252, 251, 246]);
-    doc.roundedRect(ix + 2, y, installW - 4, 23, 3, 3, 'F');
+    doc.roundedRect(ix + 2, y, installW - 4, 28, 3, 3, 'F');
 
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(23);
@@ -414,13 +414,22 @@ export async function generateProposalPDF(
     setFill(SECONDARY);
     doc.roundedRect(ix + 6, y + 13, installW - 12, 0.7, 0.3, 0.3, 'F');
 
+    const instVal = selectedCard?.installments?.[n];
+    const perMonth = instVal ? (typeof instVal === 'number' ? instVal : (instVal as any).perMonth) : 0;
+    const total = instVal ? (typeof instVal === 'number' ? instVal * n : (instVal as any).total) : 0;
+
     doc.setFontSize(9);
     doc.setFont('helvetica', 'bold');
     setColor(DARK);
-    doc.text(formatCurrency(selectedCard?.installments?.[n] || 0), ix + installW / 2, y + 20, { align: 'center' });
+    doc.text(formatCurrency(perMonth), ix + installW / 2, y + 20, { align: 'center' });
+
+    doc.setFontSize(5.5);
+    doc.setFont('helvetica', 'normal');
+    setColor(GRAY);
+    doc.text(`Total: ${formatCurrency(total)}`, ix + installW / 2, y + 25, { align: 'center' });
   });
 
-  y += 27;
+  y += 32;
 
   // "Investimento" price box — 30% larger
   setFill([245, 248, 240]);
@@ -440,8 +449,16 @@ export async function generateProposalPDF(
   setColor(GRAY);
   doc.text(`Proposta válida por ${settings.proposalValidity || 15} dias  •  ${numero}  •  ${new Date(proposal.createdAt).toLocaleDateString('pt-BR')}`, W / 2, y, { align: 'center' });
 
+  // Financing disclaimer
+  y += 3.5;
+  doc.setFontSize(5.5);
+  doc.setFont('helvetica', 'italic');
+  setColor(GRAY);
+  doc.text('* Estimativa. Sujeito à aprovação de crédito.', W / 2, y, { align: 'center' });
+
   if (proposal.cetApplied) {
     y += 3.5;
+    doc.setFont('helvetica', 'normal');
     doc.text(`CET aplicada: ${proposal.cetApplied}% a.m.`, W / 2, y, { align: 'center' });
   }
 
@@ -455,7 +472,8 @@ export async function generateProposalPDF(
     y += 5;
 
     const colW = CW / 2 - 2;
-    const cardEntries = Object.entries(selectedCard.cardInstallments);
+    const cardEntries = Object.entries(selectedCard.cardInstallments)
+      .sort(([a], [b]) => Number(b) - Number(a));
     const half = Math.ceil(cardEntries.length / 2);
     const col1 = cardEntries.slice(0, half);
     const col2 = cardEntries.slice(half);
@@ -469,7 +487,8 @@ export async function generateProposalPDF(
       doc.setFont('helvetica', 'bold');
       setColor(WHITE);
       doc.text('Parcelas', cx + 6, y + 1.5);
-      doc.text('Valor/Mês', cx + colW - 6, y + 1.5, { align: 'right' });
+      doc.text('Valor/Mês', cx + colW * 0.55, y + 1.5, { align: 'center' });
+      doc.text('Total', cx + colW - 6, y + 1.5, { align: 'right' });
     });
     const startY = y + 6.5;
 
@@ -486,7 +505,11 @@ export async function generateProposalPDF(
         setColor(DARK);
         doc.text(`${n}×`, cx + 6, rowY + 1);
         doc.setFont('helvetica', 'bold');
-        doc.text(formatCurrency((v as any).perMonth), cx + colW - 6, rowY + 1, { align: 'right' });
+        doc.text(formatCurrency((v as any).perMonth), cx + colW * 0.55, rowY + 1, { align: 'center' });
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(5.5);
+        setColor(GRAY);
+        doc.text(formatCurrency((v as any).total), cx + colW - 6, rowY + 1, { align: 'right' });
         rowY += 5.5;
       });
     });

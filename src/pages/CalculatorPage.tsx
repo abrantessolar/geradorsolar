@@ -929,22 +929,30 @@ export default function CalculatorPage() {
                   </div>
                   {paymentTab === 'financing' ? (
                     <div className="space-y-1 text-xs">
-                      {Object.entries(card.installments).map(([n, v]) => (
-                        <div key={n} className="flex justify-between">
-                          <span className="text-muted-foreground">{n}×</span>
-                          <span className="font-medium">{formatCurrency(v as number)}</span>
-                        </div>
-                      ))}
+                      {Object.entries(card.installments).map(([n, v]) => {
+                        const inst = typeof v === 'number' ? { perMonth: v, total: v * Number(n) } : v as { perMonth: number; total: number };
+                        return (
+                          <div key={n} className="flex justify-between">
+                            <span className="text-muted-foreground">{n}×</span>
+                            <span className="font-medium">{formatCurrency(inst.perMonth)}</span>
+                          </div>
+                        );
+                      })}
                       <p className="text-[10px] text-muted-foreground mt-1 italic">
-                        Valores sujeitos à aprovação de crédito
+                        * Estimativa. Sujeito à aprovação de crédito.
                       </p>
                     </div>
                   ) : (
                     <div className="space-y-1 text-xs max-h-48 overflow-y-auto">
-                      {Object.entries(card.cardInstallments).map(([n, v]) => (
+                      {Object.entries(card.cardInstallments)
+                        .sort(([a], [b]) => Number(b) - Number(a))
+                        .map(([n, v]) => (
                         <div key={n} className="flex justify-between">
                           <span className="text-muted-foreground">{n}×</span>
-                          <span className="font-medium">{formatCurrency((v as any).perMonth)}</span>
+                          <span className="font-medium">
+                            {formatCurrency((v as any).perMonth)}
+                            <span className="text-muted-foreground ml-1">— total {formatCurrency((v as any).total)}</span>
+                          </span>
                         </div>
                       ))}
                     </div>

@@ -145,14 +145,15 @@ export function calcTotalPrice(inverter: Kit | null, panel: Kit | null, panelCou
   return totalCost / (1 - settings.profitMargin / 100);
 }
 
-export function calcInstallments(totalPrice: number, cetMonthly?: number | null): Record<number, number> {
-  const result: Record<number, number> = {};
+export function calcInstallments(totalPrice: number, cetMonthly?: number | null): Record<number, { perMonth: number; total: number }> {
+  const result: Record<number, { perMonth: number; total: number }> = {};
   INSTALLMENT_OPTIONS.forEach(n => {
     if (cetMonthly && cetMonthly > 0) {
       const r = cetMonthly / 100;
-      result[n] = totalPrice * (r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
+      const pmt = totalPrice * (r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
+      result[n] = { perMonth: pmt, total: pmt * n };
     } else {
-      result[n] = totalPrice / n;
+      result[n] = { perMonth: totalPrice / n, total: totalPrice };
     }
   });
   return result;
@@ -160,7 +161,9 @@ export function calcInstallments(totalPrice: number, cetMonthly?: number | null)
 
 export function calcCardInstallments(totalPrice: number, rates: { installments: number; rate: number }[]): Record<number, { total: number; perMonth: number }> {
   const result: Record<number, { total: number; perMonth: number }> = {};
-  rates.forEach(r => {
+  // Sort descending (18x → 1x)
+  const sorted = [...rates].sort((a, b) => b.installments - a.installments);
+  sorted.forEach(r => {
     const total = totalPrice * (1 + r.rate / 100);
     result[r.installments] = { total, perMonth: total / r.installments };
   });
