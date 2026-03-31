@@ -1049,32 +1049,6 @@ function ProposalsTab() {
     navigate('/orcamentos', { state: { editProposal: p } });
   };
 
-  const handleApplyCet = async () => {
-    if (!cetModal) return;
-    const cet = parseFloat(cetValue);
-    if (!cet || cet <= 0) return;
-    const investmentBase = cetModal.costBreakdown?.salePrice || cetModal.totalPrice;
-    const { savePropostaDB, addHistoricoDB } = await import('@/data/supabaseStore');
-    const { calcInstallments } = await import('@/data/calculations');
-    const updated = {
-      ...cetModal,
-      cetApplied: cet,
-      installmentValues: calcInstallments(investmentBase, cet),
-    };
-    await savePropostaDB(updated);
-    await addHistoricoDB(cetModal.id, 'cet_atualizada', session?.user?.id || null, { cet_anterior: cetModal.cetApplied, cet_nova: cet, parcelas: cetParcelas });
-    toast.success('CET atualizada!');
-    setCetModal(null);
-    loadProposals();
-  };
-
-  const cetParcela = useMemo(() => {
-    if (!cetModal || !cetValue) return 0;
-    const cet = parseFloat(cetValue) / 100;
-    const investmentBase = cetModal.costBreakdown?.salePrice || cetModal.totalPrice;
-    if (cet <= 0) return investmentBase / cetParcelas;
-    return (investmentBase * cet * Math.pow(1 + cet, cetParcelas)) / (Math.pow(1 + cet, cetParcelas) - 1);
-  }, [cetModal, cetValue, cetParcelas]);
 
   return (
     <div className="solar-card p-6 space-y-4">
