@@ -487,7 +487,8 @@ export async function generateProposalPDF(
       doc.setFont('helvetica', 'bold');
       setColor(WHITE);
       doc.text('Parcelas', cx + 6, y + 1.5);
-      doc.text('Valor/Mês', cx + colW - 6, y + 1.5, { align: 'right' });
+      doc.text('Valor/Mês', cx + colW * 0.55, y + 1.5, { align: 'center' });
+      doc.text('Total', cx + colW - 6, y + 1.5, { align: 'right' });
     });
     const startY = y + 6.5;
 
