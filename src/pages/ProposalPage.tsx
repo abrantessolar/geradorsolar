@@ -572,7 +572,7 @@ export default function ProposalPage() {
                             </div>
                           );
                         })}
-                        {proposal.cetApplied && <p className="text-xs text-muted-foreground mt-1">CET {proposal.cetApplied}% a.m.</p>}
+                        
                         <p className="text-[10px] text-muted-foreground mt-1 italic">
                           * Estimativa. Sujeito à aprovação de crédito.
                         </p>
