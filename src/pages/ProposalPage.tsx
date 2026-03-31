@@ -128,9 +128,7 @@ export default function ProposalPage() {
           : null;
         const costBreakdown = savedCostBreakdown || fallbackCostBreakdown;
         const totalPrice = costBreakdown?.salePrice || savedData.totalPrice || proposal.totalPrice;
-        const installments = proposal.cetApplied
-          ? calcInstallments(totalPrice, proposal.cetApplied)
-          : calcInstallments(totalPrice);
+        const installments = calcInstallments(totalPrice);
         const cardInstallments = calcCardInstallments(totalPrice, settings.creditCardRates);
 
         return {
