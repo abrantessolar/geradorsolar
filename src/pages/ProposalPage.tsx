@@ -356,18 +356,7 @@ export default function ProposalPage() {
     );
   }
 
-  const applyCet = () => {
-    const cet = parseFloat(cetValue);
-    if (cet > 0) {
-      const investmentBase = proposal.costBreakdown?.salePrice || proposal.totalPrice;
-      const newInstallments = calcInstallments(investmentBase, cet);
-      const updated = { ...proposal, cetApplied: cet, installmentValues: newInstallments };
-      saveProposal(updated);
-      addHistoricoDB(id || '', 'cet_atualizada', session?.user?.id || null, { cet_anterior: proposal.cetApplied, cet_nova: cet });
-      setCetModal(false);
-      window.location.reload();
-    }
-  };
+  // CET removed - financing uses fixed multipliers now
 
   const selectedCard = lineCards.find(c => c.line === proposal.selectedLine) || lineCards[0];
   const cashflowCard = lineCards.find(c => c.line === cashflowLine) || lineCards[0];
