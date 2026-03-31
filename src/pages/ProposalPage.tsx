@@ -70,8 +70,7 @@ export default function ProposalPage() {
     loadProposal();
   }, [id]);
 
-  const [cetModal, setCetModal] = useState(false);
-  const [cetValue, setCetValue] = useState('');
+  
   const [lightbox, setLightbox] = useState<string | null>(null);
   const [videoModal, setVideoModal] = useState<string | null>(null);
   const [panelDelta, setPanelDelta] = useState(0);
@@ -128,9 +127,7 @@ export default function ProposalPage() {
           : null;
         const costBreakdown = savedCostBreakdown || fallbackCostBreakdown;
         const totalPrice = costBreakdown?.salePrice || savedData.totalPrice || proposal.totalPrice;
-        const installments = proposal.cetApplied
-          ? calcInstallments(totalPrice, proposal.cetApplied)
-          : calcInstallments(totalPrice);
+        const installments = calcInstallments(totalPrice);
         const cardInstallments = calcCardInstallments(totalPrice, settings.creditCardRates);
 
         return {
@@ -173,9 +170,7 @@ export default function ProposalPage() {
       const panelsRemaining = isPremium ? 999 : maxPanels - usedPanels;
       const monthlyGeneration = powerKwp * irradiation * 30 * (1 - settings.systemLoss / 100);
       const surplus = monthlyGeneration - dim.avgMonthlyKwh;
-      const installments = proposal.cetApplied
-        ? calcInstallments(totalPrice, proposal.cetApplied)
-        : calcInstallments(totalPrice);
+      const installments = calcInstallments(totalPrice);
       const cardInstallments = calcCardInstallments(totalPrice, settings.creditCardRates);
 
       return {
@@ -360,18 +355,7 @@ export default function ProposalPage() {
     );
   }
 
-  const applyCet = () => {
-    const cet = parseFloat(cetValue);
-    if (cet > 0) {
-      const investmentBase = proposal.costBreakdown?.salePrice || proposal.totalPrice;
-      const newInstallments = calcInstallments(investmentBase, cet);
-      const updated = { ...proposal, cetApplied: cet, installmentValues: newInstallments };
-      saveProposal(updated);
-      addHistoricoDB(id || '', 'cet_atualizada', session?.user?.id || null, { cet_anterior: proposal.cetApplied, cet_nova: cet });
-      setCetModal(false);
-      window.location.reload();
-    }
-  };
+  // CET removed - financing uses fixed multipliers now
 
   const selectedCard = lineCards.find(c => c.line === proposal.selectedLine) || lineCards[0];
   const cashflowCard = lineCards.find(c => c.line === cashflowLine) || lineCards[0];
@@ -587,7 +571,7 @@ export default function ProposalPage() {
                             </div>
                           );
                         })}
-                        {proposal.cetApplied && <p className="text-xs text-muted-foreground mt-1">CET {proposal.cetApplied}% a.m.</p>}
+                        
                         <p className="text-[10px] text-muted-foreground mt-1 italic">
                           * Estimativa. Sujeito à aprovação de crédito.
                         </p>
@@ -887,22 +871,6 @@ export default function ProposalPage() {
         </div>
       </div>
 
-      {/* CET Modal */}
-      {cetModal && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center no-print" onClick={() => setCetModal(false)}>
-          <div className="bg-card rounded-xl p-6 max-w-md w-full mx-4 space-y-4" onClick={e => e.stopPropagation()}>
-            <h3 className="text-lg font-bold text-primary">Editar CET</h3>
-            <div>
-              <label className="block text-sm font-medium mb-1">CET real (% a.m.)</label>
-              <input className="solar-input" type="number" step="0.01" value={cetValue} onChange={e => setCetValue(e.target.value)} />
-            </div>
-            <div className="flex gap-2 justify-end">
-              <button onClick={() => setCetModal(false)} className="solar-btn-outline text-sm py-2">Cancelar</button>
-              <button onClick={applyCet} className="solar-btn-primary text-sm py-2">Aplicar</button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Lightbox */}
       {lightbox && (

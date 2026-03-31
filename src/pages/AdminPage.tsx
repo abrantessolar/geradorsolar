@@ -696,9 +696,6 @@ function PricingTab() {
           <h3 className="font-semibold text-primary">Margem e Taxas</h3>
           <div><label className="block text-sm font-medium mb-1">Margem de lucro (%)</label>
             <input className="solar-input" type="number" value={settings.profitMargin} onChange={e => update('profitMargin', parseFloat(e.target.value) || 0)} /></div>
-          <div><label className="block text-sm font-medium mb-1">CET estimada padrão (% a.m.)</label>
-            <input className="solar-input" type="number" step="0.001" value={settings.defaultCET} onChange={e => update('defaultCET', parseFloat(e.target.value) || 0)} />
-            <p className="text-xs text-muted-foreground mt-1">Padrão: 2,214% a.m.</p></div>
           <div><label className="block text-sm font-medium mb-1">Fator de sobra (%)</label>
             <input className="solar-input" type="number" value={settings.surplusFactor ?? 20} onChange={e => update('surplusFactor', parseFloat(e.target.value) || 0)} />
             <p className="text-xs text-muted-foreground mt-1">Dimensiona o sistema para cobrir {100 + (settings.surplusFactor ?? 20)}% do consumo. Padrão: 20%</p></div>
@@ -972,9 +969,6 @@ function ProposalsTab() {
   const [filterLine, setFilterLine] = useState('');
   const [filterSeller, setFilterSeller] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  const [cetModal, setCetModal] = useState<any>(null);
-  const [cetValue, setCetValue] = useState('');
-  const [cetParcelas, setCetParcelas] = useState(60);
 
   const loadProposals = useCallback(async () => {
     setLoadingProposals(true);
@@ -1052,32 +1046,6 @@ function ProposalsTab() {
     navigate('/orcamentos', { state: { editProposal: p } });
   };
 
-  const handleApplyCet = async () => {
-    if (!cetModal) return;
-    const cet = parseFloat(cetValue);
-    if (!cet || cet <= 0) return;
-    const investmentBase = cetModal.costBreakdown?.salePrice || cetModal.totalPrice;
-    const { savePropostaDB, addHistoricoDB } = await import('@/data/supabaseStore');
-    const { calcInstallments } = await import('@/data/calculations');
-    const updated = {
-      ...cetModal,
-      cetApplied: cet,
-      installmentValues: calcInstallments(investmentBase, cet),
-    };
-    await savePropostaDB(updated);
-    await addHistoricoDB(cetModal.id, 'cet_atualizada', session?.user?.id || null, { cet_anterior: cetModal.cetApplied, cet_nova: cet, parcelas: cetParcelas });
-    toast.success('CET atualizada!');
-    setCetModal(null);
-    loadProposals();
-  };
-
-  const cetParcela = useMemo(() => {
-    if (!cetModal || !cetValue) return 0;
-    const cet = parseFloat(cetValue) / 100;
-    const investmentBase = cetModal.costBreakdown?.salePrice || cetModal.totalPrice;
-    if (cet <= 0) return investmentBase / cetParcelas;
-    return (investmentBase * cet * Math.pow(1 + cet, cetParcelas)) / (Math.pow(1 + cet, cetParcelas) - 1);
-  }, [cetModal, cetValue, cetParcelas]);
 
   return (
     <div className="solar-card p-6 space-y-4">
@@ -1130,7 +1098,7 @@ function ProposalsTab() {
                     )}
                   </td>
                   <td className="py-2 px-2 font-medium text-xs">{formatCurrency(p.totalPrice)}</td>
-                  <td className="py-2 px-2 text-xs">{p.cetApplied ? `${p.cetApplied}%` : '—'}</td>
+                  
                   <td className="py-2 px-2"><span className={`solar-badge text-xs ${STATUS_COLORS[p.status] || 'bg-muted text-muted-foreground'}`}>{STATUS_LABELS[p.status] || p.status}</span></td>
                   <td className="py-2 px-2 text-xs text-muted-foreground">{p.dados_completos?.updatedAt ? new Date(p.dados_completos.updatedAt).toLocaleDateString('pt-BR') : '—'}</td>
                   <td className="py-2 px-2">
@@ -1147,9 +1115,6 @@ function ProposalsTab() {
                       <button onClick={() => handleCopyLink(p.id)} className="text-green-600 hover:text-green-500" title="Copiar link">
                         <Share2 className="w-4 h-4" />
                       </button>
-                      <button onClick={() => { setCetModal(p); setCetValue(p.cetApplied ? String(p.cetApplied) : ''); }} className="text-amber-600 hover:text-amber-500" title="Atualizar CET">
-                        <DollarSign className="w-4 h-4" />
-                      </button>
                       <button onClick={() => handleArchive(p.id)} className="text-muted-foreground hover:text-destructive" title="Arquivar">
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -1162,37 +1127,6 @@ function ProposalsTab() {
         </div>
       )}
 
-      {/* CET Modal */}
-      {cetModal && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center" onClick={() => setCetModal(null)}>
-          <div className="bg-card rounded-xl p-6 max-w-md w-full mx-4 space-y-4" onClick={e => e.stopPropagation()}>
-            <h3 className="text-lg font-bold text-primary">Atualizar CET</h3>
-            <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <div><span className="text-muted-foreground">Nº Proposta:</span><p className="font-mono font-bold">{cetModal.numero_proposta || '—'}</p></div>
-                <div><span className="text-muted-foreground">Cliente:</span><p className="font-medium">{cetModal.clientData?.name}</p></div>
-              </div>
-              <div><span className="text-xs text-muted-foreground">CET atual: {cetModal.cetApplied ? `${cetModal.cetApplied}% a.m.` : 'Padrão estimada'}</span></div>
-              <div><label className="block text-sm font-medium mb-1">Nova CET (% a.m.)</label>
-                <input className="solar-input" type="number" step="0.001" value={cetValue} onChange={e => setCetValue(e.target.value)} /></div>
-              <div><label className="block text-sm font-medium mb-1">Parcelas aprovadas</label>
-                <select className="solar-input" value={cetParcelas} onChange={e => setCetParcelas(Number(e.target.value))}>
-                  {[24, 36, 48, 60, 72].map(n => <option key={n} value={n}>{n}×</option>)}
-                </select></div>
-              {cetValue && parseFloat(cetValue) > 0 && (
-                <div className="p-3 rounded-lg bg-primary/5 text-sm">
-                  <span className="text-muted-foreground">Parcela calculada:</span>
-                  <span className="font-bold text-primary ml-2">{formatCurrency(cetParcela)}</span>
-                </div>
-              )}
-              <div className="flex gap-2 justify-end">
-                <button onClick={() => setCetModal(null)} className="solar-btn-outline text-sm py-2">Cancelar</button>
-                <button onClick={handleApplyCet} className="solar-btn-primary text-sm py-2">Aplicar CET</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
