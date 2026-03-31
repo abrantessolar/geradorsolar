@@ -70,8 +70,7 @@ export default function ProposalPage() {
     loadProposal();
   }, [id]);
 
-  const [cetModal, setCetModal] = useState(false);
-  const [cetValue, setCetValue] = useState('');
+  const [lightboxDummy] = useState(false); // placeholder removed CET
   const [lightbox, setLightbox] = useState<string | null>(null);
   const [videoModal, setVideoModal] = useState<string | null>(null);
   const [panelDelta, setPanelDelta] = useState(0);

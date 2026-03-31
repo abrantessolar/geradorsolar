@@ -969,9 +969,6 @@ function ProposalsTab() {
   const [filterLine, setFilterLine] = useState('');
   const [filterSeller, setFilterSeller] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  const [cetModal, setCetModal] = useState<any>(null);
-  const [cetValue, setCetValue] = useState('');
-  const [cetParcelas, setCetParcelas] = useState(60);
 
   const loadProposals = useCallback(async () => {
     setLoadingProposals(true);
