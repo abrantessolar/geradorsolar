@@ -429,7 +429,7 @@ export async function generateProposalPDF(
     doc.text(`Total: ${formatCurrency(total)}`, ix + installW / 2, y + 25, { align: 'center' });
   });
 
-  y += 27;
+  y += 32;
 
   // "Investimento" price box — 30% larger
   setFill([245, 248, 240]);
