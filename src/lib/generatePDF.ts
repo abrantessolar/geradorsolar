@@ -449,8 +449,16 @@ export async function generateProposalPDF(
   setColor(GRAY);
   doc.text(`Proposta válida por ${settings.proposalValidity || 15} dias  •  ${numero}  •  ${new Date(proposal.createdAt).toLocaleDateString('pt-BR')}`, W / 2, y, { align: 'center' });
 
+  // Financing disclaimer
+  y += 3.5;
+  doc.setFontSize(5.5);
+  doc.setFont('helvetica', 'italic');
+  setColor(GRAY);
+  doc.text('* Estimativa. Sujeito à aprovação de crédito.', W / 2, y, { align: 'center' });
+
   if (proposal.cetApplied) {
     y += 3.5;
+    doc.setFont('helvetica', 'normal');
     doc.text(`CET aplicada: ${proposal.cetApplied}% a.m.`, W / 2, y, { align: 'center' });
   }
 
