@@ -112,8 +112,6 @@ export default function ProposalPage() {
         const savedKit = savedData.selectedKit;
         const savedDim = savedData.dimensioning || proposal.dimensioning;
         const savedCostBreakdown = savedData.costBreakdown || proposal.costBreakdown;
-        const savedInstallments = savedData.installmentValues || proposal.installmentValues;
-        const savedCardInstallments = savedData.cardInstallments || proposal.cardInstallments;
         
         const inverter = savedKit?.inverter || null;
         const panel = savedKit?.panel || null;
@@ -130,10 +128,10 @@ export default function ProposalPage() {
           : null;
         const costBreakdown = savedCostBreakdown || fallbackCostBreakdown;
         const totalPrice = costBreakdown?.salePrice || savedData.totalPrice || proposal.totalPrice;
-        const installments = savedInstallments || (proposal.cetApplied
+        const installments = proposal.cetApplied
           ? calcInstallments(totalPrice, proposal.cetApplied)
-          : calcInstallments(totalPrice));
-        const cardInstallments = savedCardInstallments || calcCardInstallments(totalPrice, settings.creditCardRates);
+          : calcInstallments(totalPrice);
+        const cardInstallments = calcCardInstallments(totalPrice, settings.creditCardRates);
 
         return {
           line, inverter, panel, panelCount, totalPrice, maxPanels, panelsRemaining, microCount,
