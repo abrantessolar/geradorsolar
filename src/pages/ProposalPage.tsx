@@ -572,21 +572,33 @@ export default function ProposalPage() {
                     {paymentTab === 'financing' ? (
                       <div className="space-y-1 text-xs">
                         <p className="font-semibold text-muted-foreground print-only-block hidden">Financiamento:</p>
-                        {INSTALLMENT_OPTIONS.map(n => (
-                          <div key={n} className="flex justify-between">
-                            <span className="text-muted-foreground">{n}×</span>
-                            <span className="font-medium">{formatCurrency(card.installments[n])}</span>
-                          </div>
-                        ))}
+                        {INSTALLMENT_OPTIONS.map(n => {
+                          const v = card.installments[n];
+                          const inst = typeof v === 'number' ? { perMonth: v, total: v * n } : v as { perMonth: number; total: number };
+                          return (
+                            <div key={n} className="flex justify-between">
+                              <span className="text-muted-foreground">{n}×</span>
+                              <span className="font-medium">{formatCurrency(inst.perMonth)}</span>
+                            </div>
+                          );
+                        })}
                         {proposal.cetApplied && <p className="text-xs text-muted-foreground mt-1">CET {proposal.cetApplied}% a.m.</p>}
+                        <p className="text-[10px] text-muted-foreground mt-1 italic">
+                          * Estimativa. Sujeito à aprovação de crédito.
+                        </p>
                       </div>
                     ) : (
                       <div className="space-y-1 text-xs max-h-48 overflow-y-auto">
                         <p className="font-semibold text-muted-foreground print-only-block hidden">Cartão:</p>
-                        {Object.entries(card.cardInstallments).map(([n, v]) => (
+                        {Object.entries(card.cardInstallments)
+                          .sort(([a], [b]) => Number(b) - Number(a))
+                          .map(([n, v]) => (
                           <div key={n} className="flex justify-between">
                             <span className="text-muted-foreground">{n}×</span>
-                            <span className="font-medium">{formatCurrency((v as any).perMonth)}</span>
+                            <span className="font-medium">
+                              {formatCurrency((v as any).perMonth)}
+                              <span className="text-muted-foreground ml-1">— total {formatCurrency((v as any).total)}</span>
+                            </span>
                           </div>
                         ))}
                       </div>
