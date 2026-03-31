@@ -6,7 +6,7 @@ import { getPropostaByIdDB, markPropostaViewedDB, getSettingsDB, addHistoricoDB 
 import { getCidadesIrradianciaDB } from '@/data/supabaseStore';
 import {
   formatCurrency, formatNumber, calcInstallments, calcDimensioning,
-  findInverterForPanels, findPanel, calcTotalPrice, maxPanelsForInverter,
+  findInverterForPanels, findPanel, maxPanelsForInverter,
   calcMicroInverterCount, calcCardInstallments, calcEquipmentMonthly, calcCostBreakdown,
 } from '@/data/calculations';
 import { MONTH_LABELS, MONTH_KEYS, SEASONAL_FACTORS, INSTALLMENT_OPTIONS, UC_COLORS, LINE_NAMES, LINE_SUBS } from '@/data/types';
@@ -112,24 +112,26 @@ export default function ProposalPage() {
         const savedKit = savedData.selectedKit;
         const savedDim = savedData.dimensioning || proposal.dimensioning;
         const savedCostBreakdown = savedData.costBreakdown || proposal.costBreakdown;
-        const savedInstallments = savedData.installmentValues || proposal.installmentValues;
-        const savedCardInstallments = savedData.cardInstallments || proposal.cardInstallments;
         
         const inverter = savedKit?.inverter || null;
         const panel = savedKit?.panel || null;
         const panelCount = savedKit?.panelCount || finalPanels;
         const isPremium = line === 'premium';
+        const isCustomSaved = !!savedData.customKit?.enabled;
         const microCount = savedData.microInverterCount ?? (isPremium ? calcMicroInverterCount(panelCount) : 0);
         const panelPowerKwp = (panel?.power || 570) / 1000;
         const maxPanels = isPremium ? 999 : (inverter ? maxPanelsForInverter(inverter.power, panelPowerKwp) : 0);
         const panelsRemaining = isPremium ? 999 : maxPanels - panelCount;
-        
-        const totalPrice = savedCostBreakdown?.salePrice || savedData.totalPrice || proposal.totalPrice;
-        const installments = savedInstallments || (proposal.cetApplied
+
+        const fallbackCostBreakdown = (!savedCostBreakdown && !isCustomSaved)
+          ? calcCostBreakdown(inverter, panel, panelCount, line)
+          : null;
+        const costBreakdown = savedCostBreakdown || fallbackCostBreakdown;
+        const totalPrice = costBreakdown?.salePrice || savedData.totalPrice || proposal.totalPrice;
+        const installments = proposal.cetApplied
           ? calcInstallments(totalPrice, proposal.cetApplied)
-          : calcInstallments(totalPrice));
-        const cardInstallments = savedCardInstallments || calcCardInstallments(totalPrice, settings.creditCardRates);
-        const costBreakdown = savedCostBreakdown || calcCostBreakdown(inverter, panel, panelCount, line);
+          : calcInstallments(totalPrice);
+        const cardInstallments = calcCardInstallments(totalPrice, settings.creditCardRates);
 
         return {
           line, inverter, panel, panelCount, totalPrice, maxPanels, panelsRemaining, microCount,
@@ -154,7 +156,8 @@ export default function ProposalPage() {
       const inverter = findInverterForPanels(line, usedPanels, panelPowerKwp);
       const powerKwp = usedPanels * panelPowerKwp;
       const hasPriceTableCost = ptEntry && ptEntry[line] !== null && ptEntry[line]! > 0;
-      const totalPrice = hasPriceTableCost ? ptEntry[line]! : calcTotalPrice(inverter, panel, usedPanels, line);
+      const costBreakdown = calcCostBreakdown(inverter, panel, usedPanels, line);
+      const totalPrice = costBreakdown.salePrice;
       const dim = calcDimensioning(
         proposal.consumption || savedData.consumption, proposal.equipment || savedData.equipment || [], proposal.clientData?.networkType || savedData.clientData?.networkType,
         irradiation, proposal.clientData?.kwhPrice || savedData.clientData?.kwhPrice, totalPrice, settings.systemLoss
@@ -174,7 +177,6 @@ export default function ProposalPage() {
         ? calcInstallments(totalPrice, proposal.cetApplied)
         : calcInstallments(totalPrice);
       const cardInstallments = calcCardInstallments(totalPrice, settings.creditCardRates);
-      const costBreakdown = calcCostBreakdown(inverter, panel, usedPanels, line);
 
       return {
         line, inverter, panel, panelCount: usedPanels, totalPrice, maxPanels, panelsRemaining, microCount,
@@ -361,7 +363,8 @@ export default function ProposalPage() {
   const applyCet = () => {
     const cet = parseFloat(cetValue);
     if (cet > 0) {
-      const newInstallments = calcInstallments(proposal.totalPrice, cet);
+      const investmentBase = proposal.costBreakdown?.salePrice || proposal.totalPrice;
+      const newInstallments = calcInstallments(investmentBase, cet);
       const updated = { ...proposal, cetApplied: cet, installmentValues: newInstallments };
       saveProposal(updated);
       addHistoricoDB(id || '', 'cet_atualizada', session?.user?.id || null, { cet_anterior: proposal.cetApplied, cet_nova: cet });
@@ -697,6 +700,7 @@ export default function ProposalPage() {
           const card = lineCards.find(c => c.line === proposal.selectedLine) || lineCards[0];
           if (!card) return null;
           const monthlyBill = card.dimensioning.avgMonthlyKwh * proposal.clientData.kwhPrice;
+          const investmentBase = card.totalPrice || 0;
 
           const calcSavings = (years: number) => {
             let totalWithout = 0;
@@ -706,7 +710,7 @@ export default function ProposalPage() {
               const minFee = Math.max(80, monthlyBill * 0.15);
               totalWith += minFee * 12;
             }
-            return totalWithout - totalWith;
+            return totalWithout - totalWith - investmentBase;
           };
 
           const calcWithoutSolar = (years: number) => {

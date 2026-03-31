@@ -1056,12 +1056,13 @@ function ProposalsTab() {
     if (!cetModal) return;
     const cet = parseFloat(cetValue);
     if (!cet || cet <= 0) return;
+    const investmentBase = cetModal.costBreakdown?.salePrice || cetModal.totalPrice;
     const { savePropostaDB, addHistoricoDB } = await import('@/data/supabaseStore');
     const { calcInstallments } = await import('@/data/calculations');
     const updated = {
       ...cetModal,
       cetApplied: cet,
-      installmentValues: calcInstallments(cetModal.totalPrice, cet),
+      installmentValues: calcInstallments(investmentBase, cet),
     };
     await savePropostaDB(updated);
     await addHistoricoDB(cetModal.id, 'cet_atualizada', session?.user?.id || null, { cet_anterior: cetModal.cetApplied, cet_nova: cet, parcelas: cetParcelas });
@@ -1073,8 +1074,9 @@ function ProposalsTab() {
   const cetParcela = useMemo(() => {
     if (!cetModal || !cetValue) return 0;
     const cet = parseFloat(cetValue) / 100;
-    if (cet <= 0) return cetModal.totalPrice / cetParcelas;
-    return (cetModal.totalPrice * cet * Math.pow(1 + cet, cetParcelas)) / (Math.pow(1 + cet, cetParcelas) - 1);
+    const investmentBase = cetModal.costBreakdown?.salePrice || cetModal.totalPrice;
+    if (cet <= 0) return investmentBase / cetParcelas;
+    return (investmentBase * cet * Math.pow(1 + cet, cetParcelas)) / (Math.pow(1 + cet, cetParcelas) - 1);
   }, [cetModal, cetValue, cetParcelas]);
 
   return (

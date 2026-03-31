@@ -13,7 +13,7 @@ import {
 import type { EquipmentCatalogItem } from '@/data/types';
 import {
   estimateFullConsumption, calcEquipmentMonthly, calcDimensioning,
-  findInverterForPanels, findPanel, calcTotalPrice, calcInstallments,
+  findInverterForPanels, findPanel, calcInstallments,
   calcCardInstallments, calcCostBreakdown,
   formatCurrency, formatNumber, maxPanelsForInverter, calcMicroInverterCount,
 } from '@/data/calculations';
@@ -319,7 +319,8 @@ export default function CalculatorPage() {
       const inverter = findInverterForPanels(line, usedPanels, panelPowerKwp);
       const powerKwp = usedPanels * panelPowerKwp;
       const hasPriceTableCost = ptEntry && ptEntry[line] !== null && ptEntry[line]! > 0;
-      const totalPrice = hasPriceTableCost ? ptEntry[line]! : calcTotalPrice(inverter, panel, usedPanels, line);
+      const costBreakdown = calcCostBreakdown(inverter, panel, usedPanels, line);
+      const totalPrice = costBreakdown.salePrice;
       const dim = calcDimensioning(consumption, equipment, client.networkType, irradiation, client.kwhPrice, totalPrice, settings.systemLoss);
       const isPremium = line === 'premium';
       const microCount = isPremium ? calcMicroInverterCount(usedPanels) : 0;
@@ -332,7 +333,6 @@ export default function CalculatorPage() {
       const panelsRemaining = isPremium ? 999 : maxPanels - usedPanels;
       const monthlyGeneration = powerKwp * irradiation * 30 * (1 - settings.systemLoss / 100);
       const surplus = monthlyGeneration - dim.avgMonthlyKwh;
-      const costBreakdown = calcCostBreakdown(inverter, panel, usedPanels, line);
       const cardInstallments = calcCardInstallments(totalPrice, settings.creditCardRates);
 
       return {
