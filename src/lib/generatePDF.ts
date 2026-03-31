@@ -404,7 +404,7 @@ export async function generateProposalPDF(
   INSTALLMENT_OPTIONS.forEach((n, i) => {
     const ix = M + i * installW;
     setFill([252, 251, 246]);
-    doc.roundedRect(ix + 2, y, installW - 4, 23, 3, 3, 'F');
+    doc.roundedRect(ix + 2, y, installW - 4, 28, 3, 3, 'F');
 
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(23);
@@ -414,10 +414,19 @@ export async function generateProposalPDF(
     setFill(SECONDARY);
     doc.roundedRect(ix + 6, y + 13, installW - 12, 0.7, 0.3, 0.3, 'F');
 
+    const instVal = selectedCard?.installments?.[n];
+    const perMonth = instVal ? (typeof instVal === 'number' ? instVal : (instVal as any).perMonth) : 0;
+    const total = instVal ? (typeof instVal === 'number' ? instVal * n : (instVal as any).total) : 0;
+
     doc.setFontSize(9);
     doc.setFont('helvetica', 'bold');
     setColor(DARK);
-    doc.text(formatCurrency(selectedCard?.installments?.[n] || 0), ix + installW / 2, y + 20, { align: 'center' });
+    doc.text(formatCurrency(perMonth), ix + installW / 2, y + 20, { align: 'center' });
+
+    doc.setFontSize(5.5);
+    doc.setFont('helvetica', 'normal');
+    setColor(GRAY);
+    doc.text(`Total: ${formatCurrency(total)}`, ix + installW / 2, y + 25, { align: 'center' });
   });
 
   y += 27;
