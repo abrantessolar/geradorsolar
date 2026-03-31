@@ -1144,9 +1144,6 @@ function ProposalsTab() {
                       <button onClick={() => handleCopyLink(p.id)} className="text-green-600 hover:text-green-500" title="Copiar link">
                         <Share2 className="w-4 h-4" />
                       </button>
-                      <button onClick={() => { setCetModal(p); setCetValue(p.cetApplied ? String(p.cetApplied) : ''); }} className="text-amber-600 hover:text-amber-500" title="Atualizar CET">
-                        <DollarSign className="w-4 h-4" />
-                      </button>
                       <button onClick={() => handleArchive(p.id)} className="text-muted-foreground hover:text-destructive" title="Arquivar">
                         <Trash2 className="w-4 h-4" />
                       </button>
