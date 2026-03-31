@@ -505,7 +505,11 @@ export async function generateProposalPDF(
         setColor(DARK);
         doc.text(`${n}×`, cx + 6, rowY + 1);
         doc.setFont('helvetica', 'bold');
-        doc.text(formatCurrency((v as any).perMonth), cx + colW - 6, rowY + 1, { align: 'right' });
+        doc.text(formatCurrency((v as any).perMonth), cx + colW * 0.55, rowY + 1, { align: 'center' });
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(5.5);
+        setColor(GRAY);
+        doc.text(formatCurrency((v as any).total), cx + colW - 6, rowY + 1, { align: 'right' });
         rowY += 5.5;
       });
     });
