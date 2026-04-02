@@ -122,6 +122,9 @@ export default function ProjetosList({ projetos, loading, onEdit, onDocumentos, 
                       <button onClick={() => setLayoutProjeto(p)} className={`${p.layout_url ? 'text-green-600' : 'text-muted-foreground'} hover:text-primary`} title="Layout">
                         <ImageIcon className="w-4 h-4" />
                       </button>
+                      <button onClick={() => setConcluidaProjeto(p)} className="text-green-600 hover:text-green-500" title="Obra Concluída">
+                        <CheckCircle className="w-4 h-4" />
+                      </button>
                       {p.objecoes && p.objecoes.trim() && (
                         <span title={p.objecoes}><AlertTriangle className="w-4 h-4 text-amber-500" /></span>
                       )}
