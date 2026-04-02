@@ -85,6 +85,7 @@ Deno.serve(async (req) => {
       if (ativo !== undefined) updates.ativo = ativo;
       if (email !== undefined) updates.email = email;
       if (body.telefone !== undefined) updates.telefone = body.telefone;
+      if (body.acesso_painel_gestor !== undefined) updates.acesso_painel_gestor = body.acesso_painel_gestor;
 
       if (Object.keys(updates).length > 0) {
         await supabaseAdmin.from('user_profiles').update(updates).eq('user_id', user_id);
