@@ -1,6 +1,10 @@
 import React, { useState, useMemo } from 'react';
 import type { Projeto } from '@/pages/GestorPage';
-import { Eye, Edit2, FileText, AlertTriangle, Filter } from 'lucide-react';
+import { Edit2, FileText, AlertTriangle, Snowflake, Image as ImageIcon } from 'lucide-react';
+import WhatsAppLink from './WhatsAppLink';
+import InstaladorSelect from './InstaladorSelect';
+import CongelarModal from './CongelarModal';
+import LayoutUploadModal from './LayoutUploadModal';
 
 const STATUS_LIST = ['Vendido', 'Equipamento Comprado', 'Entregue', 'Em Instalação', 'Instalado', 'Projeto Submetido', 'Homologado'];
 const STATUS_COLORS: Record<string, string> = {
@@ -28,6 +32,8 @@ export default function ProjetosList({ projetos, loading, onEdit, onDocumentos, 
   const [statusFilter, setStatusFilter] = useState('');
   const [concFilter, setConcFilter] = useState('');
   const [search, setSearch] = useState('');
+  const [congelarId, setCongelarId] = useState<string | null>(null);
+  const [layoutProjeto, setLayoutProjeto] = useState<Projeto | null>(null);
 
   const filtered = useMemo(() => {
     return projetos.filter(p => {
@@ -54,7 +60,7 @@ export default function ProjetosList({ projetos, loading, onEdit, onDocumentos, 
         </select>
         <select className="solar-input max-w-[180px]" value={concFilter} onChange={e => setConcFilter(e.target.value)}>
           <option value="">Todas concessionárias</option>
-          {['Elektro', 'Energisa', 'COPEL', 'Outra'].map(c => <option key={c} value={c}>{c}</option>)}
+          {['ELEKTRO', 'ENERGISA', 'COPEL', 'OUTRA'].map(c => <option key={c} value={c}>{c}</option>)}
         </select>
         <span className="text-xs text-muted-foreground ml-auto">{filtered.length} projeto(s)</span>
       </div>
@@ -64,12 +70,12 @@ export default function ProjetosList({ projetos, loading, onEdit, onDocumentos, 
           <thead>
             <tr className="border-b border-border text-left text-muted-foreground">
               <th className="py-2 px-2">Cliente</th>
+              <th className="py-2 px-2">Telefone</th>
               <th className="py-2 px-2">Tempo</th>
               <th className="py-2 px-2">Concessionária</th>
               <th className="py-2 px-2">Status</th>
-              <th className="py-2 px-2">Instalação</th>
+              <th className="py-2 px-2">Instalador</th>
               <th className="py-2 px-2">Entrega</th>
-              <th className="py-2 px-2">Obj.</th>
               <th className="py-2 px-2">Ações</th>
             </tr>
           </thead>
@@ -78,8 +84,12 @@ export default function ProjetosList({ projetos, loading, onEdit, onDocumentos, 
               const days = daysSince(p.data_fechamento);
               const clientName = p.nome_completo || p.razao_social || '—';
               return (
-                <tr key={p.id} className="border-b border-border/50 hover:bg-muted/30">
-                  <td className="py-2 px-2 font-medium max-w-[200px] truncate">{clientName}</td>
+                <tr key={p.id} className={`border-b border-border/50 hover:bg-muted/30 ${p.congelado ? 'opacity-60' : ''}`}>
+                  <td className="py-2 px-2 font-medium max-w-[180px] truncate">
+                    {p.congelado && <span className="mr-1" title="Congelada">❄️</span>}
+                    {clientName}
+                  </td>
+                  <td className="py-2 px-2 text-xs"><WhatsAppLink phone={p.telefone} /></td>
                   <td className={`py-2 px-2 text-xs font-medium ${days > 60 ? 'text-destructive' : ''}`}>
                     {p.data_fechamento ? `${days}d` : '—'}
                   </td>
@@ -89,26 +99,30 @@ export default function ProjetosList({ projetos, loading, onEdit, onDocumentos, 
                       {p.status}
                     </span>
                   </td>
-                  <td className="py-2 px-2 text-xs">
-                    {p.data_instalacao ? new Date(p.data_instalacao).toLocaleDateString('pt-BR') : '—'}
+                  <td className="py-2 px-2">
+                    <InstaladorSelect projetoId={p.id} currentValue={p.instalador} onDone={onRefresh} />
                   </td>
                   <td className="py-2 px-2 text-xs">
-                    {p.status === 'Entregue' || p.status === 'Em Instalação' || p.status === 'Instalado' || p.status === 'Projeto Submetido' || p.status === 'Homologado'
+                    {['Entregue', 'Em Instalação', 'Instalado', 'Projeto Submetido', 'Homologado'].includes(p.status)
                       ? `Sim (${p.local_entrega || '—'})` : 'Não'}
                   </td>
                   <td className="py-2 px-2">
-                    {p.objecoes && p.objecoes.trim() ? (
-                      <span title={p.objecoes}><AlertTriangle className="w-4 h-4 text-amber-500" /></span>
-                    ) : '—'}
-                  </td>
-                  <td className="py-2 px-2">
-                    <div className="flex gap-1">
+                    <div className="flex gap-1 items-center">
                       <button onClick={() => onEdit(p.id)} className="text-primary hover:text-primary/80" title="Editar">
                         <Edit2 className="w-4 h-4" />
                       </button>
-                      <button onClick={() => onDocumentos(p)} className="text-blue-600 hover:text-blue-500" title="Gerar Documentos">
+                      <button onClick={() => onDocumentos(p)} className="text-blue-600 hover:text-blue-500" title="Documentos">
                         <FileText className="w-4 h-4" />
                       </button>
+                      <button onClick={() => setCongelarId(p.congelado ? null : p.id)} className="text-blue-400 hover:text-blue-600" title={p.congelado ? 'Já congelada' : 'Congelar'}>
+                        <Snowflake className="w-4 h-4" />
+                      </button>
+                      <button onClick={() => setLayoutProjeto(p)} className={`${p.layout_url ? 'text-green-600' : 'text-muted-foreground'} hover:text-primary`} title="Layout">
+                        <ImageIcon className="w-4 h-4" />
+                      </button>
+                      {p.objecoes && p.objecoes.trim() && (
+                        <span title={p.objecoes}><AlertTriangle className="w-4 h-4 text-amber-500" /></span>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -120,6 +134,9 @@ export default function ProjetosList({ projetos, loading, onEdit, onDocumentos, 
           </tbody>
         </table>
       </div>
+
+      {congelarId && <CongelarModal projetoId={congelarId} onClose={() => setCongelarId(null)} onDone={onRefresh} />}
+      {layoutProjeto && <LayoutUploadModal projetoId={layoutProjeto.id} currentUrl={layoutProjeto.layout_url} onClose={() => setLayoutProjeto(null)} onDone={onRefresh} />}
     </div>
   );
 }
