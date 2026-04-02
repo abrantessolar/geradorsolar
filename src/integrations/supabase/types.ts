@@ -149,6 +149,36 @@ export type Database = {
         }
         Relationships: []
       }
+      equipamentos_inversores: {
+        Row: {
+          ativo: boolean
+          criado_em: string
+          id: string
+          marca: string
+          modelo: string
+          potencia_kw: number
+          tipo: string
+        }
+        Insert: {
+          ativo?: boolean
+          criado_em?: string
+          id?: string
+          marca: string
+          modelo: string
+          potencia_kw: number
+          tipo?: string
+        }
+        Update: {
+          ativo?: boolean
+          criado_em?: string
+          id?: string
+          marca?: string
+          modelo?: string
+          potencia_kw?: number
+          tipo?: string
+        }
+        Relationships: []
+      }
       equipamentos_kits: {
         Row: {
           ativo: boolean
@@ -188,6 +218,33 @@ export type Database = {
           potencia_min?: number | null
           preco_custo?: number | null
           tipo?: string
+        }
+        Relationships: []
+      }
+      equipamentos_placas: {
+        Row: {
+          ativo: boolean
+          criado_em: string
+          id: string
+          marca: string
+          modelo: string
+          potencia_wp: number
+        }
+        Insert: {
+          ativo?: boolean
+          criado_em?: string
+          id?: string
+          marca: string
+          modelo: string
+          potencia_wp: number
+        }
+        Update: {
+          ativo?: boolean
+          criado_em?: string
+          id?: string
+          marca?: string
+          modelo?: string
+          potencia_wp?: number
         }
         Relationships: []
       }
@@ -331,6 +388,180 @@ export type Database = {
         }
         Relationships: []
       }
+      modelos_documentos: {
+        Row: {
+          atualizado_em: string
+          conteudo_html: string
+          id: string
+          tipo: string
+        }
+        Insert: {
+          atualizado_em?: string
+          conteudo_html?: string
+          id?: string
+          tipo: string
+        }
+        Update: {
+          atualizado_em?: string
+          conteudo_html?: string
+          id?: string
+          tipo?: string
+        }
+        Relationships: []
+      }
+      projetos: {
+        Row: {
+          atualizado_em: string
+          bairro: string | null
+          cep: string | null
+          cidade: string | null
+          cnpj: string | null
+          concessionaria: string
+          cpf: string | null
+          cpf_representante: string | null
+          criado_em: string
+          data_fechamento: string | null
+          data_instalacao: string | null
+          data_nascimento: string | null
+          endereco_completo: string | null
+          estado: string | null
+          forma_pagamento: string | null
+          geracao_estimada_kwh: number | null
+          id: string
+          inversor_id: string | null
+          local_entrega: string | null
+          nome_completo: string | null
+          nome_representante: string | null
+          objecoes: string | null
+          placa_id: string | null
+          preco_venda: number | null
+          qtd_inversores: number | null
+          qtd_placas: number | null
+          razao_social: string | null
+          sheets_synced_at: string | null
+          status: string
+          tipo_pessoa: string
+          unidade_beneficiaria1_cep: string | null
+          unidade_beneficiaria1_codigo_uc: string | null
+          unidade_beneficiaria1_endereco: string | null
+          unidade_beneficiaria1_percentual: number | null
+          unidade_beneficiaria2_cep: string | null
+          unidade_beneficiaria2_codigo_uc: string | null
+          unidade_beneficiaria2_endereco: string | null
+          unidade_beneficiaria2_percentual: number | null
+          unidade_geradora_cep: string | null
+          unidade_geradora_codigo_uc: string | null
+          unidade_geradora_endereco: string | null
+          unidade_geradora_padrao: string | null
+          usuario_id: string
+        }
+        Insert: {
+          atualizado_em?: string
+          bairro?: string | null
+          cep?: string | null
+          cidade?: string | null
+          cnpj?: string | null
+          concessionaria?: string
+          cpf?: string | null
+          cpf_representante?: string | null
+          criado_em?: string
+          data_fechamento?: string | null
+          data_instalacao?: string | null
+          data_nascimento?: string | null
+          endereco_completo?: string | null
+          estado?: string | null
+          forma_pagamento?: string | null
+          geracao_estimada_kwh?: number | null
+          id?: string
+          inversor_id?: string | null
+          local_entrega?: string | null
+          nome_completo?: string | null
+          nome_representante?: string | null
+          objecoes?: string | null
+          placa_id?: string | null
+          preco_venda?: number | null
+          qtd_inversores?: number | null
+          qtd_placas?: number | null
+          razao_social?: string | null
+          sheets_synced_at?: string | null
+          status?: string
+          tipo_pessoa?: string
+          unidade_beneficiaria1_cep?: string | null
+          unidade_beneficiaria1_codigo_uc?: string | null
+          unidade_beneficiaria1_endereco?: string | null
+          unidade_beneficiaria1_percentual?: number | null
+          unidade_beneficiaria2_cep?: string | null
+          unidade_beneficiaria2_codigo_uc?: string | null
+          unidade_beneficiaria2_endereco?: string | null
+          unidade_beneficiaria2_percentual?: number | null
+          unidade_geradora_cep?: string | null
+          unidade_geradora_codigo_uc?: string | null
+          unidade_geradora_endereco?: string | null
+          unidade_geradora_padrao?: string | null
+          usuario_id: string
+        }
+        Update: {
+          atualizado_em?: string
+          bairro?: string | null
+          cep?: string | null
+          cidade?: string | null
+          cnpj?: string | null
+          concessionaria?: string
+          cpf?: string | null
+          cpf_representante?: string | null
+          criado_em?: string
+          data_fechamento?: string | null
+          data_instalacao?: string | null
+          data_nascimento?: string | null
+          endereco_completo?: string | null
+          estado?: string | null
+          forma_pagamento?: string | null
+          geracao_estimada_kwh?: number | null
+          id?: string
+          inversor_id?: string | null
+          local_entrega?: string | null
+          nome_completo?: string | null
+          nome_representante?: string | null
+          objecoes?: string | null
+          placa_id?: string | null
+          preco_venda?: number | null
+          qtd_inversores?: number | null
+          qtd_placas?: number | null
+          razao_social?: string | null
+          sheets_synced_at?: string | null
+          status?: string
+          tipo_pessoa?: string
+          unidade_beneficiaria1_cep?: string | null
+          unidade_beneficiaria1_codigo_uc?: string | null
+          unidade_beneficiaria1_endereco?: string | null
+          unidade_beneficiaria1_percentual?: number | null
+          unidade_beneficiaria2_cep?: string | null
+          unidade_beneficiaria2_codigo_uc?: string | null
+          unidade_beneficiaria2_endereco?: string | null
+          unidade_beneficiaria2_percentual?: number | null
+          unidade_geradora_cep?: string | null
+          unidade_geradora_codigo_uc?: string | null
+          unidade_geradora_endereco?: string | null
+          unidade_geradora_padrao?: string | null
+          usuario_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "projetos_inversor_id_fkey"
+            columns: ["inversor_id"]
+            isOneToOne: false
+            referencedRelation: "equipamentos_inversores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projetos_placa_id_fkey"
+            columns: ["placa_id"]
+            isOneToOne: false
+            referencedRelation: "equipamentos_placas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       propostas: {
         Row: {
           atualizado_em: string
@@ -404,6 +635,7 @@ export type Database = {
       }
       user_profiles: {
         Row: {
+          acesso_painel_gestor: boolean
           ativo: boolean
           criado_em: string
           email: string
@@ -415,6 +647,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          acesso_painel_gestor?: boolean
           ativo?: boolean
           criado_em?: string
           email: string
@@ -426,6 +659,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          acesso_painel_gestor?: boolean
           ativo?: boolean
           criado_em?: string
           email?: string
