@@ -424,7 +424,7 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
             <div><label className={labelClass}>Projeto Aprovado</label><input className={inputClass} type="date" value={form.projeto_aprovado} onChange={e => set('projeto_aprovado', e.target.value)} /></div>
             <div><label className={labelClass}>Vistoriado em</label><input className={inputClass} type="date" value={form.vistoriado_em} onChange={e => set('vistoriado_em', e.target.value)} /></div>
           </div>
-          <div><label className={labelClass}>Objeções</label><textarea className={inputClass} rows={3} value={form.objecoes} onChange={e => set('objecoes', e.target.value)} placeholder="Observações, objeções do cliente..." /></div>
+          
         </div>
       )}
 
