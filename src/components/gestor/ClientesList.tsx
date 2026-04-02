@@ -1,0 +1,191 @@
+import React, { useState, useMemo } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
+import { Eye, Search, ArrowUpRight, Upload } from 'lucide-react';
+
+export type ClienteBase = {
+  id: string;
+  criado_em: string;
+  nome_completo: string | null;
+  cpf: string | null;
+  endereco: string | null;
+  telefone: string | null;
+  uc: string | null;
+  concessionaria: string | null;
+  sistema: string | null;
+  dados_paineis: string | null;
+  dados_inversor: string | null;
+  qtd_placas: number | null;
+  marca_placa: string | null;
+  potencia_placa: string | null;
+  qtd_inversores: number | null;
+  marca_inversor: string | null;
+  potencia_inversor: string | null;
+  tipo_inversor: string | null;
+  fornecedor: string | null;
+  valor: number | null;
+  forma_pagamento: string | null;
+  projeto_enviado_em: string | null;
+  projeto_aprovado: string | null;
+  instalado_em: string | null;
+  vistoriado_em: string | null;
+  nome_planta: string | null;
+  satisfacao: string | null;
+  origem: string;
+  projeto_id: string | null;
+};
+
+export default function ClientesList({
+  clientes,
+  loading,
+  onPromover,
+  onRefresh,
+  onImport,
+}: {
+  clientes: ClienteBase[];
+  loading: boolean;
+  onPromover: (c: ClienteBase) => void;
+  onRefresh: () => void;
+  onImport: () => void;
+}) {
+  const [search, setSearch] = useState('');
+  const [concFilter, setConcFilter] = useState('');
+  const [selectedCliente, setSelectedCliente] = useState<ClienteBase | null>(null);
+
+  const filtered = useMemo(() => {
+    return clientes.filter(c => {
+      if (concFilter && c.concessionaria !== concFilter) return false;
+      if (search) {
+        const q = search.toLowerCase();
+        const name = (c.nome_completo || '').toLowerCase();
+        const cpf = (c.cpf || '').toLowerCase();
+        const uc = (c.uc || '').toLowerCase();
+        if (!name.includes(q) && !cpf.includes(q) && !uc.includes(q)) return false;
+      }
+      return true;
+    });
+  }, [clientes, search, concFilter]);
+
+  if (loading) return <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" /></div>;
+
+  return (
+    <>
+      <div className="solar-card p-6 space-y-4">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <input className="solar-input pl-9 max-w-xs" placeholder="Buscar nome, CPF ou UC..." value={search} onChange={e => setSearch(e.target.value)} />
+          </div>
+          <select className="solar-input max-w-[180px]" value={concFilter} onChange={e => setConcFilter(e.target.value)}>
+            <option value="">Todas concessionárias</option>
+            {['ELEKTRO', 'ENERGISA', 'COPEL', 'OUTRA'].map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
+          <button onClick={onImport} className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-accent text-accent-foreground hover:bg-accent/80 transition-colors">
+            <Upload className="w-4 h-4" /> Importar JSON
+          </button>
+          <span className="text-xs text-muted-foreground ml-auto">{filtered.length} cliente(s)</span>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-border text-left text-muted-foreground">
+                <th className="py-2 px-2">Nome</th>
+                <th className="py-2 px-2">CPF</th>
+                <th className="py-2 px-2">Telefone</th>
+                <th className="py-2 px-2">UC</th>
+                <th className="py-2 px-2">Concessionária</th>
+                <th className="py-2 px-2">Sistema</th>
+                <th className="py-2 px-2">Valor</th>
+                <th className="py-2 px-2">Instalação</th>
+                <th className="py-2 px-2">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map(c => (
+                <tr key={c.id} className="border-b border-border/50 hover:bg-muted/30">
+                  <td className="py-2 px-2 font-medium max-w-[180px] truncate">{c.nome_completo || '—'}</td>
+                  <td className="py-2 px-2 text-xs">{c.cpf || '—'}</td>
+                  <td className="py-2 px-2 text-xs">{c.telefone || '—'}</td>
+                  <td className="py-2 px-2 text-xs">{c.uc || '—'}</td>
+                  <td className="py-2 px-2 text-xs">{c.concessionaria || '—'}</td>
+                  <td className="py-2 px-2 text-xs">{c.sistema || '—'}</td>
+                  <td className="py-2 px-2 text-xs">
+                    {c.valor ? `R$ ${Number(c.valor).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '—'}
+                  </td>
+                  <td className="py-2 px-2 text-xs">
+                    {c.instalado_em ? new Date(c.instalado_em).toLocaleDateString('pt-BR') : '—'}
+                  </td>
+                  <td className="py-2 px-2">
+                    <div className="flex gap-1">
+                      <button onClick={() => setSelectedCliente(c)} className="text-primary hover:text-primary/80" title="Ver detalhes">
+                        <Eye className="w-4 h-4" />
+                      </button>
+                      {!c.projeto_id && (
+                        <button onClick={() => onPromover(c)} className="text-green-600 hover:text-green-500" title="Promover para Obra">
+                          <ArrowUpRight className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+              {filtered.length === 0 && (
+                <tr><td colSpan={9} className="py-8 text-center text-muted-foreground">Nenhum cliente encontrado.</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Detail modal */}
+      {selectedCliente && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setSelectedCliente(null)}>
+          <div className="bg-background rounded-xl shadow-xl max-w-2xl w-full max-h-[80vh] overflow-y-auto p-6 space-y-4" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-bold text-primary">{selectedCliente.nome_completo || 'Cliente'}</h2>
+              <button onClick={() => setSelectedCliente(null)} className="text-muted-foreground hover:text-foreground text-xl">×</button>
+            </div>
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              {[
+                ['CPF', selectedCliente.cpf],
+                ['Telefone', selectedCliente.telefone],
+                ['Endereço', selectedCliente.endereco],
+                ['UC', selectedCliente.uc],
+                ['Concessionária', selectedCliente.concessionaria],
+                ['Sistema', selectedCliente.sistema],
+                ['Painéis', selectedCliente.dados_paineis || `${selectedCliente.qtd_placas || ''} ${selectedCliente.marca_placa || ''} ${selectedCliente.potencia_placa || ''}`],
+                ['Inversor', selectedCliente.dados_inversor || `${selectedCliente.qtd_inversores || ''} ${selectedCliente.marca_inversor || ''} ${selectedCliente.potencia_inversor || ''}`],
+                ['Tipo Inversor', selectedCliente.tipo_inversor],
+                ['Fornecedor', selectedCliente.fornecedor],
+                ['Valor', selectedCliente.valor ? `R$ ${Number(selectedCliente.valor).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : null],
+                ['Forma Pagamento', selectedCliente.forma_pagamento],
+                ['Projeto Enviado', selectedCliente.projeto_enviado_em],
+                ['Projeto Aprovado', selectedCliente.projeto_aprovado],
+                ['Instalado em', selectedCliente.instalado_em],
+                ['Vistoriado em', selectedCliente.vistoriado_em],
+                ['Nome Planta', selectedCliente.nome_planta],
+                ['Satisfação', selectedCliente.satisfacao],
+                ['Origem', selectedCliente.origem === 'importacao' ? 'Importação' : 'Promovido de Obra'],
+              ].map(([label, val]) => (
+                <div key={label as string}>
+                  <p className="text-xs text-muted-foreground">{label}</p>
+                  <p className="font-medium">{(val as string) || '—'}</p>
+                </div>
+              ))}
+            </div>
+            {!selectedCliente.projeto_id && (
+              <button
+                onClick={() => { onPromover(selectedCliente); setSelectedCliente(null); }}
+                className="w-full mt-4 flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+              >
+                <ArrowUpRight className="w-4 h-4" /> Promover para Obra
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
