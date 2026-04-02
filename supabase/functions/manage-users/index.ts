@@ -68,6 +68,7 @@ Deno.serve(async (req) => {
         email,
         role: role || 'vendedor',
         telefone: telefone || null,
+        acesso_painel_gestor: body.acesso_painel_gestor || false,
       });
 
       return new Response(JSON.stringify({ user: data.user }), {
