@@ -122,7 +122,7 @@ export default function GestorPage() {
     { key: 'projetos' as const, label: 'Projetos', icon: ClipboardList },
     { key: 'novo' as const, label: 'Novo Projeto', icon: Plus },
     { key: 'modelos' as const, label: 'Modelos de Documentos', icon: FileText },
-    { key: 'importar' as const, label: 'Importar CSV', icon: Upload },
+    { key: 'importar' as const, label: 'Importar JSON', icon: Upload },
   ];
 
   return (
