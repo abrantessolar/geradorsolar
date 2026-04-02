@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import {
   BarChart3, ClipboardList, Plus, Filter, FileText, Eye, Edit2,
   AlertTriangle, Clock, Building2, CheckCircle, Wrench, Home,
-  Upload, ChevronLeft, ChevronRight,
+  Upload, ChevronLeft, ChevronRight, RefreshCw,
 } from 'lucide-react';
 import GestorDashboard from '@/components/gestor/GestorDashboard';
 import ProjetoForm from '@/components/gestor/ProjetoForm';
