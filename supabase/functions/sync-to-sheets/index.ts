@@ -15,39 +15,20 @@ async function createGoogleJWT(serviceAccount: any): Promise<string> {
     exp: now + 3600,
     iat: now,
   };
-
   const encode = (obj: any) =>
     btoa(JSON.stringify(obj)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-
   const headerB64 = encode(header);
   const claimB64 = encode(claim);
   const unsignedToken = `${headerB64}.${claimB64}`;
-
   const pemContents = serviceAccount.private_key
     .replace(/-----BEGIN PRIVATE KEY-----/, '')
     .replace(/-----END PRIVATE KEY-----/, '')
     .replace(/\n/g, '');
   const binaryDer = Uint8Array.from(atob(pemContents), (c) => c.charCodeAt(0));
-
-  const cryptoKey = await crypto.subtle.importKey(
-    'pkcs8',
-    binaryDer,
-    { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
-    false,
-    ['sign']
-  );
-
-  const signature = await crypto.subtle.sign(
-    'RSASSA-PKCS1-v1_5',
-    cryptoKey,
-    new TextEncoder().encode(unsignedToken)
-  );
-
+  const cryptoKey = await crypto.subtle.importKey('pkcs8', binaryDer, { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' }, false, ['sign']);
+  const signature = await crypto.subtle.sign('RSASSA-PKCS1-v1_5', cryptoKey, new TextEncoder().encode(unsignedToken));
   const signatureB64 = btoa(String.fromCharCode(...new Uint8Array(signature)))
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=+$/, '');
-
+    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
   return `${unsignedToken}.${signatureB64}`;
 }
 
@@ -63,7 +44,19 @@ async function getAccessToken(serviceAccount: any): Promise<string> {
   return data.access_token;
 }
 
-const HEADERS = [
+function colLetter(n: number): string {
+  let s = '';
+  while (n > 0) { n--; s = String.fromCharCode(65 + (n % 26)) + s; n = Math.floor(n / 26); }
+  return s;
+}
+
+function calcDiasDecorridos(dataFechamento: string | null): number | string {
+  if (!dataFechamento) return '';
+  return Math.floor((Date.now() - new Date(dataFechamento).getTime()) / (1000 * 60 * 60 * 24));
+}
+
+// ── OBRAS SHEET ──
+const OBRAS_HEADERS = [
   'ID Projeto', 'Data Fechamento', 'Cliente', 'CPF/CNPJ', 'Telefone',
   'Concessionária', 'Sistema', 'Qtd Placas', 'Marca Placa', 'Potência Placa (Wp)',
   'Qtd Inversores', 'Marca Inversor', 'Potência Inversor (kW)',
@@ -73,20 +66,88 @@ const HEADERS = [
   'Projeto Enviado', 'Projeto Aprovado', 'Vistoriado Em',
   'Tempo Decorrido (dias)',
 ];
+const OBRAS_LAST_COL = colLetter(OBRAS_HEADERS.length);
 
-const COL_COUNT = HEADERS.length;
-const lastCol = String.fromCharCode(64 + COL_COUNT); // e.g. 'AA' handled below
-function colLetter(n: number): string {
-  let s = '';
-  while (n > 0) { n--; s = String.fromCharCode(65 + (n % 26)) + s; n = Math.floor(n / 26); }
-  return s;
+// ── CLIENTES SHEET ──
+const CLIENTES_HEADERS = [
+  'ID', 'Nome', 'CPF', 'Endereço', 'Telefone', 'UC',
+  'Concessionária', 'Sistema', 'Painéis', 'Inversor',
+  'Qtd Placas', 'Marca Placa', 'Potência Placa',
+  'Qtd Inversores', 'Marca Inversor', 'Potência Inversor', 'Tipo Inversor',
+  'Fornecedor', 'Valor', 'Forma Pagamento',
+  'Projeto Enviado', 'Projeto Aprovado', 'Instalado Em', 'Vistoriado Em',
+  'Nome Planta', 'Satisfação', 'Origem',
+];
+const CLIENTES_LAST_COL = colLetter(CLIENTES_HEADERS.length);
+
+async function ensureSheet(sheetsUrl: string, accessToken: string, sheetTitle: string) {
+  const metaResp = await fetch(sheetsUrl, { headers: { Authorization: `Bearer ${accessToken}` } });
+  const meta = await metaResp.json();
+  const exists = (meta.sheets || []).some((s: any) => s.properties?.title === sheetTitle);
+  if (!exists) {
+    await fetch(`${sheetsUrl}:batchUpdate`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ requests: [{ addSheet: { properties: { title: sheetTitle } } }] }),
+    });
+  }
 }
-const LAST_COL = colLetter(COL_COUNT);
 
-function calcDiasDecorridos(dataFechamento: string | null): number | string {
-  if (!dataFechamento) return '';
-  const diff = Date.now() - new Date(dataFechamento).getTime();
-  return Math.floor(diff / (1000 * 60 * 60 * 24));
+async function syncSheet(
+  sheetsUrl: string, accessToken: string, sheetName: string,
+  headers: string[], lastCol: string, rows: string[][], idIndex: number
+) {
+  const range = (r: string) => `'${sheetName}'!${r}`;
+
+  // Ensure header
+  const headerResp = await fetch(`${sheetsUrl}/values/${range(`A1:${lastCol}1`)}`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  const headerData = await headerResp.json();
+  if (!headerData.values || headerData.values.length === 0) {
+    await fetch(`${sheetsUrl}/values/${range(`A1:${lastCol}1`)}?valueInputOption=RAW`, {
+      method: 'PUT',
+      headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ values: [headers] }),
+    });
+  }
+
+  // Get existing IDs
+  const existingResp = await fetch(`${sheetsUrl}/values/${range('A:A')}`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  const existingData = await existingResp.json();
+  const existingIds: string[] = (existingData.values || []).map((r: string[]) => r[0]);
+
+  const updates: { range: string; values: string[][] }[] = [];
+  const appends: string[][] = [];
+
+  for (const row of rows) {
+    const rowId = row[idIndex];
+    const rowIdx = existingIds.indexOf(rowId);
+    if (rowIdx > 0) {
+      updates.push({ range: range(`A${rowIdx + 1}:${lastCol}${rowIdx + 1}`), values: [row] });
+    } else {
+      appends.push(row);
+    }
+  }
+
+  if (updates.length > 0) {
+    await fetch(`${sheetsUrl}/values:batchUpdate`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ valueInputOption: 'RAW', data: updates }),
+    });
+  }
+  if (appends.length > 0) {
+    await fetch(`${sheetsUrl}/values/${range(`A:${lastCol}`)}:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ values: appends }),
+    });
+  }
+
+  return rows.length;
 }
 
 Deno.serve(async (req) => {
@@ -105,136 +166,79 @@ Deno.serve(async (req) => {
 
     const sheetsId = Deno.env.get('GOOGLE_SHEETS_ID');
     const serviceAccountJson = Deno.env.get('GOOGLE_SERVICE_ACCOUNT');
-
     if (!sheetsId || !serviceAccountJson) {
       return new Response(JSON.stringify({ error: 'Google Sheets credentials not configured' }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
     const serviceAccount = JSON.parse(serviceAccountJson);
     const accessToken = await getAccessToken(serviceAccount);
-
     const sheetsUrl = `https://sheets.googleapis.com/v4/spreadsheets/${sheetsId}`;
 
-    // Ensure header row
-    const headerResp = await fetch(`${sheetsUrl}/values/A1:${LAST_COL}1`, {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    });
-    const headerData = await headerResp.json();
-
-    if (!headerData.values || headerData.values.length === 0) {
-      await fetch(`${sheetsUrl}/values/A1:${LAST_COL}1?valueInputOption=RAW`, {
-        method: 'PUT',
-        headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ values: [HEADERS] }),
-      });
-    }
-
-    // Fetch projects
-    let query = supabaseAdmin
-      .from('projetos')
+    // ── SYNC OBRAS ──
+    let queryObras = supabaseAdmin.from('projetos')
       .select('*, equipamentos_placas!projetos_placa_id_fkey(marca, modelo, potencia_wp), equipamentos_inversores!projetos_inversor_id_fkey(marca, modelo, potencia_kw)');
+    if (!sync_all && project_id) queryObras = queryObras.eq('id', project_id);
+    const { data: projetos, error: errP } = await queryObras;
+    if (errP) throw errP;
 
-    if (!sync_all && project_id) {
-      query = query.eq('id', project_id);
-    }
-
-    const { data: projetos, error } = await query;
-    if (error) throw error;
-    if (!projetos || projetos.length === 0) {
-      return new Response(JSON.stringify({ ok: true, synced: 0 }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    // Get existing IDs
-    const existingResp = await fetch(`${sheetsUrl}/values/A:A`, {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    });
-    const existingData = await existingResp.json();
-    const existingIds: string[] = (existingData.values || []).map((r: string[]) => r[0]);
-
-    const updates: { range: string; values: string[][] }[] = [];
-    const appends: string[][] = [];
-
-    for (const p of projetos) {
-      const placa = p.equipamentos_placas as any;
-      const inversor = p.equipamentos_inversores as any;
+    const obrasRows = (projetos || []).map((p: any) => {
+      const placa = p.equipamentos_placas;
+      const inversor = p.equipamentos_inversores;
       const cliente = p.tipo_pessoa === 'PJ' ? p.razao_social : p.nome_completo;
       const cpfCnpj = p.tipo_pessoa === 'PJ' ? p.cnpj : p.cpf;
-
-      const row = [
-        p.id,
-        p.data_fechamento || '',
-        cliente || '',
-        cpfCnpj || '',
-        p.telefone || '',
-        p.concessionaria || '',
-        p.sistema || '',
-        String(p.qtd_placas || ''),
-        p.marca_placa || placa?.marca || '',
+      return [
+        p.id, p.data_fechamento || '', cliente || '', cpfCnpj || '', p.telefone || '',
+        p.concessionaria || '', p.sistema || '',
+        String(p.qtd_placas || ''), p.marca_placa || placa?.marca || '',
         p.potencia_placa || String(placa?.potencia_wp || ''),
-        String(p.qtd_inversores || ''),
-        p.marca_inversor || inversor?.marca || '',
+        String(p.qtd_inversores || ''), p.marca_inversor || inversor?.marca || '',
         p.potencia_inversor || String(inversor?.potencia_kw || ''),
         String(p.geracao_estimada_kwh || ''),
         p.preco_venda ? `R$ ${Number(p.preco_venda).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '',
-        p.forma_pagamento || '',
-        p.distribuidor || '',
-        p.instalador || '',
-        p.pagamento_status || '',
-        p.status || '',
-        p.data_instalacao || '',
-        p.local_entrega || '',
-        p.objecoes || '',
-        p.projeto_enviado_em || '',
-        p.projeto_aprovado || '',
-        p.vistoriado_em || '',
+        p.forma_pagamento || '', p.distribuidor || '', p.instalador || '',
+        p.pagamento_status || '', p.status || '', p.data_instalacao || '',
+        p.local_entrega || '', p.objecoes || '',
+        p.projeto_enviado_em || '', p.projeto_aprovado || '', p.vistoriado_em || '',
         String(calcDiasDecorridos(p.data_fechamento)),
       ];
+    });
 
-      const rowIndex = existingIds.indexOf(p.id);
-      if (rowIndex > 0) {
-        updates.push({ range: `A${rowIndex + 1}:${LAST_COL}${rowIndex + 1}`, values: [row] });
-      } else {
-        appends.push(row);
-      }
+    await ensureSheet(sheetsUrl, accessToken, 'Obras');
+    const syncedObras = await syncSheet(sheetsUrl, accessToken, 'Obras', OBRAS_HEADERS, OBRAS_LAST_COL, obrasRows, 0);
+
+    // Update sheets_synced_at
+    for (const p of (projetos || [])) {
+      await supabaseAdmin.from('projetos').update({ sheets_synced_at: new Date().toISOString() }).eq('id', p.id);
     }
 
-    if (updates.length > 0) {
-      await fetch(`${sheetsUrl}/values:batchUpdate`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ valueInputOption: 'RAW', data: updates }),
-      });
-    }
+    // ── SYNC CLIENTES ──
+    const { data: clientesData } = await supabaseAdmin.from('clientes_base').select('*');
 
-    if (appends.length > 0) {
-      await fetch(`${sheetsUrl}/values/A:${LAST_COL}:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ values: appends }),
-      });
-    }
+    const clientesRows = (clientesData || []).map((c: any) => [
+      c.id, c.nome_completo || '', c.cpf || '', c.endereco || '', c.telefone || '',
+      c.uc || '', c.concessionaria || '', c.sistema || '',
+      c.dados_paineis || '', c.dados_inversor || '',
+      String(c.qtd_placas || ''), c.marca_placa || '', c.potencia_placa || '',
+      String(c.qtd_inversores || ''), c.marca_inversor || '', c.potencia_inversor || '',
+      c.tipo_inversor || '',
+      c.fornecedor || '', c.valor ? `R$ ${Number(c.valor).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '',
+      c.forma_pagamento || '',
+      c.projeto_enviado_em || '', c.projeto_aprovado || '', c.instalado_em || '',
+      c.vistoriado_em || '', c.nome_planta || '', c.satisfacao || '', c.origem || '',
+    ]);
 
-    const ids = projetos.map((p: any) => p.id);
-    for (const id of ids) {
-      await supabaseAdmin
-        .from('projetos')
-        .update({ sheets_synced_at: new Date().toISOString() })
-        .eq('id', id);
-    }
+    await ensureSheet(sheetsUrl, accessToken, 'Clientes');
+    const syncedClientes = await syncSheet(sheetsUrl, accessToken, 'Clientes', CLIENTES_HEADERS, CLIENTES_LAST_COL, clientesRows, 0);
 
-    return new Response(JSON.stringify({ ok: true, synced: projetos.length }), {
+    return new Response(JSON.stringify({ ok: true, synced_obras: syncedObras, synced_clientes: syncedClientes }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (err) {
     console.error('sync-to-sheets error:', err);
     return new Response(JSON.stringify({ error: String(err) }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
 });
