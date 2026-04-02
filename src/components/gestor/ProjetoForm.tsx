@@ -149,15 +149,26 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
     };
 
     let error;
+    let savedId = projetoId;
     if (projetoId) {
       const { usuario_id, ...updateRow } = row;
       ({ error } = await supabase.from('projetos' as any).update(updateRow).eq('id', projetoId));
     } else {
-      ({ error } = await supabase.from('projetos' as any).insert(row));
+      const result = await supabase.from('projetos' as any).insert(row).select('id').single();
+      error = result.error;
+      if (result.data) savedId = (result.data as any).id;
     }
     setSaving(false);
     if (error) { toast.error('Erro ao salvar: ' + error.message); return; }
     toast.success(projetoId ? 'Projeto atualizado!' : 'Projeto criado!');
+    
+    // Sync to Google Sheets in background
+    if (savedId) {
+      supabase.functions.invoke('sync-to-sheets', {
+        body: { project_id: savedId, sync_all: false },
+      }).catch(() => {});
+    }
+    
     onSaved();
   };
 
