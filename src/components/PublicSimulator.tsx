@@ -550,7 +550,7 @@ export default function PublicSimulator() {
               {/* CTA */}
               <div className="text-center pt-4">
                 <a
-                  href="https://wa.me/5567999999999?text=Olá!%20Fiz%20uma%20simulação%20no%20site%20e%20gostaria%20de%20um%20orçamento."
+                  href="https://wa.me/5567996448995?text=Olá!%20Fiz%20uma%20simulação%20no%20site%20e%20gostaria%20de%20um%20orçamento."
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 solar-btn-secondary text-lg px-8 py-4"
