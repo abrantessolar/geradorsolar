@@ -70,6 +70,10 @@ export type Projeto = {
   projeto_enviado_em?: string;
   projeto_aprovado?: string;
   vistoriado_em?: string;
+  congelado?: boolean;
+  congelado_ate?: string;
+  motivo_congelamento?: string;
+  layout_url?: string;
   placa?: { marca: string; modelo: string; potencia_wp: number };
   inversor?: { marca: string; modelo: string; potencia_kw: number; tipo: string };
 };
