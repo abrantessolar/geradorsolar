@@ -1,9 +1,10 @@
 import React, { useState, useMemo } from 'react';
 import type { Projeto } from '@/pages/GestorPage';
-import { Edit2, FileText, AlertTriangle, Snowflake, Image as ImageIcon } from 'lucide-react';
+import { Edit2, FileText, AlertTriangle, Snowflake, Image as ImageIcon, CheckCircle } from 'lucide-react';
 import WhatsAppLink from './WhatsAppLink';
 import InstaladorSelect from './InstaladorSelect';
 import CongelarModal from './CongelarModal';
+import ObraConcluidaModal from './ObraConcluidaModal';
 import LayoutUploadModal from './LayoutUploadModal';
 
 const STATUS_LIST = ['Vendido', 'Equipamento Comprado', 'Entregue', 'Em Instalação', 'Instalado', 'Projeto Submetido', 'Homologado'];
