@@ -43,7 +43,7 @@ const SAMPLE_VARS: Record<string, string> = {
 
 function replaceWithSample(html: string): string {
   let result = html;
-  Object.entries(SAMPLE_VARS).forEach(([key, val]) => { result = result.replaceAll(key, `<mark>${val}</mark>`); });
+  Object.entries(SAMPLE_VARS).forEach(([key, val]) => { result = result.split(key).join(`<mark>${val}</mark>`); });
   return result;
 }
 

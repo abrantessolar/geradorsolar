@@ -35,7 +35,7 @@ function replaceVariables(html: string, p: Projeto): string {
     '{{data_fechamento}}': p.data_fechamento ? new Date(p.data_fechamento).toLocaleDateString('pt-BR') : '',
   };
   let result = html;
-  Object.entries(vars).forEach(([key, val]) => { result = result.replaceAll(key, val); });
+  Object.entries(vars).forEach(([key, val]) => { result = result.split(key).join(val); });
   return result;
 }
 
