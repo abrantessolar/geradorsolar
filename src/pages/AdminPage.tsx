@@ -91,7 +91,7 @@ function UsersTab() {
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [editUser, setEditUser] = useState<any>(null);
-  const [form, setForm] = useState({ nome: '', email: '', telefone: '', role: 'vendedor', password: '', confirmPassword: '' });
+  const [form, setForm] = useState({ nome: '', email: '', telefone: '', role: 'vendedor', password: '', confirmPassword: '', acesso_painel_gestor: false });
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
   const { session } = useAuth();
