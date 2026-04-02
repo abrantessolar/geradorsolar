@@ -80,6 +80,11 @@ const App = () => (
                 <SeoNoIndex /><Layout><AdminPage /></Layout>
               </ProtectedRoute>
             } />
+            <Route path="/gestor" element={
+              <ProtectedRoute>
+                <SeoNoIndex /><Layout><GestorPage /></Layout>
+              </ProtectedRoute>
+            } />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>

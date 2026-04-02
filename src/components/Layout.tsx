@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Sun, Calculator, Settings, Menu, X, LogOut, Megaphone } from 'lucide-react';
+import { Sun, Calculator, Settings, Menu, X, LogOut, Megaphone, HardHat } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNewLeadsCount } from '@/components/LeadNotification';
@@ -7,7 +7,7 @@ import { useNewLeadsCount } from '@/components/LeadNotification';
 export default function Layout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { profile, signOut, isAdmin, isOrcamentista } = useAuth();
+  const { profile, signOut, isAdmin, isOrcamentista, hasGestorAccess } = useAuth();
   const isProposal = location.pathname.startsWith('/proposta/');
   const newLeadsCount = useNewLeadsCount();
 
@@ -16,6 +16,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const navItems = [
     { path: '/orcamentos', label: 'Calculadora', icon: Calculator, badge: 0 },
     ...((isAdmin || isOrcamentista) ? [{ path: '/admin', label: 'Admin', icon: Settings, badge: newLeadsCount }] : []),
+    ...(hasGestorAccess ? [{ path: '/gestor', label: 'Gestor', icon: HardHat, badge: 0 }] : []),
   ];
 
   return (
