@@ -1,9 +1,10 @@
 import React, { useState, useMemo } from 'react';
 import type { Projeto } from '@/pages/GestorPage';
-import { Edit2, FileText, AlertTriangle, Snowflake, Image as ImageIcon } from 'lucide-react';
+import { Edit2, FileText, AlertTriangle, Snowflake, Image as ImageIcon, CheckCircle } from 'lucide-react';
 import WhatsAppLink from './WhatsAppLink';
 import InstaladorSelect from './InstaladorSelect';
 import CongelarModal from './CongelarModal';
+import ObraConcluidaModal from './ObraConcluidaModal';
 import LayoutUploadModal from './LayoutUploadModal';
 
 const STATUS_LIST = ['Vendido', 'Equipamento Comprado', 'Entregue', 'Em Instalação', 'Instalado', 'Projeto Submetido', 'Homologado'];
@@ -34,6 +35,7 @@ export default function ProjetosList({ projetos, loading, onEdit, onDocumentos, 
   const [search, setSearch] = useState('');
   const [congelarId, setCongelarId] = useState<string | null>(null);
   const [layoutProjeto, setLayoutProjeto] = useState<Projeto | null>(null);
+  const [concluidaProjeto, setConcluidaProjeto] = useState<Projeto | null>(null);
 
   const filtered = useMemo(() => {
     return projetos.filter(p => {
@@ -120,6 +122,9 @@ export default function ProjetosList({ projetos, loading, onEdit, onDocumentos, 
                       <button onClick={() => setLayoutProjeto(p)} className={`${p.layout_url ? 'text-green-600' : 'text-muted-foreground'} hover:text-primary`} title="Layout">
                         <ImageIcon className="w-4 h-4" />
                       </button>
+                      <button onClick={() => setConcluidaProjeto(p)} className="text-green-600 hover:text-green-500" title="Obra Concluída">
+                        <CheckCircle className="w-4 h-4" />
+                      </button>
                       {p.objecoes && p.objecoes.trim() && (
                         <span title={p.objecoes}><AlertTriangle className="w-4 h-4 text-amber-500" /></span>
                       )}
@@ -137,6 +142,7 @@ export default function ProjetosList({ projetos, loading, onEdit, onDocumentos, 
 
       {congelarId && <CongelarModal projetoId={congelarId} onClose={() => setCongelarId(null)} onDone={onRefresh} />}
       {layoutProjeto && <LayoutUploadModal projetoId={layoutProjeto.id} currentUrl={layoutProjeto.layout_url} onClose={() => setLayoutProjeto(null)} onDone={onRefresh} />}
+      {concluidaProjeto && <ObraConcluidaModal projetoId={concluidaProjeto.id} currentInstalador={concluidaProjeto.instalador} onClose={() => setConcluidaProjeto(null)} onDone={onRefresh} />}
     </div>
   );
 }

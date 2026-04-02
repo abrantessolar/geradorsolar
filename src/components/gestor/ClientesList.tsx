@@ -101,9 +101,14 @@ export default function ClientesList({
               </tr>
             </thead>
             <tbody>
-              {filtered.map(c => (
+              {filtered.map(c => {
+                const isViaObra = c.origem === 'promovido_de_obra' || c.id.startsWith('proj-');
+                return (
                 <tr key={c.id} className="border-b border-border/50 hover:bg-muted/30">
-                  <td className="py-2 px-2 font-medium max-w-[180px] truncate">{c.nome_completo || '—'}</td>
+                  <td className="py-2 px-2 font-medium max-w-[180px] truncate">
+                    {c.nome_completo || '—'}
+                    {isViaObra && <span className="ml-1 inline-block px-1.5 py-0.5 rounded text-[10px] font-medium bg-green-100 text-green-700">✅ Via Obra</span>}
+                  </td>
                   <td className="py-2 px-2 text-xs">{c.cpf || '—'}</td>
                   <td className="py-2 px-2 text-xs"><WhatsAppLink phone={c.telefone} /></td>
                   <td className="py-2 px-2 text-xs">{c.uc || '—'}</td>
@@ -131,7 +136,8 @@ export default function ClientesList({
                     </div>
                   </td>
                 </tr>
-              ))}
+                );
+              })}
               {filtered.length === 0 && (
                 <tr><td colSpan={9} className="py-8 text-center text-muted-foreground">Nenhum cliente encontrado.</td></tr>
               )}
