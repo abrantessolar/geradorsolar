@@ -63,7 +63,6 @@ export type Projeto = {
 };
 
 type TabKey = 'dashboard' | 'projetos' | 'novo' | 'editar' | 'modelos' | 'importar';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 
 export default function GestorPage() {
   const { session } = useAuth();
