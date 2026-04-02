@@ -122,7 +122,7 @@ function UsersTab() {
     const { data, error: err } = await callApi({ action: 'create', ...form, acesso_painel_gestor: form.acesso_painel_gestor });
     if (err || data?.error) { setError(data?.error || 'Erro ao criar usuário.'); setSaving(false); return; }
     setShowCreate(false);
-    setForm({ nome: '', email: '', telefone: '', role: 'vendedor', password: '', confirmPassword: '' });
+    setForm({ nome: '', email: '', telefone: '', role: 'vendedor', password: '', confirmPassword: '', acesso_painel_gestor: false });
     setSaving(false);
     loadUsers();
   };
