@@ -1,8 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { Eye, Search, ArrowUpRight, Upload } from 'lucide-react';
+import { Eye, Search, ArrowUpRight, Upload, Edit2 } from 'lucide-react';
+import WhatsAppLink from './WhatsAppLink';
+import ClienteEditModal from './ClienteEditModal';
 
 export type ClienteBase = {
   id: string;
@@ -37,11 +38,7 @@ export type ClienteBase = {
 };
 
 export default function ClientesList({
-  clientes,
-  loading,
-  onPromover,
-  onRefresh,
-  onImport,
+  clientes, loading, onPromover, onRefresh, onImport,
 }: {
   clientes: ClienteBase[];
   loading: boolean;
@@ -52,6 +49,7 @@ export default function ClientesList({
   const [search, setSearch] = useState('');
   const [concFilter, setConcFilter] = useState('');
   const [selectedCliente, setSelectedCliente] = useState<ClienteBase | null>(null);
+  const [editCliente, setEditCliente] = useState<ClienteBase | null>(null);
 
   const filtered = useMemo(() => {
     return clientes.filter(c => {
@@ -107,7 +105,7 @@ export default function ClientesList({
                 <tr key={c.id} className="border-b border-border/50 hover:bg-muted/30">
                   <td className="py-2 px-2 font-medium max-w-[180px] truncate">{c.nome_completo || '—'}</td>
                   <td className="py-2 px-2 text-xs">{c.cpf || '—'}</td>
-                  <td className="py-2 px-2 text-xs">{c.telefone || '—'}</td>
+                  <td className="py-2 px-2 text-xs"><WhatsAppLink phone={c.telefone} /></td>
                   <td className="py-2 px-2 text-xs">{c.uc || '—'}</td>
                   <td className="py-2 px-2 text-xs">{c.concessionaria || '—'}</td>
                   <td className="py-2 px-2 text-xs">{c.sistema || '—'}</td>
@@ -121,6 +119,9 @@ export default function ClientesList({
                     <div className="flex gap-1">
                       <button onClick={() => setSelectedCliente(c)} className="text-primary hover:text-primary/80" title="Ver detalhes">
                         <Eye className="w-4 h-4" />
+                      </button>
+                      <button onClick={() => setEditCliente(c)} className="text-primary hover:text-primary/80" title="Editar">
+                        <Edit2 className="w-4 h-4" />
                       </button>
                       {!c.projeto_id && (
                         <button onClick={() => onPromover(c)} className="text-green-600 hover:text-green-500" title="Promover para Obra">
@@ -185,6 +186,15 @@ export default function ClientesList({
             )}
           </div>
         </div>
+      )}
+
+      {/* Edit modal */}
+      {editCliente && (
+        <ClienteEditModal
+          cliente={editCliente}
+          onClose={() => setEditCliente(null)}
+          onSaved={() => { onRefresh(); setEditCliente(null); }}
+        />
       )}
     </>
   );
