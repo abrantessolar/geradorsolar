@@ -136,7 +136,8 @@ export default function ClientesList({
                     </div>
                   </td>
                 </tr>
-              ))}
+                );
+              })}
               {filtered.length === 0 && (
                 <tr><td colSpan={9} className="py-8 text-center text-muted-foreground">Nenhum cliente encontrado.</td></tr>
               )}
