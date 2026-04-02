@@ -112,7 +112,7 @@ export default function DocumentosModal({ projeto, onClose }: { projeto: Projeto
       container.prepend(style);
 
       const opt = {
-        margin: [15, 15, 20, 15],
+        margin: [15, 15, 20, 15] as [number, number, number, number],
         filename,
         image: { type: 'jpeg', quality: 0.98 },
         html2canvas: { scale: 2, useCORS: true, logging: false },
