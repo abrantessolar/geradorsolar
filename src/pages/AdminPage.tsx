@@ -119,7 +119,7 @@ function UsersTab() {
     if (form.password.length < 6) { setError('Senha deve ter pelo menos 6 caracteres.'); return; }
     if (form.password !== form.confirmPassword) { setError('As senhas não coincidem.'); return; }
     setSaving(true);
-    const { data, error: err } = await callApi({ action: 'create', ...form });
+    const { data, error: err } = await callApi({ action: 'create', ...form, acesso_painel_gestor: form.acesso_painel_gestor });
     if (err || data?.error) { setError(data?.error || 'Erro ao criar usuário.'); setSaving(false); return; }
     setShowCreate(false);
     setForm({ nome: '', email: '', telefone: '', role: 'vendedor', password: '', confirmPassword: '' });
