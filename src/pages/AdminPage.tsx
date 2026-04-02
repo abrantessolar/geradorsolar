@@ -91,7 +91,7 @@ function UsersTab() {
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [editUser, setEditUser] = useState<any>(null);
-  const [form, setForm] = useState({ nome: '', email: '', telefone: '', role: 'vendedor', password: '', confirmPassword: '' });
+  const [form, setForm] = useState({ nome: '', email: '', telefone: '', role: 'vendedor', password: '', confirmPassword: '', acesso_painel_gestor: false });
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
   const { session } = useAuth();
@@ -119,10 +119,10 @@ function UsersTab() {
     if (form.password.length < 6) { setError('Senha deve ter pelo menos 6 caracteres.'); return; }
     if (form.password !== form.confirmPassword) { setError('As senhas não coincidem.'); return; }
     setSaving(true);
-    const { data, error: err } = await callApi({ action: 'create', ...form });
+    const { data, error: err } = await callApi({ action: 'create', ...form, acesso_painel_gestor: form.acesso_painel_gestor });
     if (err || data?.error) { setError(data?.error || 'Erro ao criar usuário.'); setSaving(false); return; }
     setShowCreate(false);
-    setForm({ nome: '', email: '', telefone: '', role: 'vendedor', password: '', confirmPassword: '' });
+    setForm({ nome: '', email: '', telefone: '', role: 'vendedor', password: '', confirmPassword: '', acesso_painel_gestor: false });
     setSaving(false);
     loadUsers();
   };
@@ -165,6 +165,10 @@ function UsersTab() {
                   <option value="orcamentista">Orçamentista</option>
                   <option value="admin">Administrador</option>
                 </select></div>
+              <div className="flex items-center gap-2">
+                <input type="checkbox" id="create-gestor" checked={form.acesso_painel_gestor} onChange={e => setForm(p => ({ ...p, acesso_painel_gestor: e.target.checked }))} className="rounded border-border" />
+                <label htmlFor="create-gestor" className="text-sm font-medium">Acesso ao Painel do Gestor</label>
+              </div>
               <div><label className="block text-sm font-medium mb-1">Senha</label>
                 <input className="solar-input" type="password" value={form.password} onChange={e => setForm(p => ({ ...p, password: e.target.value }))} /></div>
               <div><label className="block text-sm font-medium mb-1">Confirmar senha</label>
@@ -251,6 +255,7 @@ function EditUserModal({ user, onClose, callApi }: { user: any; onClose: () => v
   const [email, setEmail] = useState(user.email);
   const [telefone, setTelefone] = useState(user.telefone || '');
   const [role, setRole] = useState(user.role);
+  const [acessoGestor, setAcessoGestor] = useState(user.acesso_painel_gestor || false);
   const [password, setPassword] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -258,7 +263,7 @@ function EditUserModal({ user, onClose, callApi }: { user: any; onClose: () => v
   const handleSave = async () => {
     setSaving(true);
     setError('');
-    const updates: any = { nome, role, telefone };
+    const updates: any = { nome, role, telefone, acesso_painel_gestor: acessoGestor };
     if (email !== user.email) updates.email = email;
     if (password) updates.password = password;
     const { data, error: err } = await callApi({ action: 'update', user_id: user.user_id, ...updates });
@@ -292,6 +297,10 @@ function EditUserModal({ user, onClose, callApi }: { user: any; onClose: () => v
               <option value="orcamentista">Orçamentista</option>
               <option value="admin">Administrador</option>
             </select></div>
+          <div className="flex items-center gap-2">
+            <input type="checkbox" id="edit-gestor" checked={acessoGestor} onChange={e => setAcessoGestor(e.target.checked)} className="rounded border-border" />
+            <label htmlFor="edit-gestor" className="text-sm font-medium">Acesso ao Painel do Gestor</label>
+          </div>
           <div><label className="block text-sm font-medium mb-1">Nova senha (deixe vazio para manter)</label>
             <input className="solar-input" type="password" value={password} onChange={e => setPassword(e.target.value)} /></div>
           <button className="w-full solar-btn-primary" onClick={handleSave} disabled={saving}>

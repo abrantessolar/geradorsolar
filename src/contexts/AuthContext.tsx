@@ -9,6 +9,7 @@ interface UserProfile {
   ativo: boolean;
   ultimo_acesso?: string | null;
   criado_em?: string;
+  acesso_painel_gestor?: boolean;
 }
 
 interface AuthContextType {
@@ -18,6 +19,7 @@ interface AuthContextType {
   isAdmin: boolean;
   isOrcamentista: boolean;
   isVendedor: boolean;
+  hasGestorAccess: boolean;
   signOut: () => Promise<void>;
 }
 
@@ -116,6 +118,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isAdmin: profile?.role === 'admin',
       isOrcamentista: profile?.role === 'orcamentista',
       isVendedor: profile?.role === 'vendedor',
+      hasGestorAccess: profile?.acesso_painel_gestor === true || profile?.role === 'admin',
       signOut,
     }}>
       {children}

@@ -12,6 +12,7 @@ import CalculatorPage from "@/pages/CalculatorPage";
 import AdminPage from "@/pages/AdminPage";
 import ProposalPage from "@/pages/ProposalPage";
 import ResetPasswordPage from "@/pages/ResetPasswordPage";
+import GestorPage from "@/pages/GestorPage";
 import LeadNotification from "@/components/LeadNotification";
 import NotFound from "@/pages/NotFound";
 
@@ -77,6 +78,11 @@ const App = () => (
             <Route path="/admin" element={
               <ProtectedRoute allowedRoles={['admin', 'orcamentista', 'vendedor']}>
                 <SeoNoIndex /><Layout><AdminPage /></Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/gestor" element={
+              <ProtectedRoute>
+                <SeoNoIndex /><Layout><GestorPage /></Layout>
               </ProtectedRoute>
             } />
             <Route path="*" element={<NotFound />} />
