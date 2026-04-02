@@ -35,6 +35,7 @@ export default function ProjetosList({ projetos, loading, onEdit, onDocumentos, 
   const [search, setSearch] = useState('');
   const [congelarId, setCongelarId] = useState<string | null>(null);
   const [layoutProjeto, setLayoutProjeto] = useState<Projeto | null>(null);
+  const [concluidaProjeto, setConcluidaProjeto] = useState<Projeto | null>(null);
 
   const filtered = useMemo(() => {
     return projetos.filter(p => {
