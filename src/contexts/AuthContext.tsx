@@ -19,6 +19,7 @@ interface AuthContextType {
   isAdmin: boolean;
   isOrcamentista: boolean;
   isVendedor: boolean;
+  hasGestorAccess: boolean;
   signOut: () => Promise<void>;
 }
 
