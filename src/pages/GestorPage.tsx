@@ -115,7 +115,26 @@ export default function GestorPage() {
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
-      <h1 className="text-2xl font-bold text-primary">Painel do Gestor de Obras</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-primary">Painel do Gestor de Obras</h1>
+        <button
+          onClick={async () => {
+            try {
+              toast.info('Sincronizando com Google Sheets...');
+              const { data, error } = await supabase.functions.invoke('sync-to-sheets', {
+                body: { sync_all: true },
+              });
+              if (error) throw error;
+              toast.success(`Sincronização concluída! ${data?.synced || 0} projetos sincronizados.`);
+            } catch (err: any) {
+              toast.error('Erro na sincronização: ' + (err.message || err));
+            }
+          }}
+          className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-accent text-accent-foreground hover:bg-accent/80 transition-colors"
+        >
+          <RefreshCw className="w-4 h-4" /> Sincronizar Sheets
+        </button>
+      </div>
 
       <div className="flex gap-2 flex-wrap">
         {tabs.map(t => (
