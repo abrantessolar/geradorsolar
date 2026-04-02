@@ -2,7 +2,72 @@ import React, { useState, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { Upload, Check, AlertTriangle, X } from 'lucide-react';
+import { Upload, Check, AlertTriangle } from 'lucide-react';
+
+function normalizeConcessionaria(v: string): string {
+  const upper = v.toUpperCase().trim();
+  if (['ELEKTRO', 'ELETRO', 'ELEKTRO', 'ELETKTRO', 'ELETKRO'].some(x => upper.includes(x) || upper.replace(/K/gi, '').includes('ELETRO'))) return 'ELEKTRO';
+  if (upper.includes('ENERGISA')) return 'ENERGISA';
+  if (upper.includes('COPEL')) return 'COPEL';
+  if (upper === 'ELEKTRO') return 'ELEKTRO';
+  return upper || 'ELEKTRO';
+}
+
+function normalizeLocalEntrega(v: string): string {
+  const upper = v.toUpperCase().trim();
+  if (['CLIENTE', 'CASA CLIENTE', 'CASA DO CLIENTE'].some(x => upper.includes(x))) return 'CASA DO CLIENTE';
+  if (upper.includes('LOJA') || upper.includes('CL11') || upper.includes('MATERIAL GUARDADO')) return 'LOJA';
+  return v.trim() || 'CASA DO CLIENTE';
+}
+
+function parseMonetario(v: string): number | null {
+  const clean = v.replace(/R\$\s*/g, '').replace(/\s/g, '').replace(/\./g, '').replace(',', '.');
+  const num = parseFloat(clean);
+  return isNaN(num) ? null : num;
+}
+
+function parseDate(v: string): string | null {
+  if (!v || !v.trim()) return null;
+  const t = v.trim();
+  // dd/mm/yyyy
+  const m = t.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+  if (m) return `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
+  // yyyy-mm-dd
+  if (/^\d{4}-\d{2}-\d{2}$/.test(t)) return t;
+  return null;
+}
+
+const FIELD_MAP: Record<string, string> = {
+  'nome completo': 'nome_completo', 'cliente': 'nome_completo', 'nome': 'nome_completo', 'nome_completo': 'nome_completo',
+  'cpf': 'cpf', 'cnpj': 'cnpj', 'tipo_pessoa': 'tipo_pessoa', 'tipo': 'tipo_pessoa',
+  'razao_social': 'razao_social', 'endereco': 'endereco_completo', 'endereço': 'endereco_completo', 'endereco_completo': 'endereco_completo',
+  'cep': 'cep', 'bairro': 'bairro', 'cidade': 'cidade', 'estado': 'estado', 'uf': 'estado',
+  'telefone': 'telefone',
+  'uc': 'unidade_geradora_codigo_uc', 'codigo_uc': 'unidade_geradora_codigo_uc',
+  'concessionaria': 'concessionaria', 'concessionária': 'concessionaria',
+  'sistema': 'sistema',
+  'qtd placas': 'qtd_placas', 'qtd_placas': 'qtd_placas',
+  'marca placa': 'marca_placa', 'marca_placa': 'marca_placa',
+  'potencia placa': 'potencia_placa', 'potência placa': 'potencia_placa', 'potência placa (w)': 'potencia_placa', 'potencia placa (w)': 'potencia_placa', 'potencia_placa': 'potencia_placa',
+  'marca inversor': 'marca_inversor', 'marca_inversor': 'marca_inversor',
+  'potencia inversor': 'potencia_inversor', 'potência inversor': 'potencia_inversor', 'potencia_inversor': 'potencia_inversor',
+  'qtd inversor': 'qtd_inversores', 'qtd inversores': 'qtd_inversores', 'qtd_inversores': 'qtd_inversores',
+  'valor': 'preco_venda', 'valor (r$)': 'preco_venda', 'preco_venda': 'preco_venda', 'preço venda': 'preco_venda',
+  'forma de pagamento': 'forma_pagamento', 'forma_pagamento': 'forma_pagamento',
+  'data fechamento': 'data_fechamento', 'data_fechamento': 'data_fechamento',
+  'data instalacao': 'data_instalacao', 'data instalação': 'data_instalacao', 'data_instalacao': 'data_instalacao',
+  'instalado': 'instalado',
+  'local entrega': 'local_entrega', 'local_entrega': 'local_entrega',
+  'objecoes': 'objecoes', 'objeções': 'objecoes',
+  'distribuidor': 'distribuidor',
+  'instalador': 'instalador',
+  'pagamento status': 'pagamento_status', 'pagamento_status': 'pagamento_status',
+  'projeto enviado': 'projeto_enviado_em', 'projeto_enviado_em': 'projeto_enviado_em',
+  'projeto aprovado': 'projeto_aprovado', 'projeto_aprovado': 'projeto_aprovado',
+  'vistoriado em': 'vistoriado_em', 'vistoriado_em': 'vistoriado_em',
+  'status': 'status_importacao',
+  'geracao estimada': 'geracao_estimada_kwh', 'geracao_estimada_kwh': 'geracao_estimada_kwh',
+};
 
 export default function ImportCSV({ onImported }: { onImported: () => void }) {
   const { session } = useAuth();
@@ -27,19 +92,6 @@ export default function ImportCSV({ onImported }: { onImported: () => void }) {
     reader.readAsText(file, 'UTF-8');
   };
 
-  const FIELD_MAP: Record<string, string> = {
-    'cliente': 'nome_completo', 'nome': 'nome_completo', 'nome_completo': 'nome_completo',
-    'cpf': 'cpf', 'cnpj': 'cnpj', 'tipo_pessoa': 'tipo_pessoa', 'tipo': 'tipo_pessoa',
-    'razao_social': 'razao_social', 'endereco': 'endereco_completo', 'endereco_completo': 'endereco_completo',
-    'cep': 'cep', 'bairro': 'bairro', 'cidade': 'cidade', 'estado': 'estado', 'uf': 'estado',
-    'concessionaria': 'concessionaria', 'qtd_placas': 'qtd_placas', 'qtd_inversores': 'qtd_inversores',
-    'geracao_estimada': 'geracao_estimada_kwh', 'geracao_estimada_kwh': 'geracao_estimada_kwh',
-    'preco_venda': 'preco_venda', 'forma_pagamento': 'forma_pagamento',
-    'data_fechamento': 'data_fechamento', 'data_instalacao': 'data_instalacao',
-    'local_entrega': 'local_entrega', 'objecoes': 'objecoes', 'status': 'status',
-    'codigo_uc': 'unidade_geradora_codigo_uc',
-  };
-
   const handleImport = async () => {
     if (!session?.user?.id) return;
     setImporting(true);
@@ -47,16 +99,42 @@ export default function ImportCSV({ onImported }: { onImported: () => void }) {
     const errors: string[] = [];
 
     for (let i = 0; i < rows.length; i++) {
-      const row: any = { usuario_id: session.user.id, concessionaria: 'Elektro', status: 'Vendido', tipo_pessoa: 'PF' };
+      const row: any = { usuario_id: session.user.id, concessionaria: 'ELEKTRO', status: 'Vendido', tipo_pessoa: 'PF', pagamento_status: 'Pendente' };
+      
       headers.forEach((h, j) => {
-        const key = FIELD_MAP[h.toLowerCase().replace(/\s+/g, '_')];
+        const key = FIELD_MAP[h.toLowerCase().replace(/\s+/g, ' ').trim()];
         if (key && rows[i][j]) {
           const val = rows[i][j];
-          if (['qtd_placas', 'qtd_inversores'].includes(key)) row[key] = parseInt(val) || null;
-          else if (['preco_venda', 'geracao_estimada_kwh'].includes(key)) row[key] = parseFloat(val.replace(',', '.')) || null;
-          else row[key] = val;
+          
+          if (key === 'status_importacao') return; // skip, don't save
+          if (key === 'instalado') return; // handled below
+          
+          if (['qtd_placas', 'qtd_inversores'].includes(key)) {
+            row[key] = parseInt(val) || null;
+          } else if (key === 'preco_venda') {
+            row[key] = parseMonetario(val);
+          } else if (key === 'geracao_estimada_kwh') {
+            row[key] = parseFloat(val.replace(',', '.')) || null;
+          } else if (['data_fechamento', 'data_instalacao', 'projeto_enviado_em', 'projeto_aprovado', 'vistoriado_em'].includes(key)) {
+            row[key] = parseDate(val);
+          } else if (key === 'concessionaria') {
+            row[key] = normalizeConcessionaria(val);
+          } else if (key === 'local_entrega') {
+            row[key] = normalizeLocalEntrega(val);
+          } else {
+            row[key] = val;
+          }
         }
       });
+
+      // Handle "instalado" column — if ✓, set status to Instalado
+      const instaladoIdx = headers.findIndex(h => h.toLowerCase().trim() === 'instalado');
+      if (instaladoIdx >= 0) {
+        const instaladoVal = rows[i][instaladoIdx]?.trim();
+        if (instaladoVal === '✓' || instaladoVal === '✔' || instaladoVal?.toLowerCase() === 'sim' || instaladoVal?.toLowerCase() === 'true') {
+          row.status = 'Instalado';
+        }
+      }
 
       if (!row.nome_completo && !row.razao_social) {
         errors.push(`Linha ${i + 2}: nome do cliente ausente`);
@@ -80,7 +158,10 @@ export default function ImportCSV({ onImported }: { onImported: () => void }) {
     <div className="solar-card p-6 space-y-4">
       <h2 className="text-lg font-bold text-primary">Importar CSV</h2>
       <p className="text-sm text-muted-foreground">
-        Faça upload de um arquivo .csv com separador ponto-e-vírgula (;). Colunas aceitas: Cliente, CPF, CNPJ, Tipo Pessoa, Endereço, CEP, Cidade, Estado, Concessionária, Qtd Placas, Qtd Inversores, Geração Estimada, Preço Venda, Forma Pagamento, Data Fechamento, Status, Objeções, etc.
+        Faça upload de um arquivo .csv com separador ponto-e-vírgula (;). Colunas aceitas: Nome Completo, CPF, Endereço, Telefone, UC, Concessionária, Sistema, Qtd Placas, Marca Placa, Potência Placa (W), Marca Inversor, Potência Inversor, Qtd Inversor, Valor (R$), Forma de Pagamento, Data Fechamento, Data Instalação, Instalado, Local Entrega, Objeções, Distribuidor, Instalador, Pagamento Status, Projeto Enviado, Projeto Aprovado, Vistoriado Em, Status.
+      </p>
+      <p className="text-xs text-muted-foreground">
+        <strong>Normalização automática:</strong> Concessionária (variações de ELEKTRO → ELEKTRO), Local de Entrega (CLIENTE → CASA DO CLIENTE), Valores monetários (remove R$ e converte).
       </p>
 
       <div>
