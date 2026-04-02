@@ -68,6 +68,108 @@ export type Database = {
         }
         Relationships: []
       }
+      clientes_base: {
+        Row: {
+          atualizado_em: string
+          concessionaria: string | null
+          cpf: string | null
+          criado_em: string
+          dados_inversor: string | null
+          dados_paineis: string | null
+          endereco: string | null
+          forma_pagamento: string | null
+          fornecedor: string | null
+          id: string
+          instalado_em: string | null
+          marca_inversor: string | null
+          marca_placa: string | null
+          nome_completo: string | null
+          nome_planta: string | null
+          origem: string
+          potencia_inversor: string | null
+          potencia_placa: string | null
+          projeto_aprovado: string | null
+          projeto_enviado_em: string | null
+          projeto_id: string | null
+          qtd_inversores: number | null
+          qtd_placas: number | null
+          satisfacao: string | null
+          sistema: string | null
+          telefone: string | null
+          tipo_inversor: string | null
+          uc: string | null
+          usuario_id: string | null
+          valor: number | null
+          vistoriado_em: string | null
+        }
+        Insert: {
+          atualizado_em?: string
+          concessionaria?: string | null
+          cpf?: string | null
+          criado_em?: string
+          dados_inversor?: string | null
+          dados_paineis?: string | null
+          endereco?: string | null
+          forma_pagamento?: string | null
+          fornecedor?: string | null
+          id?: string
+          instalado_em?: string | null
+          marca_inversor?: string | null
+          marca_placa?: string | null
+          nome_completo?: string | null
+          nome_planta?: string | null
+          origem?: string
+          potencia_inversor?: string | null
+          potencia_placa?: string | null
+          projeto_aprovado?: string | null
+          projeto_enviado_em?: string | null
+          projeto_id?: string | null
+          qtd_inversores?: number | null
+          qtd_placas?: number | null
+          satisfacao?: string | null
+          sistema?: string | null
+          telefone?: string | null
+          tipo_inversor?: string | null
+          uc?: string | null
+          usuario_id?: string | null
+          valor?: number | null
+          vistoriado_em?: string | null
+        }
+        Update: {
+          atualizado_em?: string
+          concessionaria?: string | null
+          cpf?: string | null
+          criado_em?: string
+          dados_inversor?: string | null
+          dados_paineis?: string | null
+          endereco?: string | null
+          forma_pagamento?: string | null
+          fornecedor?: string | null
+          id?: string
+          instalado_em?: string | null
+          marca_inversor?: string | null
+          marca_placa?: string | null
+          nome_completo?: string | null
+          nome_planta?: string | null
+          origem?: string
+          potencia_inversor?: string | null
+          potencia_placa?: string | null
+          projeto_aprovado?: string | null
+          projeto_enviado_em?: string | null
+          projeto_id?: string | null
+          qtd_inversores?: number | null
+          qtd_placas?: number | null
+          satisfacao?: string | null
+          sistema?: string | null
+          telefone?: string | null
+          tipo_inversor?: string | null
+          uc?: string | null
+          usuario_id?: string | null
+          valor?: number | null
+          vistoriado_em?: string | null
+        }
+        Relationships: []
+      }
       configuracoes: {
         Row: {
           chave: string
