@@ -27,6 +27,7 @@ export type Projeto = {
   cnpj?: string;
   nome_representante?: string;
   cpf_representante?: string;
+  telefone?: string;
   endereco_completo?: string;
   cep?: string;
   bairro?: string;
@@ -38,6 +39,11 @@ export type Projeto = {
   inversor_id?: string;
   qtd_inversores?: number;
   geracao_estimada_kwh?: number;
+  sistema?: string;
+  marca_placa?: string;
+  potencia_placa?: string;
+  marca_inversor?: string;
+  potencia_inversor?: string;
   preco_venda?: number;
   forma_pagamento?: string;
   unidade_geradora_cep?: string;
@@ -57,6 +63,12 @@ export type Projeto = {
   local_entrega?: string;
   objecoes?: string;
   status: string;
+  distribuidor?: string;
+  instalador?: string;
+  pagamento_status?: string;
+  projeto_enviado_em?: string;
+  projeto_aprovado?: string;
+  vistoriado_em?: string;
   // Joined
   placa?: { marca: string; modelo: string; potencia_wp: number };
   inversor?: { marca: string; modelo: string; potencia_kw: number; tipo: string };

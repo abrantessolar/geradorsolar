@@ -5,10 +5,10 @@ import { toast } from 'sonner';
 import { ChevronLeft, ChevronRight, Plus, X, Save } from 'lucide-react';
 
 const STATUS_LIST = ['Vendido', 'Equipamento Comprado', 'Entregue', 'Em Instalação', 'Instalado', 'Projeto Submetido', 'Homologado'];
-const CONC_LIST = ['Elektro', 'Energisa', 'COPEL', 'Outra'];
-const PAGAMENTO_LIST = ['À Vista', 'Financiamento Santander', 'Financiamento BV', 'Financiamento Solfácil', 'Financiamento Meu Financiamento Solar', 'Outro'];
+const CONC_LIST = ['ELEKTRO', 'ENERGISA', 'COPEL', 'OUTRA'];
+const LOCAL_ENTREGA_LIST = ['LOJA', 'CASA DO CLIENTE', 'OUTRO'];
+const PAGAMENTO_STATUS_LIST = ['Pago', 'Pendente', 'Parcial'];
 
-// CPF mask
 function maskCpf(v: string) {
   return v.replace(/\D/g, '').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d{1,2})$/, '$1-$2').slice(0, 14);
 }
@@ -17,6 +17,11 @@ function maskCnpj(v: string) {
 }
 function maskCep(v: string) {
   return v.replace(/\D/g, '').replace(/(\d{5})(\d)/, '$1-$2').slice(0, 9);
+}
+function maskTelefone(v: string) {
+  const d = v.replace(/\D/g, '').slice(0, 11);
+  if (d.length <= 10) return d.replace(/(\d{2})(\d)/, '($1) $2').replace(/(\d{4})(\d)/, '$1-$2');
+  return d.replace(/(\d{2})(\d)/, '($1) $2').replace(/(\d{5})(\d)/, '$1-$2');
 }
 
 type PlacaOption = { id: string; marca: string; modelo: string; potencia_wp: number };
@@ -41,53 +46,60 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
     tipo_pessoa: 'PF',
     nome_completo: '', cpf: '', data_nascimento: '',
     razao_social: '', cnpj: '', nome_representante: '', cpf_representante: '',
+    telefone: '',
     endereco_completo: '', cep: '', bairro: '', cidade: '', estado: '',
-    concessionaria: 'Elektro',
+    concessionaria: 'ELEKTRO',
     placa_id: '', qtd_placas: '',
     inversor_id: '', qtd_inversores: '',
-    geracao_estimada_kwh: '',
+    geracao_estimada_kwh: '', sistema: '',
     unidade_geradora_cep: '', unidade_geradora_endereco: '', unidade_geradora_codigo_uc: '', unidade_geradora_padrao: '',
     unidade_beneficiaria1_cep: '', unidade_beneficiaria1_endereco: '', unidade_beneficiaria1_codigo_uc: '', unidade_beneficiaria1_percentual: '',
     unidade_beneficiaria2_cep: '', unidade_beneficiaria2_endereco: '', unidade_beneficiaria2_codigo_uc: '', unidade_beneficiaria2_percentual: '',
-    preco_venda: '', forma_pagamento: '', forma_pagamento_outro: '',
-    data_fechamento: '', local_entrega: 'Casa do Cliente', objecoes: '',
+    preco_venda: '', forma_pagamento: '',
+    data_fechamento: '', local_entrega: 'CASA DO CLIENTE', local_entrega_outro: '', objecoes: '',
     status: 'Vendido', data_instalacao: '',
+    distribuidor: '', instalador: '', pagamento_status: 'Pendente',
+    projeto_enviado_em: '', projeto_aprovado: '', vistoriado_em: '',
   });
 
-  // Load equipment options
   useEffect(() => {
     supabase.from('equipamentos_placas' as any).select('*').eq('ativo', true).then(({ data }) => setPlacas((data || []) as any));
     supabase.from('equipamentos_inversores' as any).select('*').eq('ativo', true).then(({ data }) => setInversores((data || []) as any));
   }, []);
 
-  // Load existing project
   useEffect(() => {
     if (!projetoId) return;
     supabase.from('projetos' as any).select('*').eq('id', projetoId).maybeSingle().then(({ data }) => {
       if (!data) return;
       const p = data as any;
+      const localEntrega = ['LOJA', 'CASA DO CLIENTE'].includes(p.local_entrega?.toUpperCase()) ? p.local_entrega.toUpperCase() : (p.local_entrega ? 'OUTRO' : 'CASA DO CLIENTE');
       setForm({
         tipo_pessoa: p.tipo_pessoa || 'PF',
         nome_completo: p.nome_completo || '', cpf: p.cpf || '', data_nascimento: p.data_nascimento || '',
         razao_social: p.razao_social || '', cnpj: p.cnpj || '', nome_representante: p.nome_representante || '', cpf_representante: p.cpf_representante || '',
+        telefone: p.telefone || '',
         endereco_completo: p.endereco_completo || '', cep: p.cep || '', bairro: p.bairro || '', cidade: p.cidade || '', estado: p.estado || '',
-        concessionaria: p.concessionaria || 'Elektro',
+        concessionaria: p.concessionaria || 'ELEKTRO',
         placa_id: p.placa_id || '', qtd_placas: p.qtd_placas?.toString() || '',
         inversor_id: p.inversor_id || '', qtd_inversores: p.qtd_inversores?.toString() || '',
-        geracao_estimada_kwh: p.geracao_estimada_kwh?.toString() || '',
+        geracao_estimada_kwh: p.geracao_estimada_kwh?.toString() || '', sistema: p.sistema || '',
         unidade_geradora_cep: p.unidade_geradora_cep || '', unidade_geradora_endereco: p.unidade_geradora_endereco || '', unidade_geradora_codigo_uc: p.unidade_geradora_codigo_uc || '', unidade_geradora_padrao: p.unidade_geradora_padrao || '',
         unidade_beneficiaria1_cep: p.unidade_beneficiaria1_cep || '', unidade_beneficiaria1_endereco: p.unidade_beneficiaria1_endereco || '', unidade_beneficiaria1_codigo_uc: p.unidade_beneficiaria1_codigo_uc || '', unidade_beneficiaria1_percentual: p.unidade_beneficiaria1_percentual?.toString() || '',
         unidade_beneficiaria2_cep: p.unidade_beneficiaria2_cep || '', unidade_beneficiaria2_endereco: p.unidade_beneficiaria2_endereco || '', unidade_beneficiaria2_codigo_uc: p.unidade_beneficiaria2_codigo_uc || '', unidade_beneficiaria2_percentual: p.unidade_beneficiaria2_percentual?.toString() || '',
-        preco_venda: p.preco_venda?.toString() || '', forma_pagamento: p.forma_pagamento || '', forma_pagamento_outro: '',
-        data_fechamento: p.data_fechamento || '', local_entrega: p.local_entrega || 'Casa do Cliente', objecoes: p.objecoes || '',
+        preco_venda: p.preco_venda?.toString() || '', forma_pagamento: p.forma_pagamento || '',
+        data_fechamento: p.data_fechamento || '', 
+        local_entrega: localEntrega,
+        local_entrega_outro: localEntrega === 'OUTRO' ? (p.local_entrega || '') : '',
+        objecoes: p.objecoes || '',
         status: p.status || 'Vendido', data_instalacao: p.data_instalacao || '',
+        distribuidor: p.distribuidor || '', instalador: p.instalador || '', pagamento_status: p.pagamento_status || 'Pendente',
+        projeto_enviado_em: p.projeto_enviado_em || '', projeto_aprovado: p.projeto_aprovado || '', vistoriado_em: p.vistoriado_em || '',
       });
     });
   }, [projetoId]);
 
   const set = (key: string, val: string) => setForm(f => ({ ...f, [key]: val }));
 
-  // CEP autocomplete
   const fetchCep = async (cep: string, prefix: string) => {
     const clean = cep.replace(/\D/g, '');
     if (clean.length !== 8) return;
@@ -106,6 +118,7 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
   const handleSave = async () => {
     if (!session?.user?.id) { toast.error('Sessão expirada'); return; }
     setSaving(true);
+    const localEntregaFinal = form.local_entrega === 'OUTRO' ? form.local_entrega_outro : form.local_entrega;
     const row: any = {
       usuario_id: session.user.id,
       tipo_pessoa: form.tipo_pessoa,
@@ -116,6 +129,7 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
       cnpj: form.cnpj || null,
       nome_representante: form.nome_representante || null,
       cpf_representante: form.cpf_representante || null,
+      telefone: form.telefone || null,
       endereco_completo: form.endereco_completo || null,
       cep: form.cep || null,
       bairro: form.bairro || null,
@@ -127,8 +141,9 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
       inversor_id: form.inversor_id || null,
       qtd_inversores: form.qtd_inversores ? parseInt(form.qtd_inversores) : null,
       geracao_estimada_kwh: form.geracao_estimada_kwh ? parseFloat(form.geracao_estimada_kwh) : null,
+      sistema: form.sistema || null,
       preco_venda: form.preco_venda ? parseFloat(form.preco_venda) : null,
-      forma_pagamento: form.forma_pagamento === 'Outro' ? form.forma_pagamento_outro : form.forma_pagamento,
+      forma_pagamento: form.forma_pagamento || null,
       unidade_geradora_cep: form.unidade_geradora_cep || null,
       unidade_geradora_endereco: form.unidade_geradora_endereco || null,
       unidade_geradora_codigo_uc: form.unidade_geradora_codigo_uc || null,
@@ -143,9 +158,15 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
       unidade_beneficiaria2_percentual: form.unidade_beneficiaria2_percentual ? parseFloat(form.unidade_beneficiaria2_percentual) : null,
       data_fechamento: form.data_fechamento || null,
       data_instalacao: form.data_instalacao || null,
-      local_entrega: form.local_entrega,
+      local_entrega: localEntregaFinal || null,
       objecoes: form.objecoes || null,
       status: form.status,
+      distribuidor: form.distribuidor || null,
+      instalador: form.instalador || null,
+      pagamento_status: form.pagamento_status || 'Pendente',
+      projeto_enviado_em: form.projeto_enviado_em || null,
+      projeto_aprovado: form.projeto_aprovado || null,
+      vistoriado_em: form.vistoriado_em || null,
     };
 
     let error;
@@ -162,7 +183,6 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
     if (error) { toast.error('Erro ao salvar: ' + error.message); return; }
     toast.success(projetoId ? 'Projeto atualizado!' : 'Projeto criado!');
     
-    // Sync to Google Sheets in background
     if (savedId) {
       supabase.functions.invoke('sync-to-sheets', {
         body: { project_id: savedId, sync_all: false },
@@ -208,7 +228,6 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
         {onCancel && <button onClick={onCancel} className="text-sm text-muted-foreground hover:text-foreground">← Voltar</button>}
       </div>
 
-      {/* Step indicators */}
       <div className="flex gap-2">
         {['Dados do Cliente', 'Equipamentos', 'Unidades Consumidoras', 'Comercial'].map((label, i) => (
           <button key={i} onClick={() => setStep(i + 1)}
@@ -239,6 +258,7 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
               <div><label className={labelClass}>Nome Completo *</label><input className={inputClass} value={form.nome_completo} onChange={e => set('nome_completo', e.target.value)} /></div>
               <div><label className={labelClass}>CPF *</label><input className={inputClass} value={form.cpf} onChange={e => set('cpf', maskCpf(e.target.value))} placeholder="000.000.000-00" /></div>
               <div><label className={labelClass}>Data de Nascimento</label><input className={inputClass} type="date" value={form.data_nascimento} onChange={e => set('data_nascimento', e.target.value)} /></div>
+              <div><label className={labelClass}>Telefone</label><input className={inputClass} value={form.telefone} onChange={e => set('telefone', maskTelefone(e.target.value))} placeholder="(67) 99999-9999" /></div>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -246,6 +266,7 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
               <div><label className={labelClass}>CNPJ *</label><input className={inputClass} value={form.cnpj} onChange={e => set('cnpj', maskCnpj(e.target.value))} placeholder="00.000.000/0000-00" /></div>
               <div><label className={labelClass}>Nome do Representante Legal</label><input className={inputClass} value={form.nome_representante} onChange={e => set('nome_representante', e.target.value)} /></div>
               <div><label className={labelClass}>CPF do Representante</label><input className={inputClass} value={form.cpf_representante} onChange={e => set('cpf_representante', maskCpf(e.target.value))} placeholder="000.000.000-00" /></div>
+              <div><label className={labelClass}>Telefone</label><input className={inputClass} value={form.telefone} onChange={e => set('telefone', maskTelefone(e.target.value))} placeholder="(67) 99999-9999" /></div>
             </div>
           )}
 
@@ -270,6 +291,8 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
       {/* Step 2 - Equipamentos */}
       {step === 2 && (
         <div className="space-y-4">
+          <div><label className={labelClass}>Sistema (ex: 5,75KWp)</label><input className={inputClass} value={form.sistema} onChange={e => set('sistema', e.target.value)} placeholder="5,75KWp" /></div>
+
           <h3 className="text-sm font-semibold">Placas</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
             <div className="md:col-span-2">
@@ -373,29 +396,33 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
         <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div><label className={labelClass}>Preço de Venda (R$)</label><input className={inputClass} type="number" step="0.01" value={form.preco_venda} onChange={e => set('preco_venda', e.target.value)} /></div>
-            <div>
-              <label className={labelClass}>Forma de Pagamento</label>
-              <select className={inputClass} value={form.forma_pagamento} onChange={e => set('forma_pagamento', e.target.value)}>
-                <option value="">Selecione...</option>
-                {PAGAMENTO_LIST.map(p => <option key={p} value={p}>{p}</option>)}
+            <div><label className={labelClass}>Forma de Pagamento</label><input className={inputClass} value={form.forma_pagamento} onChange={e => set('forma_pagamento', e.target.value)} placeholder="Ex: À Vista, Financ Solfacil, 70% assinatura 30% término" /></div>
+            <div><label className={labelClass}>Distribuidor</label><input className={inputClass} value={form.distribuidor} onChange={e => set('distribuidor', e.target.value)} placeholder="Ex: BELENUS, AVT, SOLFACIL" /></div>
+            <div><label className={labelClass}>Instalador</label><input className={inputClass} value={form.instalador} onChange={e => set('instalador', e.target.value)} placeholder="Ex: GUSTAVO, MATHEUS" /></div>
+            <div><label className={labelClass}>Pagamento Status</label>
+              <select className={inputClass} value={form.pagamento_status} onChange={e => set('pagamento_status', e.target.value)}>
+                {PAGAMENTO_STATUS_LIST.map(s => <option key={s} value={s}>{s}</option>)}
               </select>
             </div>
-            {form.forma_pagamento === 'Outro' && (
-              <div><label className={labelClass}>Especifique</label><input className={inputClass} value={form.forma_pagamento_outro} onChange={e => set('forma_pagamento_outro', e.target.value)} /></div>
-            )}
             <div><label className={labelClass}>Data de Fechamento</label><input className={inputClass} type="date" value={form.data_fechamento} onChange={e => set('data_fechamento', e.target.value)} /></div>
-            <div><label className={labelClass}>Local de Entrega</label>
+            <div>
+              <label className={labelClass}>Local de Entrega</label>
               <select className={inputClass} value={form.local_entrega} onChange={e => set('local_entrega', e.target.value)}>
-                <option value="Casa do Cliente">Casa do Cliente</option>
-                <option value="Empresa">Empresa</option>
+                {LOCAL_ENTREGA_LIST.map(l => <option key={l} value={l}>{l}</option>)}
               </select>
             </div>
+            {form.local_entrega === 'OUTRO' && (
+              <div><label className={labelClass}>Especifique local</label><input className={inputClass} value={form.local_entrega_outro} onChange={e => set('local_entrega_outro', e.target.value)} /></div>
+            )}
             <div><label className={labelClass}>Status</label>
               <select className={inputClass} value={form.status} onChange={e => set('status', e.target.value)}>
                 {STATUS_LIST.map(s => <option key={s} value={s}>{s}</option>)}
               </select>
             </div>
-            <div><label className={labelClass}>Data de Instalação (opcional)</label><input className={inputClass} type="date" value={form.data_instalacao} onChange={e => set('data_instalacao', e.target.value)} /></div>
+            <div><label className={labelClass}>Data de Instalação</label><input className={inputClass} type="date" value={form.data_instalacao} onChange={e => set('data_instalacao', e.target.value)} /></div>
+            <div><label className={labelClass}>Projeto Enviado em</label><input className={inputClass} type="date" value={form.projeto_enviado_em} onChange={e => set('projeto_enviado_em', e.target.value)} /></div>
+            <div><label className={labelClass}>Projeto Aprovado</label><input className={inputClass} type="date" value={form.projeto_aprovado} onChange={e => set('projeto_aprovado', e.target.value)} /></div>
+            <div><label className={labelClass}>Vistoriado em</label><input className={inputClass} type="date" value={form.vistoriado_em} onChange={e => set('vistoriado_em', e.target.value)} /></div>
           </div>
           <div><label className={labelClass}>Objeções</label><textarea className={inputClass} rows={3} value={form.objecoes} onChange={e => set('objecoes', e.target.value)} placeholder="Observações, objeções do cliente..." /></div>
         </div>

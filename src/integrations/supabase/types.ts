@@ -423,23 +423,34 @@ export type Database = {
           data_fechamento: string | null
           data_instalacao: string | null
           data_nascimento: string | null
+          distribuidor: string | null
           endereco_completo: string | null
           estado: string | null
           forma_pagamento: string | null
           geracao_estimada_kwh: number | null
           id: string
+          instalador: string | null
           inversor_id: string | null
           local_entrega: string | null
+          marca_inversor: string | null
+          marca_placa: string | null
           nome_completo: string | null
           nome_representante: string | null
           objecoes: string | null
+          pagamento_status: string | null
           placa_id: string | null
+          potencia_inversor: string | null
+          potencia_placa: string | null
           preco_venda: number | null
+          projeto_aprovado: string | null
+          projeto_enviado_em: string | null
           qtd_inversores: number | null
           qtd_placas: number | null
           razao_social: string | null
           sheets_synced_at: string | null
+          sistema: string | null
           status: string
+          telefone: string | null
           tipo_pessoa: string
           unidade_beneficiaria1_cep: string | null
           unidade_beneficiaria1_codigo_uc: string | null
@@ -454,6 +465,7 @@ export type Database = {
           unidade_geradora_endereco: string | null
           unidade_geradora_padrao: string | null
           usuario_id: string
+          vistoriado_em: string | null
         }
         Insert: {
           atualizado_em?: string
@@ -468,23 +480,34 @@ export type Database = {
           data_fechamento?: string | null
           data_instalacao?: string | null
           data_nascimento?: string | null
+          distribuidor?: string | null
           endereco_completo?: string | null
           estado?: string | null
           forma_pagamento?: string | null
           geracao_estimada_kwh?: number | null
           id?: string
+          instalador?: string | null
           inversor_id?: string | null
           local_entrega?: string | null
+          marca_inversor?: string | null
+          marca_placa?: string | null
           nome_completo?: string | null
           nome_representante?: string | null
           objecoes?: string | null
+          pagamento_status?: string | null
           placa_id?: string | null
+          potencia_inversor?: string | null
+          potencia_placa?: string | null
           preco_venda?: number | null
+          projeto_aprovado?: string | null
+          projeto_enviado_em?: string | null
           qtd_inversores?: number | null
           qtd_placas?: number | null
           razao_social?: string | null
           sheets_synced_at?: string | null
+          sistema?: string | null
           status?: string
+          telefone?: string | null
           tipo_pessoa?: string
           unidade_beneficiaria1_cep?: string | null
           unidade_beneficiaria1_codigo_uc?: string | null
@@ -499,6 +522,7 @@ export type Database = {
           unidade_geradora_endereco?: string | null
           unidade_geradora_padrao?: string | null
           usuario_id: string
+          vistoriado_em?: string | null
         }
         Update: {
           atualizado_em?: string
@@ -513,23 +537,34 @@ export type Database = {
           data_fechamento?: string | null
           data_instalacao?: string | null
           data_nascimento?: string | null
+          distribuidor?: string | null
           endereco_completo?: string | null
           estado?: string | null
           forma_pagamento?: string | null
           geracao_estimada_kwh?: number | null
           id?: string
+          instalador?: string | null
           inversor_id?: string | null
           local_entrega?: string | null
+          marca_inversor?: string | null
+          marca_placa?: string | null
           nome_completo?: string | null
           nome_representante?: string | null
           objecoes?: string | null
+          pagamento_status?: string | null
           placa_id?: string | null
+          potencia_inversor?: string | null
+          potencia_placa?: string | null
           preco_venda?: number | null
+          projeto_aprovado?: string | null
+          projeto_enviado_em?: string | null
           qtd_inversores?: number | null
           qtd_placas?: number | null
           razao_social?: string | null
           sheets_synced_at?: string | null
+          sistema?: string | null
           status?: string
+          telefone?: string | null
           tipo_pessoa?: string
           unidade_beneficiaria1_cep?: string | null
           unidade_beneficiaria1_codigo_uc?: string | null
@@ -544,6 +579,7 @@ export type Database = {
           unidade_geradora_endereco?: string | null
           unidade_geradora_padrao?: string | null
           usuario_id?: string
+          vistoriado_em?: string | null
         }
         Relationships: [
           {
