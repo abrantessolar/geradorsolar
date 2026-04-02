@@ -9,6 +9,7 @@ interface UserProfile {
   ativo: boolean;
   ultimo_acesso?: string | null;
   criado_em?: string;
+  acesso_painel_gestor?: boolean;
 }
 
 interface AuthContextType {
