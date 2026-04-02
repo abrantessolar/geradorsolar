@@ -260,7 +260,7 @@ export default function GestorPage() {
             ))}
           </div>
 
-          {obrasSubTab === 'dashboard' && <GestorDashboard projetos={projetos} loading={loading} />}
+          {obrasSubTab === 'dashboard' && <GestorDashboard projetos={projetos} loading={loading} onRefresh={loadProjetos} />}
           {obrasSubTab === 'projetos' && (
             <ProjetosList projetos={projetos} loading={loading} onEdit={handleEdit} onDocumentos={p => setDocProjeto(p)} onRefresh={loadProjetos} />
           )}
