@@ -412,6 +412,27 @@ export type Database = {
           },
         ]
       }
+      instaladores: {
+        Row: {
+          ativo: boolean
+          criado_em: string
+          id: string
+          nome: string
+        }
+        Insert: {
+          ativo?: boolean
+          criado_em?: string
+          id?: string
+          nome: string
+        }
+        Update: {
+          ativo?: boolean
+          criado_em?: string
+          id?: string
+          nome?: string
+        }
+        Relationships: []
+      }
       leads: {
         Row: {
           atribuido_para: string | null
@@ -519,6 +540,8 @@ export type Database = {
           cidade: string | null
           cnpj: string | null
           concessionaria: string
+          congelado: boolean
+          congelado_ate: string | null
           cpf: string | null
           cpf_representante: string | null
           criado_em: string
@@ -533,9 +556,11 @@ export type Database = {
           id: string
           instalador: string | null
           inversor_id: string | null
+          layout_url: string | null
           local_entrega: string | null
           marca_inversor: string | null
           marca_placa: string | null
+          motivo_congelamento: string | null
           nome_completo: string | null
           nome_representante: string | null
           objecoes: string | null
@@ -576,6 +601,8 @@ export type Database = {
           cidade?: string | null
           cnpj?: string | null
           concessionaria?: string
+          congelado?: boolean
+          congelado_ate?: string | null
           cpf?: string | null
           cpf_representante?: string | null
           criado_em?: string
@@ -590,9 +617,11 @@ export type Database = {
           id?: string
           instalador?: string | null
           inversor_id?: string | null
+          layout_url?: string | null
           local_entrega?: string | null
           marca_inversor?: string | null
           marca_placa?: string | null
+          motivo_congelamento?: string | null
           nome_completo?: string | null
           nome_representante?: string | null
           objecoes?: string | null
@@ -633,6 +662,8 @@ export type Database = {
           cidade?: string | null
           cnpj?: string | null
           concessionaria?: string
+          congelado?: boolean
+          congelado_ate?: string | null
           cpf?: string | null
           cpf_representante?: string | null
           criado_em?: string
@@ -647,9 +678,11 @@ export type Database = {
           id?: string
           instalador?: string | null
           inversor_id?: string | null
+          layout_url?: string | null
           local_entrega?: string | null
           marca_inversor?: string | null
           marca_placa?: string | null
+          motivo_congelamento?: string | null
           nome_completo?: string | null
           nome_representante?: string | null
           objecoes?: string | null
