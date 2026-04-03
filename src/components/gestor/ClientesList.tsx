@@ -117,6 +117,22 @@ export default function ClientesList({
       );
       case 'cpf': return <td key={key} className="py-2 px-2 text-xs">{c.cpf || '—'}</td>;
       case 'telefone': return <td key={key} className="py-2 px-2 text-xs"><WhatsAppLink phone={c.telefone} /></td>;
+      case 'endereco': return (
+        <td key={key} className="py-2 px-2 text-xs max-w-[180px]">
+          {c.endereco ? (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="block truncate cursor-default">{c.endereco}</span>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-xs">
+                  <p>{c.endereco}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          ) : '—'}
+        </td>
+      );
       case 'uc': return <td key={key} className="py-2 px-2 text-xs">{c.uc || '—'}</td>;
       case 'concessionaria': return <td key={key} className="py-2 px-2 text-xs">{c.concessionaria || '—'}</td>;
       case 'marca_inv': return (
