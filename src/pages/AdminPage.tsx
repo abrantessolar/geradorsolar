@@ -261,7 +261,7 @@ function EditUserModal({ user, onClose, callApi }: { user: any; onClose: () => v
   const handleSave = async () => {
     setSaving(true);
     setError('');
-    const updates: any = { nome, role, telefone, acesso_painel_gestor: acessoGestor };
+    const updates: any = { nome, role, telefone, acesso_painel_gestor: role === 'gestor' || role === 'admin' };
     if (email !== user.email) updates.email = email;
     if (password) updates.password = password;
     const { data, error: err } = await callApi({ action: 'update', user_id: user.user_id, ...updates });
