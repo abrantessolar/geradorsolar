@@ -436,6 +436,13 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
             <div><label className={labelClass}>Projeto Aprovado</label><input className={inputClass} type="date" value={form.projeto_aprovado} onChange={e => set('projeto_aprovado', e.target.value)} /></div>
             <div><label className={labelClass}>Vistoriado em</label><input className={inputClass} type="date" value={form.vistoriado_em} onChange={e => set('vistoriado_em', e.target.value)} /></div>
           </div>
+          <hr className="border-border" />
+          <h3 className="text-sm font-semibold">Informações de Instalação</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div><label className={labelClass}>WiFi — Nome da Rede</label><input className={inputClass} value={form.wifi_nome} onChange={e => set('wifi_nome', e.target.value)} /></div>
+            <div><label className={labelClass}>WiFi — Senha</label><input className={inputClass} value={form.wifi_senha} onChange={e => set('wifi_senha', e.target.value)} /></div>
+            <div className="md:col-span-2"><label className={labelClass}>Cabo Utilizado</label><input className={inputClass} value={form.cabo_usado} onChange={e => set('cabo_usado', e.target.value)} placeholder="Preenchido após instalação" /></div>
+          </div>
           <div>
             <label className={labelClass}>Observações</label>
             <textarea className={`${inputClass} min-h-[80px]`} value={form.objecoes} onChange={e => set('objecoes', e.target.value)} placeholder="Observações gerais sobre a obra..." />
