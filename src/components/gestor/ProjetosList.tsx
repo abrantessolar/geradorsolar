@@ -187,6 +187,15 @@ export default function ProjetosList({ projetos, loading, onEdit, onDocumentos, 
       {congelarId && <CongelarModal projetoId={congelarId} onClose={() => setCongelarId(null)} onDone={onRefresh} />}
       {layoutProjeto && <LayoutUploadModal projetoId={layoutProjeto.id} currentUrl={layoutProjeto.layout_url} onClose={() => setLayoutProjeto(null)} onDone={onRefresh} />}
       {concluidaProjeto && <ObraConcluidaModal projetoId={concluidaProjeto.id} currentInstalador={concluidaProjeto.instalador} onClose={() => setConcluidaProjeto(null)} onDone={onRefresh} />}
+      {deleteProjeto && (
+        <DeleteConfirmModal
+          nome={deleteProjeto.nome_completo || deleteProjeto.razao_social || 'Projeto'}
+          id={deleteProjeto.id}
+          tabela="projetos"
+          onClose={() => setDeleteProjeto(null)}
+          onDeleted={() => { setDeleteProjeto(null); onRefresh(); }}
+        />
+      )}
     </div>
   );
 }

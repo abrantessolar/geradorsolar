@@ -276,6 +276,16 @@ export default function ClientesList({
           onSaved={() => { onRefresh(); setEditCliente(null); }}
         />
       )}
+
+      {deleteCliente && (
+        <DeleteConfirmModal
+          nome={deleteCliente.nome_completo || 'Cliente'}
+          id={deleteCliente.id}
+          tabela="clientes_base"
+          onClose={() => setDeleteCliente(null)}
+          onDeleted={() => { setDeleteCliente(null); onRefresh(); }}
+        />
+      )}
     </>
   );
 }
