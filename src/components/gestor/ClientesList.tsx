@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Eye, Search, ArrowUpRight, Upload, Edit2, GripVertical } from 'lucide-react';
+import { Eye, Search, ArrowUpRight, Upload, Edit2, GripVertical, Trash2 } from 'lucide-react';
+import DeleteConfirmModal from './DeleteConfirmModal';
 import WhatsAppLink from './WhatsAppLink';
 import ClienteEditModal from './ClienteEditModal';
 
@@ -66,6 +67,7 @@ export default function ClientesList({
   const [marcaPlacaFilter, setMarcaPlacaFilter] = useState('');
   const [selectedCliente, setSelectedCliente] = useState<ClienteBase | null>(null);
   const [editCliente, setEditCliente] = useState<ClienteBase | null>(null);
+  const [deleteCliente, setDeleteCliente] = useState<ClienteBase | null>(null);
 
   const { order, onDragStart, onDragOver, onDragEnd, dragIdx } = useDraggableColumns('gestor-clientes-cols', COL_KEYS);
 
@@ -132,6 +134,9 @@ export default function ClientesList({
             <button onClick={() => setEditCliente(c)} className="text-primary hover:text-primary/80" title="Editar"><Edit2 className="w-4 h-4" /></button>
             {!c.projeto_id && !c.id.startsWith('proj-') && (
               <button onClick={() => onPromover(c)} className="text-primary hover:text-primary/80" title="Promover para Obra"><ArrowUpRight className="w-4 h-4" /></button>
+            )}
+            {!c.id.startsWith('proj-') && (
+              <button onClick={() => setDeleteCliente(c)} className="text-destructive hover:text-destructive/80" title="Excluir"><Trash2 className="w-4 h-4" /></button>
             )}
           </div>
         </td>
@@ -269,6 +274,16 @@ export default function ClientesList({
           cliente={editCliente}
           onClose={() => setEditCliente(null)}
           onSaved={() => { onRefresh(); setEditCliente(null); }}
+        />
+      )}
+
+      {deleteCliente && (
+        <DeleteConfirmModal
+          nome={deleteCliente.nome_completo || 'Cliente'}
+          id={deleteCliente.id}
+          tabela="clientes_base"
+          onClose={() => setDeleteCliente(null)}
+          onDeleted={() => { setDeleteCliente(null); onRefresh(); }}
         />
       )}
     </>

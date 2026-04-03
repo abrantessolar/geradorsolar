@@ -1,11 +1,12 @@
 import React, { useState, useMemo } from 'react';
 import type { Projeto } from '@/pages/GestorPage';
-import { Edit2, FileText, Snowflake, Image as ImageIcon, CheckCircle, ArrowUpDown, ArrowUp, ArrowDown, GripVertical } from 'lucide-react';
+import { Edit2, FileText, Snowflake, Image as ImageIcon, CheckCircle, ArrowUpDown, ArrowUp, ArrowDown, GripVertical, Trash2 } from 'lucide-react';
 import WhatsAppLink from './WhatsAppLink';
 import InstaladorSelect from './InstaladorSelect';
 import CongelarModal from './CongelarModal';
 import ObraConcluidaModal from './ObraConcluidaModal';
 import LayoutUploadModal from './LayoutUploadModal';
+import DeleteConfirmModal from './DeleteConfirmModal';
 import { useDraggableColumns } from '@/hooks/useDraggableColumns';
 
 function daysSince(dateStr?: string): number {
@@ -35,6 +36,7 @@ export default function ProjetosList({ projetos, loading, onEdit, onDocumentos, 
   const [congelarId, setCongelarId] = useState<string | null>(null);
   const [layoutProjeto, setLayoutProjeto] = useState<Projeto | null>(null);
   const [concluidaProjeto, setConcluidaProjeto] = useState<Projeto | null>(null);
+  const [deleteProjeto, setDeleteProjeto] = useState<Projeto | null>(null);
   const [tempoSort, setTempoSort] = useState<'asc' | 'desc' | null>(null);
 
   const { order, onDragStart, onDragOver, onDragEnd, dragIdx } = useDraggableColumns('gestor-obras-cols', COL_KEYS);
@@ -124,6 +126,7 @@ export default function ProjetosList({ projetos, loading, onEdit, onDocumentos, 
             <button onClick={() => setCongelarId(p.congelado ? null : p.id)} className="text-primary hover:text-primary/80" title={p.congelado ? 'Já congelada' : 'Congelar'}><Snowflake className="w-4 h-4" /></button>
             <button onClick={() => setLayoutProjeto(p)} className={`${p.layout_url ? 'text-accent-foreground' : 'text-muted-foreground'} hover:text-primary`} title="Layout"><ImageIcon className="w-4 h-4" /></button>
             <button onClick={() => setConcluidaProjeto(p)} className="text-primary hover:text-primary/80" title="Obra Concluída"><CheckCircle className="w-4 h-4" /></button>
+            <button onClick={() => setDeleteProjeto(p)} className="text-destructive hover:text-destructive/80" title="Excluir"><Trash2 className="w-4 h-4" /></button>
           </div>
         </td>
       );
@@ -184,6 +187,15 @@ export default function ProjetosList({ projetos, loading, onEdit, onDocumentos, 
       {congelarId && <CongelarModal projetoId={congelarId} onClose={() => setCongelarId(null)} onDone={onRefresh} />}
       {layoutProjeto && <LayoutUploadModal projetoId={layoutProjeto.id} currentUrl={layoutProjeto.layout_url} onClose={() => setLayoutProjeto(null)} onDone={onRefresh} />}
       {concluidaProjeto && <ObraConcluidaModal projetoId={concluidaProjeto.id} currentInstalador={concluidaProjeto.instalador} onClose={() => setConcluidaProjeto(null)} onDone={onRefresh} />}
+      {deleteProjeto && (
+        <DeleteConfirmModal
+          nome={deleteProjeto.nome_completo || deleteProjeto.razao_social || 'Projeto'}
+          id={deleteProjeto.id}
+          tabela="projetos"
+          onClose={() => setDeleteProjeto(null)}
+          onDeleted={() => { setDeleteProjeto(null); onRefresh(); }}
+        />
+      )}
     </div>
   );
 }
