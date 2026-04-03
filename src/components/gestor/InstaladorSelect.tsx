@@ -16,6 +16,7 @@ export default function InstaladorSelect({ projetoId, currentValue, onDone }: {
   const [showNew, setShowNew] = useState(false);
   const [newNome, setNewNome] = useState('');
   const ref = useRef<HTMLDivElement>(null);
+  const { position, recalculate } = useDropdownPosition(ref);
 
   useEffect(() => {
     supabase.from('instaladores' as any).select('id, nome').eq('ativo', true).order('nome').then(({ data }) => {
