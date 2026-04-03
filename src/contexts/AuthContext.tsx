@@ -17,6 +17,7 @@ interface AuthContextType {
   profile: UserProfile | null;
   loading: boolean;
   isAdmin: boolean;
+  isGestor: boolean;
   isOrcamentista: boolean;
   isVendedor: boolean;
   hasGestorAccess: boolean;
