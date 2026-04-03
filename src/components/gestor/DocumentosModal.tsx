@@ -1,10 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { Projeto } from '@/pages/GestorPage';
 import { X, FileText, Download, Loader2, ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
-
-type Modelo = { id: string; tipo: string; conteudo_html: string };
 
 function sanitizeFilename(name: string): string {
   return name.replace(/[^a-zA-Z0-9À-ÿ\s-_]/g, '').replace(/\s+/g, '_').substring(0, 60);
@@ -64,37 +62,35 @@ function FormatDropdown({ tipo, generating, onGenerate }: {
   );
 }
 
+type DocItem = { tipo: string; label: string; icon: string };
+
+function getAvailableDocuments(projeto: Projeto): DocItem[] {
+  const docs: DocItem[] = [
+    { tipo: 'contrato', label: 'Contrato de Instalação', icon: '📄' },
+  ];
+
+  const conc = (projeto.concessionaria || '').toUpperCase();
+
+  if (conc === 'ELEKTRO' && projeto.tipo_pessoa === 'PF') {
+    docs.push({ tipo: 'procuracao_elektro_pf', label: 'Procuração Elektro (PF)', icon: '📋' });
+  }
+  if (conc === 'ELEKTRO' && projeto.tipo_pessoa === 'PJ') {
+    docs.push({ tipo: 'procuracao_elektro_pj', label: 'Procuração Elektro (PJ)', icon: '📋' });
+  }
+  if (conc === 'COPEL') {
+    docs.push({ tipo: 'procuracao_copel', label: 'Procuração COPEL', icon: '📋' });
+  }
+  if (conc === 'ENERGISA') {
+    docs.push({ tipo: 'procuracao_energisa', label: 'Procuração Energisa', icon: '📋' });
+  }
+
+  return docs;
+}
+
 export default function DocumentosModal({ projeto, onClose }: { projeto: Projeto; onClose: () => void }) {
-  const [modelos, setModelos] = useState<Modelo[]>([]);
-  const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState<string | null>(null);
 
-  useEffect(() => {
-    supabase.from('modelos_documentos' as any).select('*').then(({ data }) => {
-      setModelos((data || []) as any);
-      setLoading(false);
-    });
-  }, []);
-
-  const tiposLabel: Record<string, string> = {
-    contrato: 'Contrato de Instalação',
-    procuracao_elektro_pf: 'Procuração Elektro (PF)',
-    procuracao_elektro_pj: 'Procuração Elektro (PJ)',
-    procuracao_energisa: 'Procuração Energisa',
-    procuracao_copel: 'Procuração COPEL',
-  };
-
-  const googleDocsTypes = ['contrato'];
-
-  const applicableModelos = modelos.filter(m => {
-    if (!m.conteudo_html || m.conteudo_html.length < 10) return false;
-    if (googleDocsTypes.includes(m.tipo)) return false;
-    if (m.tipo === 'procuracao_elektro_pf') return projeto.concessionaria === 'Elektro' && projeto.tipo_pessoa === 'PF';
-    if (m.tipo === 'procuracao_elektro_pj') return projeto.concessionaria === 'Elektro' && projeto.tipo_pessoa === 'PJ';
-    if (m.tipo === 'procuracao_energisa') return projeto.concessionaria === 'Energisa';
-    if (m.tipo === 'procuracao_copel') return projeto.concessionaria === 'COPEL';
-    return false;
-  });
+  const availableDocs = getAvailableDocuments(projeto);
 
   const handleGenerate = async (tipoDocumento: string, formato: 'pdf' | 'docx') => {
     setGenerating(tipoDocumento);
@@ -111,11 +107,7 @@ export default function DocumentosModal({ projeto, onClose }: { projeto: Projeto
             'Authorization': `Bearer ${token || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
             'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
           },
-          body: JSON.stringify({
-            projeto_id: projeto.id,
-            tipo_documento: tipoDocumento,
-            formato,
-          }),
+          body: JSON.stringify({ projeto_id: projeto.id, tipo_documento: tipoDocumento, formato }),
         }
       );
 
@@ -127,7 +119,8 @@ export default function DocumentosModal({ projeto, onClose }: { projeto: Projeto
       const blob = await res.blob();
       const clientName = sanitizeFilename(projeto.nome_completo || projeto.razao_social || 'cliente');
       const ext = formato === 'docx' ? 'docx' : 'pdf';
-      const filename = `Contrato_${clientName}.${ext}`;
+      const docLabel = tipoDocumento === 'contrato' ? 'Contrato' : 'Procuracao';
+      const filename = `${docLabel}_${clientName}.${ext}`;
 
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -157,51 +150,24 @@ export default function DocumentosModal({ projeto, onClose }: { projeto: Projeto
           <button onClick={onClose}><X className="w-5 h-5 text-muted-foreground" /></button>
         </div>
 
-        {loading ? (
-          <div className="flex justify-center py-8"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary" /></div>
-        ) : (
-          <div className="space-y-3">
-            {/* Google Docs-based documents */}
-            <div className="w-full flex items-center gap-3 p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors">
-              {generating === 'contrato' ? (
+        <div className="space-y-3">
+          {availableDocs.map(doc => (
+            <div key={doc.tipo} className="w-full flex items-center gap-3 p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors">
+              {generating === doc.tipo ? (
                 <Loader2 className="w-5 h-5 text-primary flex-shrink-0 animate-spin" />
               ) : (
                 <FileText className="w-5 h-5 text-primary flex-shrink-0" />
               )}
               <div className="flex-1">
-                <span className="font-medium">Contrato de Instalação</span>
+                <span className="font-medium">{doc.icon} {doc.label}</span>
                 <p className="text-xs text-muted-foreground">
-                  {generating === 'contrato' ? 'Gerando documento...' : 'Escolha o formato para download'}
+                  {generating === doc.tipo ? 'Gerando documento...' : 'Escolha o formato para download'}
                 </p>
               </div>
-              <FormatDropdown tipo="contrato" generating={generating} onGenerate={handleGenerate} />
+              <FormatDropdown tipo={doc.tipo} generating={generating} onGenerate={handleGenerate} />
             </div>
-
-            {/* Legacy modelos-based documents */}
-            {applicableModelos.map(m => (
-              <div key={m.id} className="w-full flex items-center gap-3 p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors">
-                {generating === m.tipo ? (
-                  <Loader2 className="w-5 h-5 text-primary flex-shrink-0 animate-spin" />
-                ) : (
-                  <FileText className="w-5 h-5 text-primary flex-shrink-0" />
-                )}
-                <div className="flex-1">
-                  <span className="font-medium">{tiposLabel[m.tipo] || m.tipo}</span>
-                  <p className="text-xs text-muted-foreground">
-                    {generating === m.tipo ? 'Gerando documento...' : 'Escolha o formato para download'}
-                  </p>
-                </div>
-                <FormatDropdown tipo={m.tipo} generating={generating} onGenerate={handleGenerate} />
-              </div>
-            ))}
-
-            {applicableModelos.length === 0 && (
-              <p className="text-xs text-muted-foreground pt-2">
-                Procurações adicionais aparecerão aqui conforme a concessionária do projeto.
-              </p>
-            )}
-          </div>
-        )}
+          ))}
+        </div>
       </div>
     </div>
   );
