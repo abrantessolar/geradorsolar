@@ -299,17 +299,25 @@ Deno.serve(async (req) => {
         throw new Error(`Erro ao substituir variáveis: ${errText}`);
       }
 
-      // 3. Export as PDF
-      const pdfRes = await fetch(`https://www.googleapis.com/drive/v3/files/${copyId}/export?mimeType=application/pdf`, {
+      // 3. Export as PDF or DOCX
+      const exportMimeType = formato === "docx"
+        ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        : "application/pdf";
+      const fileExtension = formato === "docx" ? "docx" : "pdf";
+      const contentType = formato === "docx"
+        ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        : "application/pdf";
+
+      const exportRes = await fetch(`https://www.googleapis.com/drive/v3/files/${copyId}/export?mimeType=${encodeURIComponent(exportMimeType)}`, {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
 
-      if (!pdfRes.ok) {
-        const errText = await pdfRes.text();
-        throw new Error(`Erro ao exportar PDF: ${errText}`);
+      if (!exportRes.ok) {
+        const errText = await exportRes.text();
+        throw new Error(`Erro ao exportar ${fileExtension.toUpperCase()}: ${errText}`);
       }
 
-      const pdfBuffer = await pdfRes.arrayBuffer();
+      const fileBuffer = await exportRes.arrayBuffer();
 
       // 4. Delete the temporary copy
       await fetch(`https://www.googleapis.com/drive/v3/files/${copyId}`, {
@@ -317,11 +325,11 @@ Deno.serve(async (req) => {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
 
-      return new Response(pdfBuffer, {
+      return new Response(fileBuffer, {
         headers: {
           ...corsHeaders,
-          "Content-Type": "application/pdf",
-          "Content-Disposition": `attachment; filename="${copyName}.pdf"`,
+          "Content-Type": contentType,
+          "Content-Disposition": `attachment; filename="${copyName}.${fileExtension}"`,
         },
       });
     } catch (err) {
