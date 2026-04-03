@@ -50,7 +50,7 @@ function calcKwp(qtd?: number | null, potW?: string | null): string {
   return ((qtd * pot) / 1000).toFixed(2);
 }
 
-const COL_KEYS = ['nome', 'cpf', 'telefone', 'uc', 'concessionaria', 'marca_inv', 'pot_inv', 'qtd_placas', 'marca_placa', 'pot_placa', 'kwp', 'valor', 'instalacao', 'acoes'];
+const COL_KEYS = ['nome', 'cpf', 'telefone', 'uc', 'concessionaria', 'marca_inv', 'pot_inv', 'qtd_placas', 'marca_placa', 'pot_placa', 'kwp', 'valor', 'forma_pgto', 'instalacao', 'acoes'];
 
 export default function ClientesList({
   clientes, loading, onPromover, onRefresh, onImport,
@@ -100,7 +100,7 @@ export default function ClientesList({
     nome: 'Nome', cpf: 'CPF', telefone: 'Telefone', uc: 'UC',
     concessionaria: 'Concessionária', marca_inv: 'Marca Inv.', pot_inv: 'Pot. Inv.',
     qtd_placas: 'Qtd Placas', marca_placa: 'Marca Placa', pot_placa: 'Pot. Placa',
-    kwp: 'KWp', valor: 'Valor', instalacao: 'Instalação', acoes: 'Ações',
+    kwp: 'KWp', valor: 'Valor', forma_pgto: 'Forma Pgto.', instalacao: 'Instalação', acoes: 'Ações',
   };
 
   const renderCell = (key: string, c: ClienteBase) => {
@@ -123,6 +123,7 @@ export default function ClientesList({
       case 'pot_placa': return <td key={key} className="py-2 px-2 text-xs">{c.potencia_placa || '—'}</td>;
       case 'kwp': return <td key={key} className="py-2 px-2 text-xs font-medium">{c.kwp ? Number(c.kwp).toFixed(2) : calcKwp(c.qtd_placas, c.potencia_placa)}</td>;
       case 'valor': return <td key={key} className="py-2 px-2 text-xs">{c.valor ? `R$ ${Number(c.valor).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '—'}</td>;
+      case 'forma_pgto': return <td key={key} className="py-2 px-2 text-xs">{c.forma_pagamento || '—'}</td>;
       case 'instalacao': return <td key={key} className="py-2 px-2 text-xs">{c.instalado_em ? new Date(c.instalado_em).toLocaleDateString('pt-BR') : '—'}</td>;
       case 'acoes': return (
         <td key={key} className="py-2 px-2">
