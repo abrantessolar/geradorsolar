@@ -132,7 +132,7 @@ export interface Proposal {
   consumption: MonthlyConsumption;
   consumerUnits: ConsumerUnit[];
   equipment: EquipmentItem[];
-  selectedLine: 'acesso' | 'essencial' | 'excellence' | 'premium';
+  selectedLine: 'acesso' | 'excellence' | 'premium';
   selectedKit: { inverter: Kit | null; panel: Kit | null; panelCount: number };
   totalPrice: number;
   installmentValues: Record<number, number | { perMonth: number; total: number }>;
