@@ -9,8 +9,9 @@ const contactItems = [
   { icon: MapPin, label: 'Rua Luiz Corrêa da Silveira, nº 934, Jardim Alvorada, Três Lagoas/MS' },
   { icon: Phone, label: '(67) 9 9644-8995', href: 'tel:+5567996448995' },
   { icon: Mail, label: 'contato@treslagoassolar.com.br', href: 'mailto:contato@treslagoassolar.com.br' },
-  { icon: Clock, label: 'Segunda a Sexta, 8h às 18h' },
-  { icon: Clock, label: 'Sábado: Sob agendamento' },
+  { icon: Clock, label: 'Seg a Sex: 7h–11h e 13h–17h' },
+  { icon: Clock, label: 'Sábado: 8h–12h' },
+  { icon: Clock, label: 'Horário personalizado: Sob agendamento' },
 ];
 
 export default function OndeEstamos() {
