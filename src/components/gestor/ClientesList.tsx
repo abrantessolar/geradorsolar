@@ -52,7 +52,7 @@ function calcKwp(qtd?: number | null, potW?: string | null): string {
   return ((qtd * pot) / 1000).toFixed(2);
 }
 
-const COL_KEYS = ['nome', 'cpf', 'telefone', 'uc', 'concessionaria', 'marca_inv', 'pot_inv', 'qtd_placas', 'marca_placa', 'pot_placa', 'kwp', 'valor', 'forma_pgto', 'instalacao', 'acoes'];
+const COL_KEYS = ['nome', 'cpf', 'telefone', 'endereco', 'uc', 'concessionaria', 'marca_inv', 'pot_inv', 'qtd_placas', 'marca_placa', 'pot_placa', 'kwp', 'valor', 'forma_pgto', 'instalacao', 'acoes'];
 
 export default function ClientesList({
   clientes, loading, onPromover, onRefresh, onImport, showImport = true,
