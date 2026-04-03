@@ -13,6 +13,7 @@ import AdminPage from "@/pages/AdminPage";
 import ProposalPage from "@/pages/ProposalPage";
 import ResetPasswordPage from "@/pages/ResetPasswordPage";
 import GestorPage from "@/pages/GestorPage";
+import EstoquePage from "@/pages/EstoquePage";
 import LeadNotification from "@/components/LeadNotification";
 import NotFound from "@/pages/NotFound";
 
