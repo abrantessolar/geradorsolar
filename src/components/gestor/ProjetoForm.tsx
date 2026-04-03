@@ -123,6 +123,10 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
     const localEntregaFinal = form.local_entrega === 'OUTRO' ? form.local_entrega_outro : form.local_entrega;
     const selectedPlaca = placas.find(p => p.id === form.placa_id);
     const selectedInversor = inversores.find(i => i.id === form.inversor_id);
+    const qtdP = form.qtd_placas ? parseInt(form.qtd_placas) : 0;
+    const potWp = selectedPlaca?.potencia_wp || 0;
+    const kwpCalc = (qtdP * potWp) / 1000;
+    const sistemaCalc = kwpCalc > 0 ? kwpCalc.toFixed(2).replace('.', ',') + 'KWp' : null;
     const row: any = {
       usuario_id: session.user.id,
       tipo_pessoa: form.tipo_pessoa,
@@ -143,7 +147,7 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
       estado: form.estado || null,
       concessionaria: form.concessionaria,
       placa_id: form.placa_id || null,
-      qtd_placas: form.qtd_placas ? parseInt(form.qtd_placas) : null,
+      qtd_placas: qtdP || null,
       inversor_id: form.inversor_id || null,
       qtd_inversores: form.qtd_inversores ? parseInt(form.qtd_inversores) : null,
       marca_placa: selectedPlaca?.marca || null,
@@ -151,7 +155,7 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
       marca_inversor: selectedInversor?.marca || null,
       potencia_inversor: selectedInversor ? String(selectedInversor.potencia_kw) : null,
       geracao_estimada_kwh: form.geracao_estimada_kwh ? parseFloat(form.geracao_estimada_kwh) : null,
-      sistema: form.sistema || null,
+      sistema: sistemaCalc,
       nome_planta: form.nome_planta || null,
       wifi_nome: form.wifi_nome || null,
       wifi_senha: form.wifi_senha || null,
@@ -313,10 +317,6 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
         const geracaoAuto = Math.round(kwp * HSP * 30 * 0.75);
         return (
         <div className="space-y-4">
-          <div>
-            <label className={labelClass}>Sistema (ex: 5,75KWp)</label>
-            <input className={inputClass} value={form.sistema} onChange={e => set('sistema', e.target.value)} placeholder="5,75KWp" />
-          </div>
 
           <h3 className="text-sm font-semibold">Placas</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
