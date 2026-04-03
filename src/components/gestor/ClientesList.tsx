@@ -224,7 +224,9 @@ export default function ClientesList({
             <div className="grid grid-cols-2 gap-3 text-sm">
               {[
                 ['CPF', selectedCliente.cpf],
-                ['Telefone', selectedCliente.telefone],
+                ['Telefone 1', selectedCliente.telefone],
+                ['Telefone 2', selectedCliente.telefone_2],
+                ['Telefone 3', selectedCliente.telefone_3],
                 ['Endereço', selectedCliente.endereco],
                 ['UC', selectedCliente.uc],
                 ['Concessionária', selectedCliente.concessionaria],
