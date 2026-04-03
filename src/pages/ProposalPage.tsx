@@ -18,6 +18,7 @@ import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import Diferenciais from '@/components/Diferenciais';
 import ProposalPortfolio from '@/components/ProposalPortfolio';
+import ProposalFooter from '@/components/ProposalFooter';
 
 
 const LINES = ['excellence', 'premium'] as const;
