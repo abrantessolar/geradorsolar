@@ -119,8 +119,21 @@ export default function ClientesList({
       case 'telefone': return <td key={key} className="py-2 px-2 text-xs"><WhatsAppLink phone={c.telefone} /></td>;
       case 'uc': return <td key={key} className="py-2 px-2 text-xs">{c.uc || '—'}</td>;
       case 'concessionaria': return <td key={key} className="py-2 px-2 text-xs">{c.concessionaria || '—'}</td>;
-      case 'marca_inv': return <td key={key} className="py-2 px-2 text-xs">{c.marca_inversor || '—'}</td>;
-      case 'pot_inv': return <td key={key} className="py-2 px-2 text-xs">{c.potencia_inversor || '—'}</td>;
+      case 'marca_inv': return (
+        <td key={key} className="py-2 px-2 text-xs">
+          {c.marca_inversor || '—'}
+          {c.tipo_inversor?.toLowerCase() === 'micro' && (
+            <span className="ml-1 inline-block px-1.5 py-0.5 rounded text-[10px] font-bold bg-primary/15 text-primary">MICRO</span>
+          )}
+        </td>
+      );
+      case 'pot_inv': return (
+        <td key={key} className="py-2 px-2 text-xs">
+          {c.tipo_inversor?.toLowerCase() === 'micro' && c.potencia_inversor && c.qtd_inversores
+            ? `${c.potencia_inversor} kW × ${c.qtd_inversores}`
+            : c.potencia_inversor ? `${c.potencia_inversor} kW` : '—'}
+        </td>
+      );
       case 'qtd_placas': return <td key={key} className="py-2 px-2 text-xs">{c.qtd_placas || '—'}</td>;
       case 'marca_placa': return <td key={key} className="py-2 px-2 text-xs">{c.marca_placa || '—'}</td>;
       case 'pot_placa': return <td key={key} className="py-2 px-2 text-xs">{c.potencia_placa || '—'}</td>;
