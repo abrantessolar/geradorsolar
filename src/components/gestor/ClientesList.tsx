@@ -244,7 +244,17 @@ export default function ClientesList({
                 ['Nome Planta', selectedCliente.nome_planta],
                 ['Satisfação', selectedCliente.satisfacao],
                 ['Origem', selectedCliente.origem === 'importacao' ? 'Importação' : 'Promovido de Obra'],
-              ].map(([label, val]) => (
+              ].map(([label, val]) => {
+                // Render phone fields as WhatsApp links
+                if ((label === 'Telefone 1' || label === 'Telefone 2' || label === 'Telefone 3') && val) {
+                  return (
+                    <div key={label as string}>
+                      <p className="text-xs text-muted-foreground">{label}</p>
+                      <div className="font-medium"><WhatsAppLink phone={val as string} /></div>
+                    </div>
+                  );
+                }
+                return (
                 <div key={label as string}>
                   <p className="text-xs text-muted-foreground">{label}</p>
                   <p className="font-medium">{(val as string) || '—'}</p>
