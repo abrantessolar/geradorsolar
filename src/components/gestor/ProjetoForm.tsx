@@ -300,7 +300,10 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
       {/* Step 2 - Equipamentos */}
       {step === 2 && (
         <div className="space-y-4">
-          <div><label className={labelClass}>Sistema (ex: 5,75KWp)</label><input className={inputClass} value={form.sistema} onChange={e => set('sistema', e.target.value)} placeholder="5,75KWp" /></div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div><label className={labelClass}>Sistema (ex: 5,75KWp)</label><input className={inputClass} value={form.sistema} onChange={e => set('sistema', e.target.value)} placeholder="5,75KWp" /></div>
+            <div><label className={labelClass}>Nome da Planta</label><input className={inputClass} value={form.nome_planta} onChange={e => set('nome_planta', e.target.value)} placeholder="Nome da planta de monitoramento" /></div>
+          </div>
 
           <h3 className="text-sm font-semibold">Placas</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
