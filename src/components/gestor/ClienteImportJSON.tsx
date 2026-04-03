@@ -118,12 +118,25 @@ export default function ClienteImportJSON({ onImported }: { onImported: () => vo
     // Parse monetary
     if (mapped.valor) mapped.valor = parseMonetary(mapped.valor);
 
+    // Parse numeric fields that come as strings
+    if (mapped.qtd_placas) mapped.qtd_placas = parseInt(String(mapped.qtd_placas)) || null;
+    if (mapped.qtd_inversores) mapped.qtd_inversores = parseInt(String(mapped.qtd_inversores)) || null;
+    if (mapped.kwp) mapped.kwp = parseFloat(String(mapped.kwp).replace(',', '.')) || null;
+    if (mapped.potencia_placa) mapped.potencia_placa = String(mapped.potencia_placa).replace(/[Ww]$/, '').trim();
+    if (mapped.potencia_inversor) mapped.potencia_inversor = String(mapped.potencia_inversor).replace(/[Kk][Ww]$/, '').replace(',', '.').trim();
+
     // Parse dates
     for (const df of ['projeto_enviado_em', 'projeto_aprovado', 'instalado_em', 'vistoriado_em']) {
       if (mapped[df]) mapped[df] = parseDate(mapped[df]);
     }
 
-    // Parse equipment text into structured fields
+    // Calculate KWp if not provided
+    if (!mapped.kwp && mapped.qtd_placas && mapped.potencia_placa) {
+      const pot = parseFloat(mapped.potencia_placa);
+      if (!isNaN(pot)) mapped.kwp = (mapped.qtd_placas * pot) / 1000;
+    }
+
+    // Parse equipment text into structured fields (fallback)
     if (mapped.dados_paineis && !mapped.qtd_placas) {
       const parsed = parsePaineis(mapped.dados_paineis);
       if (parsed) {

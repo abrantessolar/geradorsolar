@@ -259,7 +259,14 @@ export default function ClientesList({
                   <p className="text-xs text-muted-foreground">{label}</p>
                   <p className="font-medium">{(val as string) || '—'}</p>
                 </div>
-              ))}
+              );
+              })}
+              {selectedCliente.observacoes && (
+                <div className="col-span-2">
+                  <p className="text-xs text-muted-foreground">Observações</p>
+                  <p className="font-medium whitespace-pre-wrap">{selectedCliente.observacoes}</p>
+                </div>
+              )}
             </div>
             {!selectedCliente.projeto_id && (
               <button
