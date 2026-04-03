@@ -100,7 +100,7 @@ export default function ClientesList({
     nome: 'Nome', cpf: 'CPF', telefone: 'Telefone', uc: 'UC',
     concessionaria: 'Concessionária', marca_inv: 'Marca Inv.', pot_inv: 'Pot. Inv.',
     qtd_placas: 'Qtd Placas', marca_placa: 'Marca Placa', pot_placa: 'Pot. Placa',
-    kwp: 'KWp', valor: 'Valor', instalacao: 'Instalação', acoes: 'Ações',
+    kwp: 'KWp', valor: 'Valor', forma_pgto: 'Forma Pgto.', instalacao: 'Instalação', acoes: 'Ações',
   };
 
   const renderCell = (key: string, c: ClienteBase) => {
