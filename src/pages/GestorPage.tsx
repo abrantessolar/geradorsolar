@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import {
-  BarChart3, ClipboardList, Plus, FileText, Upload, RefreshCw, Users, Wrench, Package,
+  BarChart3, ClipboardList, Plus, FileText, Upload, RefreshCw, Users, Wrench, Package, Cpu,
 } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import GestorDashboard from '@/components/gestor/GestorDashboard';
@@ -15,6 +15,7 @@ import ImportCSV from '@/components/gestor/ImportCSV';
 import ClientesList, { type ClienteBase } from '@/components/gestor/ClientesList';
 
 import MateriaisModule from '@/components/gestor/materiais/MateriaisModule';
+import EquipmentDashboard from '@/components/gestor/EquipmentDashboard';
 
 export type Projeto = {
   id: string;
@@ -90,7 +91,7 @@ type ObrasSubTab = 'dashboard' | 'projetos' | 'novo' | 'editar' | 'modelos' | 'i
 
 export default function GestorPage() {
   const { session, isAdmin } = useAuth();
-  const [mainTab, setMainTab] = useState<'obras' | 'clientes' | 'materiais'>('obras');
+  const [mainTab, setMainTab] = useState<'obras' | 'clientes' | 'materiais' | 'equipamentos'>('obras');
   const [obrasSubTab, setObrasSubTab] = useState<ObrasSubTab>('dashboard');
   
   const [projetos, setProjetos] = useState<Projeto[]>([]);
@@ -260,6 +261,9 @@ export default function GestorPage() {
           <TabsTrigger value="materiais" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-6 py-2.5 rounded-lg">
             <Package className="w-4 h-4" /> Materiais
           </TabsTrigger>
+          <TabsTrigger value="equipamentos" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-6 py-2.5 rounded-lg">
+            <Cpu className="w-4 h-4" /> Equipamentos
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="obras" className="space-y-4">
@@ -297,6 +301,10 @@ export default function GestorPage() {
 
         <TabsContent value="materiais" className="space-y-4">
           <MateriaisModule />
+        </TabsContent>
+
+        <TabsContent value="equipamentos" className="space-y-4">
+          <EquipmentDashboard clientes={clientes} />
         </TabsContent>
       </Tabs>
 
