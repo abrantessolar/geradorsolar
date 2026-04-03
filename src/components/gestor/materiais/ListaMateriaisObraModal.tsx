@@ -54,9 +54,21 @@ export default function ListaMateriaisObraModal({ projeto, onClose }: { projeto:
   const generateList = async () => {
     setGenerating(true);
     try {
-      // Determine power key from inversor
-      const potInv = parseFloat(projeto.potencia_inversor || '0');
-      const isMicro = (projeto.inversor?.tipo || '').toUpperCase().includes('MICRO');
+    // Determine power key from inversor
+      const potInvRaw = parseFloat(projeto.potencia_inversor || '0');
+      // Normalize: if value > 100 assume it's in watts (e.g. 2500 → 2.5 kW)
+      const potInv = potInvRaw > 100 ? potInvRaw / 1000 : potInvRaw;
+      
+      // Detect micro: from linked inversor tipo, or from marca/potencia heuristics
+      const tipoFromInversor = (projeto.inversor?.tipo || '').toUpperCase();
+      const marcaInv = (projeto.marca_inversor || '').toUpperCase();
+      const microBrands = ['HOYMILES', 'HOYMMILES', 'HOMYLES', 'HOMILES'];
+      const isMicro = tipoFromInversor.includes('MICRO')
+        || marcaInv.includes('MICRO')
+        || microBrands.some(b => marcaInv.includes(b))
+        || (marcaInv.includes('DEYE') && potInv < 3)
+        || ((projeto.qtd_inversores || 1) > 1 && potInv < 3);
+      
       let potKey = '';
       
       if (isMicro) {
