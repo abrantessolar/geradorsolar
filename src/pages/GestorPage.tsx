@@ -15,6 +15,7 @@ import ImportCSV from '@/components/gestor/ImportCSV';
 import ClientesList, { type ClienteBase } from '@/components/gestor/ClientesList';
 
 import MateriaisModule from '@/components/gestor/materiais/MateriaisModule';
+import EquipmentDashboard from '@/components/gestor/EquipmentDashboard';
 
 export type Projeto = {
   id: string;
