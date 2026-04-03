@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { ChevronLeft, ChevronRight, Plus, X, Save } from 'lucide-react';
+import { getPotenciaKey, generateMaterialList, hasExistingList } from './materiais/generateMaterialList';
 
 const STATUS_LIST = ['Vendido', 'Equipamento Comprado', 'Entregue', 'Em Instalação', 'Instalado', 'Projeto Submetido', 'Homologado'];
 const CONC_LIST = ['ELEKTRO', 'ENERGISA', 'COPEL', 'OUTRA'];
