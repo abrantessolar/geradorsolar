@@ -135,6 +135,9 @@ export default function ClientesList({
             {!c.projeto_id && !c.id.startsWith('proj-') && (
               <button onClick={() => onPromover(c)} className="text-primary hover:text-primary/80" title="Promover para Obra"><ArrowUpRight className="w-4 h-4" /></button>
             )}
+            {!c.id.startsWith('proj-') && (
+              <button onClick={() => setDeleteCliente(c)} className="text-destructive hover:text-destructive/80" title="Excluir"><Trash2 className="w-4 h-4" /></button>
+            )}
           </div>
         </td>
       );
