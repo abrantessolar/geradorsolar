@@ -1,13 +1,67 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { Projeto } from '@/pages/GestorPage';
-import { X, FileText, Download, Loader2 } from 'lucide-react';
+import { X, FileText, Download, Loader2, ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
 
 type Modelo = { id: string; tipo: string; conteudo_html: string };
 
 function sanitizeFilename(name: string): string {
   return name.replace(/[^a-zA-Z0-9À-ÿ\s-_]/g, '').replace(/\s+/g, '_').substring(0, 60);
+}
+
+function FormatDropdown({ tipo, generating, onGenerate }: {
+  tipo: string;
+  generating: string | null;
+  onGenerate: (tipo: string, formato: 'pdf' | 'docx') => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const isGenerating = generating === tipo;
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={(e) => { e.stopPropagation(); setOpen(!open); }}
+        disabled={!!generating}
+        className="flex items-center gap-1 px-2 py-1 rounded-md hover:bg-muted transition-colors"
+      >
+        {isGenerating ? (
+          <Loader2 className="w-4 h-4 text-primary animate-spin" />
+        ) : (
+          <>
+            <Download className="w-4 h-4 text-muted-foreground" />
+            <ChevronDown className="w-3 h-3 text-muted-foreground" />
+          </>
+        )}
+      </button>
+      {open && !generating && (
+        <div className="absolute right-0 top-full mt-1 bg-popover border border-border rounded-md shadow-lg z-10 min-w-[160px]">
+          <button
+            onClick={() => { setOpen(false); onGenerate(tipo, 'pdf'); }}
+            className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted transition-colors text-left"
+          >
+            📄 Baixar PDF
+          </button>
+          <button
+            onClick={() => { setOpen(false); onGenerate(tipo, 'docx'); }}
+            className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted transition-colors text-left"
+          >
+            📝 Baixar Word (.docx)
+          </button>
+        </div>
+      )}
+    </div>
+  );
 }
 
 export default function DocumentosModal({ projeto, onClose }: { projeto: Projeto; onClose: () => void }) {
@@ -30,13 +84,11 @@ export default function DocumentosModal({ projeto, onClose }: { projeto: Projeto
     procuracao_copel: 'Procuração COPEL',
   };
 
-  // Contrato always available via Google Docs API
   const googleDocsTypes = ['contrato'];
 
-  // Other document types still use the old modelos_documentos approach
   const applicableModelos = modelos.filter(m => {
     if (!m.conteudo_html || m.conteudo_html.length < 10) return false;
-    if (googleDocsTypes.includes(m.tipo)) return false; // handled separately
+    if (googleDocsTypes.includes(m.tipo)) return false;
     if (m.tipo === 'procuracao_elektro_pf') return projeto.concessionaria === 'Elektro' && projeto.tipo_pessoa === 'PF';
     if (m.tipo === 'procuracao_elektro_pj') return projeto.concessionaria === 'Elektro' && projeto.tipo_pessoa === 'PJ';
     if (m.tipo === 'procuracao_energisa') return projeto.concessionaria === 'Energisa';
@@ -44,7 +96,7 @@ export default function DocumentosModal({ projeto, onClose }: { projeto: Projeto
     return false;
   });
 
-  const handleGenerateGoogleDoc = async (tipoDocumento: string) => {
+  const handleGenerate = async (tipoDocumento: string, formato: 'pdf' | 'docx') => {
     setGenerating(tipoDocumento);
     try {
       const { data: sessionData } = await supabase.auth.getSession();
@@ -62,6 +114,7 @@ export default function DocumentosModal({ projeto, onClose }: { projeto: Projeto
           body: JSON.stringify({
             projeto_id: projeto.id,
             tipo_documento: tipoDocumento,
+            formato,
           }),
         }
       );
@@ -73,7 +126,8 @@ export default function DocumentosModal({ projeto, onClose }: { projeto: Projeto
 
       const blob = await res.blob();
       const clientName = sanitizeFilename(projeto.nome_completo || projeto.razao_social || 'cliente');
-      const filename = `Contrato_${clientName}.pdf`;
+      const ext = formato === 'docx' ? 'docx' : 'pdf';
+      const filename = `Contrato_${clientName}.${ext}`;
 
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -84,10 +138,10 @@ export default function DocumentosModal({ projeto, onClose }: { projeto: Projeto
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
 
-      toast.success(`PDF "${filename}" gerado com sucesso!`);
+      toast.success(`${ext.toUpperCase()} "${filename}" gerado com sucesso!`);
     } catch (err) {
-      console.error('PDF generation error:', err);
-      toast.error('Erro ao gerar PDF: ' + String(err));
+      console.error('Document generation error:', err);
+      toast.error('Erro ao gerar documento: ' + String(err));
     } finally {
       setGenerating(null);
     }
@@ -108,11 +162,7 @@ export default function DocumentosModal({ projeto, onClose }: { projeto: Projeto
         ) : (
           <div className="space-y-3">
             {/* Google Docs-based documents */}
-            <button
-              onClick={() => handleGenerateGoogleDoc('contrato')}
-              disabled={!!generating}
-              className="w-full flex items-center gap-3 p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors text-left"
-            >
+            <div className="w-full flex items-center gap-3 p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors">
               {generating === 'contrato' ? (
                 <Loader2 className="w-5 h-5 text-primary flex-shrink-0 animate-spin" />
               ) : (
@@ -121,19 +171,15 @@ export default function DocumentosModal({ projeto, onClose }: { projeto: Projeto
               <div className="flex-1">
                 <span className="font-medium">Contrato de Instalação</span>
                 <p className="text-xs text-muted-foreground">
-                  {generating === 'contrato' ? 'Gerando PDF...' : 'Clique para gerar e baixar o PDF'}
+                  {generating === 'contrato' ? 'Gerando documento...' : 'Escolha o formato para download'}
                 </p>
               </div>
-              <Download className="w-4 h-4 text-muted-foreground" />
-            </button>
+              <FormatDropdown tipo="contrato" generating={generating} onGenerate={handleGenerate} />
+            </div>
 
             {/* Legacy modelos-based documents */}
             {applicableModelos.map(m => (
-              <button key={m.id}
-                onClick={() => handleGenerateGoogleDoc(m.tipo)}
-                disabled={!!generating}
-                className="w-full flex items-center gap-3 p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors text-left"
-              >
+              <div key={m.id} className="w-full flex items-center gap-3 p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors">
                 {generating === m.tipo ? (
                   <Loader2 className="w-5 h-5 text-primary flex-shrink-0 animate-spin" />
                 ) : (
@@ -142,11 +188,11 @@ export default function DocumentosModal({ projeto, onClose }: { projeto: Projeto
                 <div className="flex-1">
                   <span className="font-medium">{tiposLabel[m.tipo] || m.tipo}</span>
                   <p className="text-xs text-muted-foreground">
-                    {generating === m.tipo ? 'Gerando PDF...' : 'Clique para gerar e baixar o PDF'}
+                    {generating === m.tipo ? 'Gerando documento...' : 'Escolha o formato para download'}
                   </p>
                 </div>
-                <Download className="w-4 h-4 text-muted-foreground" />
-              </button>
+                <FormatDropdown tipo={m.tipo} generating={generating} onGenerate={handleGenerate} />
+              </div>
             ))}
 
             {applicableModelos.length === 0 && (
