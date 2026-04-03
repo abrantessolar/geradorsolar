@@ -72,7 +72,7 @@ const App = () => (
             <Route path="/proposta/:id" element={<div><SeoNoIndex /><ProposalPage /></div>} />
             <Route path="/reset-password" element={<div><SeoNoIndex /><ResetPasswordPage /></div>} />
             <Route path="/orcamentos" element={
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={['admin', 'orcamentista', 'vendedor']}>
                 <SeoNoIndex /><Layout><CalculatorPage /></Layout>
               </ProtectedRoute>
             } />
