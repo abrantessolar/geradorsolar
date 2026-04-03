@@ -149,66 +149,96 @@ export default function ProdutosTab() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-3">
-        <input className="solar-input max-w-xs" placeholder="Buscar material..." value={search} onChange={e => setSearch(e.target.value)} />
-        <select className="solar-input max-w-[180px]" value={catFilter} onChange={e => setCatFilter(e.target.value)}>
+      <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2 sm:gap-3">
+        <input className="solar-input w-full sm:max-w-xs text-sm" placeholder="Buscar material..." value={search} onChange={e => setSearch(e.target.value)} />
+        <select className="solar-input w-full sm:max-w-[180px] text-sm" value={catFilter} onChange={e => setCatFilter(e.target.value)}>
           <option value="">Todas categorias</option>
           {CATEGORIAS.map(c => <option key={c} value={c}>{CATEGORIA_ICONS[c]} {c}</option>)}
         </select>
-        <div className="ml-auto flex gap-2">
+        <div className="sm:ml-auto">
           <button onClick={() => { setShowForm(true); setEditId(null); setForm({ nome: '', categoria: 'Outros', fornecedor_id: '', preco_unitario: '', unidade: 'unidade' }); setQtdPadrao({}); }}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-primary text-primary-foreground">
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-primary text-primary-foreground w-full sm:w-auto justify-center">
             <Plus className="w-4 h-4" /> Novo Material
           </button>
         </div>
       </div>
 
+      {/* Modal/Popup form */}
       {showForm && (
-        <div className="solar-card p-4 space-y-4">
-          <div className="flex items-center justify-between">
-            <h4 className="text-sm font-semibold">{editId ? 'Editar' : 'Novo'} Material</h4>
-            <button onClick={() => { setShowForm(false); setEditId(null); }}><X className="w-4 h-4" /></button>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <input className="solar-input" placeholder="Nome *" value={form.nome} onChange={e => setForm(f => ({ ...f, nome: e.target.value }))} />
-            <select className="solar-input" value={form.categoria} onChange={e => setForm(f => ({ ...f, categoria: e.target.value }))}>
-              {CATEGORIAS.map(c => <option key={c} value={c}>{c}</option>)}
-            </select>
-            <select className="solar-input" value={form.fornecedor_id} onChange={e => setForm(f => ({ ...f, fornecedor_id: e.target.value }))}>
-              <option value="">Sem fornecedor</option>
-              {fornecedores.map(f => <option key={f.id} value={f.id}>{f.nome}</option>)}
-            </select>
-            <input className="solar-input" type="number" step="0.01" placeholder="Preço unitário" value={form.preco_unitario} onChange={e => setForm(f => ({ ...f, preco_unitario: e.target.value }))} />
-            <select className="solar-input" value={form.unidade} onChange={e => setForm(f => ({ ...f, unidade: e.target.value }))}>
-              <option value="unidade">Unidade</option>
-              <option value="metros">Metros</option>
-              <option value="par">Par</option>
-              <option value="kit">Kit</option>
-            </select>
-          </div>
-
-          <div>
-            <h5 className="text-xs font-semibold mb-2">Quantidades Padrão por Potência</h5>
-            <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-8 gap-2">
-              {POTENCIAS.map(pot => (
-                <div key={pot} className="text-center">
-                  <label className="block text-[10px] text-muted-foreground mb-1">{pot}</label>
-                  <input className="solar-input text-center text-xs w-full" type="number" min="0"
-                    value={qtdPadrao[pot] || ''}
-                    onChange={e => setQtdPadrao(q => ({ ...q, [pot]: parseInt(e.target.value) || 0 }))}
-                  />
-                </div>
-              ))}
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center sm:p-4" onClick={() => { setShowForm(false); setEditId(null); }}>
+          <div className="bg-background rounded-t-xl sm:rounded-xl shadow-xl w-full sm:max-w-2xl max-h-[90vh] overflow-y-auto p-4 sm:p-6 space-y-4" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <h4 className="text-sm sm:text-base font-semibold">{editId ? '✏️ Editar' : '➕ Novo'} Material</h4>
+              <button onClick={() => { setShowForm(false); setEditId(null); }}><X className="w-5 h-5" /></button>
             </div>
-          </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <input className="solar-input" placeholder="Nome *" value={form.nome} onChange={e => setForm(f => ({ ...f, nome: e.target.value }))} />
+              <select className="solar-input" value={form.categoria} onChange={e => setForm(f => ({ ...f, categoria: e.target.value }))}>
+                {CATEGORIAS.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+              <select className="solar-input" value={form.fornecedor_id} onChange={e => setForm(f => ({ ...f, fornecedor_id: e.target.value }))}>
+                <option value="">Sem fornecedor</option>
+                {fornecedores.map(f => <option key={f.id} value={f.id}>{f.nome}</option>)}
+              </select>
+              <input className="solar-input" type="number" step="0.01" placeholder="Preço unitário" value={form.preco_unitario} onChange={e => setForm(f => ({ ...f, preco_unitario: e.target.value }))} />
+              <select className="solar-input" value={form.unidade} onChange={e => setForm(f => ({ ...f, unidade: e.target.value }))}>
+                <option value="unidade">Unidade</option>
+                <option value="metros">Metros</option>
+                <option value="par">Par</option>
+                <option value="kit">Kit</option>
+              </select>
+            </div>
 
-          <button onClick={handleSave} className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-primary text-primary-foreground">
-            <Save className="w-4 h-4" /> Salvar
-          </button>
+            <div>
+              <h5 className="text-xs font-semibold mb-2">Quantidades Padrão por Potência</h5>
+              <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-8 gap-2">
+                {POTENCIAS.map(pot => (
+                  <div key={pot} className="text-center">
+                    <label className="block text-[10px] text-muted-foreground mb-1">{pot}</label>
+                    <input className="solar-input text-center text-xs w-full" type="number" min="0"
+                      value={qtdPadrao[pot] || ''}
+                      onChange={e => setQtdPadrao(q => ({ ...q, [pot]: parseInt(e.target.value) || 0 }))}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <button onClick={handleSave} className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium bg-primary text-primary-foreground">
+              <Save className="w-4 h-4" /> Salvar
+            </button>
+          </div>
         </div>
       )}
 
-      <div className="solar-card overflow-hidden">
+      {/* Mobile card view */}
+      <div className="block sm:hidden space-y-2">
+        {filtered.map(m => (
+          <div key={m.id} className="border border-border rounded-lg p-3 space-y-1.5">
+            <div className="flex items-start justify-between">
+              <p className="font-medium text-sm">
+                <span className="mr-1.5">{CATEGORIA_ICONS[m.categoria] || '📦'}</span>
+                {m.nome}
+              </p>
+              <div className="flex gap-2 shrink-0 ml-2">
+                <button onClick={() => handleEdit(m)} className="text-primary hover:text-primary/80"><Edit2 className="w-4 h-4" /></button>
+                <button onClick={() => handleDelete(m.id)} className="text-destructive hover:text-destructive/80"><Trash2 className="w-4 h-4" /></button>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-muted-foreground">
+              <span>{m.categoria}</span>
+              {m.preco_unitario && <span>R$ {Number(m.preco_unitario).toFixed(2)}</span>}
+              <span className={`font-medium ${(estoqueMap[m.id] || 0) === 0 ? 'text-destructive' : ''}`}>
+                Estoque: {estoqueMap[m.id] ?? 0}
+              </span>
+            </div>
+          </div>
+        ))}
+        {filtered.length === 0 && <p className="py-8 text-center text-sm text-muted-foreground">Nenhum material cadastrado.</p>}
+      </div>
+
+      {/* Desktop table view */}
+      <div className="hidden sm:block solar-card overflow-hidden">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-border text-left text-muted-foreground">
