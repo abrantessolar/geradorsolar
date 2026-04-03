@@ -108,7 +108,7 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
       const data = await res.json();
       if (data.erro) return;
       if (prefix === 'main') {
-        setForm(f => ({ ...f, endereco_completo: `${data.logradouro || ''}`, bairro: data.bairro || '', cidade: data.localidade || '', estado: data.uf || '' }));
+        setForm(f => ({ ...f, logradouro: data.logradouro || '', bairro: data.bairro || '', cidade: data.localidade || '', estado: data.uf || '' }));
       } else {
         setForm(f => ({ ...f, [`${prefix}_endereco`]: `${data.logradouro || ''}, ${data.bairro || ''}, ${data.localidade || ''}-${data.uf || ''}` }));
       }
