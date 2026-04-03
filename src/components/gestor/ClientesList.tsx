@@ -67,6 +67,7 @@ export default function ClientesList({
   const [marcaPlacaFilter, setMarcaPlacaFilter] = useState('');
   const [selectedCliente, setSelectedCliente] = useState<ClienteBase | null>(null);
   const [editCliente, setEditCliente] = useState<ClienteBase | null>(null);
+  const [deleteCliente, setDeleteCliente] = useState<ClienteBase | null>(null);
 
   const { order, onDragStart, onDragOver, onDragEnd, dragIdx } = useDraggableColumns('gestor-clientes-cols', COL_KEYS);
 
