@@ -25,6 +25,7 @@ import { useNavigate } from 'react-router-dom';
 
 const ROLE_LABELS: Record<string, string> = {
   admin: 'Administrador',
+  gestor: 'Gestor',
   orcamentista: 'Orçamentista',
   vendedor: 'Vendedor',
 };
