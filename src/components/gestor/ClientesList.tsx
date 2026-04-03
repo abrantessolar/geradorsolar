@@ -123,6 +123,7 @@ export default function ClientesList({
       case 'pot_placa': return <td key={key} className="py-2 px-2 text-xs">{c.potencia_placa || '—'}</td>;
       case 'kwp': return <td key={key} className="py-2 px-2 text-xs font-medium">{c.kwp ? Number(c.kwp).toFixed(2) : calcKwp(c.qtd_placas, c.potencia_placa)}</td>;
       case 'valor': return <td key={key} className="py-2 px-2 text-xs">{c.valor ? `R$ ${Number(c.valor).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '—'}</td>;
+      case 'forma_pgto': return <td key={key} className="py-2 px-2 text-xs">{c.forma_pagamento || '—'}</td>;
       case 'instalacao': return <td key={key} className="py-2 px-2 text-xs">{c.instalado_em ? new Date(c.instalado_em).toLocaleDateString('pt-BR') : '—'}</td>;
       case 'acoes': return (
         <td key={key} className="py-2 px-2">
