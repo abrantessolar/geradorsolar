@@ -162,7 +162,61 @@ Deno.serve(async (req) => {
     );
 
     const body = await req.json();
-    const { project_id, sync_all } = body;
+    const { project_id, sync_all, delete_id, sheet } = body;
+
+    const sheetsId = Deno.env.get('GOOGLE_SHEETS_ID');
+    const serviceAccountJson = Deno.env.get('GOOGLE_SERVICE_ACCOUNT');
+    if (!sheetsId || !serviceAccountJson) {
+      return new Response(JSON.stringify({ error: 'Google Sheets credentials not configured' }), {
+        status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const serviceAccount = JSON.parse(serviceAccountJson);
+    const accessToken = await getAccessToken(serviceAccount);
+    const sheetsUrl = `https://sheets.googleapis.com/v4/spreadsheets/${sheetsId}`;
+
+    // ── DELETE ROW FROM SHEET ──
+    if (delete_id && sheet) {
+      try {
+        await ensureSheet(sheetsUrl, accessToken, sheet);
+        const existingResp = await fetch(`${sheetsUrl}/values/'${sheet}'!A:A`, {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
+        const existingData = await existingResp.json();
+        const existingIds: string[] = (existingData.values || []).map((r: string[]) => r[0]);
+        const rowIdx = existingIds.indexOf(delete_id);
+        if (rowIdx > 0) {
+          // Get sheet ID
+          const metaResp = await fetch(sheetsUrl, { headers: { Authorization: `Bearer ${accessToken}` } });
+          const meta = await metaResp.json();
+          const sheetMeta = (meta.sheets || []).find((s: any) => s.properties?.title === sheet);
+          if (sheetMeta) {
+            await fetch(`${sheetsUrl}:batchUpdate`, {
+              method: 'POST',
+              headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                requests: [{
+                  deleteDimension: {
+                    range: {
+                      sheetId: sheetMeta.properties.sheetId,
+                      dimension: 'ROWS',
+                      startIndex: rowIdx,
+                      endIndex: rowIdx + 1,
+                    },
+                  },
+                }],
+              }),
+            });
+          }
+        }
+      } catch (e) {
+        console.error('Error deleting row from sheet:', e);
+      }
+      return new Response(JSON.stringify({ ok: true, deleted: delete_id }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
     const sheetsId = Deno.env.get('GOOGLE_SHEETS_ID');
     const serviceAccountJson = Deno.env.get('GOOGLE_SERVICE_ACCOUNT');
