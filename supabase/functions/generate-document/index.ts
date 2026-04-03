@@ -7,6 +7,18 @@ const corsHeaders = {
 
 const TEMPLATE_IDS: Record<string, string> = {
   contrato: "1HY68Im2Gn5--KqEbt3qO5aHv9zFLYDrN",
+  procuracao_elektro_pf: "1no4aUjWi0UPfOKGqDdLIO7iVfXG7dulS",
+  procuracao_elektro_pj: "1Ak2z8JyHwRLMYG9hUdf3jMqoK2eUgpDO",
+  procuracao_copel: "1VTAKZTCBlYDpqLI6bRQe51kVu5nt7Url",
+  procuracao_energisa: "14v7d237tgvvL19K_wqXkPUui7Ap8LPTT",
+};
+
+const DOC_LABELS: Record<string, string> = {
+  contrato: "Contrato",
+  procuracao_elektro_pf: "Procuracao_Elektro_PF",
+  procuracao_elektro_pj: "Procuracao_Elektro_PJ",
+  procuracao_copel: "Procuracao_COPEL",
+  procuracao_energisa: "Procuracao_Energisa",
 };
 
 const MESES = [
@@ -41,29 +53,19 @@ function numberToPortugueseExtensive(n: number): string {
 
   const intPart = Math.floor(n);
   const centavos = Math.round((n - intPart) * 100);
-
   const milhares = Math.floor(intPart / 1000);
   const resto = intPart % 1000;
-
   const chunks: string[] = [];
   if (milhares > 0) {
-    if (milhares === 1) {
-      chunks.push("mil");
-    } else {
-      chunks.push(group(milhares) + " mil");
-    }
+    chunks.push(milhares === 1 ? "mil" : group(milhares) + " mil");
   }
-  if (resto > 0) {
-    chunks.push(group(resto));
-  }
+  if (resto > 0) chunks.push(group(resto));
 
   let result = chunks.join(" e ");
   result += intPart === 1 ? " real" : " reais";
-
   if (centavos > 0) {
     result += " e " + group(centavos) + (centavos === 1 ? " centavo" : " centavos");
   }
-
   return result;
 }
 
@@ -91,29 +93,23 @@ async function getGoogleAccessToken(serviceAccount: { client_email: string; priv
     exp: now + 3600,
     iat: now,
   };
-  if (impersonateEmail) {
-    claimSet.sub = impersonateEmail;
-  }
+  if (impersonateEmail) claimSet.sub = impersonateEmail;
   const claim = toBase64Url(btoa(JSON.stringify(claimSet)));
 
-  // Import private key and sign JWT
   const pemContents = serviceAccount.private_key
     .replace(/-----BEGIN PRIVATE KEY-----/, "")
     .replace(/-----END PRIVATE KEY-----/, "")
     .replace(/\n/g, "");
   const binaryKey = Uint8Array.from(atob(pemContents), (c) => c.charCodeAt(0));
   const cryptoKey = await crypto.subtle.importKey(
-    "pkcs8",
-    binaryKey,
+    "pkcs8", binaryKey,
     { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
-    false,
-    ["sign"]
+    false, ["sign"]
   );
 
   const signatureInput = new TextEncoder().encode(`${header}.${claim}`);
   const signature = await crypto.subtle.sign("RSASSA-PKCS1-v1_5", cryptoKey, signatureInput);
   const sig = toBase64Url(signature);
-
   const jwt = `${header}.${claim}.${sig}`;
 
   const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
@@ -126,94 +122,45 @@ async function getGoogleAccessToken(serviceAccount: { client_email: string; priv
     const errText = await tokenRes.text();
     throw new Error(`Failed to get Google access token: ${errText}`);
   }
-
-  const tokenData = await tokenRes.json();
-  return tokenData.access_token;
+  return (await tokenRes.json()).access_token;
 }
 
-Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
+function buildVariables(projeto: any, tipoDocumento: string): Record<string, string> {
+  const dataFechamento = projeto.data_fechamento
+    ? new Date(projeto.data_fechamento + "T12:00:00")
+    : new Date();
+  const dia = String(dataFechamento.getDate()).padStart(2, "0");
+  const mes = MESES[dataFechamento.getMonth()];
+  const ano = String(dataFechamento.getFullYear());
 
-  try {
-    const { projeto_id, tipo_documento, formato = "pdf" } = await req.json();
-    if (!projeto_id || !tipo_documento) {
-      return new Response(JSON.stringify({ error: "projeto_id e tipo_documento são obrigatórios" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+  // Common variables for all document types
+  const vars: Record<string, string> = {
+    "{{nome_completo}}": projeto.nome_completo || projeto.razao_social || "",
+    "{{cpf}}": projeto.cpf || "",
+    "{{endereco_completo}}": projeto.endereco_completo || "",
+    "{{cep}}": projeto.unidade_geradora_cep || "",
+    "{{unidade_consumidora}}": projeto.unidade_geradora_codigo_uc || "",
+    "{{dia}}": dia,
+    "{{mes}}": mes,
+    "{{ano}}": ano,
+    "{{concessionaria}}": projeto.concessionaria || "",
+  };
 
-    const templateId = TEMPLATE_IDS[tipo_documento];
-    if (!templateId) {
-      return new Response(JSON.stringify({ error: `Tipo de documento "${tipo_documento}" não suportado` }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    // Get service account from secrets
-    const serviceAccountJson = Deno.env.get("GOOGLE_SERVICE_ACCOUNT");
-    if (!serviceAccountJson) {
-      throw new Error("GOOGLE_SERVICE_ACCOUNT não configurada");
-    }
-    const serviceAccount = JSON.parse(serviceAccountJson);
-
-    // Get project data from Supabase
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
-
-    const { data: projeto, error: projetoError } = await supabase
-      .from("projetos")
-      .select("*, equipamentos_placas(marca, modelo, potencia_wp), equipamentos_inversores(marca, modelo, potencia_kw)")
-      .eq("id", projeto_id)
-      .single();
-
-    if (projetoError || !projeto) {
-      return new Response(JSON.stringify({ error: "Projeto não encontrado" }), {
-        status: 404,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    // Get Google access token
-    const accessToken = await getGoogleAccessToken(serviceAccount, "contato@treslagoassolar.com.br");
-
-    // Parse date parts
-    const dataFechamento = projeto.data_fechamento
-      ? new Date(projeto.data_fechamento + "T12:00:00")
-      : new Date();
-    const dia = String(dataFechamento.getDate()).padStart(2, "0");
-    const mes = MESES[dataFechamento.getMonth()];
-    const ano = String(dataFechamento.getFullYear());
-
-    // Get equipment info
+  if (tipoDocumento === "contrato") {
     const placa = projeto.equipamentos_placas;
     const inversor = projeto.equipamentos_inversores;
-
     const marcaInversor = projeto.marca_inversor || inversor?.marca || "";
     const modeloInversor = projeto.potencia_inversor
       ? (inversor?.modelo || projeto.marca_inversor || marcaInversor)
       : (inversor?.modelo || marcaInversor);
     const potenciaInversor = projeto.potencia_inversor || (inversor?.potencia_kw ? String(inversor.potencia_kw) : "");
-
     const marcaPlaca = projeto.marca_placa || placa?.marca || "";
     const modeloPlaca = placa?.modelo || projeto.marca_placa || marcaPlaca;
     const potenciaPlaca = projeto.potencia_placa || (placa?.potencia_wp ? String(placa.potencia_wp) : "");
-
     const precoVenda = Number(projeto.preco_venda) || 0;
     const geracaoMensal = Number(projeto.geracao_estimada_kwh) || 0;
 
-    // Build variables map
-    const variables: Record<string, string> = {
-      "{{nome_completo}}": projeto.nome_completo || projeto.razao_social || "",
-      "{{cpf}}": projeto.cpf || "",
-      "{{endereco_completo}}": projeto.endereco_completo || "",
-      "{{dia}}": dia,
-      "{{mes}}": mes,
-      "{{ano}}": ano,
+    Object.assign(vars, {
       "{{marca_inversor}}": marcaInversor,
       "{{modelo_inversor}}": modeloInversor || marcaInversor,
       "{{potencia_inversor}}": potenciaInversor ? `${potenciaInversor} kW` : "",
@@ -239,18 +186,80 @@ Deno.serve(async (req) => {
       "{{forma_pagamento}}": projeto.forma_pagamento || "",
       "{{geracao_anual}}": geracaoMensal ? String(Math.round(geracaoMensal * 12)) : "",
       "{{geracao_mensal}}": geracaoMensal ? String(geracaoMensal) : "",
-      "{{concessionaria}}": projeto.concessionaria || "",
-      "{{unidade_consumidora}}": projeto.unidade_geradora_codigo_uc || "",
-    };
+    });
+  }
+
+  if (tipoDocumento === "procuracao_elektro_pj") {
+    Object.assign(vars, {
+      "{{razao_social}}": projeto.razao_social || "",
+      "{{cnpj}}": projeto.cnpj || "",
+      "{{nome_representante}}": projeto.nome_representante || "",
+      "{{cpf_representante}}": projeto.cpf_representante || "",
+    });
+  }
+
+  if (tipoDocumento === "procuracao_energisa") {
+    const validade = new Date(dataFechamento);
+    validade.setMonth(validade.getMonth() + 6);
+    const ddVal = String(validade.getDate()).padStart(2, "0");
+    const mmVal = String(validade.getMonth() + 1).padStart(2, "0");
+    const yyyyVal = String(validade.getFullYear());
+    vars["{{data_validade_6meses}}"] = `${ddVal}/${mmVal}/${yyyyVal}`;
+  }
+
+  return vars;
+}
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
+  }
+
+  try {
+    const { projeto_id, tipo_documento, formato = "pdf" } = await req.json();
+    if (!projeto_id || !tipo_documento) {
+      return new Response(JSON.stringify({ error: "projeto_id e tipo_documento são obrigatórios" }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const templateId = TEMPLATE_IDS[tipo_documento];
+    if (!templateId) {
+      return new Response(JSON.stringify({ error: `Tipo de documento "${tipo_documento}" não suportado` }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const serviceAccountJson = Deno.env.get("GOOGLE_SERVICE_ACCOUNT");
+    if (!serviceAccountJson) throw new Error("GOOGLE_SERVICE_ACCOUNT não configurada");
+    const serviceAccount = JSON.parse(serviceAccountJson);
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    const { data: projeto, error: projetoError } = await supabase
+      .from("projetos")
+      .select("*, equipamentos_placas(marca, modelo, potencia_wp), equipamentos_inversores(marca, modelo, potencia_kw)")
+      .eq("id", projeto_id)
+      .single();
+
+    if (projetoError || !projeto) {
+      return new Response(JSON.stringify({ error: "Projeto não encontrado" }), {
+        status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const accessToken = await getGoogleAccessToken(serviceAccount, "contato@treslagoassolar.com.br");
+    const variables = buildVariables(projeto, tipo_documento);
 
     const clientName = (projeto.nome_completo || projeto.razao_social || "cliente")
-      .replace(/[^a-zA-Z0-9À-ÿ\s]/g, "")
-      .replace(/\s+/g, "_")
-      .substring(0, 40);
+      .replace(/[^a-zA-Z0-9À-ÿ\s]/g, "").replace(/\s+/g, "_").substring(0, 40);
     const today = new Date().toISOString().split("T")[0];
-    const copyName = `Contrato_${clientName}_${today}`;
+    const docLabel = DOC_LABELS[tipo_documento] || "Documento";
+    const copyName = `${docLabel}_${clientName}_${today}`;
 
-    // 1. Get template's parent folder
+    // Get template parent folder
     const templateMeta = await fetch(
       `https://www.googleapis.com/drive/v3/files/${templateId}?fields=parents&supportsAllDrives=true`,
       { headers: { Authorization: `Bearer ${accessToken}` } }
@@ -258,13 +267,10 @@ Deno.serve(async (req) => {
     const templateMetaData = templateMeta.ok ? await templateMeta.json() : {};
     const parents = templateMetaData.parents || [];
 
-    // 2. Copy the template into the same folder
+    // Copy template
     const copyRes = await fetch(`https://www.googleapis.com/drive/v3/files/${templateId}/copy?supportsAllDrives=true`, {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        "Content-Type": "application/json",
-      },
+      headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
       body: JSON.stringify({ name: copyName, mimeType: "application/vnd.google-apps.document", ...(parents.length > 0 ? { parents } : {}) }),
     });
 
@@ -273,24 +279,17 @@ Deno.serve(async (req) => {
       throw new Error(`Erro ao copiar template: ${errText}`);
     }
 
-    const copyData = await copyRes.json();
-    const copyId = copyData.id;
+    const copyId = (await copyRes.json()).id;
 
     try {
-      // 2. Replace variables using Google Docs API
+      // Replace variables
       const requests = Object.entries(variables).map(([key, value]) => ({
-        replaceAllText: {
-          containsText: { text: key, matchCase: true },
-          replaceText: value,
-        },
+        replaceAllText: { containsText: { text: key, matchCase: true }, replaceText: value },
       }));
 
       const batchRes = await fetch(`https://docs.googleapis.com/v1/documents/${copyId}:batchUpdate`, {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          "Content-Type": "application/json",
-        },
+        headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
         body: JSON.stringify({ requests }),
       });
 
@@ -299,14 +298,11 @@ Deno.serve(async (req) => {
         throw new Error(`Erro ao substituir variáveis: ${errText}`);
       }
 
-      // 3. Export as PDF or DOCX
+      // Export
       const exportMimeType = formato === "docx"
         ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         : "application/pdf";
       const fileExtension = formato === "docx" ? "docx" : "pdf";
-      const contentType = formato === "docx"
-        ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-        : "application/pdf";
 
       const exportRes = await fetch(`https://www.googleapis.com/drive/v3/files/${copyId}/export?mimeType=${encodeURIComponent(exportMimeType)}`, {
         headers: { Authorization: `Bearer ${accessToken}` },
@@ -319,34 +315,30 @@ Deno.serve(async (req) => {
 
       const fileBuffer = await exportRes.arrayBuffer();
 
-      // 4. Delete the temporary copy
+      // Delete temp copy
       await fetch(`https://www.googleapis.com/drive/v3/files/${copyId}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${accessToken}` },
+        method: "DELETE", headers: { Authorization: `Bearer ${accessToken}` },
       });
 
       return new Response(fileBuffer, {
         headers: {
           ...corsHeaders,
-          "Content-Type": contentType,
+          "Content-Type": exportMimeType,
           "Content-Disposition": `attachment; filename="${copyName}.${fileExtension}"`,
         },
       });
     } catch (err) {
-      // Cleanup: delete copy on error
       try {
         await fetch(`https://www.googleapis.com/drive/v3/files/${copyId}`, {
-          method: "DELETE",
-          headers: { Authorization: `Bearer ${accessToken}` },
+          method: "DELETE", headers: { Authorization: `Bearer ${accessToken}` },
         });
-      } catch (_) { /* ignore cleanup errors */ }
+      } catch (_) { /* ignore */ }
       throw err;
     }
   } catch (error) {
     console.error("generate-document error:", error);
     return new Response(JSON.stringify({ error: String(error) }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });
