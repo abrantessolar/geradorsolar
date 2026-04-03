@@ -437,7 +437,7 @@ function PriceTableTab() {
   };
 
   const generateEstimates = () => {
-    const lines: ('acesso' | 'essencial' | 'excellence' | 'premium')[] = ['acesso', 'essencial', 'excellence', 'premium'];
+    const lines: ('acesso' | 'excellence' | 'premium')[] = ['acesso', 'excellence', 'premium'];
     const newTable = [...table.map(r => ({ ...r, estimated: { ...r.estimated } }))];
     lines.forEach(line => {
       const filled = newTable.filter(r => r[line] !== null && r[line]! > 0).map(r => ({ panels: r.panels, value: r[line]! }));

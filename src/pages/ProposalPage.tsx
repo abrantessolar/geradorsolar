@@ -77,7 +77,7 @@ export default function ProposalPage() {
   const [cashflowInstallments, setCashflowInstallments] = useState(60);
   const [paymentTab, setPaymentTab] = useState<'financing' | 'card'>('financing');
   const [cashflowMode, setCashflowMode] = useState<'financing' | 'card' | 'cash'>('financing');
-  const [cashflowLine, setCashflowLine] = useState<string>(proposal?.selectedLine || 'essencial');
+  const [cashflowLine, setCashflowLine] = useState<string>(proposal?.selectedLine || 'excellence');
   const [cashflowPeriod, setCashflowPeriod] = useState(15);
   const [showShareMenu, setShowShareMenu] = useState(false);
   const [showCashflow, setShowCashflow] = useState(false);

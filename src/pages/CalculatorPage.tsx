@@ -137,7 +137,6 @@ export default function CalculatorPage() {
   });
   const [customKits, setCustomKits] = useState<Record<string, CustomKitData>>(() => {
     const base = {
-      essencial: defaultCustomKit(0),
       excellence: defaultCustomKit(0),
       premium: defaultCustomKit(0),
     };
