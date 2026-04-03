@@ -84,6 +84,7 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
         placa_id: p.placa_id || '', qtd_placas: p.qtd_placas?.toString() || '',
         inversor_id: p.inversor_id || '', qtd_inversores: p.qtd_inversores?.toString() || '',
         geracao_estimada_kwh: p.geracao_estimada_kwh?.toString() || '', sistema: p.sistema || '',
+        nome_planta: p.nome_planta || '', wifi_nome: p.wifi_nome || '', wifi_senha: p.wifi_senha || '', cabo_usado: p.cabo_usado || '',
         unidade_geradora_cep: p.unidade_geradora_cep || '', unidade_geradora_endereco: p.unidade_geradora_endereco || '', unidade_geradora_codigo_uc: p.unidade_geradora_codigo_uc || '', unidade_geradora_padrao: p.unidade_geradora_padrao || '',
         unidade_beneficiaria1_cep: p.unidade_beneficiaria1_cep || '', unidade_beneficiaria1_endereco: p.unidade_beneficiaria1_endereco || '', unidade_beneficiaria1_codigo_uc: p.unidade_beneficiaria1_codigo_uc || '', unidade_beneficiaria1_percentual: p.unidade_beneficiaria1_percentual?.toString() || '',
         unidade_beneficiaria2_cep: p.unidade_beneficiaria2_cep || '', unidade_beneficiaria2_endereco: p.unidade_beneficiaria2_endereco || '', unidade_beneficiaria2_codigo_uc: p.unidade_beneficiaria2_codigo_uc || '', unidade_beneficiaria2_percentual: p.unidade_beneficiaria2_percentual?.toString() || '',
