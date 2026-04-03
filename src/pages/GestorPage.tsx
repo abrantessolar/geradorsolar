@@ -86,7 +86,7 @@ export type Projeto = {
 };
 
 type ObrasSubTab = 'dashboard' | 'projetos' | 'novo' | 'editar' | 'modelos' | 'importar';
-type ClientesSubTab = 'lista' | 'importar_clientes';
+
 
 export default function GestorPage() {
   const { session, isAdmin } = useAuth();
