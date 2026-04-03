@@ -115,8 +115,22 @@ export default function ProjetosList({ projetos, loading, onEdit, onDocumentos, 
       case 'telefone': return <td key={key} className="py-2 px-2 text-xs"><WhatsAppLink phone={p.telefone} /></td>;
       case 'tempo': return <td key={key} className={`py-2 px-2 text-xs font-medium ${days > 60 ? 'text-destructive' : ''}`}>{p.data_fechamento ? `${days}d` : '—'}</td>;
       case 'concessionaria': return <td key={key} className="py-2 px-2 text-xs">{p.concessionaria}</td>;
-      case 'marca_inv': return <td key={key} className="py-2 px-2 text-xs">{p.marca_inversor || '—'}</td>;
-      case 'pot_inv': return <td key={key} className="py-2 px-2 text-xs">{p.potencia_inversor || '—'}</td>;
+      case 'marca_inv': return (
+        <td key={key} className="py-2 px-2 text-xs">
+          {p.marca_inversor || p.inversor?.marca || '—'}
+          {p.inversor?.tipo?.toUpperCase() === 'MICRO' && (
+            <span className="ml-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-accent text-accent-foreground">MICRO</span>
+          )}
+        </td>
+      );
+      case 'pot_inv': return (
+        <td key={key} className="py-2 px-2 text-xs">
+          {p.inversor?.tipo?.toUpperCase() === 'MICRO'
+            ? `${p.qtd_inversores || 1}x ${p.inversor?.potencia_kw || p.potencia_inversor || '—'}kW`
+            : (p.potencia_inversor || p.inversor?.potencia_kw || '—')
+          }
+        </td>
+      );
       case 'qtd_placas': return <td key={key} className="py-2 px-2 text-xs">{p.qtd_placas || '—'}</td>;
       case 'marca_placa': return <td key={key} className="py-2 px-2 text-xs">{p.marca_placa || '—'}</td>;
       case 'pot_placa': return <td key={key} className="py-2 px-2 text-xs">{p.potencia_placa || '—'}</td>;
