@@ -61,8 +61,6 @@ export default function ClientesList({
   loading: boolean;
   onPromover: (c: ClienteBase) => void;
   onRefresh: () => void;
-  onImport: () => void;
-  showImport?: boolean;
 }) {
   const [search, setSearch] = useState('');
   const [marcaInversorFilter, setMarcaInversorFilter] = useState('');
