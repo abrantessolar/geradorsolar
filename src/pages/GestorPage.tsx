@@ -91,7 +91,7 @@ type ObrasSubTab = 'dashboard' | 'projetos' | 'novo' | 'editar' | 'modelos' | 'i
 
 export default function GestorPage() {
   const { session, isAdmin } = useAuth();
-  const [mainTab, setMainTab] = useState<'obras' | 'clientes' | 'materiais'>('obras');
+  const [mainTab, setMainTab] = useState<'obras' | 'clientes' | 'materiais' | 'equipamentos'>('obras');
   const [obrasSubTab, setObrasSubTab] = useState<ObrasSubTab>('dashboard');
   
   const [projetos, setProjetos] = useState<Projeto[]>([]);
