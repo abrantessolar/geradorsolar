@@ -265,7 +265,7 @@ Deno.serve(async (req) => {
         Authorization: `Bearer ${accessToken}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ name: copyName, ...(parents.length > 0 ? { parents } : {}) }),
+      body: JSON.stringify({ name: copyName, mimeType: "application/vnd.google-apps.document", ...(parents.length > 0 ? { parents } : {}) }),
     });
 
     if (!copyRes.ok) {
