@@ -202,7 +202,7 @@ function UsersTab() {
                   <td className="py-2 px-2">{u.email}</td>
                   <td className="py-2 px-2 text-sm text-muted-foreground">{u.telefone || '—'}</td>
                   <td className="py-2 px-2">
-                    <span className={`solar-badge text-xs ${u.role === 'admin' ? 'bg-primary/10 text-primary' : u.role === 'orcamentista' ? 'bg-blue-100 text-blue-800' : 'bg-amber-100 text-amber-800'}`}>
+                    <span className={`solar-badge text-xs ${u.role === 'admin' ? 'bg-primary/10 text-primary' : u.role === 'gestor' ? 'bg-emerald-100 text-emerald-800' : u.role === 'orcamentista' ? 'bg-blue-100 text-blue-800' : 'bg-amber-100 text-amber-800'}`}>
                       {ROLE_LABELS[u.role] || u.role}
                     </span>
                   </td>
