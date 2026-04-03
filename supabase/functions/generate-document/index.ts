@@ -71,8 +71,18 @@ function formatBRL(value: number): string {
   return value.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
+function toBase64Url(input: string | ArrayBuffer): string {
+  let b64: string;
+  if (typeof input === "string") {
+    b64 = input;
+  } else {
+    b64 = btoa(String.fromCharCode(...new Uint8Array(input)));
+  }
+  return b64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
 async function getGoogleAccessToken(serviceAccount: { client_email: string; private_key: string }): Promise<string> {
-  const header = btoa(JSON.stringify({ alg: "RS256", typ: "JWT" }));
+  const header = toBase64Url(btoa(JSON.stringify({ alg: "RS256", typ: "JWT" })));
   const now = Math.floor(Date.now() / 1000);
   const claimSet = {
     iss: serviceAccount.client_email,
@@ -81,7 +91,7 @@ async function getGoogleAccessToken(serviceAccount: { client_email: string; priv
     exp: now + 3600,
     iat: now,
   };
-  const claim = btoa(JSON.stringify(claimSet));
+  const claim = toBase64Url(btoa(JSON.stringify(claimSet)));
 
   // Import private key and sign JWT
   const pemContents = serviceAccount.private_key
@@ -99,11 +109,9 @@ async function getGoogleAccessToken(serviceAccount: { client_email: string; priv
 
   const signatureInput = new TextEncoder().encode(`${header}.${claim}`);
   const signature = await crypto.subtle.sign("RSASSA-PKCS1-v1_5", cryptoKey, signatureInput);
-  const sig = btoa(String.fromCharCode(...new Uint8Array(signature)));
+  const sig = toBase64Url(signature);
 
-  // Base64url encode
-  const toBase64Url = (s: string) => s.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-  const jwt = `${toBase64Url(header)}.${toBase64Url(claim)}.${toBase64Url(sig)}`;
+  const jwt = `${header}.${claim}.${sig}`;
 
   const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
     method: "POST",
@@ -239,14 +247,22 @@ Deno.serve(async (req) => {
     const today = new Date().toISOString().split("T")[0];
     const copyName = `Contrato_${clientName}_${today}`;
 
-    // 1. Copy the template
-    const copyRes = await fetch(`https://www.googleapis.com/drive/v3/files/${templateId}/copy`, {
+    // 1. Get template's parent folder
+    const templateMeta = await fetch(
+      `https://www.googleapis.com/drive/v3/files/${templateId}?fields=parents&supportsAllDrives=true`,
+      { headers: { Authorization: `Bearer ${accessToken}` } }
+    );
+    const templateMetaData = templateMeta.ok ? await templateMeta.json() : {};
+    const parents = templateMetaData.parents || [];
+
+    // 2. Copy the template into the same folder
+    const copyRes = await fetch(`https://www.googleapis.com/drive/v3/files/${templateId}/copy?supportsAllDrives=true`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${accessToken}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ name: copyName }),
+      body: JSON.stringify({ name: copyName, ...(parents.length > 0 ? { parents } : {}) }),
     });
 
     if (!copyRes.ok) {
