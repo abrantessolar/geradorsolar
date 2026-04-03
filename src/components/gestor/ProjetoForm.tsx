@@ -304,11 +304,18 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
       )}
 
       {/* Step 2 - Equipamentos */}
-      {step === 2 && (
+      {step === 2 && (() => {
+        const selectedPlaca = placas.find(p => p.id === form.placa_id);
+        const qtdPlacas = parseInt(form.qtd_placas) || 0;
+        const potenciaWp = selectedPlaca?.potencia_wp || 0;
+        const kwp = (qtdPlacas * potenciaWp) / 1000;
+        const HSP = 4.8;
+        const geracaoAuto = Math.round(kwp * HSP * 30 * 0.75);
+        return (
         <div className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div><label className={labelClass}>Sistema (ex: 5,75KWp)</label><input className={inputClass} value={form.sistema} onChange={e => set('sistema', e.target.value)} placeholder="5,75KWp" /></div>
-            <div><label className={labelClass}>Nome da Planta</label><input className={inputClass} value={form.nome_planta} onChange={e => set('nome_planta', e.target.value)} placeholder="Nome da planta de monitoramento" /></div>
+          <div>
+            <label className={labelClass}>Sistema (ex: 5,75KWp)</label>
+            <input className={inputClass} value={form.sistema} onChange={e => set('sistema', e.target.value)} placeholder="5,75KWp" />
           </div>
 
           <h3 className="text-sm font-semibold">Placas</h3>
@@ -323,7 +330,15 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
                 <button onClick={() => setShowNewPlaca(true)} className="solar-btn-primary py-2 px-3 text-sm"><Plus className="w-4 h-4" /></button>
               </div>
             </div>
-            <div><label className={labelClass}>Quantidade</label><input className={inputClass} type="number" value={form.qtd_placas} onChange={e => set('qtd_placas', e.target.value)} /></div>
+            <div><label className={labelClass}>Quantidade</label><input className={inputClass} type="number" value={form.qtd_placas} onChange={e => {
+              set('qtd_placas', e.target.value);
+              const newQtd = parseInt(e.target.value) || 0;
+              const newKwp = (newQtd * potenciaWp) / 1000;
+              const newGen = Math.round(newKwp * HSP * 30 * 0.75);
+              if (!form.geracao_estimada_kwh || form.geracao_estimada_kwh === String(geracaoAuto)) {
+                set('geracao_estimada_kwh', String(newGen));
+              }
+            }} /></div>
           </div>
 
           {showNewPlaca && (
@@ -370,9 +385,23 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
             </div>
           )}
 
-          <div><label className={labelClass}>Geração Estimada (kWh/mês)</label><input className={inputClass} type="number" value={form.geracao_estimada_kwh} onChange={e => set('geracao_estimada_kwh', e.target.value)} /></div>
+          <hr className="border-border" />
+          <h3 className="text-sm font-semibold">Geração</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className={labelClass}>KWp (calculado)</label>
+              <input className={`${inputClass} bg-muted/50 font-semibold`} readOnly value={kwp > 0 ? kwp.toFixed(2).replace('.', ',') + ' kWp' : '—'} />
+              {kwp > 0 && <p className="text-xs text-muted-foreground mt-1">{qtdPlacas} × {potenciaWp}Wp ÷ 1000</p>}
+            </div>
+            <div>
+              <label className={labelClass}>Geração Estimada (kWh/mês)</label>
+              <input className={inputClass} type="number" value={form.geracao_estimada_kwh} onChange={e => set('geracao_estimada_kwh', e.target.value)} />
+              {kwp > 0 && <p className="text-xs text-muted-foreground mt-1">Sugestão: {geracaoAuto} kWh (HSP 4,8 × 30d × 0,75)</p>}
+            </div>
+          </div>
         </div>
-      )}
+        );
+      })()}
 
       {/* Step 3 - Unidades Consumidoras */}
       {step === 3 && (
@@ -445,6 +474,7 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
           <hr className="border-border" />
           <h3 className="text-sm font-semibold">Informações de Instalação</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="md:col-span-2"><label className={labelClass}>Nome da Planta</label><input className={inputClass} value={form.nome_planta} onChange={e => set('nome_planta', e.target.value)} placeholder="Nome da planta de monitoramento" /></div>
             <div><label className={labelClass}>WiFi — Nome da Rede</label><input className={inputClass} value={form.wifi_nome} onChange={e => set('wifi_nome', e.target.value)} /></div>
             <div><label className={labelClass}>WiFi — Senha</label><input className={inputClass} value={form.wifi_senha} onChange={e => set('wifi_senha', e.target.value)} /></div>
             <div className="md:col-span-2"><label className={labelClass}>Cabo Utilizado</label><input className={inputClass} value={form.cabo_usado} onChange={e => set('cabo_usado', e.target.value)} placeholder="Preenchido após instalação" /></div>
