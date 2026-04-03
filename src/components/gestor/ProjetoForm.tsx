@@ -121,6 +121,8 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
     if (!session?.user?.id) { toast.error('Sessão expirada'); return; }
     setSaving(true);
     const localEntregaFinal = form.local_entrega === 'OUTRO' ? form.local_entrega_outro : form.local_entrega;
+    const selectedPlaca = placas.find(p => p.id === form.placa_id);
+    const selectedInversor = inversores.find(i => i.id === form.inversor_id);
     const row: any = {
       usuario_id: session.user.id,
       tipo_pessoa: form.tipo_pessoa,
