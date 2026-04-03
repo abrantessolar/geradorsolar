@@ -869,6 +869,9 @@ export default function ProposalPage() {
         {/* PORTFÓLIO DE OBRAS */}
         <ProposalPortfolio />
 
+        {/* CONTACT FOOTER */}
+        <ProposalFooter />
+
         {/* PRINT FOOTER */}
         <div className="hidden print-only-block text-center py-8 border-t border-border mt-8">
           <p className="text-sm font-semibold">{settings.company.name}</p>
