@@ -1,7 +1,7 @@
 import { MapPin, Phone, Mail, Clock, ExternalLink } from 'lucide-react';
 
-const MAPS_EMBED_URL = 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3762.5!2d-51.6889!3d-20.7553!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMjDCsDQ1JzE5LjEiUyA1McKwNDEnMjAuMCJX!5e0!3m2!1spt-BR!2sbr!4v1';
-const MAPS_LINK = 'https://maps.google.com/?q=-20.7553,-51.6889';
+const MAPS_EMBED_URL = 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3762.5!2d-51.684020545129925!3d-20.795708921126337!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMjDCsDQ3JzQ0LjYiUyA1McKwNDEnMDIuNSJX!5e0!3m2!1spt-BR!2sbr!4v1';
+const MAPS_LINK = 'https://maps.google.com/?q=-20.795708921126337,-51.684020545129925';
 const WHATSAPP_URL = 'https://wa.me/5567996448995?text=Olá! Gostaria de agendar uma visita.';
 const HERO_BG = 'https://static.wixstatic.com/media/c2ae0d_0fc9044d218948a585d2170345d4ce87~mv2.jpg';
 
