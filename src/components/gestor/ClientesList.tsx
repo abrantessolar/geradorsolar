@@ -130,7 +130,7 @@ export default function ClientesList({
           <div className="flex gap-1">
             <button onClick={() => setSelectedCliente(c)} className="text-primary hover:text-primary/80" title="Ver detalhes"><Eye className="w-4 h-4" /></button>
             <button onClick={() => setEditCliente(c)} className="text-primary hover:text-primary/80" title="Editar"><Edit2 className="w-4 h-4" /></button>
-            {!c.projeto_id && (
+            {!c.projeto_id && !c.id.startsWith('proj-') && (
               <button onClick={() => onPromover(c)} className="text-primary hover:text-primary/80" title="Promover para Obra"><ArrowUpRight className="w-4 h-4" /></button>
             )}
           </div>
