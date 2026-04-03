@@ -81,16 +81,19 @@ function toBase64Url(input: string | ArrayBuffer): string {
   return b64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
 
-async function getGoogleAccessToken(serviceAccount: { client_email: string; private_key: string }): Promise<string> {
+async function getGoogleAccessToken(serviceAccount: { client_email: string; private_key: string }, impersonateEmail?: string): Promise<string> {
   const header = toBase64Url(btoa(JSON.stringify({ alg: "RS256", typ: "JWT" })));
   const now = Math.floor(Date.now() / 1000);
-  const claimSet = {
+  const claimSet: Record<string, unknown> = {
     iss: serviceAccount.client_email,
     scope: "https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/documents",
     aud: "https://oauth2.googleapis.com/token",
     exp: now + 3600,
     iat: now,
   };
+  if (impersonateEmail) {
+    claimSet.sub = impersonateEmail;
+  }
   const claim = toBase64Url(btoa(JSON.stringify(claimSet)));
 
   // Import private key and sign JWT
@@ -176,7 +179,7 @@ Deno.serve(async (req) => {
     }
 
     // Get Google access token
-    const accessToken = await getGoogleAccessToken(serviceAccount);
+    const accessToken = await getGoogleAccessToken(serviceAccount, "contato@treslagoassolar.com.br");
 
     // Parse date parts
     const dataFechamento = projeto.data_fechamento
