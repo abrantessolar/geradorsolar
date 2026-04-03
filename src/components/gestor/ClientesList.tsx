@@ -1,7 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
-import { Eye, Search, ArrowUpRight, Upload, Edit2 } from 'lucide-react';
+import { Eye, Search, ArrowUpRight, Upload, Edit2, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import WhatsAppLink from './WhatsAppLink';
 import ClienteEditModal from './ClienteEditModal';
 
@@ -37,6 +35,13 @@ export type ClienteBase = {
   projeto_id: string | null;
 };
 
+function calcKwp(qtd?: number | null, potW?: string | null): string {
+  if (!qtd || !potW) return '—';
+  const pot = parseFloat(potW);
+  if (isNaN(pot)) return '—';
+  return ((qtd * pot) / 1000).toFixed(2);
+}
+
 export default function ClientesList({
   clientes, loading, onPromover, onRefresh, onImport,
 }: {
@@ -47,13 +52,27 @@ export default function ClientesList({
   onImport: () => void;
 }) {
   const [search, setSearch] = useState('');
-  const [concFilter, setConcFilter] = useState('');
+  const [marcaInversorFilter, setMarcaInversorFilter] = useState('');
+  const [marcaPlacaFilter, setMarcaPlacaFilter] = useState('');
   const [selectedCliente, setSelectedCliente] = useState<ClienteBase | null>(null);
   const [editCliente, setEditCliente] = useState<ClienteBase | null>(null);
 
+  const marcasInversor = useMemo(() => {
+    const set = new Set<string>();
+    clientes.forEach(c => { if (c.marca_inversor) set.add(c.marca_inversor); });
+    return Array.from(set).sort();
+  }, [clientes]);
+
+  const marcasPlaca = useMemo(() => {
+    const set = new Set<string>();
+    clientes.forEach(c => { if (c.marca_placa) set.add(c.marca_placa); });
+    return Array.from(set).sort();
+  }, [clientes]);
+
   const filtered = useMemo(() => {
     return clientes.filter(c => {
-      if (concFilter && c.concessionaria !== concFilter) return false;
+      if (marcaInversorFilter && c.marca_inversor !== marcaInversorFilter) return false;
+      if (marcaPlacaFilter && c.marca_placa !== marcaPlacaFilter) return false;
       if (search) {
         const q = search.toLowerCase();
         const name = (c.nome_completo || '').toLowerCase();
@@ -63,7 +82,7 @@ export default function ClientesList({
       }
       return true;
     });
-  }, [clientes, search, concFilter]);
+  }, [clientes, search, marcaInversorFilter, marcaPlacaFilter]);
 
   if (loading) return <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" /></div>;
 
@@ -75,9 +94,13 @@ export default function ClientesList({
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <input className="solar-input pl-9 max-w-xs" placeholder="Buscar nome, CPF ou UC..." value={search} onChange={e => setSearch(e.target.value)} />
           </div>
-          <select className="solar-input max-w-[180px]" value={concFilter} onChange={e => setConcFilter(e.target.value)}>
-            <option value="">Todas concessionárias</option>
-            {['ELEKTRO', 'ENERGISA', 'COPEL', 'OUTRA'].map(c => <option key={c} value={c}>{c}</option>)}
+          <select className="solar-input max-w-[180px]" value={marcaInversorFilter} onChange={e => setMarcaInversorFilter(e.target.value)}>
+            <option value="">Todas marcas inversor</option>
+            {marcasInversor.map(m => <option key={m} value={m}>{m}</option>)}
+          </select>
+          <select className="solar-input max-w-[180px]" value={marcaPlacaFilter} onChange={e => setMarcaPlacaFilter(e.target.value)}>
+            <option value="">Todas marcas placa</option>
+            {marcasPlaca.map(m => <option key={m} value={m}>{m}</option>)}
           </select>
           <button onClick={onImport} className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-accent text-accent-foreground hover:bg-accent/80 transition-colors">
             <Upload className="w-4 h-4" /> Importar JSON
@@ -94,7 +117,12 @@ export default function ClientesList({
                 <th className="py-2 px-2">Telefone</th>
                 <th className="py-2 px-2">UC</th>
                 <th className="py-2 px-2">Concessionária</th>
-                <th className="py-2 px-2">Sistema</th>
+                <th className="py-2 px-2">Marca Inv.</th>
+                <th className="py-2 px-2">Pot. Inv.</th>
+                <th className="py-2 px-2">Qtd Placas</th>
+                <th className="py-2 px-2">Marca Placa</th>
+                <th className="py-2 px-2">Pot. Placa</th>
+                <th className="py-2 px-2">KWp</th>
                 <th className="py-2 px-2">Valor</th>
                 <th className="py-2 px-2">Instalação</th>
                 <th className="py-2 px-2">Ações</th>
@@ -113,7 +141,12 @@ export default function ClientesList({
                   <td className="py-2 px-2 text-xs"><WhatsAppLink phone={c.telefone} /></td>
                   <td className="py-2 px-2 text-xs">{c.uc || '—'}</td>
                   <td className="py-2 px-2 text-xs">{c.concessionaria || '—'}</td>
-                  <td className="py-2 px-2 text-xs">{c.sistema || '—'}</td>
+                  <td className="py-2 px-2 text-xs">{c.marca_inversor || '—'}</td>
+                  <td className="py-2 px-2 text-xs">{c.potencia_inversor || '—'}</td>
+                  <td className="py-2 px-2 text-xs">{c.qtd_placas || '—'}</td>
+                  <td className="py-2 px-2 text-xs">{c.marca_placa || '—'}</td>
+                  <td className="py-2 px-2 text-xs">{c.potencia_placa || '—'}</td>
+                  <td className="py-2 px-2 text-xs font-medium">{calcKwp(c.qtd_placas, c.potencia_placa)}</td>
                   <td className="py-2 px-2 text-xs">
                     {c.valor ? `R$ ${Number(c.valor).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '—'}
                   </td>
@@ -139,14 +172,13 @@ export default function ClientesList({
                 );
               })}
               {filtered.length === 0 && (
-                <tr><td colSpan={9} className="py-8 text-center text-muted-foreground">Nenhum cliente encontrado.</td></tr>
+                <tr><td colSpan={14} className="py-8 text-center text-muted-foreground">Nenhum cliente encontrado.</td></tr>
               )}
             </tbody>
           </table>
         </div>
       </div>
 
-      {/* Detail modal */}
       {selectedCliente && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setSelectedCliente(null)}>
           <div className="bg-background rounded-xl shadow-xl max-w-2xl w-full max-h-[80vh] overflow-y-auto p-6 space-y-4" onClick={e => e.stopPropagation()}>
@@ -194,7 +226,6 @@ export default function ClientesList({
         </div>
       )}
 
-      {/* Edit modal */}
       {editCliente && (
         <ClienteEditModal
           cliente={editCliente}

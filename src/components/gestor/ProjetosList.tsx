@@ -1,26 +1,22 @@
 import React, { useState, useMemo } from 'react';
 import type { Projeto } from '@/pages/GestorPage';
-import { Edit2, FileText, AlertTriangle, Snowflake, Image as ImageIcon, CheckCircle } from 'lucide-react';
+import { Edit2, FileText, AlertTriangle, Snowflake, Image as ImageIcon, CheckCircle, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import WhatsAppLink from './WhatsAppLink';
 import InstaladorSelect from './InstaladorSelect';
 import CongelarModal from './CongelarModal';
 import ObraConcluidaModal from './ObraConcluidaModal';
 import LayoutUploadModal from './LayoutUploadModal';
 
-const STATUS_LIST = ['Vendido', 'Equipamento Comprado', 'Entregue', 'Em Instalação', 'Instalado', 'Projeto Submetido', 'Homologado'];
-const STATUS_COLORS: Record<string, string> = {
-  'Vendido': 'bg-amber-100 text-amber-800',
-  'Equipamento Comprado': 'bg-blue-100 text-blue-800',
-  'Entregue': 'bg-cyan-100 text-cyan-800',
-  'Em Instalação': 'bg-orange-100 text-orange-800',
-  'Instalado': 'bg-green-100 text-green-800',
-  'Projeto Submetido': 'bg-purple-100 text-purple-800',
-  'Homologado': 'bg-emerald-100 text-emerald-800',
-};
-
 function daysSince(dateStr?: string): number {
   if (!dateStr) return 0;
   return Math.floor((Date.now() - new Date(dateStr).getTime()) / (1000 * 60 * 60 * 24));
+}
+
+function calcKwp(qtd?: number, potW?: string): string {
+  if (!qtd || !potW) return '—';
+  const pot = parseFloat(potW);
+  if (isNaN(pot)) return '—';
+  return ((qtd * pot) / 1000).toFixed(2);
 }
 
 export default function ProjetosList({ projetos, loading, onEdit, onDocumentos, onRefresh }: {
@@ -30,17 +26,30 @@ export default function ProjetosList({ projetos, loading, onEdit, onDocumentos, 
   onDocumentos: (p: Projeto) => void;
   onRefresh: () => void;
 }) {
-  const [statusFilter, setStatusFilter] = useState('');
-  const [concFilter, setConcFilter] = useState('');
   const [search, setSearch] = useState('');
+  const [marcaInversorFilter, setMarcaInversorFilter] = useState('');
+  const [marcaPlacaFilter, setMarcaPlacaFilter] = useState('');
   const [congelarId, setCongelarId] = useState<string | null>(null);
   const [layoutProjeto, setLayoutProjeto] = useState<Projeto | null>(null);
   const [concluidaProjeto, setConcluidaProjeto] = useState<Projeto | null>(null);
+  const [tempoSort, setTempoSort] = useState<'asc' | 'desc' | null>(null);
+
+  const marcasInversor = useMemo(() => {
+    const set = new Set<string>();
+    projetos.forEach(p => { if (p.marca_inversor) set.add(p.marca_inversor); });
+    return Array.from(set).sort();
+  }, [projetos]);
+
+  const marcasPlaca = useMemo(() => {
+    const set = new Set<string>();
+    projetos.forEach(p => { if (p.marca_placa) set.add(p.marca_placa); });
+    return Array.from(set).sort();
+  }, [projetos]);
 
   const filtered = useMemo(() => {
-    return projetos.filter(p => {
-      if (statusFilter && p.status !== statusFilter) return false;
-      if (concFilter && p.concessionaria !== concFilter) return false;
+    let result = projetos.filter(p => {
+      if (marcaInversorFilter && p.marca_inversor !== marcaInversorFilter) return false;
+      if (marcaPlacaFilter && p.marca_placa !== marcaPlacaFilter) return false;
       if (search) {
         const q = search.toLowerCase();
         const name = (p.nome_completo || p.razao_social || '').toLowerCase();
@@ -48,7 +57,19 @@ export default function ProjetosList({ projetos, loading, onEdit, onDocumentos, 
       }
       return true;
     });
-  }, [projetos, statusFilter, concFilter, search]);
+    if (tempoSort) {
+      result = [...result].sort((a, b) => {
+        const da = daysSince(a.data_fechamento);
+        const db = daysSince(b.data_fechamento);
+        return tempoSort === 'asc' ? da - db : db - da;
+      });
+    }
+    return result;
+  }, [projetos, marcaInversorFilter, marcaPlacaFilter, search, tempoSort]);
+
+  const toggleTempoSort = () => {
+    setTempoSort(prev => prev === null ? 'desc' : prev === 'desc' ? 'asc' : null);
+  };
 
   if (loading) return <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" /></div>;
 
@@ -56,13 +77,13 @@ export default function ProjetosList({ projetos, loading, onEdit, onDocumentos, 
     <div className="solar-card p-6 space-y-4">
       <div className="flex flex-wrap items-center gap-3">
         <input className="solar-input max-w-xs" placeholder="Buscar cliente..." value={search} onChange={e => setSearch(e.target.value)} />
-        <select className="solar-input max-w-[180px]" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
-          <option value="">Todos os status</option>
-          {STATUS_LIST.map(s => <option key={s} value={s}>{s}</option>)}
+        <select className="solar-input max-w-[180px]" value={marcaInversorFilter} onChange={e => setMarcaInversorFilter(e.target.value)}>
+          <option value="">Todas marcas inversor</option>
+          {marcasInversor.map(m => <option key={m} value={m}>{m}</option>)}
         </select>
-        <select className="solar-input max-w-[180px]" value={concFilter} onChange={e => setConcFilter(e.target.value)}>
-          <option value="">Todas concessionárias</option>
-          {['ELEKTRO', 'ENERGISA', 'COPEL', 'OUTRA'].map(c => <option key={c} value={c}>{c}</option>)}
+        <select className="solar-input max-w-[180px]" value={marcaPlacaFilter} onChange={e => setMarcaPlacaFilter(e.target.value)}>
+          <option value="">Todas marcas placa</option>
+          {marcasPlaca.map(m => <option key={m} value={m}>{m}</option>)}
         </select>
         <span className="text-xs text-muted-foreground ml-auto">{filtered.length} projeto(s)</span>
       </div>
@@ -73,11 +94,20 @@ export default function ProjetosList({ projetos, loading, onEdit, onDocumentos, 
             <tr className="border-b border-border text-left text-muted-foreground">
               <th className="py-2 px-2">Cliente</th>
               <th className="py-2 px-2">Telefone</th>
-              <th className="py-2 px-2">Tempo</th>
+              <th className="py-2 px-2 cursor-pointer select-none" onClick={toggleTempoSort}>
+                <div className="flex items-center gap-1">
+                  Tempo
+                  {tempoSort === 'desc' ? <ArrowDown className="w-3 h-3" /> : tempoSort === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowUpDown className="w-3 h-3 opacity-40" />}
+                </div>
+              </th>
               <th className="py-2 px-2">Concessionária</th>
-              <th className="py-2 px-2">Status</th>
+              <th className="py-2 px-2">Marca Inv.</th>
+              <th className="py-2 px-2">Pot. Inv.</th>
+              <th className="py-2 px-2">Qtd Placas</th>
+              <th className="py-2 px-2">Marca Placa</th>
+              <th className="py-2 px-2">Pot. Placa</th>
+              <th className="py-2 px-2">KWp</th>
               <th className="py-2 px-2">Instalador</th>
-              <th className="py-2 px-2">Entrega</th>
               <th className="py-2 px-2">Ações</th>
             </tr>
           </thead>
@@ -96,17 +126,14 @@ export default function ProjetosList({ projetos, loading, onEdit, onDocumentos, 
                     {p.data_fechamento ? `${days}d` : '—'}
                   </td>
                   <td className="py-2 px-2 text-xs">{p.concessionaria}</td>
-                  <td className="py-2 px-2">
-                    <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[p.status] || 'bg-muted text-muted-foreground'}`}>
-                      {p.status}
-                    </span>
-                  </td>
+                  <td className="py-2 px-2 text-xs">{p.marca_inversor || '—'}</td>
+                  <td className="py-2 px-2 text-xs">{p.potencia_inversor || '—'}</td>
+                  <td className="py-2 px-2 text-xs">{p.qtd_placas || '—'}</td>
+                  <td className="py-2 px-2 text-xs">{p.marca_placa || '—'}</td>
+                  <td className="py-2 px-2 text-xs">{p.potencia_placa || '—'}</td>
+                  <td className="py-2 px-2 text-xs font-medium">{calcKwp(p.qtd_placas, p.potencia_placa)}</td>
                   <td className="py-2 px-2">
                     <InstaladorSelect projetoId={p.id} currentValue={p.instalador} onDone={onRefresh} />
-                  </td>
-                  <td className="py-2 px-2 text-xs">
-                    {['Entregue', 'Em Instalação', 'Instalado', 'Projeto Submetido', 'Homologado'].includes(p.status)
-                      ? `Sim (${p.local_entrega || '—'})` : 'Não'}
                   </td>
                   <td className="py-2 px-2">
                     <div className="flex gap-1 items-center">
@@ -125,16 +152,13 @@ export default function ProjetosList({ projetos, loading, onEdit, onDocumentos, 
                       <button onClick={() => setConcluidaProjeto(p)} className="text-green-600 hover:text-green-500" title="Obra Concluída">
                         <CheckCircle className="w-4 h-4" />
                       </button>
-                      {p.objecoes && p.objecoes.trim() && (
-                        <span title={p.objecoes}><AlertTriangle className="w-4 h-4 text-amber-500" /></span>
-                      )}
                     </div>
                   </td>
                 </tr>
               );
             })}
             {filtered.length === 0 && (
-              <tr><td colSpan={8} className="py-8 text-center text-muted-foreground">Nenhum projeto encontrado.</td></tr>
+              <tr><td colSpan={12} className="py-8 text-center text-muted-foreground">Nenhum projeto encontrado.</td></tr>
             )}
           </tbody>
         </table>
