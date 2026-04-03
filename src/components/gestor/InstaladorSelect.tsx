@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { HardHat, Plus, X } from 'lucide-react';
+import { useDropdownPosition } from '@/hooks/useDropdownPosition';
 
 type Instalador = { id: string; nome: string };
 
@@ -15,6 +16,7 @@ export default function InstaladorSelect({ projetoId, currentValue, onDone }: {
   const [showNew, setShowNew] = useState(false);
   const [newNome, setNewNome] = useState('');
   const ref = useRef<HTMLDivElement>(null);
+  const { position, recalculate } = useDropdownPosition(ref);
 
   useEffect(() => {
     supabase.from('instaladores' as any).select('id, nome').eq('ativo', true).order('nome').then(({ data }) => {
@@ -47,7 +49,7 @@ export default function InstaladorSelect({ projetoId, currentValue, onDone }: {
 
   return (
     <div className="relative" ref={ref}>
-      <button onClick={() => setOpen(!open)} className="inline-flex items-center gap-1 text-xs" title="Instalador">
+      <button onClick={() => { if (!open) recalculate(); setOpen(!open); }} className="inline-flex items-center gap-1 text-xs" title="Instalador">
         {currentValue ? (
           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 text-xs font-medium">
             <HardHat className="w-3 h-3" /> {currentValue}
@@ -57,7 +59,7 @@ export default function InstaladorSelect({ projetoId, currentValue, onDone }: {
         )}
       </button>
       {open && (
-        <div className="absolute z-50 top-full left-0 mt-1 bg-background border border-border rounded-lg shadow-lg py-1 min-w-[160px]">
+        <div className="absolute z-50 bg-background border border-border rounded-lg shadow-lg py-1 min-w-[160px] mt-1" style={position}>
           {instaladores.map(i => (
             <button key={i.id} onClick={() => select(i.nome)}
               className={`w-full text-left px-3 py-1.5 text-sm hover:bg-muted ${currentValue === i.nome ? 'bg-primary/10 font-medium' : ''}`}>

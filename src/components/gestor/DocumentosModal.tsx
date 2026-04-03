@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import type { Projeto } from '@/pages/GestorPage';
 import { X, FileText, Download, Loader2, ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
+import { useDropdownPosition } from '@/hooks/useDropdownPosition';
 
 function sanitizeFilename(name: string): string {
   return name.replace(/[^a-zA-Z0-9À-ÿ\s-_]/g, '').replace(/\s+/g, '_').substring(0, 60);
@@ -15,6 +16,7 @@ function FormatDropdown({ tipo, generating, onGenerate }: {
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const { position, recalculate } = useDropdownPosition(ref);
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -24,12 +26,18 @@ function FormatDropdown({ tipo, generating, onGenerate }: {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
+  const toggleOpen = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!open) recalculate();
+    setOpen(!open);
+  };
+
   const isGenerating = generating === tipo;
 
   return (
     <div ref={ref} className="relative">
       <button
-        onClick={(e) => { e.stopPropagation(); setOpen(!open); }}
+        onClick={toggleOpen}
         disabled={!!generating}
         className="flex items-center gap-1 px-2 py-1 rounded-md hover:bg-muted transition-colors"
       >
@@ -43,7 +51,7 @@ function FormatDropdown({ tipo, generating, onGenerate }: {
         )}
       </button>
       {open && !generating && (
-        <div className="absolute right-0 top-full mt-1 bg-popover border border-border rounded-md shadow-lg z-10 min-w-[160px]">
+        <div className="absolute z-10 min-w-[160px] bg-popover border border-border rounded-md shadow-lg mt-1" style={position}>
           <button
             onClick={() => { setOpen(false); onGenerate(tipo, 'pdf'); }}
             className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted transition-colors text-left"
