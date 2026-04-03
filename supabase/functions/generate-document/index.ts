@@ -133,12 +133,20 @@ function buildVariables(projeto: any, tipoDocumento: string): Record<string, str
   const mes = MESES[dataFechamento.getMonth()];
   const ano = String(dataFechamento.getFullYear());
 
+  // Build endereco_completo from parts
+  const enderecoCompleto = [
+    projeto.logradouro,
+    projeto.bairro,
+    projeto.cidade && projeto.estado ? `${projeto.cidade}/${projeto.estado}` : projeto.cidade || projeto.estado,
+    projeto.cep ? `CEP: ${projeto.cep}` : '',
+  ].filter(Boolean).join(', ') || projeto.endereco_completo || '';
+
   // Common variables for all document types
   const vars: Record<string, string> = {
     "{{nome_completo}}": projeto.nome_completo || projeto.razao_social || "",
     "{{cpf}}": projeto.cpf || "",
-    "{{endereco_completo}}": projeto.endereco_completo || "",
-    "{{cep}}": projeto.unidade_geradora_cep || "",
+    "{{endereco_completo}}": enderecoCompleto,
+    "{{cep}}": projeto.unidade_geradora_cep || projeto.cep || "",
     "{{unidade_consumidora}}": projeto.unidade_geradora_codigo_uc || "",
     "{{dia}}": dia,
     "{{mes}}": mes,
