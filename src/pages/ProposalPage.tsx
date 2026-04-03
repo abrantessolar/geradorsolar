@@ -18,6 +18,7 @@ import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import Diferenciais from '@/components/Diferenciais';
 import ProposalPortfolio from '@/components/ProposalPortfolio';
+import ProposalFooter from '@/components/ProposalFooter';
 
 
 const LINES = ['excellence', 'premium'] as const;
@@ -867,6 +868,9 @@ export default function ProposalPage() {
 
         {/* PORTFÓLIO DE OBRAS */}
         <ProposalPortfolio />
+
+        {/* CONTACT FOOTER */}
+        <ProposalFooter />
 
         {/* PRINT FOOTER */}
         <div className="hidden print-only-block text-center py-8 border-t border-border mt-8">
