@@ -13,7 +13,7 @@ import DocumentosModal from '@/components/gestor/DocumentosModal';
 import ModelosDocumentos from '@/components/gestor/ModelosDocumentos';
 import ImportCSV from '@/components/gestor/ImportCSV';
 import ClientesList, { type ClienteBase } from '@/components/gestor/ClientesList';
-import ClienteImportJSON from '@/components/gestor/ClienteImportJSON';
+
 import MateriaisModule from '@/components/gestor/materiais/MateriaisModule';
 
 export type Projeto = {
