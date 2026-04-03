@@ -100,7 +100,7 @@ export default function ClientesList({
   }, [clientes, search, marcaInversorFilter, marcaPlacaFilter]);
 
   const colHeaders: Record<string, string> = {
-    nome: 'Nome', cpf: 'CPF', telefone: 'Telefone', uc: 'UC',
+    nome: 'Nome', cpf: 'CPF', telefone: 'Telefone', endereco: 'Endereço', uc: 'UC',
     concessionaria: 'Concessionária', marca_inv: 'Marca Inv.', pot_inv: 'Pot. Inv.',
     qtd_placas: 'Qtd Placas', marca_placa: 'Marca Placa', pot_placa: 'Pot. Placa',
     kwp: 'KWp', valor: 'Valor', forma_pgto: 'Forma Pgto.', instalacao: 'Instalação', acoes: 'Ações',
