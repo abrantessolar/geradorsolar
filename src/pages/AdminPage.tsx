@@ -163,13 +163,10 @@ function UsersTab() {
               <div><label className="block text-sm font-medium mb-1">Nível de permissão</label>
                 <select className="solar-input" value={form.role} onChange={e => setForm(p => ({ ...p, role: e.target.value }))}>
                   <option value="vendedor">Vendedor</option>
+                  <option value="gestor">Gestor</option>
                   <option value="orcamentista">Orçamentista</option>
                   <option value="admin">Administrador</option>
                 </select></div>
-              <div className="flex items-center gap-2">
-                <input type="checkbox" id="create-gestor" checked={form.acesso_painel_gestor} onChange={e => setForm(p => ({ ...p, acesso_painel_gestor: e.target.checked }))} className="rounded border-border" />
-                <label htmlFor="create-gestor" className="text-sm font-medium">Acesso ao Painel do Gestor</label>
-              </div>
               <div><label className="block text-sm font-medium mb-1">Senha</label>
                 <input className="solar-input" type="password" value={form.password} onChange={e => setForm(p => ({ ...p, password: e.target.value }))} /></div>
               <div><label className="block text-sm font-medium mb-1">Confirmar senha</label>
