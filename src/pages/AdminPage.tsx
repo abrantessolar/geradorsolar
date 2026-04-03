@@ -336,7 +336,6 @@ function PriceTableTab() {
   }, []);
 
   const LINES_ARR = [
-    { key: 'essencial' as const, name: LINE_NAMES.essencial },
     { key: 'excellence' as const, name: LINE_NAMES.excellence },
     { key: 'premium' as const, name: LINE_NAMES.premium },
   ];
