@@ -1,7 +1,10 @@
 import React, { useState, useMemo } from 'react';
-import { Eye, Search, ArrowUpRight, Upload, Edit2, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import { Eye, Search, ArrowUpRight, Upload, Edit2, RefreshCw } from 'lucide-react';
 import WhatsAppLink from './WhatsAppLink';
 import ClienteEditModal from './ClienteEditModal';
+import { parsePaineis, parseInversor } from './equipmentParser';
 
 export type ClienteBase = {
   id: string;
@@ -84,6 +87,31 @@ export default function ClientesList({
     });
   }, [clientes, search, marcaInversorFilter, marcaPlacaFilter]);
 
+  const handleReprocess = async () => {
+    toast.info('Reprocessando equipamentos...');
+    const { data, error } = await supabase.from('clientes_base' as any).select('id, dados_paineis, dados_inversor, marca_placa, marca_inversor');
+    if (error) { toast.error(error.message); return; }
+    const toUpdate = (data || []).filter((c: any) => (!c.marca_placa || c.marca_placa === '') || (!c.marca_inversor || c.marca_inversor === ''));
+    let updated = 0;
+    for (const c of toUpdate as any[]) {
+      const changes: any = {};
+      if ((!c.marca_placa || c.marca_placa === '') && c.dados_paineis) {
+        const p = parsePaineis(c.dados_paineis);
+        if (p) { changes.qtd_placas = p.qtd; changes.marca_placa = p.marca; changes.potencia_placa = p.potencia; }
+      }
+      if ((!c.marca_inversor || c.marca_inversor === '') && c.dados_inversor) {
+        const p = parseInversor(c.dados_inversor);
+        if (p) { changes.qtd_inversores = p.qtd; changes.marca_inversor = p.marca; changes.potencia_inversor = p.potencia; changes.tipo_inversor = p.tipo; }
+      }
+      if (Object.keys(changes).length > 0) {
+        await supabase.from('clientes_base' as any).update(changes).eq('id', c.id);
+        updated++;
+      }
+    }
+    toast.success(`${updated} registros atualizados de ${toUpdate.length} pendentes.`);
+    onRefresh();
+  };
+
   if (loading) return <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" /></div>;
 
   return (
@@ -104,6 +132,9 @@ export default function ClientesList({
           </select>
           <button onClick={onImport} className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-accent text-accent-foreground hover:bg-accent/80 transition-colors">
             <Upload className="w-4 h-4" /> Importar JSON
+          </button>
+          <button onClick={handleReprocess} className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-muted text-muted-foreground hover:bg-muted/70 transition-colors">
+            <RefreshCw className="w-4 h-4" /> Reprocessar Equipamentos
           </button>
           <span className="text-xs text-muted-foreground ml-auto">{filtered.length} cliente(s)</span>
         </div>
