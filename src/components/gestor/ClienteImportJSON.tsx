@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { Upload, FileJson, CheckCircle, AlertTriangle } from 'lucide-react';
-import { parseEquipmentText } from './equipmentParser';
+import { parsePaineis, parseInversor } from './equipmentParser';
 
 const FIELD_MAP: Record<string, string> = {
   'CLIENTE': 'nome_completo',
