@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
-import { Package, Warehouse, Truck } from 'lucide-react';
+import { Package, Warehouse, Truck, ShoppingCart } from 'lucide-react';
 import ProdutosTab from './ProdutosTab';
 import EstoqueTab from './EstoqueTab';
 import FornecedoresTab from './FornecedoresTab';
+import ComprasTab from './ComprasTab';
 
 const SUB_TABS = [
   { key: 'produtos', label: 'Produtos', icon: Package },
   { key: 'estoque', label: 'Estoque', icon: Warehouse },
   { key: 'fornecedores', label: 'Fornecedores', icon: Truck },
+  { key: 'compras', label: 'Compras', icon: ShoppingCart },
 ] as const;
 
 type SubTab = typeof SUB_TABS[number]['key'];
