@@ -27,7 +27,7 @@ const EQUIPMENT_COLORS = [
   '#F39C12', '#2ECC71', '#8E44AD', '#16A085', '#D35400',
 ];
 
-const LINES = ['essencial', 'excellence', 'premium'] as const;
+const LINES = ['excellence', 'premium'] as const;
 
 
 const emptyMonthly = (): MonthlyConsumption => ({
