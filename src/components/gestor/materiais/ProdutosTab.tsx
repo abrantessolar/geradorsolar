@@ -95,21 +95,30 @@ export default function ProdutosTab() {
   };
 
   const handleImportPadrao = async () => {
+    if (!confirm('Isso irá substituir todos os materiais atuais pela tabela padrão com 48 itens. Confirmar?')) return;
+    
     toast.info('Importando tabela padrão de materiais...');
     try {
       const { MATERIAIS_PADRAO, CABOS_PADRAO } = await import('./defaultMaterials');
       
+      // 1. Delete existing quantidades padrão, estoque, and materiais
+      await supabase.from('materiais_quantidades_padrao' as any).delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      await supabase.from('estoque' as any).delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      await supabase.from('materiais' as any).delete().neq('id', '00000000-0000-0000-0000-000000000000');
+
+      let matCount = 0;
       for (const mat of MATERIAIS_PADRAO) {
         const { data, error } = await supabase.from('materiais' as any)
           .insert({ nome: mat.nome, categoria: mat.categoria, unidade: mat.unidade || 'unidade' })
           .select('id').single();
         if (error || !data) continue;
         const matId = (data as any).id;
+        matCount++;
         
         // Create stock entry
         await supabase.from('estoque' as any).insert({ material_id: matId, quantidade_atual: 0 });
         
-        // Insert quantities
+        // Insert quantities (only non-zero)
         if (mat.quantidades) {
           const rows = Object.entries(mat.quantidades).filter(([, q]) => (q as number) > 0).map(([pot, q]) => ({
             material_id: matId, potencia: pot, quantidade: q,
@@ -118,12 +127,12 @@ export default function ProdutosTab() {
         }
       }
 
-      // Import cabos padrão
+      // 2. Import cabos padrão
       await supabase.from('cabos_padrao' as any).delete().neq('id', '00000000-0000-0000-0000-000000000000');
       const caboRows = CABOS_PADRAO.map(c => ({ potencia: c.potencia, tipo_cabo: c.tipo_cabo, observacao: c.observacao || null }));
       await supabase.from('cabos_padrao' as any).insert(caboRows);
 
-      toast.success('Tabela padrão importada com sucesso!');
+      toast.success(`${matCount} materiais e ${caboRows.length} cabos importados com sucesso!`);
       load();
     } catch (err: any) {
       toast.error('Erro na importação: ' + err.message);
