@@ -124,21 +124,33 @@ export type Database = {
       clientes_base: {
         Row: {
           atualizado_em: string
+          bairro: string | null
+          cabo_usado: string | null
+          cep: string | null
+          cidade: string | null
+          complemento: string | null
           concessionaria: string | null
           cpf: string | null
           criado_em: string
           dados_inversor: string | null
           dados_paineis: string | null
+          data_nascimento: string | null
+          email: string | null
           endereco: string | null
+          estado: string | null
           forma_pagamento: string | null
           fornecedor: string | null
           id: string
           instalado_em: string | null
           kwp: number | null
+          logradouro: string | null
           marca_inversor: string | null
           marca_placa: string | null
+          modelo_inversor: string | null
+          modelo_placa: string | null
           nome_completo: string | null
           nome_planta: string | null
+          numero: string | null
           observacoes: string | null
           origem: string
           potencia_inversor: string | null
@@ -158,24 +170,38 @@ export type Database = {
           usuario_id: string | null
           valor: number | null
           vistoriado_em: string | null
+          wifi_nome: string | null
+          wifi_senha: string | null
         }
         Insert: {
           atualizado_em?: string
+          bairro?: string | null
+          cabo_usado?: string | null
+          cep?: string | null
+          cidade?: string | null
+          complemento?: string | null
           concessionaria?: string | null
           cpf?: string | null
           criado_em?: string
           dados_inversor?: string | null
           dados_paineis?: string | null
+          data_nascimento?: string | null
+          email?: string | null
           endereco?: string | null
+          estado?: string | null
           forma_pagamento?: string | null
           fornecedor?: string | null
           id?: string
           instalado_em?: string | null
           kwp?: number | null
+          logradouro?: string | null
           marca_inversor?: string | null
           marca_placa?: string | null
+          modelo_inversor?: string | null
+          modelo_placa?: string | null
           nome_completo?: string | null
           nome_planta?: string | null
+          numero?: string | null
           observacoes?: string | null
           origem?: string
           potencia_inversor?: string | null
@@ -195,24 +221,38 @@ export type Database = {
           usuario_id?: string | null
           valor?: number | null
           vistoriado_em?: string | null
+          wifi_nome?: string | null
+          wifi_senha?: string | null
         }
         Update: {
           atualizado_em?: string
+          bairro?: string | null
+          cabo_usado?: string | null
+          cep?: string | null
+          cidade?: string | null
+          complemento?: string | null
           concessionaria?: string | null
           cpf?: string | null
           criado_em?: string
           dados_inversor?: string | null
           dados_paineis?: string | null
+          data_nascimento?: string | null
+          email?: string | null
           endereco?: string | null
+          estado?: string | null
           forma_pagamento?: string | null
           fornecedor?: string | null
           id?: string
           instalado_em?: string | null
           kwp?: number | null
+          logradouro?: string | null
           marca_inversor?: string | null
           marca_placa?: string | null
+          modelo_inversor?: string | null
+          modelo_placa?: string | null
           nome_completo?: string | null
           nome_planta?: string | null
+          numero?: string | null
           observacoes?: string | null
           origem?: string
           potencia_inversor?: string | null
@@ -232,6 +272,8 @@ export type Database = {
           usuario_id?: string | null
           valor?: number | null
           vistoriado_em?: string | null
+          wifi_nome?: string | null
+          wifi_senha?: string | null
         }
         Relationships: []
       }
