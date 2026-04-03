@@ -81,10 +81,12 @@ export type Database = {
           fornecedor: string | null
           id: string
           instalado_em: string | null
+          kwp: number | null
           marca_inversor: string | null
           marca_placa: string | null
           nome_completo: string | null
           nome_planta: string | null
+          observacoes: string | null
           origem: string
           potencia_inversor: string | null
           potencia_placa: string | null
@@ -96,6 +98,8 @@ export type Database = {
           satisfacao: string | null
           sistema: string | null
           telefone: string | null
+          telefone_2: string | null
+          telefone_3: string | null
           tipo_inversor: string | null
           uc: string | null
           usuario_id: string | null
@@ -114,10 +118,12 @@ export type Database = {
           fornecedor?: string | null
           id?: string
           instalado_em?: string | null
+          kwp?: number | null
           marca_inversor?: string | null
           marca_placa?: string | null
           nome_completo?: string | null
           nome_planta?: string | null
+          observacoes?: string | null
           origem?: string
           potencia_inversor?: string | null
           potencia_placa?: string | null
@@ -129,6 +135,8 @@ export type Database = {
           satisfacao?: string | null
           sistema?: string | null
           telefone?: string | null
+          telefone_2?: string | null
+          telefone_3?: string | null
           tipo_inversor?: string | null
           uc?: string | null
           usuario_id?: string | null
@@ -147,10 +155,12 @@ export type Database = {
           fornecedor?: string | null
           id?: string
           instalado_em?: string | null
+          kwp?: number | null
           marca_inversor?: string | null
           marca_placa?: string | null
           nome_completo?: string | null
           nome_planta?: string | null
+          observacoes?: string | null
           origem?: string
           potencia_inversor?: string | null
           potencia_placa?: string | null
@@ -162,6 +172,8 @@ export type Database = {
           satisfacao?: string | null
           sistema?: string | null
           telefone?: string | null
+          telefone_2?: string | null
+          telefone_3?: string | null
           tipo_inversor?: string | null
           uc?: string | null
           usuario_id?: string | null

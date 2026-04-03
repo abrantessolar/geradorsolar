@@ -1,10 +1,11 @@
 import React, { useState, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Eye, Search, ArrowUpRight, Upload, Edit2, RefreshCw } from 'lucide-react';
+import { Eye, Search, ArrowUpRight, Upload, Edit2, RefreshCw, GripVertical } from 'lucide-react';
 import WhatsAppLink from './WhatsAppLink';
 import ClienteEditModal from './ClienteEditModal';
 import { parsePaineis, parseInversor } from './equipmentParser';
+import { useDraggableColumns } from '@/hooks/useDraggableColumns';
 
 export type ClienteBase = {
   id: string;
@@ -36,6 +37,10 @@ export type ClienteBase = {
   satisfacao: string | null;
   origem: string;
   projeto_id: string | null;
+  telefone_2: string | null;
+  telefone_3: string | null;
+  observacoes: string | null;
+  kwp: number | null;
 };
 
 function calcKwp(qtd?: number | null, potW?: string | null): string {
@@ -44,6 +49,8 @@ function calcKwp(qtd?: number | null, potW?: string | null): string {
   if (isNaN(pot)) return '—';
   return ((qtd * pot) / 1000).toFixed(2);
 }
+
+const COL_KEYS = ['nome', 'cpf', 'telefone', 'uc', 'concessionaria', 'marca_inv', 'pot_inv', 'qtd_placas', 'marca_placa', 'pot_placa', 'kwp', 'valor', 'instalacao', 'acoes'];
 
 export default function ClientesList({
   clientes, loading, onPromover, onRefresh, onImport,
@@ -59,6 +66,8 @@ export default function ClientesList({
   const [marcaPlacaFilter, setMarcaPlacaFilter] = useState('');
   const [selectedCliente, setSelectedCliente] = useState<ClienteBase | null>(null);
   const [editCliente, setEditCliente] = useState<ClienteBase | null>(null);
+
+  const { order, onDragStart, onDragOver, onDragEnd, dragIdx } = useDraggableColumns('gestor-clientes-cols', COL_KEYS);
 
   const marcasInversor = useMemo(() => {
     const set = new Set<string>();
@@ -112,6 +121,49 @@ export default function ClientesList({
     onRefresh();
   };
 
+  const colHeaders: Record<string, string> = {
+    nome: 'Nome', cpf: 'CPF', telefone: 'Telefone', uc: 'UC',
+    concessionaria: 'Concessionária', marca_inv: 'Marca Inv.', pot_inv: 'Pot. Inv.',
+    qtd_placas: 'Qtd Placas', marca_placa: 'Marca Placa', pot_placa: 'Pot. Placa',
+    kwp: 'KWp', valor: 'Valor', instalacao: 'Instalação', acoes: 'Ações',
+  };
+
+  const renderCell = (key: string, c: ClienteBase) => {
+    const isViaObra = c.origem === 'promovido_de_obra' || c.id.startsWith('proj-');
+    switch (key) {
+      case 'nome': return (
+        <td key={key} className="py-2 px-2 font-medium max-w-[180px] truncate">
+          {c.nome_completo || '—'}
+          {isViaObra && <span className="ml-1 inline-block px-1.5 py-0.5 rounded text-[10px] font-medium bg-accent text-accent-foreground">✅ Via Obra</span>}
+        </td>
+      );
+      case 'cpf': return <td key={key} className="py-2 px-2 text-xs">{c.cpf || '—'}</td>;
+      case 'telefone': return <td key={key} className="py-2 px-2 text-xs"><WhatsAppLink phone={c.telefone} /></td>;
+      case 'uc': return <td key={key} className="py-2 px-2 text-xs">{c.uc || '—'}</td>;
+      case 'concessionaria': return <td key={key} className="py-2 px-2 text-xs">{c.concessionaria || '—'}</td>;
+      case 'marca_inv': return <td key={key} className="py-2 px-2 text-xs">{c.marca_inversor || '—'}</td>;
+      case 'pot_inv': return <td key={key} className="py-2 px-2 text-xs">{c.potencia_inversor || '—'}</td>;
+      case 'qtd_placas': return <td key={key} className="py-2 px-2 text-xs">{c.qtd_placas || '—'}</td>;
+      case 'marca_placa': return <td key={key} className="py-2 px-2 text-xs">{c.marca_placa || '—'}</td>;
+      case 'pot_placa': return <td key={key} className="py-2 px-2 text-xs">{c.potencia_placa || '—'}</td>;
+      case 'kwp': return <td key={key} className="py-2 px-2 text-xs font-medium">{c.kwp ? Number(c.kwp).toFixed(2) : calcKwp(c.qtd_placas, c.potencia_placa)}</td>;
+      case 'valor': return <td key={key} className="py-2 px-2 text-xs">{c.valor ? `R$ ${Number(c.valor).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '—'}</td>;
+      case 'instalacao': return <td key={key} className="py-2 px-2 text-xs">{c.instalado_em ? new Date(c.instalado_em).toLocaleDateString('pt-BR') : '—'}</td>;
+      case 'acoes': return (
+        <td key={key} className="py-2 px-2">
+          <div className="flex gap-1">
+            <button onClick={() => setSelectedCliente(c)} className="text-primary hover:text-primary/80" title="Ver detalhes"><Eye className="w-4 h-4" /></button>
+            <button onClick={() => setEditCliente(c)} className="text-primary hover:text-primary/80" title="Editar"><Edit2 className="w-4 h-4" /></button>
+            {!c.projeto_id && (
+              <button onClick={() => onPromover(c)} className="text-primary hover:text-primary/80" title="Promover para Obra"><ArrowUpRight className="w-4 h-4" /></button>
+            )}
+          </div>
+        </td>
+      );
+      default: return <td key={key} className="py-2 px-2">—</td>;
+    }
+  };
+
   if (loading) return <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" /></div>;
 
   return (
@@ -139,71 +191,34 @@ export default function ClientesList({
           <span className="text-xs text-muted-foreground ml-auto">{filtered.length} cliente(s)</span>
         </div>
 
+        <p className="text-[11px] text-muted-foreground flex items-center gap-1"><GripVertical className="w-3 h-3" /> Arraste os cabeçalhos para reordenar colunas</p>
+
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border text-left text-muted-foreground">
-                <th className="py-2 px-2">Nome</th>
-                <th className="py-2 px-2">CPF</th>
-                <th className="py-2 px-2">Telefone</th>
-                <th className="py-2 px-2">UC</th>
-                <th className="py-2 px-2">Concessionária</th>
-                <th className="py-2 px-2">Marca Inv.</th>
-                <th className="py-2 px-2">Pot. Inv.</th>
-                <th className="py-2 px-2">Qtd Placas</th>
-                <th className="py-2 px-2">Marca Placa</th>
-                <th className="py-2 px-2">Pot. Placa</th>
-                <th className="py-2 px-2">KWp</th>
-                <th className="py-2 px-2">Valor</th>
-                <th className="py-2 px-2">Instalação</th>
-                <th className="py-2 px-2">Ações</th>
+                {order.map((key, idx) => (
+                  <th
+                    key={key}
+                    className={`py-2 px-2 cursor-grab select-none ${dragIdx === idx ? 'opacity-50' : ''}`}
+                    draggable
+                    onDragStart={() => onDragStart(idx)}
+                    onDragOver={e => onDragOver(e, idx)}
+                    onDragEnd={onDragEnd}
+                  >
+                    {colHeaders[key] || key}
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody>
-              {filtered.map(c => {
-                const isViaObra = c.origem === 'promovido_de_obra' || c.id.startsWith('proj-');
-                return (
+              {filtered.map(c => (
                 <tr key={c.id} className="border-b border-border/50 hover:bg-muted/30">
-                  <td className="py-2 px-2 font-medium max-w-[180px] truncate">
-                    {c.nome_completo || '—'}
-                    {isViaObra && <span className="ml-1 inline-block px-1.5 py-0.5 rounded text-[10px] font-medium bg-green-100 text-green-700">✅ Via Obra</span>}
-                  </td>
-                  <td className="py-2 px-2 text-xs">{c.cpf || '—'}</td>
-                  <td className="py-2 px-2 text-xs"><WhatsAppLink phone={c.telefone} /></td>
-                  <td className="py-2 px-2 text-xs">{c.uc || '—'}</td>
-                  <td className="py-2 px-2 text-xs">{c.concessionaria || '—'}</td>
-                  <td className="py-2 px-2 text-xs">{c.marca_inversor || '—'}</td>
-                  <td className="py-2 px-2 text-xs">{c.potencia_inversor || '—'}</td>
-                  <td className="py-2 px-2 text-xs">{c.qtd_placas || '—'}</td>
-                  <td className="py-2 px-2 text-xs">{c.marca_placa || '—'}</td>
-                  <td className="py-2 px-2 text-xs">{c.potencia_placa || '—'}</td>
-                  <td className="py-2 px-2 text-xs font-medium">{calcKwp(c.qtd_placas, c.potencia_placa)}</td>
-                  <td className="py-2 px-2 text-xs">
-                    {c.valor ? `R$ ${Number(c.valor).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '—'}
-                  </td>
-                  <td className="py-2 px-2 text-xs">
-                    {c.instalado_em ? new Date(c.instalado_em).toLocaleDateString('pt-BR') : '—'}
-                  </td>
-                  <td className="py-2 px-2">
-                    <div className="flex gap-1">
-                      <button onClick={() => setSelectedCliente(c)} className="text-primary hover:text-primary/80" title="Ver detalhes">
-                        <Eye className="w-4 h-4" />
-                      </button>
-                      <button onClick={() => setEditCliente(c)} className="text-primary hover:text-primary/80" title="Editar">
-                        <Edit2 className="w-4 h-4" />
-                      </button>
-                      {!c.projeto_id && (
-                        <button onClick={() => onPromover(c)} className="text-green-600 hover:text-green-500" title="Promover para Obra">
-                          <ArrowUpRight className="w-4 h-4" />
-                        </button>
-                      )}
-                    </div>
-                  </td>
+                  {order.map(key => renderCell(key, c))}
                 </tr>
-                );
-              })}
+              ))}
               {filtered.length === 0 && (
-                <tr><td colSpan={14} className="py-8 text-center text-muted-foreground">Nenhum cliente encontrado.</td></tr>
+                <tr><td colSpan={order.length} className="py-8 text-center text-muted-foreground">Nenhum cliente encontrado.</td></tr>
               )}
             </tbody>
           </table>
@@ -220,7 +235,9 @@ export default function ClientesList({
             <div className="grid grid-cols-2 gap-3 text-sm">
               {[
                 ['CPF', selectedCliente.cpf],
-                ['Telefone', selectedCliente.telefone],
+                ['Telefone 1', selectedCliente.telefone],
+                ['Telefone 2', selectedCliente.telefone_2],
+                ['Telefone 3', selectedCliente.telefone_3],
                 ['Endereço', selectedCliente.endereco],
                 ['UC', selectedCliente.uc],
                 ['Concessionária', selectedCliente.concessionaria],
@@ -228,6 +245,7 @@ export default function ClientesList({
                 ['Painéis', selectedCliente.dados_paineis || `${selectedCliente.qtd_placas || ''} ${selectedCliente.marca_placa || ''} ${selectedCliente.potencia_placa || ''}`],
                 ['Inversor', selectedCliente.dados_inversor || `${selectedCliente.qtd_inversores || ''} ${selectedCliente.marca_inversor || ''} ${selectedCliente.potencia_inversor || ''}`],
                 ['Tipo Inversor', selectedCliente.tipo_inversor],
+                ['KWp', selectedCliente.kwp ? Number(selectedCliente.kwp).toFixed(2) : calcKwp(selectedCliente.qtd_placas, selectedCliente.potencia_placa)],
                 ['Fornecedor', selectedCliente.fornecedor],
                 ['Valor', selectedCliente.valor ? `R$ ${Number(selectedCliente.valor).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : null],
                 ['Forma Pagamento', selectedCliente.forma_pagamento],
@@ -238,12 +256,28 @@ export default function ClientesList({
                 ['Nome Planta', selectedCliente.nome_planta],
                 ['Satisfação', selectedCliente.satisfacao],
                 ['Origem', selectedCliente.origem === 'importacao' ? 'Importação' : 'Promovido de Obra'],
-              ].map(([label, val]) => (
-                <div key={label as string}>
-                  <p className="text-xs text-muted-foreground">{label}</p>
-                  <p className="font-medium">{(val as string) || '—'}</p>
+              ].map(([label, val]) => {
+                if ((label === 'Telefone 1' || label === 'Telefone 2' || label === 'Telefone 3') && val) {
+                  return (
+                    <div key={label as string}>
+                      <p className="text-xs text-muted-foreground">{label}</p>
+                      <div className="font-medium"><WhatsAppLink phone={val as string} /></div>
+                    </div>
+                  );
+                }
+                return (
+                  <div key={label as string}>
+                    <p className="text-xs text-muted-foreground">{label}</p>
+                    <p className="font-medium">{(val as string) || '—'}</p>
+                  </div>
+                );
+              })}
+              {selectedCliente.observacoes && (
+                <div className="col-span-2">
+                  <p className="text-xs text-muted-foreground">Observações</p>
+                  <p className="font-medium whitespace-pre-wrap">{selectedCliente.observacoes}</p>
                 </div>
-              ))}
+              )}
             </div>
             {!selectedCliente.projeto_id && (
               <button

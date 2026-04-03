@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Save, X } from 'lucide-react';
+import { Save, X, Plus } from 'lucide-react';
 import type { ClienteBase } from './ClientesList';
 
 export default function ClienteEditModal({ cliente, onClose, onSaved }: {
@@ -15,13 +15,18 @@ export default function ClienteEditModal({ cliente, onClose, onSaved }: {
     cpf: cliente.cpf || '',
     endereco: cliente.endereco || '',
     telefone: cliente.telefone || '',
+    telefone_2: (cliente as any).telefone_2 || '',
+    telefone_3: (cliente as any).telefone_3 || '',
     uc: cliente.uc || '',
     concessionaria: cliente.concessionaria || 'ELEKTRO',
     valor: cliente.valor?.toString() || '',
     forma_pagamento: cliente.forma_pagamento || '',
     instalado_em: cliente.instalado_em || '',
+    observacoes: (cliente as any).observacoes || '',
   });
   const [saving, setSaving] = useState(false);
+  const [showTel2, setShowTel2] = useState(!!form.telefone_2);
+  const [showTel3, setShowTel3] = useState(!!form.telefone_3);
 
   const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }));
 
@@ -39,6 +44,7 @@ export default function ClienteEditModal({ cliente, onClose, onSaved }: {
         preco_venda: form.valor ? parseFloat(form.valor) : null,
         forma_pagamento: form.forma_pagamento || null,
         data_instalacao: form.instalado_em || null,
+        objecoes: form.observacoes || null,
       }).eq('id', realId);
       setSaving(false);
       if (error) { toast.error(error.message); return; }
@@ -48,11 +54,14 @@ export default function ClienteEditModal({ cliente, onClose, onSaved }: {
         cpf: form.cpf || null,
         endereco: form.endereco || null,
         telefone: form.telefone || null,
+        telefone_2: form.telefone_2 || null,
+        telefone_3: form.telefone_3 || null,
         uc: form.uc || null,
         concessionaria: form.concessionaria,
         valor: form.valor ? parseFloat(form.valor) : null,
         forma_pagamento: form.forma_pagamento || null,
         instalado_em: form.instalado_em || null,
+        observacoes: form.observacoes || null,
       }).eq('id', cliente.id);
       setSaving(false);
       if (error) { toast.error(error.message); return; }
@@ -75,7 +84,33 @@ export default function ClienteEditModal({ cliente, onClose, onSaved }: {
           <div><label className="block text-sm font-medium mb-1">Nome</label><input className={inputClass} value={form.nome_completo} onChange={e => set('nome_completo', e.target.value)} /></div>
           <div><label className="block text-sm font-medium mb-1">CPF</label><input className={inputClass} value={form.cpf} onChange={e => set('cpf', e.target.value)} /></div>
           <div className="md:col-span-2"><label className="block text-sm font-medium mb-1">Endereço</label><input className={inputClass} value={form.endereco} onChange={e => set('endereco', e.target.value)} /></div>
-          <div><label className="block text-sm font-medium mb-1">Telefone</label><input className={inputClass} value={form.telefone} onChange={e => set('telefone', e.target.value)} /></div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Telefone 1</label>
+            <input className={inputClass} value={form.telefone} onChange={e => set('telefone', e.target.value)} />
+          </div>
+          {showTel2 ? (
+            <div>
+              <label className="block text-sm font-medium mb-1">Telefone 2</label>
+              <input className={inputClass} value={form.telefone_2} onChange={e => set('telefone_2', e.target.value)} />
+            </div>
+          ) : null}
+          {showTel3 ? (
+            <div>
+              <label className="block text-sm font-medium mb-1">Telefone 3</label>
+              <input className={inputClass} value={form.telefone_3} onChange={e => set('telefone_3', e.target.value)} />
+            </div>
+          ) : null}
+          {(!showTel2 || !showTel3) && (
+            <div className="flex items-end">
+              <button
+                type="button"
+                onClick={() => { if (!showTel2) setShowTel2(true); else setShowTel3(true); }}
+                className="flex items-center gap-1 text-sm text-primary hover:text-primary/80"
+              >
+                <Plus className="w-4 h-4" /> Adicionar telefone
+              </button>
+            </div>
+          )}
           <div><label className="block text-sm font-medium mb-1">UC</label><input className={inputClass} value={form.uc} onChange={e => set('uc', e.target.value)} /></div>
           <div><label className="block text-sm font-medium mb-1">Concessionária</label>
             <select className={inputClass} value={form.concessionaria} onChange={e => set('concessionaria', e.target.value)}>
@@ -85,6 +120,10 @@ export default function ClienteEditModal({ cliente, onClose, onSaved }: {
           <div><label className="block text-sm font-medium mb-1">Valor (R$)</label><input className={inputClass} type="number" step="0.01" value={form.valor} onChange={e => set('valor', e.target.value)} /></div>
           <div><label className="block text-sm font-medium mb-1">Forma de Pagamento</label><input className={inputClass} value={form.forma_pagamento} onChange={e => set('forma_pagamento', e.target.value)} /></div>
           <div><label className="block text-sm font-medium mb-1">Instalado em</label><input className={inputClass} type="date" value={form.instalado_em} onChange={e => set('instalado_em', e.target.value)} /></div>
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium mb-1">Observações</label>
+            <textarea className={`${inputClass} min-h-[80px]`} value={form.observacoes} onChange={e => set('observacoes', e.target.value)} />
+          </div>
         </div>
         <div className="flex justify-end gap-2 pt-2">
           <button onClick={onClose} className="px-4 py-2 rounded-lg text-sm font-medium bg-muted text-muted-foreground">Cancelar</button>
