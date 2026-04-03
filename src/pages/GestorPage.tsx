@@ -77,6 +77,10 @@ export type Projeto = {
   congelado_ate?: string;
   motivo_congelamento?: string;
   layout_url?: string;
+  wifi_nome?: string;
+  wifi_senha?: string;
+  nome_planta?: string;
+  cabo_usado?: string;
   placa?: { marca: string; modelo: string; potencia_wp: number };
   inversor?: { marca: string; modelo: string; potencia_kw: number; tipo: string };
 };
