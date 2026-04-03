@@ -559,7 +559,7 @@ export default function ProposalPage() {
                       </button>
                     </div>
                     {paymentTab === 'financing' ? (
-                      <div className="space-y-1 text-xs">
+                      <div className="space-y-1 text-sm">
                         <p className="font-semibold text-muted-foreground print-only-block hidden">Financiamento:</p>
                         {INSTALLMENT_OPTIONS.map(n => {
                           const v = card.installments[n];
