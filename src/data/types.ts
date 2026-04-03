@@ -57,7 +57,7 @@ export interface EquipmentItem {
 
 export interface Kit {
   id: string;
-  line: 'acesso' | 'essencial' | 'excellence' | 'premium';
+  line: 'acesso' | 'excellence' | 'premium';
   type: 'inversor' | 'placa' | 'estrutura' | 'cabo' | 'stringbox';
   brand: string;
   model: string;
