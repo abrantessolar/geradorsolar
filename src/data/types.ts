@@ -107,13 +107,11 @@ export interface PriceTableLineDetails {
 export interface PriceTableEntry {
   panels: number;
   acesso: number | null;
-  essencial: number | null;
   excellence: number | null;
   premium: number | null;
-  estimated?: { acesso?: boolean; essencial?: boolean; excellence?: boolean; premium?: boolean };
+  estimated?: { acesso?: boolean; excellence?: boolean; premium?: boolean };
   details?: {
     acesso?: PriceTableLineDetails;
-    essencial?: PriceTableLineDetails;
     excellence?: PriceTableLineDetails;
     premium?: PriceTableLineDetails;
   };
