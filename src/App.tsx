@@ -51,6 +51,7 @@ function AuthRedirect() {
 
   if (session && profile) {
     if (profile.role === 'admin') return <Navigate to="/admin" replace />;
+    if (profile.role === 'gestor') return <Navigate to="/gestor" replace />;
     return <Navigate to="/orcamentos" replace />;
   }
 
