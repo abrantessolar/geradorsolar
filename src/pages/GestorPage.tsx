@@ -92,7 +92,7 @@ export default function GestorPage() {
   const { session, isAdmin } = useAuth();
   const [mainTab, setMainTab] = useState<'obras' | 'clientes' | 'materiais'>('obras');
   const [obrasSubTab, setObrasSubTab] = useState<ObrasSubTab>('dashboard');
-  const [clientesSubTab, setClientesSubTab] = useState<ClientesSubTab>('lista');
+  
   const [projetos, setProjetos] = useState<Projeto[]>([]);
   const [clientes, setClientes] = useState<ClienteBase[]>([]);
   const [loading, setLoading] = useState(true);
