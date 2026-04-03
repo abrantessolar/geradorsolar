@@ -54,13 +54,14 @@ function calcKwp(qtd?: number | null, potW?: string | null): string {
 const COL_KEYS = ['nome', 'cpf', 'telefone', 'uc', 'concessionaria', 'marca_inv', 'pot_inv', 'qtd_placas', 'marca_placa', 'pot_placa', 'kwp', 'valor', 'forma_pgto', 'instalacao', 'acoes'];
 
 export default function ClientesList({
-  clientes, loading, onPromover, onRefresh, onImport,
+  clientes, loading, onPromover, onRefresh, onImport, showImport = true,
 }: {
   clientes: ClienteBase[];
   loading: boolean;
   onPromover: (c: ClienteBase) => void;
   onRefresh: () => void;
   onImport: () => void;
+  showImport?: boolean;
 }) {
   const [search, setSearch] = useState('');
   const [marcaInversorFilter, setMarcaInversorFilter] = useState('');
