@@ -297,6 +297,9 @@ export default function LandingPage() {
         <PublicSimulator />
       </div>
 
+      {/* ─── ONDE ESTAMOS ─── */}
+      <OndeEstamos />
+
       {/* ─── DIFERENCIAIS ─── */}
       <Diferenciais />
 
