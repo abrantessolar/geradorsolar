@@ -253,7 +253,7 @@ function EditUserModal({ user, onClose, callApi }: { user: any; onClose: () => v
   const [email, setEmail] = useState(user.email);
   const [telefone, setTelefone] = useState(user.telefone || '');
   const [role, setRole] = useState(user.role);
-  const [acessoGestor, setAcessoGestor] = useState(user.acesso_painel_gestor || false);
+  const [acessoGestor, setAcessoGestor] = useState(user.role === 'gestor' || user.role === 'admin');
   const [password, setPassword] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
