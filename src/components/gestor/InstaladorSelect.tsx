@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { HardHat, Plus, X } from 'lucide-react';
+import { useDropdownPosition } from '@/hooks/useDropdownPosition';
 
 type Instalador = { id: string; nome: string };
 
