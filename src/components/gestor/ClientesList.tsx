@@ -277,13 +277,13 @@ export default function ClientesList({
       </div>
 
       {selectedCliente && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setSelectedCliente(null)}>
-          <div className="bg-background rounded-xl shadow-xl max-w-2xl w-full max-h-[80vh] overflow-y-auto p-6 space-y-4" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center sm:p-4" onClick={() => setSelectedCliente(null)}>
+          <div className="bg-background rounded-t-xl sm:rounded-xl shadow-xl max-w-2xl w-full max-h-[85vh] sm:max-h-[80vh] overflow-y-auto p-4 sm:p-6 space-y-4" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold text-primary">{selectedCliente.nome_completo || 'Cliente'}</h2>
-              <button onClick={() => setSelectedCliente(null)} className="text-muted-foreground hover:text-foreground text-xl">×</button>
+              <h2 className="text-base sm:text-lg font-bold text-primary truncate">{selectedCliente.nome_completo || 'Cliente'}</h2>
+              <button onClick={() => setSelectedCliente(null)} className="text-muted-foreground hover:text-foreground text-xl ml-2">×</button>
             </div>
-            <div className="grid grid-cols-2 gap-3 text-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
               {[
                 ['CPF', selectedCliente.cpf],
                 ['Telefone 1', selectedCliente.telefone],
