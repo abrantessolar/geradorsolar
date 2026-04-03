@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { Upload, FileJson, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Upload, FileJson, CheckCircle, AlertTriangle, ChevronDown, ChevronUp } from 'lucide-react';
 import { parsePaineis, parseInversor } from './equipmentParser';
 
 const FIELD_MAP: Record<string, string> = {
@@ -70,9 +70,46 @@ function normalizeConcessionaria(val: string): string {
 function parseDate(val: string): string | null {
   if (!val || val.trim() === '') return null;
   const v = val.trim();
-  if (/^\d{4}-\d{2}-\d{2}/.test(v)) return v.substring(0, 10);
+  // ISO format
+  if (/^\d{4}-\d{2}-\d{2}/.test(v)) {
+    const [y, m, d] = v.substring(0, 10).split('-').map(Number);
+    if (m >= 1 && m <= 12 && d >= 1 && d <= 31) return v.substring(0, 10);
+    // Maybe DD-MM-YYYY was misread, but unlikely for ISO. Return null if invalid.
+    return null;
+  }
   const parts = v.split('/');
-  if (parts.length === 3) return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+  if (parts.length === 3) {
+    const [p0, p1, p2] = parts.map(s => s.trim());
+    let day: number, month: number, year: string;
+    
+    if (p2.length === 4) {
+      // DD/MM/YYYY
+      day = parseInt(p0);
+      month = parseInt(p1);
+      year = p2;
+    } else if (p0.length === 4) {
+      // YYYY/MM/DD
+      day = parseInt(p2);
+      month = parseInt(p1);
+      year = p0;
+    } else {
+      day = parseInt(p0);
+      month = parseInt(p1);
+      year = p2.length === 2 ? `20${p2}` : p2;
+    }
+
+    // Validate
+    if (month < 1 || month > 12 || day < 1 || day > 31) {
+      // Try swapping day/month
+      if (day >= 1 && day <= 12 && month >= 1 && month <= 31) {
+        [day, month] = [month, day];
+      } else {
+        return null;
+      }
+    }
+
+    return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+  }
   return null;
 }
 
@@ -84,12 +121,20 @@ function parseMonetary(val: any): number | null {
   return isNaN(n) ? null : n;
 }
 
+interface ImportError {
+  index: number;
+  nome: string;
+  message: string;
+}
+
 export default function ClienteImportJSON({ onImported }: { onImported: () => void }) {
   const { session } = useAuth();
   const fileRef = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<any[] | null>(null);
   const [importing, setImporting] = useState(false);
   const [result, setResult] = useState<{ ok: number; errors: number } | null>(null);
+  const [importErrors, setImportErrors] = useState<ImportError[]>([]);
+  const [showAllErrors, setShowAllErrors] = useState(false);
 
   const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -100,6 +145,7 @@ export default function ClienteImportJSON({ onImported }: { onImported: () => vo
       if (!Array.isArray(data)) { toast.error('O arquivo deve ser um array JSON.'); return; }
       setPreview(data);
       setResult(null);
+      setImportErrors([]);
     } catch { toast.error('Erro ao ler o JSON.'); }
   };
 
@@ -112,22 +158,25 @@ export default function ClienteImportJSON({ onImported }: { onImported: () => vo
       }
     }
 
-    // Normalize concessionaria
     if (mapped.concessionaria) mapped.concessionaria = normalizeConcessionaria(mapped.concessionaria);
-
-    // Parse monetary
     if (mapped.valor) mapped.valor = parseMonetary(mapped.valor);
 
-    // Parse numeric fields that come as strings
+    // Parse numeric fields
     if (mapped.qtd_placas) mapped.qtd_placas = parseInt(String(mapped.qtd_placas)) || null;
     if (mapped.qtd_inversores) mapped.qtd_inversores = parseInt(String(mapped.qtd_inversores)) || null;
-    if (mapped.kwp) mapped.kwp = parseFloat(String(mapped.kwp).replace(',', '.')) || null;
+    if (mapped.kwp) {
+      const k = parseFloat(String(mapped.kwp).replace(',', '.'));
+      mapped.kwp = isNaN(k) ? null : k;
+    }
     if (mapped.potencia_placa) mapped.potencia_placa = String(mapped.potencia_placa).replace(/[Ww]$/, '').trim();
     if (mapped.potencia_inversor) mapped.potencia_inversor = String(mapped.potencia_inversor).replace(/[Kk][Ww]$/, '').replace(',', '.').trim();
 
-    // Parse dates
+    // Parse dates - convert empty/invalid to null
     for (const df of ['projeto_enviado_em', 'projeto_aprovado', 'instalado_em', 'vistoriado_em']) {
-      if (mapped[df]) mapped[df] = parseDate(mapped[df]);
+      if (mapped[df] !== undefined) {
+        const parsed = parseDate(mapped[df]);
+        mapped[df] = parsed; // null if invalid
+      }
     }
 
     // Calculate KWp if not provided
@@ -155,6 +204,11 @@ export default function ClienteImportJSON({ onImported }: { onImported: () => vo
       }
     }
 
+    // Clean any remaining empty strings to null for non-text fields
+    for (const key of Object.keys(mapped)) {
+      if (mapped[key] === '') mapped[key] = null;
+    }
+
     if (session?.user?.id) mapped.usuario_id = session.user.id;
     return mapped;
   };
@@ -162,19 +216,31 @@ export default function ClienteImportJSON({ onImported }: { onImported: () => vo
   const doImport = async () => {
     if (!preview) return;
     setImporting(true);
-    let ok = 0, errors = 0;
-    const BATCH = 50;
-    for (let i = 0; i < preview.length; i += BATCH) {
-      const batch = preview.slice(i, i + BATCH).map(mapRecord);
-      const { error } = await supabase.from('clientes_base' as any).insert(batch);
-      if (error) { errors += batch.length; console.error(error); }
-      else ok += batch.length;
+    setImportErrors([]);
+    let ok = 0;
+    const errors: ImportError[] = [];
+
+    // Insert one by one to capture per-record errors
+    for (let i = 0; i < preview.length; i++) {
+      const raw = preview[i];
+      const mapped = mapRecord(raw);
+      const nome = mapped.nome_completo || raw.CLIENTE || raw.NOME || `Registro ${i + 1}`;
+      const { error } = await supabase.from('clientes_base' as any).insert([mapped]);
+      if (error) {
+        errors.push({ index: i, nome, message: error.message });
+      } else {
+        ok++;
+      }
     }
-    setResult({ ok, errors });
+
+    setResult({ ok, errors: errors.length });
+    setImportErrors(errors);
     setImporting(false);
     if (ok > 0) { toast.success(`${ok} clientes importados!`); onImported(); }
-    if (errors > 0) toast.error(`${errors} registros com erro.`);
+    if (errors.length > 0) toast.error(`${errors.length} registros com erro.`);
   };
+
+  const visibleErrors = showAllErrors ? importErrors : importErrors.slice(0, 5);
 
   return (
     <div className="solar-card p-6 space-y-4">
@@ -212,11 +278,36 @@ export default function ClienteImportJSON({ onImported }: { onImported: () => vo
       )}
 
       {result && (
-        <div className="flex items-center gap-3 p-3 rounded-lg bg-muted">
-          {result.errors === 0
-            ? <><CheckCircle className="w-5 h-5 text-green-600" /><span className="text-sm">{result.ok} clientes importados com sucesso!</span></>
-            : <><AlertTriangle className="w-5 h-5 text-amber-500" /><span className="text-sm">{result.ok} importados, {result.errors} com erro.</span></>
-          }
+        <div className="space-y-3">
+          <div className="flex items-center gap-3 p-3 rounded-lg bg-muted">
+            {result.errors === 0
+              ? <><CheckCircle className="w-5 h-5 text-green-600" /><span className="text-sm">{result.ok} clientes importados com sucesso!</span></>
+              : <><AlertTriangle className="w-5 h-5 text-amber-500" /><span className="text-sm">{result.ok} importados, {result.errors} com erro.</span></>
+            }
+          </div>
+
+          {importErrors.length > 0 && (
+            <div className="space-y-2">
+              <h3 className="text-sm font-semibold text-destructive">Erros na importação:</h3>
+              <div className="space-y-1 max-h-80 overflow-y-auto">
+                {visibleErrors.map((err, i) => (
+                  <div key={i} className="text-xs p-2 rounded bg-destructive/10 border border-destructive/20">
+                    <span className="font-medium">{err.nome}</span>
+                    <span className="text-muted-foreground"> — </span>
+                    <span>{err.message}</span>
+                  </div>
+                ))}
+              </div>
+              {importErrors.length > 5 && (
+                <button
+                  onClick={() => setShowAllErrors(!showAllErrors)}
+                  className="flex items-center gap-1 text-xs text-primary hover:underline"
+                >
+                  {showAllErrors ? <><ChevronUp className="w-3 h-3" /> Mostrar menos</> : <><ChevronDown className="w-3 h-3" /> Ver todos os {importErrors.length} erros</>}
+                </button>
+              )}
+            </div>
+          )}
         </div>
       )}
     </div>
