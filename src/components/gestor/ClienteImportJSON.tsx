@@ -50,6 +50,7 @@ const FIELD_MAP: Record<string, string> = {
   'POTÊNCIA INVERSOR': 'potencia_inversor',
   'POTENCIA INVERSOR': 'potencia_inversor',
   'TIPO INVERSOR': 'tipo_inversor',
+  'TIPO_INVERSOR': 'tipo_inversor',
   'TELEFONE_2': 'telefone_2',
   'TELEFONE 2': 'telefone_2',
   'TELEFONE_3': 'telefone_3',
@@ -159,6 +160,10 @@ export default function ClienteImportJSON({ onImported }: { onImported: () => vo
     }
 
     if (mapped.concessionaria) mapped.concessionaria = normalizeConcessionaria(mapped.concessionaria);
+    if (mapped.tipo_inversor) {
+      const t = String(mapped.tipo_inversor).toLowerCase().trim();
+      mapped.tipo_inversor = t.includes('micro') ? 'Micro' : 'String';
+    }
     if (mapped.valor) mapped.valor = parseMonetary(mapped.valor);
 
     // Parse numeric fields

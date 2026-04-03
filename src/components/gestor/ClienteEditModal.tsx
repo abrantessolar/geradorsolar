@@ -23,6 +23,10 @@ export default function ClienteEditModal({ cliente, onClose, onSaved }: {
     forma_pagamento: cliente.forma_pagamento || '',
     instalado_em: cliente.instalado_em || '',
     observacoes: (cliente as any).observacoes || '',
+    tipo_inversor: cliente.tipo_inversor || 'String',
+    qtd_inversores: cliente.qtd_inversores?.toString() || '',
+    marca_inversor: cliente.marca_inversor || '',
+    potencia_inversor: cliente.potencia_inversor || '',
   });
   const [saving, setSaving] = useState(false);
   const [showTel2, setShowTel2] = useState(!!form.telefone_2);
@@ -62,6 +66,10 @@ export default function ClienteEditModal({ cliente, onClose, onSaved }: {
         forma_pagamento: form.forma_pagamento || null,
         instalado_em: form.instalado_em || null,
         observacoes: form.observacoes || null,
+        tipo_inversor: form.tipo_inversor || 'String',
+        qtd_inversores: form.qtd_inversores ? parseInt(form.qtd_inversores) : null,
+        marca_inversor: form.marca_inversor || null,
+        potencia_inversor: form.potencia_inversor || null,
       }).eq('id', cliente.id);
       setSaving(false);
       if (error) { toast.error(error.message); return; }
@@ -117,6 +125,17 @@ export default function ClienteEditModal({ cliente, onClose, onSaved }: {
               {['ELEKTRO', 'ENERGISA', 'COPEL', 'OUTRA'].map(c => <option key={c}>{c}</option>)}
             </select>
           </div>
+          <div><label className="block text-sm font-medium mb-1">Tipo de Inversor</label>
+            <select className={inputClass} value={form.tipo_inversor} onChange={e => set('tipo_inversor', e.target.value)}>
+              <option value="String">String</option>
+              <option value="Micro">Micro</option>
+            </select>
+          </div>
+          <div><label className="block text-sm font-medium mb-1">Marca Inversor</label><input className={inputClass} value={form.marca_inversor} onChange={e => set('marca_inversor', e.target.value)} /></div>
+          <div><label className="block text-sm font-medium mb-1">Potência Inversor (kW)</label><input className={inputClass} value={form.potencia_inversor} onChange={e => set('potencia_inversor', e.target.value)} /></div>
+          {form.tipo_inversor === 'Micro' && (
+            <div><label className="block text-sm font-medium mb-1">Quantidade de Micros</label><input className={inputClass} type="number" min="1" value={form.qtd_inversores} onChange={e => set('qtd_inversores', e.target.value)} /></div>
+          )}
           <div><label className="block text-sm font-medium mb-1">Valor (R$)</label><input className={inputClass} type="number" step="0.01" value={form.valor} onChange={e => set('valor', e.target.value)} /></div>
           <div><label className="block text-sm font-medium mb-1">Forma de Pagamento</label><input className={inputClass} value={form.forma_pagamento} onChange={e => set('forma_pagamento', e.target.value)} /></div>
           <div><label className="block text-sm font-medium mb-1">Instalado em</label><input className={inputClass} type="date" value={form.instalado_em} onChange={e => set('instalado_em', e.target.value)} /></div>

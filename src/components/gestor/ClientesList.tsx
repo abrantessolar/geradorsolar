@@ -119,8 +119,21 @@ export default function ClientesList({
       case 'telefone': return <td key={key} className="py-2 px-2 text-xs"><WhatsAppLink phone={c.telefone} /></td>;
       case 'uc': return <td key={key} className="py-2 px-2 text-xs">{c.uc || '—'}</td>;
       case 'concessionaria': return <td key={key} className="py-2 px-2 text-xs">{c.concessionaria || '—'}</td>;
-      case 'marca_inv': return <td key={key} className="py-2 px-2 text-xs">{c.marca_inversor || '—'}</td>;
-      case 'pot_inv': return <td key={key} className="py-2 px-2 text-xs">{c.potencia_inversor || '—'}</td>;
+      case 'marca_inv': return (
+        <td key={key} className="py-2 px-2 text-xs">
+          {c.marca_inversor || '—'}
+          {c.tipo_inversor?.toLowerCase() === 'micro' && (
+            <span className="ml-1 inline-block px-1.5 py-0.5 rounded text-[10px] font-bold bg-primary/15 text-primary">MICRO</span>
+          )}
+        </td>
+      );
+      case 'pot_inv': return (
+        <td key={key} className="py-2 px-2 text-xs">
+          {c.tipo_inversor?.toLowerCase() === 'micro' && c.potencia_inversor && c.qtd_inversores
+            ? `${c.potencia_inversor} kW × ${c.qtd_inversores}`
+            : c.potencia_inversor ? `${c.potencia_inversor} kW` : '—'}
+        </td>
+      );
       case 'qtd_placas': return <td key={key} className="py-2 px-2 text-xs">{c.qtd_placas || '—'}</td>;
       case 'marca_placa': return <td key={key} className="py-2 px-2 text-xs">{c.marca_placa || '—'}</td>;
       case 'pot_placa': return <td key={key} className="py-2 px-2 text-xs">{c.potencia_placa || '—'}</td>;
@@ -224,8 +237,10 @@ export default function ClientesList({
                 ['Concessionária', selectedCliente.concessionaria],
                 ['Sistema', selectedCliente.sistema],
                 ['Painéis', selectedCliente.dados_paineis || `${selectedCliente.qtd_placas || ''} ${selectedCliente.marca_placa || ''} ${selectedCliente.potencia_placa || ''}`],
-                ['Inversor', selectedCliente.dados_inversor || `${selectedCliente.qtd_inversores || ''} ${selectedCliente.marca_inversor || ''} ${selectedCliente.potencia_inversor || ''}`],
-                ['Tipo Inversor', selectedCliente.tipo_inversor],
+                ['Inversor', selectedCliente.tipo_inversor?.toLowerCase() === 'micro' && selectedCliente.qtd_inversores && selectedCliente.marca_inversor && selectedCliente.potencia_inversor
+                  ? `${selectedCliente.qtd_inversores}x ${selectedCliente.marca_inversor} ${selectedCliente.potencia_inversor}kW (MICRO)`
+                  : selectedCliente.dados_inversor || `${selectedCliente.qtd_inversores || '1'}x ${selectedCliente.marca_inversor || ''} ${selectedCliente.potencia_inversor || ''}kW`],
+                ['Tipo Inversor', selectedCliente.tipo_inversor || 'String'],
                 ['KWp', selectedCliente.kwp ? Number(selectedCliente.kwp).toFixed(2) : calcKwp(selectedCliente.qtd_placas, selectedCliente.potencia_placa)],
                 ['Fornecedor', selectedCliente.fornecedor],
                 ['Valor', selectedCliente.valor ? `R$ ${Number(selectedCliente.valor).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : null],
