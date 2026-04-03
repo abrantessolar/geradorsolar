@@ -247,14 +247,22 @@ Deno.serve(async (req) => {
     const today = new Date().toISOString().split("T")[0];
     const copyName = `Contrato_${clientName}_${today}`;
 
-    // 1. Copy the template
-    const copyRes = await fetch(`https://www.googleapis.com/drive/v3/files/${templateId}/copy`, {
+    // 1. Get template's parent folder
+    const templateMeta = await fetch(
+      `https://www.googleapis.com/drive/v3/files/${templateId}?fields=parents&supportsAllDrives=true`,
+      { headers: { Authorization: `Bearer ${accessToken}` } }
+    );
+    const templateMetaData = templateMeta.ok ? await templateMeta.json() : {};
+    const parents = templateMetaData.parents || [];
+
+    // 2. Copy the template into the same folder
+    const copyRes = await fetch(`https://www.googleapis.com/drive/v3/files/${templateId}/copy?supportsAllDrives=true`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${accessToken}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ name: copyName }),
+      body: JSON.stringify({ name: copyName, ...(parents.length > 0 ? { parents } : {}) }),
     });
 
     if (!copyRes.ok) {
