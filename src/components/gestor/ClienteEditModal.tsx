@@ -66,6 +66,10 @@ export default function ClienteEditModal({ cliente, onClose, onSaved }: {
         forma_pagamento: form.forma_pagamento || null,
         instalado_em: form.instalado_em || null,
         observacoes: form.observacoes || null,
+        tipo_inversor: form.tipo_inversor || 'String',
+        qtd_inversores: form.qtd_inversores ? parseInt(form.qtd_inversores) : null,
+        marca_inversor: form.marca_inversor || null,
+        potencia_inversor: form.potencia_inversor || null,
       }).eq('id', cliente.id);
       setSaving(false);
       if (error) { toast.error(error.message); return; }
