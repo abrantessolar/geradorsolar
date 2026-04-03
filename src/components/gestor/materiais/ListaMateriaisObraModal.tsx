@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { X, Plus, Check, Loader2 } from 'lucide-react';
 import { CATEGORIA_ICONS } from './types';
+import { getPotenciaKey, generateMaterialList } from './generateMaterialList';
 import type { Projeto } from '@/pages/GestorPage';
 
 type MatItem = {
