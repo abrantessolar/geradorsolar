@@ -40,6 +40,7 @@ export default function ProjetosList({ projetos, loading, onEdit, onDocumentos, 
   const [concluidaProjeto, setConcluidaProjeto] = useState<Projeto | null>(null);
   const [deleteProjeto, setDeleteProjeto] = useState<Projeto | null>(null);
   const [materiaisProjeto, setMateriaisProjeto] = useState<Projeto | null>(null);
+  const [retirarProjeto, setRetirarProjeto] = useState<Projeto | null>(null);
   const [tempoSort, setTempoSort] = useState<'asc' | 'desc' | null>(null);
 
   const { order, onDragStart, onDragOver, onDragEnd, dragIdx } = useDraggableColumns('gestor-obras-cols', COL_KEYS);
