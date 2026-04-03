@@ -323,11 +323,11 @@ export default function PublicSimulator() {
             <button
               type="button"
               onClick={() => setShowEquipmentPanel(!showEquipmentPanel)}
-              className="flex items-center gap-2 text-sm font-bold text-primary hover:text-primary/80 transition-colors"
+              className="flex items-center gap-2 text-base font-bold text-white bg-primary hover:bg-primary/90 transition-colors px-4 py-3 rounded-lg w-full justify-center"
             >
-              <Plus className="w-4 h-4" />
+              <Plus className="w-5 h-5" />
               Clique aqui para adicionar +Ar condicionado, ou outros eletrodomésticos.
-              <ChevronDown className={`w-4 h-4 transition-transform ${showEquipmentPanel ? 'rotate-180' : ''}`} />
+              <ChevronDown className={`w-5 h-5 transition-transform ${showEquipmentPanel ? 'rotate-180' : ''}`} />
             </button>
 
             {showEquipmentPanel && (
