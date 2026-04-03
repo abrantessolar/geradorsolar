@@ -1,5 +1,9 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Sun, Calculator, Settings, Menu, X, LogOut, Megaphone, HardHat } from 'lucide-react';
+import { Calculator, Settings, Menu, X, LogOut, Megaphone, HardHat } from 'lucide-react';
+import { useState } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { useNewLeadsCount } from '@/components/LeadNotification';
+import logoImg from '@/assets/logo.png';
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNewLeadsCount } from '@/components/LeadNotification';
