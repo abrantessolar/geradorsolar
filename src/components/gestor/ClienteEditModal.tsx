@@ -23,6 +23,10 @@ export default function ClienteEditModal({ cliente, onClose, onSaved }: {
     forma_pagamento: cliente.forma_pagamento || '',
     instalado_em: cliente.instalado_em || '',
     observacoes: (cliente as any).observacoes || '',
+    tipo_inversor: cliente.tipo_inversor || 'String',
+    qtd_inversores: cliente.qtd_inversores?.toString() || '',
+    marca_inversor: cliente.marca_inversor || '',
+    potencia_inversor: cliente.potencia_inversor || '',
   });
   const [saving, setSaving] = useState(false);
   const [showTel2, setShowTel2] = useState(!!form.telefone_2);
