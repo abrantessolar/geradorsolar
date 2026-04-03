@@ -284,6 +284,7 @@ export default function GestorPage() {
               onPromover={handlePromoverParaObra}
               onRefresh={loadClientes}
               onImport={() => setClientesSubTab('importar_clientes')}
+              showImport={isAdmin}
             />
           )}
           {clientesSubTab === 'importar_clientes' && (
