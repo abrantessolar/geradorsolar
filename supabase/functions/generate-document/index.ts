@@ -179,7 +179,7 @@ Deno.serve(async (req) => {
     }
 
     // Get Google access token
-    const accessToken = await getGoogleAccessToken(serviceAccount);
+    const accessToken = await getGoogleAccessToken(serviceAccount, "contato@treslagoassolar.com.br");
 
     // Parse date parts
     const dataFechamento = projeto.data_fechamento
