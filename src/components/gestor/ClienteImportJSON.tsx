@@ -160,6 +160,10 @@ export default function ClienteImportJSON({ onImported }: { onImported: () => vo
     }
 
     if (mapped.concessionaria) mapped.concessionaria = normalizeConcessionaria(mapped.concessionaria);
+    if (mapped.tipo_inversor) {
+      const t = String(mapped.tipo_inversor).toLowerCase().trim();
+      mapped.tipo_inversor = t.includes('micro') ? 'Micro' : 'String';
+    }
     if (mapped.valor) mapped.valor = parseMonetary(mapped.valor);
 
     // Parse numeric fields
