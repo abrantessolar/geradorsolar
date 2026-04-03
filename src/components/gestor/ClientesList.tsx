@@ -252,7 +252,7 @@ export default function ClientesList({
                 </div>
               )}
             </div>
-            {!selectedCliente.projeto_id && (
+            {!selectedCliente.projeto_id && !selectedCliente.id.startsWith('proj-') && (
               <button
                 onClick={() => { onPromover(selectedCliente); setSelectedCliente(null); }}
                 className="w-full mt-4 flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
