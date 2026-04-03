@@ -92,7 +92,8 @@ export default function ClientesList({
         const name = (c.nome_completo || '').toLowerCase();
         const cpf = (c.cpf || '').toLowerCase();
         const uc = (c.uc || '').toLowerCase();
-        if (!name.includes(q) && !cpf.includes(q) && !uc.includes(q)) return false;
+        const endereco = (c.endereco || '').toLowerCase();
+        if (!name.includes(q) && !cpf.includes(q) && !uc.includes(q) && !endereco.includes(q)) return false;
       }
       return true;
     });
