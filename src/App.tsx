@@ -87,6 +87,16 @@ const App = () => (
                 <SeoNoIndex /><Layout><GestorPage /></Layout>
               </ProtectedRoute>
             } />
+            <Route path="/gestor" element={
+              <ProtectedRoute>
+                <SeoNoIndex /><Layout><GestorPage /></Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/estoque" element={
+              <ProtectedRoute>
+                <SeoNoIndex /><EstoquePage />
+              </ProtectedRoute>
+            } />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
