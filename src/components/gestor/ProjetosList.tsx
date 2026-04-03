@@ -199,6 +199,9 @@ export default function ProjetosList({ projetos, loading, onEdit, onDocumentos, 
           onDeleted={() => { setDeleteProjeto(null); onRefresh(); }}
         />
       )}
+      {materiaisProjeto && (
+        <ListaMateriaisObraModal projeto={materiaisProjeto} onClose={() => setMateriaisProjeto(null)} />
+      )}
     </div>
   );
 }
