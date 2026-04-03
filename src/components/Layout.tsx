@@ -1,8 +1,9 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Sun, Calculator, Settings, Menu, X, LogOut, Megaphone, HardHat } from 'lucide-react';
+import { Calculator, Settings, Menu, X, LogOut, Megaphone, HardHat } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNewLeadsCount } from '@/components/LeadNotification';
+import logoImg from '@/assets/logo.png';
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
@@ -24,9 +25,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       <header className="no-print sticky top-0 z-50 bg-card border-b border-border/50 shadow-sm">
         <div className="container flex items-center justify-between h-16">
           <Link to="/orcamentos" className="flex items-center gap-3 group">
-            <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
-              <Sun className="w-6 h-6 text-secondary" />
-            </div>
+            <img src={logoImg} alt="Três Lagoas Solar" className="w-10 h-10 object-contain" />
             <div className="hidden sm:block">
               <span className="text-lg font-bold text-primary leading-none">Três Lagoas Solar</span>
               <span className="block text-xs text-muted-foreground">Energia Limpa</span>

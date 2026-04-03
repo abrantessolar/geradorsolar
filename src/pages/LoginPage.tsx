@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Sun, Lock, AlertCircle } from 'lucide-react';
+import { Lock, AlertCircle } from 'lucide-react';
+import logoImg from '@/assets/logo.png';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -72,9 +73,7 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <div className="max-w-md w-full solar-card p-8 space-y-6 animate-fade-in-up">
         <div className="text-center">
-          <div className="w-16 h-16 rounded-full bg-primary flex items-center justify-center mx-auto mb-4">
-            <Sun className="w-8 h-8 text-secondary" />
-          </div>
+          <img src={logoImg} alt="Três Lagoas Solar" className="w-16 h-16 object-contain mx-auto mb-4" />
           <h1 className="text-2xl font-bold text-primary">Três Lagoas Solar</h1>
           <p className="text-sm text-muted-foreground">Acesse o sistema</p>
         </div>

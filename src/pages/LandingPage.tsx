@@ -7,7 +7,8 @@ import PublicSimulator from '@/components/PublicSimulator';
 import LazyImage from '@/components/LazyImage';
 import Diferenciais from '@/components/Diferenciais';
 
-const LOGO_URL = 'https://static.wixstatic.com/media/c2ae0d_30cd8efa4a3c4fbab3622fcd674c4d02~mv2.png';
+import logoImg from '@/assets/logo.png';
+const LOGO_URL = logoImg;
 const HERO_BG = 'https://static.wixstatic.com/media/c2ae0d_0fc9044d218948a585d2170345d4ce87~mv2.jpg';
 const MISSION_IMG = 'https://static.wixstatic.com/media/11062b_bdefce897daa4bafad009726c2eae2df~mv2.jpg';
 
