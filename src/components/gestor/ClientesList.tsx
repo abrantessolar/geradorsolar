@@ -96,31 +96,6 @@ export default function ClientesList({
     });
   }, [clientes, search, marcaInversorFilter, marcaPlacaFilter]);
 
-  const handleReprocess = async () => {
-    toast.info('Reprocessando equipamentos...');
-    const { data, error } = await supabase.from('clientes_base' as any).select('id, dados_paineis, dados_inversor, marca_placa, marca_inversor');
-    if (error) { toast.error(error.message); return; }
-    const toUpdate = (data || []).filter((c: any) => (!c.marca_placa || c.marca_placa === '') || (!c.marca_inversor || c.marca_inversor === ''));
-    let updated = 0;
-    for (const c of toUpdate as any[]) {
-      const changes: any = {};
-      if ((!c.marca_placa || c.marca_placa === '') && c.dados_paineis) {
-        const p = parsePaineis(c.dados_paineis);
-        if (p) { changes.qtd_placas = p.qtd; changes.marca_placa = p.marca; changes.potencia_placa = p.potencia; }
-      }
-      if ((!c.marca_inversor || c.marca_inversor === '') && c.dados_inversor) {
-        const p = parseInversor(c.dados_inversor);
-        if (p) { changes.qtd_inversores = p.qtd; changes.marca_inversor = p.marca; changes.potencia_inversor = p.potencia; changes.tipo_inversor = p.tipo; }
-      }
-      if (Object.keys(changes).length > 0) {
-        await supabase.from('clientes_base' as any).update(changes).eq('id', c.id);
-        updated++;
-      }
-    }
-    toast.success(`${updated} registros atualizados de ${toUpdate.length} pendentes.`);
-    onRefresh();
-  };
-
   const colHeaders: Record<string, string> = {
     nome: 'Nome', cpf: 'CPF', telefone: 'Telefone', uc: 'UC',
     concessionaria: 'Concessionária', marca_inv: 'Marca Inv.', pot_inv: 'Pot. Inv.',
