@@ -261,6 +261,9 @@ export default function GestorPage() {
           <TabsTrigger value="materiais" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-6 py-2.5 rounded-lg">
             <Package className="w-4 h-4" /> Materiais
           </TabsTrigger>
+          <TabsTrigger value="equipamentos" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-6 py-2.5 rounded-lg">
+            <Cpu className="w-4 h-4" /> Equipamentos
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="obras" className="space-y-4">
