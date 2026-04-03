@@ -104,17 +104,17 @@ export default function ClienteImportJSON({ onImported }: { onImported: () => vo
       if (mapped[df]) mapped[df] = parseDate(mapped[df]);
     }
 
-    // Parse equipment text
-    if (mapped.dados_paineis) {
-      const parsed = parseEquipmentText(mapped.dados_paineis);
+    // Parse equipment text into structured fields
+    if (mapped.dados_paineis && !mapped.qtd_placas) {
+      const parsed = parsePaineis(mapped.dados_paineis);
       if (parsed) {
         mapped.qtd_placas = parsed.qtd;
         mapped.marca_placa = parsed.marca;
         mapped.potencia_placa = parsed.potencia;
       }
     }
-    if (mapped.dados_inversor) {
-      const parsed = parseEquipmentText(mapped.dados_inversor);
+    if (mapped.dados_inversor && !mapped.qtd_inversores) {
+      const parsed = parseInversor(mapped.dados_inversor);
       if (parsed) {
         mapped.qtd_inversores = parsed.qtd;
         mapped.marca_inversor = parsed.marca;
