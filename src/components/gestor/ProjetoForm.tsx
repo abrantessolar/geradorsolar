@@ -313,10 +313,6 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
         const geracaoAuto = Math.round(kwp * HSP * 30 * 0.75);
         return (
         <div className="space-y-4">
-          <div>
-            <label className={labelClass}>Sistema (ex: 5,75KWp)</label>
-            <input className={inputClass} value={form.sistema} onChange={e => set('sistema', e.target.value)} placeholder="5,75KWp" />
-          </div>
 
           <h3 className="text-sm font-semibold">Placas</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
