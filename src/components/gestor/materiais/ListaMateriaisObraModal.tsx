@@ -55,62 +55,14 @@ export default function ListaMateriaisObraModal({ projeto, onClose }: { projeto:
   const generateList = async () => {
     setGenerating(true);
     try {
-    // Determine power key from inversor
-      const potInvRaw = parseFloat(projeto.potencia_inversor || '0');
-      // Normalize: if value > 100 assume it's in watts (e.g. 2500 → 2.5 kW)
-      const potInv = potInvRaw > 100 ? potInvRaw / 1000 : potInvRaw;
-      
-      // Detect micro: from linked inversor tipo, or from marca/potencia heuristics
-      const tipoFromInversor = (projeto.inversor?.tipo || '').toUpperCase();
-      const marcaInv = (projeto.marca_inversor || '').toUpperCase();
-      const microBrands = ['HOYMILES', 'HOYMMILES', 'HOMYLES', 'HOMILES'];
-      const isMicro = tipoFromInversor.includes('MICRO')
-        || marcaInv.includes('MICRO')
-        || microBrands.some(b => marcaInv.includes(b))
-        || (marcaInv.includes('DEYE') && potInv < 3)
-        || ((projeto.qtd_inversores || 1) > 1 && potInv < 3);
-      
-      let potKey = '';
-      
-      if (isMicro) {
-        const qtdMicro = projeto.qtd_inversores || 1;
-        potKey = `${qtdMicro} MICRO`;
-      } else {
-        // Find closest standard potencia
-        const pots = [3, 4, 5, 6, 7.5, 8, 10];
-        const closest = pots.reduce((prev, curr) => Math.abs(curr - potInv) < Math.abs(prev - potInv) ? curr : prev, pots[0]);
-        potKey = closest.toString();
-      }
-
-      // Get standard quantities for this power
-      const { data: qtdPadrao } = await supabase
-        .from('materiais_quantidades_padrao' as any)
-        .select('*, materiais(id, nome, categoria)')
-        .eq('potencia', potKey);
-
-      // Get standard cables
-      const { data: cabosPadrao } = await supabase.from('cabos_padrao' as any).select('*').eq('potencia', potKey);
-
-      // Clear existing
-      await supabase.from('lista_materiais_obra' as any).delete().eq('projeto_id', projeto.id);
-      await supabase.from('cabos_obra' as any).delete().eq('projeto_id', projeto.id);
-
-      // Insert materials
-      if (qtdPadrao && qtdPadrao.length > 0) {
-        const rows = qtdPadrao.map((q: any) => ({
-          projeto_id: projeto.id, material_id: q.material_id, quantidade_necessaria: q.quantidade, quantidade_separada: 0, separado: false,
-        }));
-        await supabase.from('lista_materiais_obra' as any).insert(rows);
-      }
-
-      // Insert cables
-      if (cabosPadrao && cabosPadrao.length > 0) {
-        const caboRows = cabosPadrao.map((c: any) => ({
-          projeto_id: projeto.id, tipo_cabo: c.tipo_cabo, quantidade_metros: 0, observacao: c.observacao,
-        }));
-        await supabase.from('cabos_obra' as any).insert(caboRows);
-      }
-
+      const potKey = getPotenciaKey({
+        potencia_inversor: projeto.potencia_inversor,
+        inversor_tipo: (projeto as any).inversor?.tipo,
+        marca_inversor: projeto.marca_inversor,
+        qtd_inversores: projeto.qtd_inversores,
+      });
+      if (!potKey) { toast.error('Não foi possível determinar a potência'); setGenerating(false); return; }
+      await generateMaterialList(projeto.id, potKey);
       toast.success(`Lista gerada para potência ${potKey}!`);
       loadList();
     } catch (err: any) {
