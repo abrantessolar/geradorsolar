@@ -543,7 +543,7 @@ export default function ProposalPage() {
                   </div>
 
                   <div className="text-center py-3 border-y border-border">
-                    <p className="text-2xl font-bold text-primary">{formatCurrency(card.totalPrice)}</p>
+                    <p className="text-3xl font-bold text-primary">{formatCurrency(card.totalPrice)}</p>
                   </div>
 
                   {/* Payment tabs */}
