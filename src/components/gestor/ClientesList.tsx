@@ -54,13 +54,14 @@ function calcKwp(qtd?: number | null, potW?: string | null): string {
 const COL_KEYS = ['nome', 'cpf', 'telefone', 'uc', 'concessionaria', 'marca_inv', 'pot_inv', 'qtd_placas', 'marca_placa', 'pot_placa', 'kwp', 'valor', 'forma_pgto', 'instalacao', 'acoes'];
 
 export default function ClientesList({
-  clientes, loading, onPromover, onRefresh, onImport,
+  clientes, loading, onPromover, onRefresh, onImport, showImport = true,
 }: {
   clientes: ClienteBase[];
   loading: boolean;
   onPromover: (c: ClienteBase) => void;
   onRefresh: () => void;
   onImport: () => void;
+  showImport?: boolean;
 }) {
   const [search, setSearch] = useState('');
   const [marcaInversorFilter, setMarcaInversorFilter] = useState('');
@@ -163,9 +164,11 @@ export default function ClientesList({
             <option value="">Todas marcas placa</option>
             {marcasPlaca.map(m => <option key={m} value={m}>{m}</option>)}
           </select>
-          <button onClick={onImport} className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-accent text-accent-foreground hover:bg-accent/80 transition-colors">
-            <Upload className="w-4 h-4" /> Importar JSON
-          </button>
+          {showImport && (
+            <button onClick={onImport} className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-accent text-accent-foreground hover:bg-accent/80 transition-colors">
+              <Upload className="w-4 h-4" /> Importar JSON
+            </button>
+          )}
           <span className="text-xs text-muted-foreground ml-auto">{filtered.length} cliente(s)</span>
         </div>
 

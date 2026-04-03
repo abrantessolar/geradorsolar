@@ -82,7 +82,7 @@ type ObrasSubTab = 'dashboard' | 'projetos' | 'novo' | 'editar' | 'modelos' | 'i
 type ClientesSubTab = 'lista' | 'importar_clientes';
 
 export default function GestorPage() {
-  const { session } = useAuth();
+  const { session, isAdmin } = useAuth();
   const [mainTab, setMainTab] = useState<'obras' | 'clientes'>('obras');
   const [obrasSubTab, setObrasSubTab] = useState<ObrasSubTab>('dashboard');
   const [clientesSubTab, setClientesSubTab] = useState<ClientesSubTab>('lista');
@@ -215,7 +215,7 @@ export default function GestorPage() {
     { key: 'projetos' as const, label: 'Projetos', icon: ClipboardList },
     { key: 'novo' as const, label: 'Novo Projeto', icon: Plus },
     { key: 'modelos' as const, label: 'Modelos', icon: FileText },
-    { key: 'importar' as const, label: 'Importar JSON', icon: Upload },
+    ...(isAdmin ? [{ key: 'importar' as const, label: 'Importar JSON', icon: Upload }] : []),
   ];
 
   return (
@@ -284,6 +284,7 @@ export default function GestorPage() {
               onPromover={handlePromoverParaObra}
               onRefresh={loadClientes}
               onImport={() => setClientesSubTab('importar_clientes')}
+              showImport={isAdmin}
             />
           )}
           {clientesSubTab === 'importar_clientes' && (

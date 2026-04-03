@@ -7,14 +7,14 @@ import { useNewLeadsCount } from '@/components/LeadNotification';
 export default function Layout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { profile, signOut, isAdmin, isOrcamentista, hasGestorAccess } = useAuth();
+  const { profile, signOut, isAdmin, isGestor, isOrcamentista, hasGestorAccess } = useAuth();
   const isProposal = location.pathname.startsWith('/proposta/');
   const newLeadsCount = useNewLeadsCount();
 
   if (isProposal) return <>{children}</>;
 
   const navItems = [
-    { path: '/orcamentos', label: 'Calculadora', icon: Calculator, badge: 0 },
+    ...(!isGestor ? [{ path: '/orcamentos', label: 'Calculadora', icon: Calculator, badge: 0 }] : []),
     ...((isAdmin || isOrcamentista) ? [{ path: '/admin', label: 'Admin', icon: Settings, badge: newLeadsCount }] : []),
     ...(hasGestorAccess ? [{ path: '/gestor', label: 'Gestor', icon: HardHat, badge: 0 }] : []),
   ];

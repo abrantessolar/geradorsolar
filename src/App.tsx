@@ -51,6 +51,7 @@ function AuthRedirect() {
 
   if (session && profile) {
     if (profile.role === 'admin') return <Navigate to="/admin" replace />;
+    if (profile.role === 'gestor') return <Navigate to="/gestor" replace />;
     return <Navigate to="/orcamentos" replace />;
   }
 
@@ -71,7 +72,7 @@ const App = () => (
             <Route path="/proposta/:id" element={<div><SeoNoIndex /><ProposalPage /></div>} />
             <Route path="/reset-password" element={<div><SeoNoIndex /><ResetPasswordPage /></div>} />
             <Route path="/orcamentos" element={
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={['admin', 'orcamentista', 'vendedor']}>
                 <SeoNoIndex /><Layout><CalculatorPage /></Layout>
               </ProtectedRoute>
             } />
