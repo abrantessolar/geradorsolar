@@ -78,7 +78,7 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
         nome_completo: p.nome_completo || '', cpf: p.cpf || '', data_nascimento: p.data_nascimento || '',
         razao_social: p.razao_social || '', cnpj: p.cnpj || '', nome_representante: p.nome_representante || '', cpf_representante: p.cpf_representante || '',
         telefone: p.telefone || '',
-        endereco_completo: p.endereco_completo || '', cep: p.cep || '', bairro: p.bairro || '', cidade: p.cidade || '', estado: p.estado || '',
+        logradouro: p.logradouro || p.endereco_completo || '', complemento: p.complemento || '', cep: p.cep || '', bairro: p.bairro || '', cidade: p.cidade || '', estado: p.estado || '',
         concessionaria: p.concessionaria || 'ELEKTRO',
         placa_id: p.placa_id || '', qtd_placas: p.qtd_placas?.toString() || '',
         inversor_id: p.inversor_id || '', qtd_inversores: p.qtd_inversores?.toString() || '',
