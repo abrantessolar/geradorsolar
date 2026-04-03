@@ -601,9 +601,18 @@ export default function ProposalPage() {
 
         {/* CHART */}
         <section className="solar-card p-4 sm:p-8 space-y-6 print-page print-chart-section">
-          <h2 className="text-xl sm:text-2xl font-bold text-primary flex items-center gap-2">
-            <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 text-secondary" /> Geração vs Consumo — 12 Meses
-          </h2>
+          <div className="text-center space-y-1">
+            <h2 className="text-xl sm:text-2xl font-bold text-primary flex items-center justify-center gap-2">
+              <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 text-secondary" /> Geração vs Consumo — 12 Meses
+            </h2>
+            {lineCards[0] && (
+              <p className="text-sm text-muted-foreground">
+                Geração: <span className="font-semibold text-primary">{formatNumber(lineCards[0].dimensioning.monthlyGeneration, 0)} kWh/mês</span>
+                {' · '}
+                Consumo: <span className="font-semibold">{formatNumber(lineCards[0].dimensioning.avgMonthlyKwh, 0)} kWh/mês</span>
+              </p>
+            )}
+          </div>
           <div className="min-h-[280px] h-72 sm:h-80 print-chart">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData}
