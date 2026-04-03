@@ -303,6 +303,10 @@ export default function GestorPage() {
             </div>
           )}
         </TabsContent>
+
+        <TabsContent value="materiais" className="space-y-4">
+          <MateriaisModule />
+        </TabsContent>
       </Tabs>
 
       {docProjeto && (
