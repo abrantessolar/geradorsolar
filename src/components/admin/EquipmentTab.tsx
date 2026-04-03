@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Plus, Edit2, X, Save, Power, PowerOff } from 'lucide-react';
+import { Plus, Edit2, X, Save, Power, PowerOff, Trash2, SunMedium, Zap } from 'lucide-react';
 import { toast } from 'sonner';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 
 interface EquipmentRow {
   id: string;
@@ -15,10 +16,226 @@ interface EquipmentRow {
   ativo: boolean;
 }
 
+interface PlacaRow {
+  id: string;
+  marca: string;
+  modelo: string;
+  potencia_wp: number;
+  ativo: boolean;
+}
+
+interface InversorRow {
+  id: string;
+  marca: string;
+  modelo: string;
+  potencia_kw: number;
+  tipo: string;
+  ativo: boolean;
+}
+
 const CATEGORIES = ['Ar-condicionado', 'Cozinha', 'Refrigeração', 'Lavanderia', 'Piscina', 'Veículo Elétrico'];
 const TIPO_LABELS: Record<string, string> = { hora: 'Por hora (kW × h × dias)', uso: 'Por uso (kWh fixo)', km: 'Por km' };
 
 export default function EquipmentTab() {
+  return (
+    <div className="space-y-4">
+      <Tabs defaultValue="placas">
+        <TabsList className="w-full justify-start gap-1 bg-transparent p-0">
+          <TabsTrigger value="placas" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-5 py-2 rounded-lg">
+            <SunMedium className="w-4 h-4" /> Placas Solares
+          </TabsTrigger>
+          <TabsTrigger value="inversores" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-5 py-2 rounded-lg">
+            <Zap className="w-4 h-4" /> Inversores
+          </TabsTrigger>
+          <TabsTrigger value="calculadora" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-5 py-2 rounded-lg">
+            Calculadora
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="placas"><PlacasSection /></TabsContent>
+        <TabsContent value="inversores"><InversoresSection /></TabsContent>
+        <TabsContent value="calculadora"><CalculadoraSection /></TabsContent>
+      </Tabs>
+    </div>
+  );
+}
+
+/* ─── PLACAS ─── */
+function PlacasSection() {
+  const [items, setItems] = useState<PlacaRow[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const load = async () => {
+    setLoading(true);
+    const { data } = await supabase.from('equipamentos_placas' as any).select('*').order('marca').order('modelo');
+    setItems((data || []) as any);
+    setLoading(false);
+  };
+  useEffect(() => { load(); }, []);
+
+  const handleDelete = async (item: PlacaRow) => {
+    if (!confirm(`Excluir placa "${item.marca} ${item.modelo} ${item.potencia_wp}Wp"?\n\nAtenção: isso pode afetar projetos que usam esta placa.`)) return;
+    const { error } = await supabase.from('equipamentos_placas' as any).delete().eq('id', item.id);
+    if (error) { toast.error('Erro: ' + error.message); return; }
+    toast.success('Placa excluída!');
+    load();
+  };
+
+  const toggleActive = async (item: PlacaRow) => {
+    await supabase.from('equipamentos_placas' as any).update({ ativo: !item.ativo }).eq('id', item.id);
+    toast.success(item.ativo ? 'Placa desativada' : 'Placa reativada');
+    load();
+  };
+
+  return (
+    <div className="solar-card p-6 space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-bold text-primary">Placas Solares Cadastradas</h2>
+        <span className="text-sm text-muted-foreground">{items.length} cadastradas</span>
+      </div>
+
+      {loading ? (
+        <div className="flex justify-center py-8"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary" /></div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-border text-left text-muted-foreground">
+                <th className="py-2 px-2">Marca</th>
+                <th className="py-2 px-2">Modelo</th>
+                <th className="py-2 px-2">Potência (Wp)</th>
+                <th className="py-2 px-2">Status</th>
+                <th className="py-2 px-2">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {items.map(item => (
+                <tr key={item.id} className={`border-b border-border/50 hover:bg-muted/30 ${!item.ativo ? 'opacity-50' : ''}`}>
+                  <td className="py-2 px-2 font-medium">{item.marca}</td>
+                  <td className="py-2 px-2">{item.modelo}</td>
+                  <td className="py-2 px-2">{item.potencia_wp} Wp</td>
+                  <td className="py-2 px-2">
+                    <span className={`solar-badge text-xs ${item.ativo ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                      {item.ativo ? 'Ativo' : 'Inativo'}
+                    </span>
+                  </td>
+                  <td className="py-2 px-2">
+                    <div className="flex gap-1">
+                      <button onClick={() => toggleActive(item)}
+                        className={`p-1 rounded ${item.ativo ? 'text-destructive hover:bg-destructive/10' : 'text-green-700 hover:bg-green-50'}`}
+                        title={item.ativo ? 'Desativar' : 'Reativar'}>
+                        {item.ativo ? <PowerOff className="w-4 h-4" /> : <Power className="w-4 h-4" />}
+                      </button>
+                      <button onClick={() => handleDelete(item)} className="p-1 rounded text-destructive/60 hover:text-destructive hover:bg-destructive/10" title="Excluir">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+              {items.length === 0 && (
+                <tr><td colSpan={5} className="py-8 text-center text-muted-foreground">Nenhuma placa cadastrada</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─── INVERSORES ─── */
+function InversoresSection() {
+  const [items, setItems] = useState<InversorRow[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const load = async () => {
+    setLoading(true);
+    const { data } = await supabase.from('equipamentos_inversores' as any).select('*').order('marca').order('modelo');
+    setItems((data || []) as any);
+    setLoading(false);
+  };
+  useEffect(() => { load(); }, []);
+
+  const handleDelete = async (item: InversorRow) => {
+    if (!confirm(`Excluir inversor "${item.marca} ${item.modelo} ${item.potencia_kw}kW (${item.tipo})"?\n\nAtenção: isso pode afetar projetos que usam este inversor.`)) return;
+    const { error } = await supabase.from('equipamentos_inversores' as any).delete().eq('id', item.id);
+    if (error) { toast.error('Erro: ' + error.message); return; }
+    toast.success('Inversor excluído!');
+    load();
+  };
+
+  const toggleActive = async (item: InversorRow) => {
+    await supabase.from('equipamentos_inversores' as any).update({ ativo: !item.ativo }).eq('id', item.id);
+    toast.success(item.ativo ? 'Inversor desativado' : 'Inversor reativado');
+    load();
+  };
+
+  return (
+    <div className="solar-card p-6 space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-bold text-primary">Inversores Cadastrados</h2>
+        <span className="text-sm text-muted-foreground">{items.length} cadastrados</span>
+      </div>
+
+      {loading ? (
+        <div className="flex justify-center py-8"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary" /></div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-border text-left text-muted-foreground">
+                <th className="py-2 px-2">Marca</th>
+                <th className="py-2 px-2">Modelo</th>
+                <th className="py-2 px-2">Potência (kW)</th>
+                <th className="py-2 px-2">Tipo</th>
+                <th className="py-2 px-2">Status</th>
+                <th className="py-2 px-2">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {items.map(item => (
+                <tr key={item.id} className={`border-b border-border/50 hover:bg-muted/30 ${!item.ativo ? 'opacity-50' : ''}`}>
+                  <td className="py-2 px-2 font-medium">{item.marca}</td>
+                  <td className="py-2 px-2">{item.modelo}</td>
+                  <td className="py-2 px-2">{item.potencia_kw} kW</td>
+                  <td className="py-2 px-2">
+                    <span className={`solar-badge text-xs ${item.tipo === 'Micro' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'}`}>
+                      {item.tipo}
+                    </span>
+                  </td>
+                  <td className="py-2 px-2">
+                    <span className={`solar-badge text-xs ${item.ativo ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                      {item.ativo ? 'Ativo' : 'Inativo'}
+                    </span>
+                  </td>
+                  <td className="py-2 px-2">
+                    <div className="flex gap-1">
+                      <button onClick={() => toggleActive(item)}
+                        className={`p-1 rounded ${item.ativo ? 'text-destructive hover:bg-destructive/10' : 'text-green-700 hover:bg-green-50'}`}
+                        title={item.ativo ? 'Desativar' : 'Reativar'}>
+                        {item.ativo ? <PowerOff className="w-4 h-4" /> : <Power className="w-4 h-4" />}
+                      </button>
+                      <button onClick={() => handleDelete(item)} className="p-1 rounded text-destructive/60 hover:text-destructive hover:bg-destructive/10" title="Excluir">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+              {items.length === 0 && (
+                <tr><td colSpan={6} className="py-8 text-center text-muted-foreground">Nenhum inversor cadastrado</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─── CALCULADORA (original) ─── */
+function CalculadoraSection() {
   const [items, setItems] = useState<EquipmentRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -33,7 +250,6 @@ export default function EquipmentTab() {
     setItems((data as any[]) || []);
     setLoading(false);
   };
-
   useEffect(() => { load(); }, []);
 
   const openCreate = () => {
@@ -45,11 +261,8 @@ export default function EquipmentTab() {
   const openEdit = (item: EquipmentRow) => {
     setEditItem(item);
     setForm({
-      nome: item.nome,
-      categoria: item.categoria,
-      potencia_kw: String(item.potencia_kw),
-      tipo_medicao: item.tipo_medicao,
-      dias_mes_padrao: String(item.dias_mes_padrao),
+      nome: item.nome, categoria: item.categoria, potencia_kw: String(item.potencia_kw),
+      tipo_medicao: item.tipo_medicao, dias_mes_padrao: String(item.dias_mes_padrao),
       horas_dia_padrao: item.horas_dia_padrao != null ? String(item.horas_dia_padrao) : '',
       fator_servico: String(Math.round((item.fator_servico || 0.80) * 100)),
     });
@@ -60,15 +273,11 @@ export default function EquipmentTab() {
     if (!form.nome || !form.potencia_kw) { toast.error('Preencha nome e potência.'); return; }
     setSaving(true);
     const row = {
-      nome: form.nome,
-      categoria: form.categoria,
-      potencia_kw: parseFloat(form.potencia_kw),
-      tipo_medicao: form.tipo_medicao,
-      dias_mes_padrao: parseInt(form.dias_mes_padrao) || 30,
+      nome: form.nome, categoria: form.categoria, potencia_kw: parseFloat(form.potencia_kw),
+      tipo_medicao: form.tipo_medicao, dias_mes_padrao: parseInt(form.dias_mes_padrao) || 30,
       horas_dia_padrao: form.horas_dia_padrao ? parseFloat(form.horas_dia_padrao) : null,
       fator_servico: Math.max(0.10, Math.min(1.00, (parseInt(form.fator_servico) || 80) / 100)),
     };
-
     if (editItem) {
       await supabase.from('equipamentos_calculadora').update({ ...row, atualizado_em: new Date().toISOString() }).eq('id', editItem.id);
       toast.success('Equipamento atualizado!');
@@ -98,7 +307,6 @@ export default function EquipmentTab() {
         </button>
       </div>
 
-      {/* Filter */}
       <div className="flex flex-wrap gap-2">
         <button onClick={() => setFilter('all')}
           className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${filter === 'all' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/70'}`}>
@@ -167,7 +375,6 @@ export default function EquipmentTab() {
         </div>
       )}
 
-      {/* Form modal */}
       {showForm && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center" onClick={() => setShowForm(false)}>
           <div className="bg-card rounded-xl p-6 max-w-md w-full mx-4 space-y-4" onClick={e => e.stopPropagation()}>
