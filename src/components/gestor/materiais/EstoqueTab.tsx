@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { Plus, Minus, RotateCcw } from 'lucide-react';
+import { Plus, RotateCcw, Package } from 'lucide-react';
 import { CATEGORIA_ICONS } from './types';
+import EntradaLoteModal from './EntradaLoteModal';
 
 type EstoqueRow = {
   id: string;
@@ -16,14 +17,28 @@ type EstoqueRow = {
   fornecedor_nome: string | null;
 };
 
+type MovRow = {
+  id: string;
+  material_nome: string;
+  tipo: string;
+  quantidade: number;
+  obra_nome: string | null;
+  observacao: string | null;
+  criado_em: string;
+};
+
 export default function EstoqueTab() {
   const { session } = useAuth();
   const [items, setItems] = useState<EstoqueRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [catFilter, setCatFilter] = useState('');
-  const [movModal, setMovModal] = useState<{ materialId: string; nome: string; tipo: 'entrada' | 'saida' | 'retorno' } | null>(null);
+  const [movModal, setMovModal] = useState<{ materialId: string; nome: string; tipo: 'entrada' | 'retorno' } | null>(null);
   const [movQtd, setMovQtd] = useState('');
   const [movObs, setMovObs] = useState('');
+  const [showEntradaLote, setShowEntradaLote] = useState(false);
+  const [showHistorico, setShowHistorico] = useState(false);
+  const [historico, setHistorico] = useState<MovRow[]>([]);
+  const [loadingHist, setLoadingHist] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -47,12 +62,31 @@ export default function EstoqueTab() {
 
   useEffect(() => { load(); }, []);
 
+  const loadHistorico = async () => {
+    setLoadingHist(true);
+    const { data } = await supabase
+      .from('movimentacoes_estoque' as any)
+      .select('*, materiais(nome), projetos(nome_completo, razao_social)')
+      .order('criado_em', { ascending: false })
+      .limit(100);
+    
+    setHistorico((data || []).map((m: any) => ({
+      id: m.id,
+      material_nome: m.materiais?.nome || '—',
+      tipo: m.tipo,
+      quantidade: m.quantidade,
+      obra_nome: m.projetos?.nome_completo || m.projetos?.razao_social || null,
+      observacao: m.observacao,
+      criado_em: m.criado_em,
+    })));
+    setLoadingHist(false);
+  };
+
   const handleMovimentacao = async () => {
     if (!movModal || !movQtd || !session?.user?.id) return;
     const qtd = parseInt(movQtd);
     if (qtd <= 0) { toast.error('Quantidade inválida'); return; }
 
-    // Register movement
     await supabase.from('movimentacoes_estoque' as any).insert({
       material_id: movModal.materialId,
       tipo: movModal.tipo,
@@ -61,16 +95,13 @@ export default function EstoqueTab() {
       usuario_id: session.user.id,
     });
 
-    // Update stock
     const item = items.find(i => i.material_id === movModal.materialId);
     if (item) {
-      const newQtd = movModal.tipo === 'saida'
-        ? Math.max(0, item.quantidade_atual - qtd)
-        : item.quantidade_atual + qtd;
+      const newQtd = item.quantidade_atual + qtd;
       await supabase.from('estoque' as any).update({ quantidade_atual: newQtd, atualizado_em: new Date().toISOString() }).eq('material_id', movModal.materialId);
     }
 
-    toast.success(`${movModal.tipo === 'entrada' ? 'Entrada' : movModal.tipo === 'saida' ? 'Saída' : 'Retorno'} registrado!`);
+    toast.success(`${movModal.tipo === 'entrada' ? 'Entrada' : 'Retorno'} registrado!`);
     setMovModal(null);
     setMovQtd('');
     setMovObs('');
@@ -90,11 +121,67 @@ export default function EstoqueTab() {
           <option value="">Todas categorias</option>
           {categorias.map(c => <option key={c} value={c}>{c}</option>)}
         </select>
+        <button onClick={() => setShowEntradaLote(true)} className="px-4 py-2 rounded-lg text-sm font-medium bg-primary text-primary-foreground flex items-center gap-2">
+          <Package className="w-4 h-4" /> Entrada em Lote
+        </button>
+        <button
+          onClick={() => { setShowHistorico(!showHistorico); if (!showHistorico) loadHistorico(); }}
+          className="px-4 py-2 rounded-lg text-sm bg-muted hover:bg-muted/70 flex items-center gap-2"
+        >
+          📋 {showHistorico ? 'Ocultar' : 'Ver'} Histórico
+        </button>
         <div className="ml-auto solar-card px-4 py-2">
           <span className="text-sm text-muted-foreground">Valor total em estoque: </span>
           <span className="font-bold text-primary">R$ {totalValor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
         </div>
       </div>
+
+      {/* Histórico de movimentações */}
+      {showHistorico && (
+        <div className="solar-card p-4 space-y-2">
+          <h3 className="text-sm font-bold">Últimas Movimentações</h3>
+          {loadingHist ? (
+            <p className="text-sm text-muted-foreground">Carregando...</p>
+          ) : historico.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Nenhuma movimentação registrada.</p>
+          ) : (
+            <div className="max-h-64 overflow-y-auto">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="border-b text-left text-muted-foreground">
+                    <th className="py-1 px-2">Material</th>
+                    <th className="py-1 px-2">Tipo</th>
+                    <th className="py-1 px-2 text-center">Qtd</th>
+                    <th className="py-1 px-2">Obra/Cliente</th>
+                    <th className="py-1 px-2">Data</th>
+                    <th className="py-1 px-2">Obs</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {historico.map(m => (
+                    <tr key={m.id} className="border-b border-border/30">
+                      <td className="py-1 px-2 font-medium">{m.material_nome}</td>
+                      <td className="py-1 px-2">
+                        <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
+                          m.tipo === 'entrada' ? 'bg-primary/10 text-primary' :
+                          m.tipo === 'saida' ? 'bg-destructive/10 text-destructive' :
+                          'bg-accent text-accent-foreground'
+                        }`}>
+                          {m.tipo === 'entrada' ? '➕ Entrada' : m.tipo === 'saida' ? '➖ Saída' : '↩️ Retorno'}
+                        </span>
+                      </td>
+                      <td className="py-1 px-2 text-center">{m.quantidade}</td>
+                      <td className="py-1 px-2">{m.obra_nome || <span className="text-muted-foreground">—</span>}</td>
+                      <td className="py-1 px-2 text-muted-foreground">{new Date(m.criado_em).toLocaleDateString('pt-BR')}</td>
+                      <td className="py-1 px-2 text-muted-foreground max-w-[150px] truncate">{m.observacao || '—'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="solar-card overflow-hidden">
         <table className="w-full text-sm">
@@ -129,15 +216,11 @@ export default function EstoqueTab() {
                   <td className="py-3 px-4">
                     <div className="flex gap-1">
                       <button onClick={() => setMovModal({ materialId: item.material_id, nome: item.material_nome, tipo: 'entrada' })}
-                        className="px-2 py-1 rounded text-xs font-medium bg-emerald-100 text-emerald-700 hover:bg-emerald-200" title="Entrada">
+                        className="px-2 py-1 rounded text-xs font-medium bg-primary/10 text-primary hover:bg-primary/20" title="Entrada">
                         <Plus className="w-3 h-3 inline" /> Entrada
                       </button>
-                      <button onClick={() => setMovModal({ materialId: item.material_id, nome: item.material_nome, tipo: 'saida' })}
-                        className="px-2 py-1 rounded text-xs font-medium bg-red-100 text-red-700 hover:bg-red-200" title="Saída">
-                        <Minus className="w-3 h-3 inline" /> Saída
-                      </button>
                       <button onClick={() => setMovModal({ materialId: item.material_id, nome: item.material_nome, tipo: 'retorno' })}
-                        className="px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-700 hover:bg-blue-200" title="Retorno">
+                        className="px-2 py-1 rounded text-xs font-medium bg-accent text-accent-foreground hover:bg-accent/80" title="Retorno">
                         <RotateCcw className="w-3 h-3 inline" /> Retorno
                       </button>
                     </div>
@@ -152,12 +235,12 @@ export default function EstoqueTab() {
         </table>
       </div>
 
-      {/* Modal de movimentação */}
+      {/* Modal de movimentação individual (entrada/retorno apenas) */}
       {movModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setMovModal(null)}>
           <div className="bg-background rounded-xl shadow-xl max-w-md w-full p-6 space-y-4" onClick={e => e.stopPropagation()}>
             <h3 className="text-lg font-bold">
-              {movModal.tipo === 'entrada' ? '➕ Entrada' : movModal.tipo === 'saida' ? '➖ Saída' : '↩️ Retorno'}
+              {movModal.tipo === 'entrada' ? '➕ Entrada' : '↩️ Retorno'}
             </h3>
             <p className="text-sm text-muted-foreground">{movModal.nome}</p>
             <input className="solar-input w-full" type="number" min="1" placeholder="Quantidade" value={movQtd} onChange={e => setMovQtd(e.target.value)} autoFocus />
@@ -168,6 +251,11 @@ export default function EstoqueTab() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Modal de entrada em lote */}
+      {showEntradaLote && (
+        <EntradaLoteModal onClose={() => setShowEntradaLote(false)} onDone={load} />
       )}
     </div>
   );

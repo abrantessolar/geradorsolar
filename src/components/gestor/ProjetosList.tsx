@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import type { Projeto } from '@/pages/GestorPage';
-import { Edit2, FileText, Snowflake, Image as ImageIcon, CheckCircle, ArrowUpDown, ArrowUp, ArrowDown, GripVertical, Trash2, ClipboardList } from 'lucide-react';
+import { Edit2, FileText, Snowflake, Image as ImageIcon, CheckCircle, ArrowUpDown, ArrowUp, ArrowDown, GripVertical, Trash2, ClipboardList, Package } from 'lucide-react';
 import WhatsAppLink from './WhatsAppLink';
 import InstaladorSelect from './InstaladorSelect';
 import CongelarModal from './CongelarModal';
@@ -8,6 +8,7 @@ import ObraConcluidaModal from './ObraConcluidaModal';
 import LayoutUploadModal from './LayoutUploadModal';
 import DeleteConfirmModal from './DeleteConfirmModal';
 import ListaMateriaisObraModal from './materiais/ListaMateriaisObraModal';
+import RetirarMaterialModal from './materiais/RetirarMaterialModal';
 import { useDraggableColumns } from '@/hooks/useDraggableColumns';
 
 function daysSince(dateStr?: string): number {
@@ -39,6 +40,7 @@ export default function ProjetosList({ projetos, loading, onEdit, onDocumentos, 
   const [concluidaProjeto, setConcluidaProjeto] = useState<Projeto | null>(null);
   const [deleteProjeto, setDeleteProjeto] = useState<Projeto | null>(null);
   const [materiaisProjeto, setMateriaisProjeto] = useState<Projeto | null>(null);
+  const [retirarProjeto, setRetirarProjeto] = useState<Projeto | null>(null);
   const [tempoSort, setTempoSort] = useState<'asc' | 'desc' | null>(null);
 
   const { order, onDragStart, onDragOver, onDragEnd, dragIdx } = useDraggableColumns('gestor-obras-cols', COL_KEYS);
@@ -113,8 +115,22 @@ export default function ProjetosList({ projetos, loading, onEdit, onDocumentos, 
       case 'telefone': return <td key={key} className="py-2 px-2 text-xs"><WhatsAppLink phone={p.telefone} /></td>;
       case 'tempo': return <td key={key} className={`py-2 px-2 text-xs font-medium ${days > 60 ? 'text-destructive' : ''}`}>{p.data_fechamento ? `${days}d` : '—'}</td>;
       case 'concessionaria': return <td key={key} className="py-2 px-2 text-xs">{p.concessionaria}</td>;
-      case 'marca_inv': return <td key={key} className="py-2 px-2 text-xs">{p.marca_inversor || '—'}</td>;
-      case 'pot_inv': return <td key={key} className="py-2 px-2 text-xs">{p.potencia_inversor || '—'}</td>;
+      case 'marca_inv': return (
+        <td key={key} className="py-2 px-2 text-xs">
+          {p.marca_inversor || p.inversor?.marca || '—'}
+          {p.inversor?.tipo?.toUpperCase() === 'MICRO' && (
+            <span className="ml-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-accent text-accent-foreground">MICRO</span>
+          )}
+        </td>
+      );
+      case 'pot_inv': return (
+        <td key={key} className="py-2 px-2 text-xs">
+          {p.inversor?.tipo?.toUpperCase() === 'MICRO'
+            ? `${p.qtd_inversores || 1}x ${p.inversor?.potencia_kw || p.potencia_inversor || '—'}kW`
+            : (p.potencia_inversor || p.inversor?.potencia_kw || '—')
+          }
+        </td>
+      );
       case 'qtd_placas': return <td key={key} className="py-2 px-2 text-xs">{p.qtd_placas || '—'}</td>;
       case 'marca_placa': return <td key={key} className="py-2 px-2 text-xs">{p.marca_placa || '—'}</td>;
       case 'pot_placa': return <td key={key} className="py-2 px-2 text-xs">{p.potencia_placa || '—'}</td>;
@@ -126,6 +142,7 @@ export default function ProjetosList({ projetos, loading, onEdit, onDocumentos, 
             <button onClick={() => onEdit(p.id)} className="text-primary hover:text-primary/80" title="Editar"><Edit2 className="w-4 h-4" /></button>
             <button onClick={() => onDocumentos(p)} className="text-primary hover:text-primary/80" title="Documentos"><FileText className="w-4 h-4" /></button>
             <button onClick={() => setMateriaisProjeto(p)} className="text-primary hover:text-primary/80" title="Lista de Materiais"><ClipboardList className="w-4 h-4" /></button>
+            <button onClick={() => setRetirarProjeto(p)} className="text-primary hover:text-primary/80" title="Retirar Material"><Package className="w-4 h-4" /></button>
             <button onClick={() => setCongelarId(p.congelado ? null : p.id)} className="text-primary hover:text-primary/80" title={p.congelado ? 'Já congelada' : 'Congelar'}><Snowflake className="w-4 h-4" /></button>
             <button onClick={() => setLayoutProjeto(p)} className={`${p.layout_url ? 'text-accent-foreground' : 'text-muted-foreground'} hover:text-primary`} title="Layout"><ImageIcon className="w-4 h-4" /></button>
             <button onClick={() => setConcluidaProjeto(p)} className="text-primary hover:text-primary/80" title="Obra Concluída"><CheckCircle className="w-4 h-4" /></button>
@@ -201,6 +218,9 @@ export default function ProjetosList({ projetos, loading, onEdit, onDocumentos, 
       )}
       {materiaisProjeto && (
         <ListaMateriaisObraModal projeto={materiaisProjeto} onClose={() => setMateriaisProjeto(null)} />
+      )}
+      {retirarProjeto && (
+        <RetirarMaterialModal projeto={retirarProjeto} onClose={() => setRetirarProjeto(null)} onDone={onRefresh} />
       )}
     </div>
   );

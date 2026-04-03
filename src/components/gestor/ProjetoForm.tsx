@@ -121,6 +121,8 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
     if (!session?.user?.id) { toast.error('Sessão expirada'); return; }
     setSaving(true);
     const localEntregaFinal = form.local_entrega === 'OUTRO' ? form.local_entrega_outro : form.local_entrega;
+    const selectedPlaca = placas.find(p => p.id === form.placa_id);
+    const selectedInversor = inversores.find(i => i.id === form.inversor_id);
     const row: any = {
       usuario_id: session.user.id,
       tipo_pessoa: form.tipo_pessoa,
@@ -144,6 +146,10 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
       qtd_placas: form.qtd_placas ? parseInt(form.qtd_placas) : null,
       inversor_id: form.inversor_id || null,
       qtd_inversores: form.qtd_inversores ? parseInt(form.qtd_inversores) : null,
+      marca_placa: selectedPlaca?.marca || null,
+      potencia_placa: selectedPlaca ? String(selectedPlaca.potencia_wp) : null,
+      marca_inversor: selectedInversor?.marca || null,
+      potencia_inversor: selectedInversor ? String(selectedInversor.potencia_kw) : null,
       geracao_estimada_kwh: form.geracao_estimada_kwh ? parseFloat(form.geracao_estimada_kwh) : null,
       sistema: form.sistema || null,
       nome_planta: form.nome_planta || null,
