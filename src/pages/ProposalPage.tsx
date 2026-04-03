@@ -20,7 +20,7 @@ import Diferenciais from '@/components/Diferenciais';
 import ProposalPortfolio from '@/components/ProposalPortfolio';
 
 
-const LINES = ['essencial', 'excellence', 'premium'] as const;
+const LINES = ['excellence', 'premium'] as const;
 const PERIOD_OPTIONS = [5, 10, 15, 20, 25];
 
 export default function ProposalPage() {
