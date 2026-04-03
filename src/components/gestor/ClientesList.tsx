@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Eye, Search, ArrowUpRight, Upload, Edit2, GripVertical } from 'lucide-react';
+import { Eye, Search, ArrowUpRight, Upload, Edit2, GripVertical, Trash2 } from 'lucide-react';
+import DeleteConfirmModal from './DeleteConfirmModal';
 import WhatsAppLink from './WhatsAppLink';
 import ClienteEditModal from './ClienteEditModal';
 
