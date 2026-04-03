@@ -30,10 +30,10 @@ export default function InstaladorSelect({ projetoId, currentValue, onDone }: {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  const select = async (nome: string) => {
+  const select = async (nome: string | null) => {
     const { error } = await supabase.from('projetos' as any).update({ instalador: nome }).eq('id', projetoId);
     if (error) toast.error(error.message);
-    else { toast.success(`Instalador: ${nome}`); onDone(); }
+    else { toast.success(nome ? `Instalador: ${nome}` : 'Instalador removido'); onDone(); }
     setOpen(false);
   };
 
@@ -59,7 +59,13 @@ export default function InstaladorSelect({ projetoId, currentValue, onDone }: {
         )}
       </button>
       {open && (
-        <div className="absolute z-50 bg-background border border-border rounded-lg shadow-lg py-1 min-w-[160px] mt-1" style={position}>
+        <div className="absolute z-50 bg-background border border-border rounded-lg shadow-lg py-1 min-w-[180px] mt-1" style={position}>
+          {currentValue && (
+            <button onClick={() => select(null)}
+              className="w-full text-left px-3 py-1.5 text-sm hover:bg-muted text-destructive border-b border-border mb-1">
+              — Remover instalador
+            </button>
+          )}
           {instaladores.map(i => (
             <button key={i.id} onClick={() => select(i.nome)}
               className={`w-full text-left px-3 py-1.5 text-sm hover:bg-muted ${currentValue === i.nome ? 'bg-primary/10 font-medium' : ''}`}>
