@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { ChevronLeft, ChevronRight, Plus, X, Save } from 'lucide-react';
+import { getPotenciaKey, generateMaterialList, hasExistingList } from './materiais/generateMaterialList';
 
 const STATUS_LIST = ['Vendido', 'Equipamento Comprado', 'Entregue', 'Em Instalação', 'Instalado', 'Projeto Submetido', 'Homologado'];
 const CONC_LIST = ['ELEKTRO', 'ENERGISA', 'COPEL', 'OUTRA'];
@@ -201,6 +202,32 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
     if (error) { toast.error('Erro ao salvar: ' + error.message); return; }
     toast.success(projetoId ? 'Projeto atualizado!' : 'Projeto criado!');
     
+    // Auto-generate materials list
+    if (savedId && selectedInversor) {
+      const potKey = getPotenciaKey({
+        potencia_inversor: String(selectedInversor.potencia_kw),
+        inversor_tipo: selectedInversor.tipo,
+        marca_inversor: selectedInversor.marca,
+        qtd_inversores: form.qtd_inversores ? parseInt(form.qtd_inversores) : 1,
+      });
+      if (potKey) {
+        const existing = await hasExistingList(savedId);
+        if (!existing) {
+          await generateMaterialList(savedId, potKey);
+          toast.success(`Lista de materiais gerada (${potKey})!`);
+        } else if (projetoId) {
+          // Editing: check if inversor/potência changed - ask to regenerate
+          const shouldRegenerate = window.confirm(
+            'O inversor/potência foi alterado. Deseja regenerar a lista de materiais?'
+          );
+          if (shouldRegenerate) {
+            await generateMaterialList(savedId, potKey);
+            toast.success(`Lista de materiais regenerada (${potKey})!`);
+          }
+        }
+      }
+    }
+
     if (savedId) {
       supabase.functions.invoke('sync-to-sheets', {
         body: { project_id: savedId, sync_all: false },
