@@ -183,7 +183,7 @@ export default function ClientesList({
         <div className="flex flex-wrap items-center gap-3">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <input className="solar-input pl-9 max-w-xs" placeholder="Buscar nome, CPF ou UC..." value={search} onChange={e => setSearch(e.target.value)} />
+            <input className="solar-input pl-9 max-w-xs" placeholder="Buscar por nome, CPF, UC ou endereço..." value={search} onChange={e => setSearch(e.target.value)} />
           </div>
           <select className="solar-input max-w-[180px]" value={marcaInversorFilter} onChange={e => setMarcaInversorFilter(e.target.value)}>
             <option value="">Todas marcas inversor</option>
