@@ -326,7 +326,7 @@ export default function ClientesList({
                 );
               })}
               {selectedCliente.observacoes && (
-                <div className="col-span-2">
+                <div className="col-span-1 sm:col-span-2">
                   <p className="text-xs text-muted-foreground">Observações</p>
                   <p className="font-medium whitespace-pre-wrap">{selectedCliente.observacoes}</p>
                 </div>
