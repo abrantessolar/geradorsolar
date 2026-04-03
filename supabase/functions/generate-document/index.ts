@@ -137,7 +137,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { projeto_id, tipo_documento } = await req.json();
+    const { projeto_id, tipo_documento, formato = "pdf" } = await req.json();
     if (!projeto_id || !tipo_documento) {
       return new Response(JSON.stringify({ error: "projeto_id e tipo_documento são obrigatórios" }), {
         status: 400,
