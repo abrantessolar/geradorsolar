@@ -156,10 +156,6 @@ export default function ProdutosTab() {
           {CATEGORIAS.map(c => <option key={c} value={c}>{CATEGORIA_ICONS[c]} {c}</option>)}
         </select>
         <div className="ml-auto flex gap-2">
-          <button onClick={handleImportPadrao}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-accent text-accent-foreground">
-            <Upload className="w-4 h-4" /> Importar Tabela Padrão
-          </button>
           <button onClick={() => { setShowForm(true); setEditId(null); setForm({ nome: '', categoria: 'Outros', fornecedor_id: '', preco_unitario: '', unidade: 'unidade' }); setQtdPadrao({}); }}
             className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-primary text-primary-foreground">
             <Plus className="w-4 h-4" /> Novo Material
