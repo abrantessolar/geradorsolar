@@ -37,7 +37,7 @@ function FormatDropdown({ tipo, generating, onGenerate }: {
   return (
     <div ref={ref} className="relative">
       <button
-        onClick={(e) => { e.stopPropagation(); setOpen(!open); }}
+        onClick={toggleOpen}
         disabled={!!generating}
         className="flex items-center gap-1 px-2 py-1 rounded-md hover:bg-muted transition-colors"
       >
@@ -51,7 +51,7 @@ function FormatDropdown({ tipo, generating, onGenerate }: {
         )}
       </button>
       {open && !generating && (
-        <div className="absolute right-0 top-full mt-1 bg-popover border border-border rounded-md shadow-lg z-10 min-w-[160px]">
+        <div className="absolute z-10 min-w-[160px] bg-popover border border-border rounded-md shadow-lg mt-1" style={position}>
           <button
             onClick={() => { setOpen(false); onGenerate(tipo, 'pdf'); }}
             className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted transition-colors text-left"
