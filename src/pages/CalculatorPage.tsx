@@ -831,7 +831,7 @@ export default function CalculatorPage() {
       {/* System Cards */}
       <section className="space-y-4 animate-fade-in-up" style={{ animationDelay: '500ms' }}>
         <h2 className="text-2xl font-bold text-primary text-center">Sistemas Disponíveis</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
           {systemCards.map((card, idx) => {
             const isPremium = card.line === 'premium';
             const maxP = card.maxPanels;
