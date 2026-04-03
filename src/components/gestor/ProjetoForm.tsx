@@ -47,7 +47,7 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
     nome_completo: '', cpf: '', data_nascimento: '',
     razao_social: '', cnpj: '', nome_representante: '', cpf_representante: '',
     telefone: '',
-    endereco_completo: '', cep: '', bairro: '', cidade: '', estado: '',
+    logradouro: '', complemento: '', cep: '', bairro: '', cidade: '', estado: '',
     concessionaria: 'ELEKTRO',
     placa_id: '', qtd_placas: '',
     inversor_id: '', qtd_inversores: '',
@@ -78,7 +78,7 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
         nome_completo: p.nome_completo || '', cpf: p.cpf || '', data_nascimento: p.data_nascimento || '',
         razao_social: p.razao_social || '', cnpj: p.cnpj || '', nome_representante: p.nome_representante || '', cpf_representante: p.cpf_representante || '',
         telefone: p.telefone || '',
-        endereco_completo: p.endereco_completo || '', cep: p.cep || '', bairro: p.bairro || '', cidade: p.cidade || '', estado: p.estado || '',
+        logradouro: p.logradouro || p.endereco_completo || '', complemento: p.complemento || '', cep: p.cep || '', bairro: p.bairro || '', cidade: p.cidade || '', estado: p.estado || '',
         concessionaria: p.concessionaria || 'ELEKTRO',
         placa_id: p.placa_id || '', qtd_placas: p.qtd_placas?.toString() || '',
         inversor_id: p.inversor_id || '', qtd_inversores: p.qtd_inversores?.toString() || '',
@@ -108,7 +108,7 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
       const data = await res.json();
       if (data.erro) return;
       if (prefix === 'main') {
-        setForm(f => ({ ...f, endereco_completo: `${data.logradouro || ''}`, bairro: data.bairro || '', cidade: data.localidade || '', estado: data.uf || '' }));
+        setForm(f => ({ ...f, logradouro: data.logradouro || '', bairro: data.bairro || '', cidade: data.localidade || '', estado: data.uf || '' }));
       } else {
         setForm(f => ({ ...f, [`${prefix}_endereco`]: `${data.logradouro || ''}, ${data.bairro || ''}, ${data.localidade || ''}-${data.uf || ''}` }));
       }
@@ -130,7 +130,9 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
       nome_representante: form.nome_representante || null,
       cpf_representante: form.cpf_representante || null,
       telefone: form.telefone || null,
-      endereco_completo: form.endereco_completo || null,
+      logradouro: form.logradouro || null,
+      complemento: form.complemento || null,
+      endereco_completo: [form.logradouro, form.bairro, form.cidade && form.estado ? `${form.cidade}/${form.estado}` : form.cidade || form.estado, form.cep ? `CEP: ${form.cep}` : ''].filter(Boolean).join(', ') || null,
       cep: form.cep || null,
       bairro: form.bairro || null,
       cidade: form.cidade || null,
@@ -274,8 +276,9 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
           <h3 className="text-sm font-semibold">Endereço (conforme conta de luz)</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div><label className={labelClass}>CEP</label><input className={inputClass} value={form.cep} onChange={e => { set('cep', maskCep(e.target.value)); }} onBlur={() => fetchCep(form.cep, 'main')} placeholder="00000-000" /></div>
-            <div className="md:col-span-2"><label className={labelClass}>Logradouro</label><input className={inputClass} value={form.endereco_completo} onChange={e => set('endereco_completo', e.target.value)} /></div>
+            <div className="md:col-span-2"><label className={labelClass}>Logradouro (Rua + Número)</label><input className={inputClass} value={form.logradouro} onChange={e => set('logradouro', e.target.value)} placeholder="Rua das Flores, 123" /></div>
             <div><label className={labelClass}>Bairro</label><input className={inputClass} value={form.bairro} onChange={e => set('bairro', e.target.value)} /></div>
+            <div><label className={labelClass}>Complemento</label><input className={inputClass} value={form.complemento} onChange={e => set('complemento', e.target.value)} placeholder="Apto, Bloco (opcional)" /></div>
             <div><label className={labelClass}>Cidade</label><input className={inputClass} value={form.cidade} onChange={e => set('cidade', e.target.value)} /></div>
             <div><label className={labelClass}>Estado</label><input className={inputClass} value={form.estado} onChange={e => set('estado', e.target.value)} placeholder="UF" /></div>
           </div>

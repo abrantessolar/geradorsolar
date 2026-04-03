@@ -30,6 +30,8 @@ export type Projeto = {
   cpf_representante?: string;
   telefone?: string;
   endereco_completo?: string;
+  logradouro?: string;
+  complemento?: string;
   cep?: string;
   bairro?: string;
   cidade?: string;
