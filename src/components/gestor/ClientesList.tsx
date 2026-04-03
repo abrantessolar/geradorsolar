@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import { Eye, Search, ArrowUpRight, Upload, Edit2, GripVertical } from 'lucide-react';
 import WhatsAppLink from './WhatsAppLink';
 import ClienteEditModal from './ClienteEditModal';
-import { parsePaineis, parseInversor } from './equipmentParser';
+
 import { useDraggableColumns } from '@/hooks/useDraggableColumns';
 
 export type ClienteBase = {
