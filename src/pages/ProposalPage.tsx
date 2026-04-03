@@ -577,8 +577,8 @@ export default function ProposalPage() {
                         </p>
                       </div>
                     ) : (
-                      <div className="space-y-1 text-xs max-h-48 overflow-y-auto">
-                        <p className="font-semibold text-muted-foreground print-only-block hidden">Cartão:</p>
+                      <div className="space-y-1 text-sm max-h-48 overflow-y-auto">
+                        <p className="font-bold text-muted-foreground print-only-block hidden">Cartão:</p>
                         {Object.entries(card.cardInstallments)
                           .sort(([a], [b]) => Number(b) - Number(a))
                           .map(([n, v]) => (
