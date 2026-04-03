@@ -160,6 +160,10 @@ export default function GestorPage() {
       satisfacao: null,
       origem: 'promovido_de_obra',
       projeto_id: p.id,
+      telefone_2: null,
+      telefone_3: null,
+      observacoes: p.objecoes || null,
+      kwp: p.qtd_placas && p.potencia_placa ? (p.qtd_placas * parseFloat(p.potencia_placa || '0')) / 1000 : null,
     }));
 
     setClientes([...fromBase, ...fromProjetos]);
