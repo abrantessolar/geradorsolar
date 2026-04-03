@@ -36,6 +36,10 @@ export type ClienteBase = {
   satisfacao: string | null;
   origem: string;
   projeto_id: string | null;
+  telefone_2: string | null;
+  telefone_3: string | null;
+  observacoes: string | null;
+  kwp: number | null;
 };
 
 function calcKwp(qtd?: number | null, potW?: string | null): string {
