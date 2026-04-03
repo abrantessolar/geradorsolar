@@ -474,6 +474,7 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
           <hr className="border-border" />
           <h3 className="text-sm font-semibold">Informações de Instalação</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="md:col-span-2"><label className={labelClass}>Nome da Planta</label><input className={inputClass} value={form.nome_planta} onChange={e => set('nome_planta', e.target.value)} placeholder="Nome da planta de monitoramento" /></div>
             <div><label className={labelClass}>WiFi — Nome da Rede</label><input className={inputClass} value={form.wifi_nome} onChange={e => set('wifi_nome', e.target.value)} /></div>
             <div><label className={labelClass}>WiFi — Senha</label><input className={inputClass} value={form.wifi_senha} onChange={e => set('wifi_senha', e.target.value)} /></div>
             <div className="md:col-span-2"><label className={labelClass}>Cabo Utilizado</label><input className={inputClass} value={form.cabo_usado} onChange={e => set('cabo_usado', e.target.value)} placeholder="Preenchido após instalação" /></div>
