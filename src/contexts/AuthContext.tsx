@@ -117,9 +117,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       profile,
       loading,
       isAdmin: profile?.role === 'admin',
+      isGestor: profile?.role === 'gestor',
       isOrcamentista: profile?.role === 'orcamentista',
       isVendedor: profile?.role === 'vendedor',
-      hasGestorAccess: profile?.acesso_painel_gestor === true || profile?.role === 'admin',
+      hasGestorAccess: profile?.role === 'admin' || profile?.role === 'gestor' || profile?.acesso_painel_gestor === true,
       signOut,
     }}>
       {children}
