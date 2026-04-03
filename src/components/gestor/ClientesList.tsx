@@ -160,9 +160,6 @@ export default function ClientesList({
           <button onClick={onImport} className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-accent text-accent-foreground hover:bg-accent/80 transition-colors">
             <Upload className="w-4 h-4" /> Importar JSON
           </button>
-          <button onClick={handleReprocess} className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-muted text-muted-foreground hover:bg-muted/70 transition-colors">
-            <RefreshCw className="w-4 h-4" /> Reprocessar Equipamentos
-          </button>
           <span className="text-xs text-muted-foreground ml-auto">{filtered.length} cliente(s)</span>
         </div>
 
