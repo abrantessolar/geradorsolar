@@ -312,11 +312,10 @@ function PriceTableTab() {
   const MAX_PANELS = 25;
   const stored = getPriceTable();
   const filteredStored = stored.filter(r => r.panels <= MAX_PANELS);
-  const initial: PriceTableEntry[] = filteredStored.length > 0 ? filteredStored.map(r => ({ ...r, essencial: (r as any).essencial ?? null })) :
+  const initial: PriceTableEntry[] = filteredStored.length > 0 ? filteredStored : 
     Array.from({ length: MAX_PANELS - 3 }, (_, i) => ({
       panels: i + 4,
       acesso: null,
-      essencial: null,
       excellence: null,
       premium: null,
       estimated: {},
