@@ -179,65 +179,111 @@ export default function ClientesList({
 
   return (
     <>
-      <div className="solar-card p-6 space-y-4">
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="relative">
+      <div className="solar-card p-3 sm:p-6 space-y-3 sm:space-y-4">
+        <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2 sm:gap-3">
+          <div className="relative w-full sm:w-auto">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <input className="solar-input pl-9 max-w-xs" placeholder="Buscar por nome, CPF, UC ou endereço..." value={search} onChange={e => setSearch(e.target.value)} />
+            <input className="solar-input pl-9 w-full sm:max-w-xs text-sm" placeholder="Buscar nome, CPF, UC, endereço..." value={search} onChange={e => setSearch(e.target.value)} />
           </div>
-          <select className="solar-input max-w-[180px]" value={marcaInversorFilter} onChange={e => setMarcaInversorFilter(e.target.value)}>
-            <option value="">Todas marcas inversor</option>
-            {marcasInversor.map(m => <option key={m} value={m}>{m}</option>)}
-          </select>
-          <select className="solar-input max-w-[180px]" value={marcaPlacaFilter} onChange={e => setMarcaPlacaFilter(e.target.value)}>
-            <option value="">Todas marcas placa</option>
-            {marcasPlaca.map(m => <option key={m} value={m}>{m}</option>)}
-          </select>
-          <span className="text-xs text-muted-foreground ml-auto">{filtered.length} cliente(s)</span>
+          <div className="flex gap-2 w-full sm:w-auto">
+            <select className="solar-input flex-1 sm:max-w-[180px] text-xs sm:text-sm" value={marcaInversorFilter} onChange={e => setMarcaInversorFilter(e.target.value)}>
+              <option value="">Todas inv.</option>
+              {marcasInversor.map(m => <option key={m} value={m}>{m}</option>)}
+            </select>
+            <select className="solar-input flex-1 sm:max-w-[180px] text-xs sm:text-sm" value={marcaPlacaFilter} onChange={e => setMarcaPlacaFilter(e.target.value)}>
+              <option value="">Todas placas</option>
+              {marcasPlaca.map(m => <option key={m} value={m}>{m}</option>)}
+            </select>
+          </div>
+          <span className="text-xs text-muted-foreground sm:ml-auto">{filtered.length} cliente(s)</span>
         </div>
 
-        <p className="text-[11px] text-muted-foreground flex items-center gap-1"><GripVertical className="w-3 h-3" /> Arraste os cabeçalhos para reordenar colunas</p>
+        {/* Mobile card view */}
+        <div className="block sm:hidden space-y-3">
+          {filtered.map(c => {
+            const isViaObra = c.origem === 'promovido_de_obra' || c.id.startsWith('proj-');
+            return (
+              <div key={c.id} className="border border-border rounded-lg p-3 space-y-2">
+                <div className="flex items-start justify-between">
+                  <div className="min-w-0">
+                    <p className="font-medium text-sm truncate">
+                      {c.nome_completo || '—'}
+                      {isViaObra && <span className="ml-1 inline-block px-1.5 py-0.5 rounded text-[10px] font-medium bg-accent text-accent-foreground">✅</span>}
+                    </p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <WhatsAppLink phone={c.telefone} />
+                      {c.cpf && <span className="text-xs text-muted-foreground">{c.cpf}</span>}
+                    </div>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
+                  <div><span className="text-muted-foreground">Placas:</span> {c.qtd_placas || '—'} {c.marca_placa || ''}</div>
+                  <div><span className="text-muted-foreground">KWp:</span> {c.kwp ? Number(c.kwp).toFixed(2) : calcKwp(c.qtd_placas, c.potencia_placa)}</div>
+                  <div><span className="text-muted-foreground">Inversor:</span> {c.marca_inversor || '—'}</div>
+                  <div><span className="text-muted-foreground">UC:</span> {c.uc || '—'}</div>
+                  {c.instalado_em && <div><span className="text-muted-foreground">Instalação:</span> {new Date(c.instalado_em).toLocaleDateString('pt-BR')}</div>}
+                  {c.valor && <div><span className="text-muted-foreground">Valor:</span> R$ {Number(c.valor).toLocaleString('pt-BR')}</div>}
+                </div>
+                <div className="flex gap-1.5 items-center pt-1 border-t border-border/50">
+                  <button onClick={() => setSelectedCliente(c)} className="text-primary hover:text-primary/80 p-1"><Eye className="w-4 h-4" /></button>
+                  <button onClick={() => setEditCliente(c)} className="text-primary hover:text-primary/80 p-1"><Edit2 className="w-4 h-4" /></button>
+                  {!c.projeto_id && !c.id.startsWith('proj-') && (
+                    <button onClick={() => onPromover(c)} className="text-primary hover:text-primary/80 p-1"><ArrowUpRight className="w-4 h-4" /></button>
+                  )}
+                  {!c.id.startsWith('proj-') && (
+                    <button onClick={() => setDeleteCliente(c)} className="text-destructive hover:text-destructive/80 p-1 ml-auto"><Trash2 className="w-4 h-4" /></button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+          {filtered.length === 0 && <p className="py-8 text-center text-sm text-muted-foreground">Nenhum cliente encontrado.</p>}
+        </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border text-left text-muted-foreground">
-                {order.map((key, idx) => (
-                  <th
-                    key={key}
-                    className={`py-2 px-2 cursor-grab select-none ${dragIdx === idx ? 'opacity-50' : ''}`}
-                    draggable
-                    onDragStart={() => onDragStart(idx)}
-                    onDragOver={e => onDragOver(e, idx)}
-                    onDragEnd={onDragEnd}
-                  >
-                    {colHeaders[key] || key}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map(c => (
-                <tr key={c.id} className="border-b border-border/50 hover:bg-muted/30">
-                  {order.map(key => renderCell(key, c))}
+        {/* Desktop table view */}
+        <div className="hidden sm:block">
+          <p className="text-[11px] text-muted-foreground flex items-center gap-1 mb-2"><GripVertical className="w-3 h-3" /> Arraste os cabeçalhos para reordenar colunas</p>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border text-left text-muted-foreground">
+                  {order.map((key, idx) => (
+                    <th
+                      key={key}
+                      className={`py-2 px-2 cursor-grab select-none ${dragIdx === idx ? 'opacity-50' : ''}`}
+                      draggable
+                      onDragStart={() => onDragStart(idx)}
+                      onDragOver={e => onDragOver(e, idx)}
+                      onDragEnd={onDragEnd}
+                    >
+                      {colHeaders[key] || key}
+                    </th>
+                  ))}
                 </tr>
-              ))}
-              {filtered.length === 0 && (
-                <tr><td colSpan={order.length} className="py-8 text-center text-muted-foreground">Nenhum cliente encontrado.</td></tr>
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {filtered.map(c => (
+                  <tr key={c.id} className="border-b border-border/50 hover:bg-muted/30">
+                    {order.map(key => renderCell(key, c))}
+                  </tr>
+                ))}
+                {filtered.length === 0 && (
+                  <tr><td colSpan={order.length} className="py-8 text-center text-muted-foreground">Nenhum cliente encontrado.</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
       {selectedCliente && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setSelectedCliente(null)}>
-          <div className="bg-background rounded-xl shadow-xl max-w-2xl w-full max-h-[80vh] overflow-y-auto p-6 space-y-4" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center sm:p-4" onClick={() => setSelectedCliente(null)}>
+          <div className="bg-background rounded-t-xl sm:rounded-xl shadow-xl max-w-2xl w-full max-h-[85vh] sm:max-h-[80vh] overflow-y-auto p-4 sm:p-6 space-y-4" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold text-primary">{selectedCliente.nome_completo || 'Cliente'}</h2>
-              <button onClick={() => setSelectedCliente(null)} className="text-muted-foreground hover:text-foreground text-xl">×</button>
+              <h2 className="text-base sm:text-lg font-bold text-primary truncate">{selectedCliente.nome_completo || 'Cliente'}</h2>
+              <button onClick={() => setSelectedCliente(null)} className="text-muted-foreground hover:text-foreground text-xl ml-2">×</button>
             </div>
-            <div className="grid grid-cols-2 gap-3 text-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
               {[
                 ['CPF', selectedCliente.cpf],
                 ['Telefone 1', selectedCliente.telefone],
@@ -280,7 +326,7 @@ export default function ClientesList({
                 );
               })}
               {selectedCliente.observacoes && (
-                <div className="col-span-2">
+                <div className="col-span-1 sm:col-span-2">
                   <p className="text-xs text-muted-foreground">Observações</p>
                   <p className="font-medium whitespace-pre-wrap">{selectedCliente.observacoes}</p>
                 </div>
