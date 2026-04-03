@@ -218,17 +218,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    const sheetsId = Deno.env.get('GOOGLE_SHEETS_ID');
-    const serviceAccountJson = Deno.env.get('GOOGLE_SERVICE_ACCOUNT');
-    if (!sheetsId || !serviceAccountJson) {
-      return new Response(JSON.stringify({ error: 'Google Sheets credentials not configured' }), {
-        status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    const serviceAccount = JSON.parse(serviceAccountJson);
-    const accessToken = await getAccessToken(serviceAccount);
-    const sheetsUrl = `https://sheets.googleapis.com/v4/spreadsheets/${sheetsId}`;
 
     // ── SYNC OBRAS ──
     let queryObras = supabaseAdmin.from('projetos')
