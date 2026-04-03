@@ -237,8 +237,10 @@ export default function ClientesList({
                 ['Concessionária', selectedCliente.concessionaria],
                 ['Sistema', selectedCliente.sistema],
                 ['Painéis', selectedCliente.dados_paineis || `${selectedCliente.qtd_placas || ''} ${selectedCliente.marca_placa || ''} ${selectedCliente.potencia_placa || ''}`],
-                ['Inversor', selectedCliente.dados_inversor || `${selectedCliente.qtd_inversores || ''} ${selectedCliente.marca_inversor || ''} ${selectedCliente.potencia_inversor || ''}`],
-                ['Tipo Inversor', selectedCliente.tipo_inversor],
+                ['Inversor', selectedCliente.tipo_inversor?.toLowerCase() === 'micro' && selectedCliente.qtd_inversores && selectedCliente.marca_inversor && selectedCliente.potencia_inversor
+                  ? `${selectedCliente.qtd_inversores}x ${selectedCliente.marca_inversor} ${selectedCliente.potencia_inversor}kW (MICRO)`
+                  : selectedCliente.dados_inversor || `${selectedCliente.qtd_inversores || '1'}x ${selectedCliente.marca_inversor || ''} ${selectedCliente.potencia_inversor || ''}kW`],
+                ['Tipo Inversor', selectedCliente.tipo_inversor || 'String'],
                 ['KWp', selectedCliente.kwp ? Number(selectedCliente.kwp).toFixed(2) : calcKwp(selectedCliente.qtd_placas, selectedCliente.potencia_placa)],
                 ['Fornecedor', selectedCliente.fornecedor],
                 ['Valor', selectedCliente.valor ? `R$ ${Number(selectedCliente.valor).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : null],

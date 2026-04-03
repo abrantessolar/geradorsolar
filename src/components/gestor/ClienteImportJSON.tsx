@@ -50,6 +50,7 @@ const FIELD_MAP: Record<string, string> = {
   'POTÊNCIA INVERSOR': 'potencia_inversor',
   'POTENCIA INVERSOR': 'potencia_inversor',
   'TIPO INVERSOR': 'tipo_inversor',
+  'TIPO_INVERSOR': 'tipo_inversor',
   'TELEFONE_2': 'telefone_2',
   'TELEFONE 2': 'telefone_2',
   'TELEFONE_3': 'telefone_3',
