@@ -292,13 +292,10 @@ function EditUserModal({ user, onClose, callApi }: { user: any; onClose: () => v
           <div><label className="block text-sm font-medium mb-1">Nível</label>
             <select className="solar-input" value={role} onChange={e => setRole(e.target.value)}>
               <option value="vendedor">Vendedor</option>
+              <option value="gestor">Gestor</option>
               <option value="orcamentista">Orçamentista</option>
               <option value="admin">Administrador</option>
             </select></div>
-          <div className="flex items-center gap-2">
-            <input type="checkbox" id="edit-gestor" checked={acessoGestor} onChange={e => setAcessoGestor(e.target.checked)} className="rounded border-border" />
-            <label htmlFor="edit-gestor" className="text-sm font-medium">Acesso ao Painel do Gestor</label>
-          </div>
           <div><label className="block text-sm font-medium mb-1">Nova senha (deixe vazio para manter)</label>
             <input className="solar-input" type="password" value={password} onChange={e => setPassword(e.target.value)} /></div>
           <button className="w-full solar-btn-primary" onClick={handleSave} disabled={saving}>
