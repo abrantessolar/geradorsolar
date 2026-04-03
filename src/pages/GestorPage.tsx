@@ -13,7 +13,7 @@ import DocumentosModal from '@/components/gestor/DocumentosModal';
 import ModelosDocumentos from '@/components/gestor/ModelosDocumentos';
 import ImportCSV from '@/components/gestor/ImportCSV';
 import ClientesList, { type ClienteBase } from '@/components/gestor/ClientesList';
-import ClienteImportJSON from '@/components/gestor/ClienteImportJSON';
+
 import MateriaisModule from '@/components/gestor/materiais/MateriaisModule';
 
 export type Projeto = {
@@ -86,13 +86,13 @@ export type Projeto = {
 };
 
 type ObrasSubTab = 'dashboard' | 'projetos' | 'novo' | 'editar' | 'modelos' | 'importar';
-type ClientesSubTab = 'lista' | 'importar_clientes';
+
 
 export default function GestorPage() {
   const { session, isAdmin } = useAuth();
   const [mainTab, setMainTab] = useState<'obras' | 'clientes' | 'materiais'>('obras');
   const [obrasSubTab, setObrasSubTab] = useState<ObrasSubTab>('dashboard');
-  const [clientesSubTab, setClientesSubTab] = useState<ClientesSubTab>('lista');
+  
   const [projetos, setProjetos] = useState<Projeto[]>([]);
   const [clientes, setClientes] = useState<ClienteBase[]>([]);
   const [loading, setLoading] = useState(true);
@@ -287,25 +287,12 @@ export default function GestorPage() {
         </TabsContent>
 
         <TabsContent value="clientes" className="space-y-4">
-          {clientesSubTab === 'lista' && (
-            <ClientesList
-              clientes={clientes}
-              loading={loadingClientes}
-              onPromover={handlePromoverParaObra}
-              onRefresh={loadClientes}
-              onImport={() => setClientesSubTab('importar_clientes')}
-              showImport={isAdmin}
-            />
-          )}
-          {clientesSubTab === 'importar_clientes' && (
-            <div className="space-y-4">
-              <button onClick={() => setClientesSubTab('lista')}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-muted text-muted-foreground hover:bg-muted/70 transition-colors">
-                ← Voltar para Lista
-              </button>
-              <ClienteImportJSON onImported={() => { loadClientes(); setClientesSubTab('lista'); }} />
-            </div>
-          )}
+          <ClientesList
+            clientes={clientes}
+            loading={loadingClientes}
+            onPromover={handlePromoverParaObra}
+            onRefresh={loadClientes}
+          />
         </TabsContent>
 
         <TabsContent value="materiais" className="space-y-4">

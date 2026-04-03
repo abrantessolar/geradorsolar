@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Eye, Search, ArrowUpRight, Upload, Edit2, GripVertical, Trash2 } from 'lucide-react';
+import { Eye, Search, ArrowUpRight, Edit2, GripVertical, Trash2 } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import DeleteConfirmModal from './DeleteConfirmModal';
 import WhatsAppLink from './WhatsAppLink';
 import ClienteEditModal from './ClienteEditModal';
@@ -51,17 +52,15 @@ function calcKwp(qtd?: number | null, potW?: string | null): string {
   return ((qtd * pot) / 1000).toFixed(2);
 }
 
-const COL_KEYS = ['nome', 'cpf', 'telefone', 'uc', 'concessionaria', 'marca_inv', 'pot_inv', 'qtd_placas', 'marca_placa', 'pot_placa', 'kwp', 'valor', 'forma_pgto', 'instalacao', 'acoes'];
+const COL_KEYS = ['nome', 'cpf', 'telefone', 'endereco', 'uc', 'concessionaria', 'marca_inv', 'pot_inv', 'qtd_placas', 'marca_placa', 'pot_placa', 'kwp', 'valor', 'forma_pgto', 'instalacao', 'acoes'];
 
 export default function ClientesList({
-  clientes, loading, onPromover, onRefresh, onImport, showImport = true,
+  clientes, loading, onPromover, onRefresh,
 }: {
   clientes: ClienteBase[];
   loading: boolean;
   onPromover: (c: ClienteBase) => void;
   onRefresh: () => void;
-  onImport: () => void;
-  showImport?: boolean;
 }) {
   const [search, setSearch] = useState('');
   const [marcaInversorFilter, setMarcaInversorFilter] = useState('');
@@ -93,14 +92,15 @@ export default function ClientesList({
         const name = (c.nome_completo || '').toLowerCase();
         const cpf = (c.cpf || '').toLowerCase();
         const uc = (c.uc || '').toLowerCase();
-        if (!name.includes(q) && !cpf.includes(q) && !uc.includes(q)) return false;
+        const endereco = (c.endereco || '').toLowerCase();
+        if (!name.includes(q) && !cpf.includes(q) && !uc.includes(q) && !endereco.includes(q)) return false;
       }
       return true;
     });
   }, [clientes, search, marcaInversorFilter, marcaPlacaFilter]);
 
   const colHeaders: Record<string, string> = {
-    nome: 'Nome', cpf: 'CPF', telefone: 'Telefone', uc: 'UC',
+    nome: 'Nome', cpf: 'CPF', telefone: 'Telefone', endereco: 'Endereço', uc: 'UC',
     concessionaria: 'Concessionária', marca_inv: 'Marca Inv.', pot_inv: 'Pot. Inv.',
     qtd_placas: 'Qtd Placas', marca_placa: 'Marca Placa', pot_placa: 'Pot. Placa',
     kwp: 'KWp', valor: 'Valor', forma_pgto: 'Forma Pgto.', instalacao: 'Instalação', acoes: 'Ações',
@@ -117,6 +117,22 @@ export default function ClientesList({
       );
       case 'cpf': return <td key={key} className="py-2 px-2 text-xs">{c.cpf || '—'}</td>;
       case 'telefone': return <td key={key} className="py-2 px-2 text-xs"><WhatsAppLink phone={c.telefone} /></td>;
+      case 'endereco': return (
+        <td key={key} className="py-2 px-2 text-xs max-w-[180px]">
+          {c.endereco ? (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="block truncate cursor-default">{c.endereco}</span>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-xs">
+                  <p>{c.endereco}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          ) : '—'}
+        </td>
+      );
       case 'uc': return <td key={key} className="py-2 px-2 text-xs">{c.uc || '—'}</td>;
       case 'concessionaria': return <td key={key} className="py-2 px-2 text-xs">{c.concessionaria || '—'}</td>;
       case 'marca_inv': return (
@@ -167,7 +183,7 @@ export default function ClientesList({
         <div className="flex flex-wrap items-center gap-3">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <input className="solar-input pl-9 max-w-xs" placeholder="Buscar nome, CPF ou UC..." value={search} onChange={e => setSearch(e.target.value)} />
+            <input className="solar-input pl-9 max-w-xs" placeholder="Buscar por nome, CPF, UC ou endereço..." value={search} onChange={e => setSearch(e.target.value)} />
           </div>
           <select className="solar-input max-w-[180px]" value={marcaInversorFilter} onChange={e => setMarcaInversorFilter(e.target.value)}>
             <option value="">Todas marcas inversor</option>
@@ -177,11 +193,6 @@ export default function ClientesList({
             <option value="">Todas marcas placa</option>
             {marcasPlaca.map(m => <option key={m} value={m}>{m}</option>)}
           </select>
-          {showImport && (
-            <button onClick={onImport} className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-accent text-accent-foreground hover:bg-accent/80 transition-colors">
-              <Upload className="w-4 h-4" /> Importar JSON
-            </button>
-          )}
           <span className="text-xs text-muted-foreground ml-auto">{filtered.length} cliente(s)</span>
         </div>
 
