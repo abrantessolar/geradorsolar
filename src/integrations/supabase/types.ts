@@ -551,6 +551,7 @@ export type Database = {
           cep: string | null
           cidade: string | null
           cnpj: string | null
+          complemento: string | null
           concessionaria: string
           congelado: boolean
           congelado_ate: string | null
@@ -570,6 +571,7 @@ export type Database = {
           inversor_id: string | null
           layout_url: string | null
           local_entrega: string | null
+          logradouro: string | null
           marca_inversor: string | null
           marca_placa: string | null
           motivo_congelamento: string | null
@@ -612,6 +614,7 @@ export type Database = {
           cep?: string | null
           cidade?: string | null
           cnpj?: string | null
+          complemento?: string | null
           concessionaria?: string
           congelado?: boolean
           congelado_ate?: string | null
@@ -631,6 +634,7 @@ export type Database = {
           inversor_id?: string | null
           layout_url?: string | null
           local_entrega?: string | null
+          logradouro?: string | null
           marca_inversor?: string | null
           marca_placa?: string | null
           motivo_congelamento?: string | null
@@ -673,6 +677,7 @@ export type Database = {
           cep?: string | null
           cidade?: string | null
           cnpj?: string | null
+          complemento?: string | null
           concessionaria?: string
           congelado?: boolean
           congelado_ate?: string | null
@@ -692,6 +697,7 @@ export type Database = {
           inversor_id?: string | null
           layout_url?: string | null
           local_entrega?: string | null
+          logradouro?: string | null
           marca_inversor?: string | null
           marca_placa?: string | null
           motivo_congelamento?: string | null
