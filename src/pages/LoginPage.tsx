@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Sun, Lock, AlertCircle } from 'lucide-react';
+import { Lock, AlertCircle } from 'lucide-react';
+import logoImg from '@/assets/logo.png';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
