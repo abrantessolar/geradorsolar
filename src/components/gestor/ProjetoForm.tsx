@@ -52,6 +52,7 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
     placa_id: '', qtd_placas: '',
     inversor_id: '', qtd_inversores: '',
     geracao_estimada_kwh: '', sistema: '',
+    nome_planta: '', wifi_nome: '', wifi_senha: '', cabo_usado: '',
     unidade_geradora_cep: '', unidade_geradora_endereco: '', unidade_geradora_codigo_uc: '', unidade_geradora_padrao: '',
     unidade_beneficiaria1_cep: '', unidade_beneficiaria1_endereco: '', unidade_beneficiaria1_codigo_uc: '', unidade_beneficiaria1_percentual: '',
     unidade_beneficiaria2_cep: '', unidade_beneficiaria2_endereco: '', unidade_beneficiaria2_codigo_uc: '', unidade_beneficiaria2_percentual: '',
