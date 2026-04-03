@@ -33,6 +33,7 @@ export default function MateriaisModule() {
       {subTab === 'produtos' && <ProdutosTab />}
       {subTab === 'estoque' && <EstoqueTab />}
       {subTab === 'fornecedores' && <FornecedoresTab />}
+      {subTab === 'compras' && <ComprasTab />}
     </div>
   );
 }
