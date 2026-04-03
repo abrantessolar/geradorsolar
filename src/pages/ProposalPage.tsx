@@ -538,7 +538,7 @@ export default function ProposalPage() {
                     )}
                     <div className="flex justify-between"><span className="text-muted-foreground">Placas</span><span className="font-medium">{card.panelCount}× {card.panelBrand || card.panel?.brand} {card.panelPowerLabel || `${card.panel?.power || 570}Wp`}</span></div>
                     <div className="flex justify-between"><span className="text-muted-foreground">Potência</span><span className="font-medium">{formatNumber(card.dimensioning.powerKwp)} kWp</span></div>
-                    <div className="flex justify-between"><span className="text-muted-foreground">Geração/mês</span><span className="font-semibold text-primary">{formatNumber(card.dimensioning.monthlyGeneration, 0)} kWh</span></div>
+                    <div className="flex justify-between items-center"><span className="text-muted-foreground">Geração/mês</span><span className="font-bold text-primary text-lg">{formatNumber(card.dimensioning.monthlyGeneration, 0)} kWh</span></div>
                     <div className="flex justify-between"><span className="text-muted-foreground">Excedente</span><span className="font-medium">{formatNumber(card.dimensioning.surplus, 0)} kWh</span></div>
                   </div>
 
