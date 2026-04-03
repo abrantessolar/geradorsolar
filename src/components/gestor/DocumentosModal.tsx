@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import type { Projeto } from '@/pages/GestorPage';
 import { X, FileText, Download, Loader2, ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
+import { useDropdownPosition } from '@/hooks/useDropdownPosition';
 
 function sanitizeFilename(name: string): string {
   return name.replace(/[^a-zA-Z0-9À-ÿ\s-_]/g, '').replace(/\s+/g, '_').substring(0, 60);
