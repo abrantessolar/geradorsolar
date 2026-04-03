@@ -47,7 +47,7 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
     nome_completo: '', cpf: '', data_nascimento: '',
     razao_social: '', cnpj: '', nome_representante: '', cpf_representante: '',
     telefone: '',
-    endereco_completo: '', cep: '', bairro: '', cidade: '', estado: '',
+    logradouro: '', complemento: '', cep: '', bairro: '', cidade: '', estado: '',
     concessionaria: 'ELEKTRO',
     placa_id: '', qtd_placas: '',
     inversor_id: '', qtd_inversores: '',
