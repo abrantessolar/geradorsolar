@@ -14,6 +14,59 @@ export type Database = {
   }
   public: {
     Tables: {
+      cabos_obra: {
+        Row: {
+          id: string
+          observacao: string | null
+          projeto_id: string
+          quantidade_metros: number
+          tipo_cabo: string
+        }
+        Insert: {
+          id?: string
+          observacao?: string | null
+          projeto_id: string
+          quantidade_metros?: number
+          tipo_cabo: string
+        }
+        Update: {
+          id?: string
+          observacao?: string | null
+          projeto_id?: string
+          quantidade_metros?: number
+          tipo_cabo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cabos_obra_projeto_id_fkey"
+            columns: ["projeto_id"]
+            isOneToOne: false
+            referencedRelation: "projetos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cabos_padrao: {
+        Row: {
+          id: string
+          observacao: string | null
+          potencia: string
+          tipo_cabo: string
+        }
+        Insert: {
+          id?: string
+          observacao?: string | null
+          potencia: string
+          tipo_cabo: string
+        }
+        Update: {
+          id?: string
+          observacao?: string | null
+          potencia?: string
+          tipo_cabo?: string
+        }
+        Relationships: []
+      }
       cidades_irradiancia: {
         Row: {
           abr: number | null
@@ -362,6 +415,65 @@ export type Database = {
         }
         Relationships: []
       }
+      estoque: {
+        Row: {
+          atualizado_em: string
+          id: string
+          material_id: string
+          quantidade_atual: number
+          quantidade_minima: number | null
+        }
+        Insert: {
+          atualizado_em?: string
+          id?: string
+          material_id: string
+          quantidade_atual?: number
+          quantidade_minima?: number | null
+        }
+        Update: {
+          atualizado_em?: string
+          id?: string
+          material_id?: string
+          quantidade_atual?: number
+          quantidade_minima?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "estoque_material_id_fkey"
+            columns: ["material_id"]
+            isOneToOne: false
+            referencedRelation: "materiais"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fornecedores_materiais: {
+        Row: {
+          ativo: boolean
+          contato: string | null
+          criado_em: string
+          id: string
+          nome: string
+          telefone: string | null
+        }
+        Insert: {
+          ativo?: boolean
+          contato?: string | null
+          criado_em?: string
+          id?: string
+          nome: string
+          telefone?: string | null
+        }
+        Update: {
+          ativo?: boolean
+          contato?: string | null
+          criado_em?: string
+          id?: string
+          nome?: string
+          telefone?: string | null
+        }
+        Relationships: []
+      }
       fotos_portfolio: {
         Row: {
           ativo: boolean
@@ -493,6 +605,48 @@ export type Database = {
         }
         Relationships: []
       }
+      lista_materiais_obra: {
+        Row: {
+          id: string
+          material_id: string
+          projeto_id: string
+          quantidade_necessaria: number
+          quantidade_separada: number
+          separado: boolean
+        }
+        Insert: {
+          id?: string
+          material_id: string
+          projeto_id: string
+          quantidade_necessaria?: number
+          quantidade_separada?: number
+          separado?: boolean
+        }
+        Update: {
+          id?: string
+          material_id?: string
+          projeto_id?: string
+          quantidade_necessaria?: number
+          quantidade_separada?: number
+          separado?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lista_materiais_obra_material_id_fkey"
+            columns: ["material_id"]
+            isOneToOne: false
+            referencedRelation: "materiais"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lista_materiais_obra_projeto_id_fkey"
+            columns: ["projeto_id"]
+            isOneToOne: false
+            referencedRelation: "projetos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       logos_parceiros: {
         Row: {
           ativo: boolean
@@ -523,6 +677,79 @@ export type Database = {
         }
         Relationships: []
       }
+      materiais: {
+        Row: {
+          ativo: boolean
+          categoria: string
+          criado_em: string
+          fornecedor_id: string | null
+          id: string
+          imagem_url: string | null
+          nome: string
+          preco_unitario: number | null
+          unidade: string
+        }
+        Insert: {
+          ativo?: boolean
+          categoria?: string
+          criado_em?: string
+          fornecedor_id?: string | null
+          id?: string
+          imagem_url?: string | null
+          nome: string
+          preco_unitario?: number | null
+          unidade?: string
+        }
+        Update: {
+          ativo?: boolean
+          categoria?: string
+          criado_em?: string
+          fornecedor_id?: string | null
+          id?: string
+          imagem_url?: string | null
+          nome?: string
+          preco_unitario?: number | null
+          unidade?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "materiais_fornecedor_id_fkey"
+            columns: ["fornecedor_id"]
+            isOneToOne: false
+            referencedRelation: "fornecedores_materiais"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      materiais_quantidades_padrao: {
+        Row: {
+          id: string
+          material_id: string
+          potencia: string
+          quantidade: number
+        }
+        Insert: {
+          id?: string
+          material_id: string
+          potencia: string
+          quantidade?: number
+        }
+        Update: {
+          id?: string
+          material_id?: string
+          potencia?: string
+          quantidade?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "materiais_quantidades_padrao_material_id_fkey"
+            columns: ["material_id"]
+            isOneToOne: false
+            referencedRelation: "materiais"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       modelos_documentos: {
         Row: {
           atualizado_em: string
@@ -544,10 +771,59 @@ export type Database = {
         }
         Relationships: []
       }
+      movimentacoes_estoque: {
+        Row: {
+          criado_em: string
+          id: string
+          material_id: string
+          obra_id: string | null
+          observacao: string | null
+          quantidade: number
+          tipo: string
+          usuario_id: string
+        }
+        Insert: {
+          criado_em?: string
+          id?: string
+          material_id: string
+          obra_id?: string | null
+          observacao?: string | null
+          quantidade: number
+          tipo: string
+          usuario_id: string
+        }
+        Update: {
+          criado_em?: string
+          id?: string
+          material_id?: string
+          obra_id?: string | null
+          observacao?: string | null
+          quantidade?: number
+          tipo?: string
+          usuario_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "movimentacoes_estoque_material_id_fkey"
+            columns: ["material_id"]
+            isOneToOne: false
+            referencedRelation: "materiais"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "movimentacoes_estoque_obra_id_fkey"
+            columns: ["obra_id"]
+            isOneToOne: false
+            referencedRelation: "projetos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       projetos: {
         Row: {
           atualizado_em: string
           bairro: string | null
+          cabo_usado: string | null
           cep: string | null
           cidade: string | null
           cnpj: string | null
@@ -576,6 +852,7 @@ export type Database = {
           marca_placa: string | null
           motivo_congelamento: string | null
           nome_completo: string | null
+          nome_planta: string | null
           nome_representante: string | null
           objecoes: string | null
           pagamento_status: string | null
@@ -607,10 +884,13 @@ export type Database = {
           unidade_geradora_padrao: string | null
           usuario_id: string
           vistoriado_em: string | null
+          wifi_nome: string | null
+          wifi_senha: string | null
         }
         Insert: {
           atualizado_em?: string
           bairro?: string | null
+          cabo_usado?: string | null
           cep?: string | null
           cidade?: string | null
           cnpj?: string | null
@@ -639,6 +919,7 @@ export type Database = {
           marca_placa?: string | null
           motivo_congelamento?: string | null
           nome_completo?: string | null
+          nome_planta?: string | null
           nome_representante?: string | null
           objecoes?: string | null
           pagamento_status?: string | null
@@ -670,10 +951,13 @@ export type Database = {
           unidade_geradora_padrao?: string | null
           usuario_id: string
           vistoriado_em?: string | null
+          wifi_nome?: string | null
+          wifi_senha?: string | null
         }
         Update: {
           atualizado_em?: string
           bairro?: string | null
+          cabo_usado?: string | null
           cep?: string | null
           cidade?: string | null
           cnpj?: string | null
@@ -702,6 +986,7 @@ export type Database = {
           marca_placa?: string | null
           motivo_congelamento?: string | null
           nome_completo?: string | null
+          nome_planta?: string | null
           nome_representante?: string | null
           objecoes?: string | null
           pagamento_status?: string | null
@@ -733,6 +1018,8 @@ export type Database = {
           unidade_geradora_padrao?: string | null
           usuario_id?: string
           vistoriado_em?: string | null
+          wifi_nome?: string | null
+          wifi_senha?: string | null
         }
         Relationships: [
           {

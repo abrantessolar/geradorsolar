@@ -1,12 +1,13 @@
 import React, { useState, useMemo } from 'react';
 import type { Projeto } from '@/pages/GestorPage';
-import { Edit2, FileText, Snowflake, Image as ImageIcon, CheckCircle, ArrowUpDown, ArrowUp, ArrowDown, GripVertical, Trash2 } from 'lucide-react';
+import { Edit2, FileText, Snowflake, Image as ImageIcon, CheckCircle, ArrowUpDown, ArrowUp, ArrowDown, GripVertical, Trash2, ClipboardList } from 'lucide-react';
 import WhatsAppLink from './WhatsAppLink';
 import InstaladorSelect from './InstaladorSelect';
 import CongelarModal from './CongelarModal';
 import ObraConcluidaModal from './ObraConcluidaModal';
 import LayoutUploadModal from './LayoutUploadModal';
 import DeleteConfirmModal from './DeleteConfirmModal';
+import ListaMateriaisObraModal from './materiais/ListaMateriaisObraModal';
 import { useDraggableColumns } from '@/hooks/useDraggableColumns';
 
 function daysSince(dateStr?: string): number {
@@ -37,6 +38,7 @@ export default function ProjetosList({ projetos, loading, onEdit, onDocumentos, 
   const [layoutProjeto, setLayoutProjeto] = useState<Projeto | null>(null);
   const [concluidaProjeto, setConcluidaProjeto] = useState<Projeto | null>(null);
   const [deleteProjeto, setDeleteProjeto] = useState<Projeto | null>(null);
+  const [materiaisProjeto, setMateriaisProjeto] = useState<Projeto | null>(null);
   const [tempoSort, setTempoSort] = useState<'asc' | 'desc' | null>(null);
 
   const { order, onDragStart, onDragOver, onDragEnd, dragIdx } = useDraggableColumns('gestor-obras-cols', COL_KEYS);
@@ -123,6 +125,7 @@ export default function ProjetosList({ projetos, loading, onEdit, onDocumentos, 
           <div className="flex gap-1 items-center">
             <button onClick={() => onEdit(p.id)} className="text-primary hover:text-primary/80" title="Editar"><Edit2 className="w-4 h-4" /></button>
             <button onClick={() => onDocumentos(p)} className="text-primary hover:text-primary/80" title="Documentos"><FileText className="w-4 h-4" /></button>
+            <button onClick={() => setMateriaisProjeto(p)} className="text-primary hover:text-primary/80" title="Lista de Materiais"><ClipboardList className="w-4 h-4" /></button>
             <button onClick={() => setCongelarId(p.congelado ? null : p.id)} className="text-primary hover:text-primary/80" title={p.congelado ? 'Já congelada' : 'Congelar'}><Snowflake className="w-4 h-4" /></button>
             <button onClick={() => setLayoutProjeto(p)} className={`${p.layout_url ? 'text-accent-foreground' : 'text-muted-foreground'} hover:text-primary`} title="Layout"><ImageIcon className="w-4 h-4" /></button>
             <button onClick={() => setConcluidaProjeto(p)} className="text-primary hover:text-primary/80" title="Obra Concluída"><CheckCircle className="w-4 h-4" /></button>
@@ -195,6 +198,9 @@ export default function ProjetosList({ projetos, loading, onEdit, onDocumentos, 
           onClose={() => setDeleteProjeto(null)}
           onDeleted={() => { setDeleteProjeto(null); onRefresh(); }}
         />
+      )}
+      {materiaisProjeto && (
+        <ListaMateriaisObraModal projeto={materiaisProjeto} onClose={() => setMateriaisProjeto(null)} />
       )}
     </div>
   );

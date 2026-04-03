@@ -52,6 +52,7 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
     placa_id: '', qtd_placas: '',
     inversor_id: '', qtd_inversores: '',
     geracao_estimada_kwh: '', sistema: '',
+    nome_planta: '', wifi_nome: '', wifi_senha: '', cabo_usado: '',
     unidade_geradora_cep: '', unidade_geradora_endereco: '', unidade_geradora_codigo_uc: '', unidade_geradora_padrao: '',
     unidade_beneficiaria1_cep: '', unidade_beneficiaria1_endereco: '', unidade_beneficiaria1_codigo_uc: '', unidade_beneficiaria1_percentual: '',
     unidade_beneficiaria2_cep: '', unidade_beneficiaria2_endereco: '', unidade_beneficiaria2_codigo_uc: '', unidade_beneficiaria2_percentual: '',
@@ -83,6 +84,7 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
         placa_id: p.placa_id || '', qtd_placas: p.qtd_placas?.toString() || '',
         inversor_id: p.inversor_id || '', qtd_inversores: p.qtd_inversores?.toString() || '',
         geracao_estimada_kwh: p.geracao_estimada_kwh?.toString() || '', sistema: p.sistema || '',
+        nome_planta: p.nome_planta || '', wifi_nome: p.wifi_nome || '', wifi_senha: p.wifi_senha || '', cabo_usado: p.cabo_usado || '',
         unidade_geradora_cep: p.unidade_geradora_cep || '', unidade_geradora_endereco: p.unidade_geradora_endereco || '', unidade_geradora_codigo_uc: p.unidade_geradora_codigo_uc || '', unidade_geradora_padrao: p.unidade_geradora_padrao || '',
         unidade_beneficiaria1_cep: p.unidade_beneficiaria1_cep || '', unidade_beneficiaria1_endereco: p.unidade_beneficiaria1_endereco || '', unidade_beneficiaria1_codigo_uc: p.unidade_beneficiaria1_codigo_uc || '', unidade_beneficiaria1_percentual: p.unidade_beneficiaria1_percentual?.toString() || '',
         unidade_beneficiaria2_cep: p.unidade_beneficiaria2_cep || '', unidade_beneficiaria2_endereco: p.unidade_beneficiaria2_endereco || '', unidade_beneficiaria2_codigo_uc: p.unidade_beneficiaria2_codigo_uc || '', unidade_beneficiaria2_percentual: p.unidade_beneficiaria2_percentual?.toString() || '',
@@ -144,6 +146,10 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
       qtd_inversores: form.qtd_inversores ? parseInt(form.qtd_inversores) : null,
       geracao_estimada_kwh: form.geracao_estimada_kwh ? parseFloat(form.geracao_estimada_kwh) : null,
       sistema: form.sistema || null,
+      nome_planta: form.nome_planta || null,
+      wifi_nome: form.wifi_nome || null,
+      wifi_senha: form.wifi_senha || null,
+      cabo_usado: form.cabo_usado || null,
       preco_venda: form.preco_venda ? parseFloat(form.preco_venda) : null,
       forma_pagamento: form.forma_pagamento || null,
       unidade_geradora_cep: form.unidade_geradora_cep || null,
@@ -294,7 +300,10 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
       {/* Step 2 - Equipamentos */}
       {step === 2 && (
         <div className="space-y-4">
-          <div><label className={labelClass}>Sistema (ex: 5,75KWp)</label><input className={inputClass} value={form.sistema} onChange={e => set('sistema', e.target.value)} placeholder="5,75KWp" /></div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div><label className={labelClass}>Sistema (ex: 5,75KWp)</label><input className={inputClass} value={form.sistema} onChange={e => set('sistema', e.target.value)} placeholder="5,75KWp" /></div>
+            <div><label className={labelClass}>Nome da Planta</label><input className={inputClass} value={form.nome_planta} onChange={e => set('nome_planta', e.target.value)} placeholder="Nome da planta de monitoramento" /></div>
+          </div>
 
           <h3 className="text-sm font-semibold">Placas</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
@@ -426,6 +435,13 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
             <div><label className={labelClass}>Projeto Enviado em</label><input className={inputClass} type="date" value={form.projeto_enviado_em} onChange={e => set('projeto_enviado_em', e.target.value)} /></div>
             <div><label className={labelClass}>Projeto Aprovado</label><input className={inputClass} type="date" value={form.projeto_aprovado} onChange={e => set('projeto_aprovado', e.target.value)} /></div>
             <div><label className={labelClass}>Vistoriado em</label><input className={inputClass} type="date" value={form.vistoriado_em} onChange={e => set('vistoriado_em', e.target.value)} /></div>
+          </div>
+          <hr className="border-border" />
+          <h3 className="text-sm font-semibold">Informações de Instalação</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div><label className={labelClass}>WiFi — Nome da Rede</label><input className={inputClass} value={form.wifi_nome} onChange={e => set('wifi_nome', e.target.value)} /></div>
+            <div><label className={labelClass}>WiFi — Senha</label><input className={inputClass} value={form.wifi_senha} onChange={e => set('wifi_senha', e.target.value)} /></div>
+            <div className="md:col-span-2"><label className={labelClass}>Cabo Utilizado</label><input className={inputClass} value={form.cabo_usado} onChange={e => set('cabo_usado', e.target.value)} placeholder="Preenchido após instalação" /></div>
           </div>
           <div>
             <label className={labelClass}>Observações</label>

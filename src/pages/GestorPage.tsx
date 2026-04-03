@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import {
-  BarChart3, ClipboardList, Plus, FileText, Upload, RefreshCw, Users, Wrench,
+  BarChart3, ClipboardList, Plus, FileText, Upload, RefreshCw, Users, Wrench, Package,
 } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import GestorDashboard from '@/components/gestor/GestorDashboard';
@@ -14,6 +14,7 @@ import ModelosDocumentos from '@/components/gestor/ModelosDocumentos';
 import ImportCSV from '@/components/gestor/ImportCSV';
 import ClientesList, { type ClienteBase } from '@/components/gestor/ClientesList';
 import ClienteImportJSON from '@/components/gestor/ClienteImportJSON';
+import MateriaisModule from '@/components/gestor/materiais/MateriaisModule';
 
 export type Projeto = {
   id: string;
@@ -76,6 +77,10 @@ export type Projeto = {
   congelado_ate?: string;
   motivo_congelamento?: string;
   layout_url?: string;
+  wifi_nome?: string;
+  wifi_senha?: string;
+  nome_planta?: string;
+  cabo_usado?: string;
   placa?: { marca: string; modelo: string; potencia_wp: number };
   inversor?: { marca: string; modelo: string; potencia_kw: number; tipo: string };
 };
@@ -85,7 +90,7 @@ type ClientesSubTab = 'lista' | 'importar_clientes';
 
 export default function GestorPage() {
   const { session, isAdmin } = useAuth();
-  const [mainTab, setMainTab] = useState<'obras' | 'clientes'>('obras');
+  const [mainTab, setMainTab] = useState<'obras' | 'clientes' | 'materiais'>('obras');
   const [obrasSubTab, setObrasSubTab] = useState<ObrasSubTab>('dashboard');
   const [clientesSubTab, setClientesSubTab] = useState<ClientesSubTab>('lista');
   const [projetos, setProjetos] = useState<Projeto[]>([]);
@@ -252,6 +257,9 @@ export default function GestorPage() {
           <TabsTrigger value="clientes" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-6 py-2.5 rounded-lg">
             <Users className="w-4 h-4" /> Clientes
           </TabsTrigger>
+          <TabsTrigger value="materiais" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-6 py-2.5 rounded-lg">
+            <Package className="w-4 h-4" /> Materiais
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="obras" className="space-y-4">
@@ -298,6 +306,10 @@ export default function GestorPage() {
               <ClienteImportJSON onImported={() => { loadClientes(); setClientesSubTab('lista'); }} />
             </div>
           )}
+        </TabsContent>
+
+        <TabsContent value="materiais" className="space-y-4">
+          <MateriaisModule />
         </TabsContent>
       </Tabs>
 
