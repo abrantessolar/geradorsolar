@@ -74,11 +74,11 @@ export default function ProposalPage() {
   const [lightbox, setLightbox] = useState<string | null>(null);
   const [videoModal, setVideoModal] = useState<string | null>(null);
   const [panelDelta, setPanelDelta] = useState(0);
-  const [cashflowInstallments, setCashflowInstallments] = useState(60);
+  const [cashflowInstallments, setCashflowInstallments] = useState(36);
   const [paymentTab, setPaymentTab] = useState<'financing' | 'card'>('financing');
   const [cashflowMode, setCashflowMode] = useState<'financing' | 'card' | 'cash'>('financing');
   const [cashflowLine, setCashflowLine] = useState<string>(proposal?.selectedLine || 'excellence');
-  const [cashflowPeriod, setCashflowPeriod] = useState(15);
+  const [cashflowPeriod, setCashflowPeriod] = useState(5);
   const [showShareMenu, setShowShareMenu] = useState(false);
   const [showCashflow, setShowCashflow] = useState(false);
 
