@@ -82,7 +82,7 @@ type ObrasSubTab = 'dashboard' | 'projetos' | 'novo' | 'editar' | 'modelos' | 'i
 type ClientesSubTab = 'lista' | 'importar_clientes';
 
 export default function GestorPage() {
-  const { session } = useAuth();
+  const { session, isAdmin } = useAuth();
   const [mainTab, setMainTab] = useState<'obras' | 'clientes'>('obras');
   const [obrasSubTab, setObrasSubTab] = useState<ObrasSubTab>('dashboard');
   const [clientesSubTab, setClientesSubTab] = useState<ClientesSubTab>('lista');
