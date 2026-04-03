@@ -227,9 +227,9 @@ export default function GestorPage() {
   ];
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-primary">Painel do Gestor de Obras</h1>
+    <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6 px-2 sm:px-0">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <h1 className="text-lg sm:text-2xl font-bold text-primary">Painel do Gestor</h1>
         <button
           onClick={async () => {
             try {
@@ -243,37 +243,37 @@ export default function GestorPage() {
               toast.error('Erro na sincronização: ' + (err.message || err));
             }
           }}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-accent text-accent-foreground hover:bg-accent/80 transition-colors"
+          className="flex items-center gap-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-medium bg-accent text-accent-foreground hover:bg-accent/80 transition-colors self-start"
         >
-          <RefreshCw className="w-4 h-4" /> Sincronizar Sheets
+          <RefreshCw className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Sincronizar Sheets
         </button>
       </div>
 
       {/* Main tabs: Obras / Clientes */}
       <Tabs value={mainTab} onValueChange={(v) => setMainTab(v as any)}>
-        <TabsList className="w-full justify-start gap-1 bg-transparent p-0">
-          <TabsTrigger value="obras" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-6 py-2.5 rounded-lg">
-            <Wrench className="w-4 h-4" /> Obras
+        <TabsList className="w-full justify-start gap-1 bg-transparent p-0 overflow-x-auto flex-nowrap">
+          <TabsTrigger value="obras" className="flex items-center gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-3 sm:px-6 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm whitespace-nowrap">
+            <Wrench className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Obras
           </TabsTrigger>
-          <TabsTrigger value="clientes" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-6 py-2.5 rounded-lg">
-            <Users className="w-4 h-4" /> Clientes
+          <TabsTrigger value="clientes" className="flex items-center gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-3 sm:px-6 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm whitespace-nowrap">
+            <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Clientes
           </TabsTrigger>
-          <TabsTrigger value="materiais" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-6 py-2.5 rounded-lg">
-            <Package className="w-4 h-4" /> Materiais
+          <TabsTrigger value="materiais" className="flex items-center gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-3 sm:px-6 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm whitespace-nowrap">
+            <Package className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Materiais
           </TabsTrigger>
-          <TabsTrigger value="equipamentos" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-6 py-2.5 rounded-lg">
-            <Cpu className="w-4 h-4" /> Equipamentos
+          <TabsTrigger value="equipamentos" className="flex items-center gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-3 sm:px-6 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm whitespace-nowrap">
+            <Cpu className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Equipamentos
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="obras" className="space-y-4">
-          <div className="flex gap-2 flex-wrap">
+        <TabsContent value="obras" className="space-y-3 sm:space-y-4">
+          <div className="flex gap-1.5 sm:gap-2 flex-nowrap overflow-x-auto pb-1">
             {obrasTabs.map(t => (
               <button key={t.key} onClick={() => { setObrasSubTab(t.key); setEditId(null); }}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                className={`flex items-center gap-1.5 px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap shrink-0 ${
                   obrasSubTab === t.key ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/70'
                 }`}>
-                <t.icon className="w-4 h-4" /> {t.label}
+                <t.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> {t.label}
               </button>
             ))}
           </div>
