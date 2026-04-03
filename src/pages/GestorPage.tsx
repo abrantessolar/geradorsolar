@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import {
-  BarChart3, ClipboardList, Plus, FileText, Upload, RefreshCw, Users, Wrench,
+  BarChart3, ClipboardList, Plus, FileText, Upload, RefreshCw, Users, Wrench, Package,
 } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import GestorDashboard from '@/components/gestor/GestorDashboard';
@@ -14,6 +14,7 @@ import ModelosDocumentos from '@/components/gestor/ModelosDocumentos';
 import ImportCSV from '@/components/gestor/ImportCSV';
 import ClientesList, { type ClienteBase } from '@/components/gestor/ClientesList';
 import ClienteImportJSON from '@/components/gestor/ClienteImportJSON';
+import MateriaisModule from '@/components/gestor/materiais/MateriaisModule';
 
 export type Projeto = {
   id: string;
