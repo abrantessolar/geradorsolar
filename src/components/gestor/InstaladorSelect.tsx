@@ -30,10 +30,10 @@ export default function InstaladorSelect({ projetoId, currentValue, onDone }: {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  const select = async (nome: string) => {
+  const select = async (nome: string | null) => {
     const { error } = await supabase.from('projetos' as any).update({ instalador: nome }).eq('id', projetoId);
     if (error) toast.error(error.message);
-    else { toast.success(`Instalador: ${nome}`); onDone(); }
+    else { toast.success(nome ? `Instalador: ${nome}` : 'Instalador removido'); onDone(); }
     setOpen(false);
   };
 
