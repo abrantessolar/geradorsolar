@@ -4,9 +4,6 @@ import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNewLeadsCount } from '@/components/LeadNotification';
 import logoImg from '@/assets/logo.png';
-import { useState } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
-import { useNewLeadsCount } from '@/components/LeadNotification';
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
