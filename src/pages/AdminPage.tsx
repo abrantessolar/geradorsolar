@@ -312,11 +312,10 @@ function PriceTableTab() {
   const MAX_PANELS = 25;
   const stored = getPriceTable();
   const filteredStored = stored.filter(r => r.panels <= MAX_PANELS);
-  const initial: PriceTableEntry[] = filteredStored.length > 0 ? filteredStored.map(r => ({ ...r, essencial: (r as any).essencial ?? null })) :
+  const initial: PriceTableEntry[] = filteredStored.length > 0 ? filteredStored : 
     Array.from({ length: MAX_PANELS - 3 }, (_, i) => ({
       panels: i + 4,
       acesso: null,
-      essencial: null,
       excellence: null,
       premium: null,
       estimated: {},
@@ -337,7 +336,6 @@ function PriceTableTab() {
   }, []);
 
   const LINES_ARR = [
-    { key: 'essencial' as const, name: LINE_NAMES.essencial },
     { key: 'excellence' as const, name: LINE_NAMES.excellence },
     { key: 'premium' as const, name: LINE_NAMES.premium },
   ];
@@ -396,7 +394,7 @@ function PriceTableTab() {
     })
   );
 
-  const updateCell = (idx: number, field: 'acesso' | 'essencial' | 'excellence' | 'premium', value: string) => {
+  const updateCell = (idx: number, field: 'acesso' | 'excellence' | 'premium', value: string) => {
     const num = value === '' ? null : parseFloat(value);
     setTable(prev => prev.map((row, i) => i === idx ? {
       ...row,
@@ -439,7 +437,7 @@ function PriceTableTab() {
   };
 
   const generateEstimates = () => {
-    const lines: ('acesso' | 'essencial' | 'excellence' | 'premium')[] = ['acesso', 'essencial', 'excellence', 'premium'];
+    const lines: ('acesso' | 'excellence' | 'premium')[] = ['acesso', 'excellence', 'premium'];
     const newTable = [...table.map(r => ({ ...r, estimated: { ...r.estimated } }))];
     lines.forEach(line => {
       const filled = newTable.filter(r => r[line] !== null && r[line]! > 0).map(r => ({ panels: r.panels, value: r[line]! }));

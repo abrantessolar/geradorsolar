@@ -63,14 +63,6 @@ const DEFAULT_KITS: Kit[] = [
   { id: 'inv-ac-15', line: 'acesso', type: 'inversor', brand: 'Growatt', model: 'MOD 15KTL3-X', power: 15, warranty: 10, costPrice: 5800, minPower: 12, maxPower: 20, active: true },
   { id: 'inv-ac-25', line: 'acesso', type: 'inversor', brand: 'Growatt', model: 'MOD 25KTL3-X', power: 25, warranty: 10, costPrice: 7500, minPower: 18, maxPower: 30, active: true },
   { id: 'pan-ac', line: 'acesso', type: 'placa', brand: 'DAH Solar', model: 'DHM-60X10/FS', power: 570, warranty: 25, costPrice: 480, minPower: 0, maxPower: 999, active: true },
-  // Essencial (econômica — string inverters)
-  { id: 'inv-es-3', line: 'essencial', type: 'inversor', brand: 'Growatt', model: 'MIN 3000TL-X', power: 3, warranty: 10, costPrice: 2200, minPower: 1, maxPower: 3.5, active: true },
-  { id: 'inv-es-5', line: 'essencial', type: 'inversor', brand: 'Growatt', model: 'MIN 5000TL-X', power: 5, warranty: 10, costPrice: 2800, minPower: 3.5, maxPower: 6, active: true },
-  { id: 'inv-es-8', line: 'essencial', type: 'inversor', brand: 'Growatt', model: 'MIN 8000TL-X', power: 8, warranty: 10, costPrice: 3500, minPower: 6, maxPower: 10, active: true },
-  { id: 'inv-es-10', line: 'essencial', type: 'inversor', brand: 'Growatt', model: 'MOD 10KTL3-X', power: 10, warranty: 10, costPrice: 4200, minPower: 8, maxPower: 15, active: true },
-  { id: 'inv-es-15', line: 'essencial', type: 'inversor', brand: 'Growatt', model: 'MOD 15KTL3-X', power: 15, warranty: 10, costPrice: 5800, minPower: 12, maxPower: 20, active: true },
-  { id: 'inv-es-25', line: 'essencial', type: 'inversor', brand: 'Growatt', model: 'MOD 25KTL3-X', power: 25, warranty: 10, costPrice: 7500, minPower: 18, maxPower: 30, active: true },
-  { id: 'pan-es', line: 'essencial', type: 'placa', brand: 'DAH Solar', model: 'DHM-60X10/FS', power: 570, warranty: 25, costPrice: 420, minPower: 0, maxPower: 999, active: true },
   // Excellence
   { id: 'inv-ex-3', line: 'excellence', type: 'inversor', brand: 'Huawei', model: 'SUN2000-3KTL-L1', power: 3, warranty: 10, costPrice: 3200, minPower: 1, maxPower: 3.5, active: true },
   { id: 'inv-ex-5', line: 'excellence', type: 'inversor', brand: 'Huawei', model: 'SUN2000-5KTL-L1', power: 5, warranty: 10, costPrice: 3800, minPower: 3.5, maxPower: 6, active: true },

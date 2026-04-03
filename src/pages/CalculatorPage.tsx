@@ -27,7 +27,7 @@ const EQUIPMENT_COLORS = [
   '#F39C12', '#2ECC71', '#8E44AD', '#16A085', '#D35400',
 ];
 
-const LINES = ['essencial', 'excellence', 'premium'] as const;
+const LINES = ['excellence', 'premium'] as const;
 
 
 const emptyMonthly = (): MonthlyConsumption => ({
@@ -137,7 +137,6 @@ export default function CalculatorPage() {
   });
   const [customKits, setCustomKits] = useState<Record<string, CustomKitData>>(() => {
     const base = {
-      essencial: defaultCustomKit(0),
       excellence: defaultCustomKit(0),
       premium: defaultCustomKit(0),
     };
@@ -262,7 +261,7 @@ export default function CalculatorPage() {
   }, []);
 
   // Find best price table entry for a given line and panel count
-  const findPriceTableEntry = useCallback((line: 'essencial' | 'excellence' | 'premium', panels: number): PriceTableEntry | null => {
+  const findPriceTableEntry = useCallback((line: 'excellence' | 'premium', panels: number): PriceTableEntry | null => {
     const entries = priceTable.filter(e => e[line] !== null && e[line]! > 0 && e.panels >= panels);
     entries.sort((a, b) => a.panels - b.panels);
     // Exact match first, then next available

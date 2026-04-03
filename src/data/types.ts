@@ -57,7 +57,7 @@ export interface EquipmentItem {
 
 export interface Kit {
   id: string;
-  line: 'acesso' | 'essencial' | 'excellence' | 'premium';
+  line: 'acesso' | 'excellence' | 'premium';
   type: 'inversor' | 'placa' | 'estrutura' | 'cabo' | 'stringbox';
   brand: string;
   model: string;
@@ -107,13 +107,11 @@ export interface PriceTableLineDetails {
 export interface PriceTableEntry {
   panels: number;
   acesso: number | null;
-  essencial: number | null;
   excellence: number | null;
   premium: number | null;
-  estimated?: { acesso?: boolean; essencial?: boolean; excellence?: boolean; premium?: boolean };
+  estimated?: { acesso?: boolean; excellence?: boolean; premium?: boolean };
   details?: {
     acesso?: PriceTableLineDetails;
-    essencial?: PriceTableLineDetails;
     excellence?: PriceTableLineDetails;
     premium?: PriceTableLineDetails;
   };
@@ -134,7 +132,7 @@ export interface Proposal {
   consumption: MonthlyConsumption;
   consumerUnits: ConsumerUnit[];
   equipment: EquipmentItem[];
-  selectedLine: 'acesso' | 'essencial' | 'excellence' | 'premium';
+  selectedLine: 'acesso' | 'excellence' | 'premium';
   selectedKit: { inverter: Kit | null; panel: Kit | null; panelCount: number };
   totalPrice: number;
   installmentValues: Record<number, number | { perMonth: number; total: number }>;
@@ -186,13 +184,11 @@ export const AVAILABILITY_FEE: Record<string, number> = {
 };
 
 export const LINE_NAMES: Record<string, string> = {
-  essencial: 'TLS Essencial — Opção 1',
-  excellence: 'TLS Plus — Opção 2',
-  premium: 'TLS Prime Micro — Opção 3',
+  excellence: 'TLS Plus — Opção 1',
+  premium: 'TLS Prime Micro — Opção 2',
 };
 
 export const LINE_SUBS: Record<string, string> = {
-  essencial: 'Linha econômica — Custo-benefício',
   excellence: 'Importados intermediários',
   premium: 'Micro inversores — Top de linha',
 };

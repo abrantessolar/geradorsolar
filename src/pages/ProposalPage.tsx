@@ -20,7 +20,7 @@ import Diferenciais from '@/components/Diferenciais';
 import ProposalPortfolio from '@/components/ProposalPortfolio';
 
 
-const LINES = ['essencial', 'excellence', 'premium'] as const;
+const LINES = ['excellence', 'premium'] as const;
 const PERIOD_OPTIONS = [5, 10, 15, 20, 25];
 
 export default function ProposalPage() {
@@ -77,7 +77,7 @@ export default function ProposalPage() {
   const [cashflowInstallments, setCashflowInstallments] = useState(60);
   const [paymentTab, setPaymentTab] = useState<'financing' | 'card'>('financing');
   const [cashflowMode, setCashflowMode] = useState<'financing' | 'card' | 'cash'>('financing');
-  const [cashflowLine, setCashflowLine] = useState<string>(proposal?.selectedLine || 'essencial');
+  const [cashflowLine, setCashflowLine] = useState<string>(proposal?.selectedLine || 'excellence');
   const [cashflowPeriod, setCashflowPeriod] = useState(15);
   const [showShareMenu, setShowShareMenu] = useState(false);
   const [showCashflow, setShowCashflow] = useState(false);
