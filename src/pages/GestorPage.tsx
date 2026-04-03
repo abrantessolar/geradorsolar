@@ -287,25 +287,12 @@ export default function GestorPage() {
         </TabsContent>
 
         <TabsContent value="clientes" className="space-y-4">
-          {clientesSubTab === 'lista' && (
-            <ClientesList
-              clientes={clientes}
-              loading={loadingClientes}
-              onPromover={handlePromoverParaObra}
-              onRefresh={loadClientes}
-              onImport={() => setClientesSubTab('importar_clientes')}
-              showImport={isAdmin}
-            />
-          )}
-          {clientesSubTab === 'importar_clientes' && (
-            <div className="space-y-4">
-              <button onClick={() => setClientesSubTab('lista')}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-muted text-muted-foreground hover:bg-muted/70 transition-colors">
-                ← Voltar para Lista
-              </button>
-              <ClienteImportJSON onImported={() => { loadClientes(); setClientesSubTab('lista'); }} />
-            </div>
-          )}
+          <ClientesList
+            clientes={clientes}
+            loading={loadingClientes}
+            onPromover={handlePromoverParaObra}
+            onRefresh={loadClientes}
+          />
         </TabsContent>
 
         <TabsContent value="materiais" className="space-y-4">
