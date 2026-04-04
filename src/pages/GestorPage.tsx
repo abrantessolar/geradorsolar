@@ -221,8 +221,6 @@ export default function GestorPage() {
     { key: 'dashboard' as const, label: 'Dashboard', icon: BarChart3 },
     { key: 'projetos' as const, label: 'Projetos', icon: ClipboardList },
     { key: 'novo' as const, label: 'Novo Projeto', icon: Plus },
-    { key: 'modelos' as const, label: 'Modelos', icon: FileText },
-    ...(isAdmin ? [{ key: 'importar' as const, label: 'Importar JSON', icon: Upload }] : []),
   ];
 
   return (
