@@ -129,8 +129,18 @@ export default function EntradaLoteModal({ onClose, onDone }: { onClose: () => v
                         placeholder="0"
                       />
                     </td>
-                    <td className="py-2 px-3 text-right text-muted-foreground">
-                      {row.preco_unitario ? `R$ ${row.preco_unitario.toFixed(2)}` : '—'}
+                    <td className="py-2 px-3 text-center">
+                      <input
+                        className="solar-input w-20 text-center mx-auto"
+                        type="number" min="0" step="0.01"
+                        value={row.preco_unitario != null ? String(row.preco_unitario) : ''}
+                        onChange={e => {
+                          const newRows = [...rows];
+                          newRows[idx] = { ...newRows[idx], preco_unitario: e.target.value ? Number(e.target.value) : null };
+                          setRows(newRows);
+                        }}
+                        placeholder="0.00"
+                      />
                     </td>
                   </tr>
                 ))}
