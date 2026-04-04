@@ -302,7 +302,7 @@ export default function GestorPage() {
 
           {obrasSubTab === 'dashboard' && <GestorDashboard projetos={projetos} loading={loading} onRefresh={loadProjetos} />}
           {obrasSubTab === 'projetos' && (
-            <ProjetosList projetos={projetos} loading={loading} onEdit={handleEdit} onDocumentos={p => setDocProjeto(p)} onRefresh={loadProjetos} />
+            <ProjetosList projetos={projetos} loading={loading} onEdit={handleEdit} onDocumentos={p => setDocProjeto(p)} onRefresh={() => { loadProjetos(); loadClientes(); }} />
           )}
           {obrasSubTab === 'novo' && <ProjetoForm onSaved={handleSaved} />}
           {obrasSubTab === 'editar' && editId && (
