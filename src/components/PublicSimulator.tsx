@@ -510,7 +510,7 @@ export default function PublicSimulator() {
 
           {/* Results */}
           {showResults && results && (
-            <div className="space-y-6 pt-6 border-t border-border animate-fade-in-up relative">
+            <div className="space-y-6 pt-6 border-t border-border animate-fade-in-up relative" style={{ minHeight: '500px' }}>
               {/* Blurred overlay when not unlocked */}
               {!isUnlocked && (
                 <>
