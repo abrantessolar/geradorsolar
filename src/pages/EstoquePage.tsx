@@ -5,9 +5,10 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import {
   Package, Send, RotateCcw, BarChart3, RefreshCw, ArrowLeft,
-  Check, AlertTriangle, Loader2, X, Phone, MapPin, Wrench, Plus, Trash2
+  Check, AlertTriangle, Loader2, X, Phone, MapPin, Wrench, Plus, Trash2, FileDown
 } from 'lucide-react';
 import { CATEGORIA_ICONS } from '@/components/gestor/materiais/types';
+import { generateFichaInstalacao } from '@/lib/generateFichaInstalacao';
 
 /* ─── Types ─── */
 type ObraCard = {
@@ -624,15 +625,36 @@ export default function EstoquePage() {
               </div>
 
               {/* Fixed footer actions */}
-              {obraDetails && obraDetails.materiais.some(m => !m.separado) && (
-                <div className="p-4 border-t border-border bg-background flex-shrink-0 space-y-2">
+              <div className="p-4 border-t border-border bg-background flex-shrink-0 space-y-2">
+                {obraDetails && obraDetails.materiais.some(m => !m.separado) && (
                   <button onClick={confirmRetirada} disabled={savingRetirada}
                     className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-primary text-primary-foreground font-medium text-base h-[56px] disabled:opacity-50">
                     {savingRetirada ? <Loader2 className="w-5 h-5 animate-spin" /> : <Check className="w-5 h-5" />}
                     ✅ Confirmar Retirada ({obraDetails.materiais.filter(m => !m.separado).length} itens)
                   </button>
-                </div>
-              )}
+                )}
+                <button onClick={() => {
+                  // Build a projeto-like object from selectedObra
+                  const p: any = {
+                    id: selectedObra.id,
+                    nome_completo: selectedObra.nome,
+                    telefone: selectedObra.telefone,
+                    endereco_completo: selectedObra.endereco,
+                    qtd_placas: selectedObra.qtd_placas,
+                    marca_placa: selectedObra.marca_placa,
+                    potencia_placa: selectedObra.potencia_placa,
+                    qtd_inversores: selectedObra.qtd_inversores,
+                    marca_inversor: selectedObra.marca_inversor,
+                    potencia_inversor: selectedObra.potencia_inversor,
+                    sistema: selectedObra.sistema,
+                    instalador: selectedObra.instalador,
+                  };
+                  generateFichaInstalacao(p);
+                }}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 border-primary text-primary font-medium text-base h-[56px]">
+                  <FileDown className="w-5 h-5" /> 📋 Ficha de Instalação
+                </button>
+              </div>
             </div>
           ) : !activeAction ? (
             <div className="flex items-center justify-center h-full text-muted-foreground text-base p-8">
