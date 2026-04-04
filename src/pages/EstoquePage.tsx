@@ -79,7 +79,7 @@ export default function EstoquePage() {
   const [activeAction, setActiveAction] = useState<'entrada' | 'retorno' | 'estoque' | null>(null);
 
   // Entrada em lote
-  const [entradaRows, setEntradaRows] = useState<{ id: string; nome: string; categoria: string; estoque_atual: number; entrada: string }[]>([]);
+  const [entradaRows, setEntradaRows] = useState<{ id: string; nome: string; categoria: string; estoque_atual: number; entrada: string; preco_unitario: string }[]>([]);
   const [entradaNota, setEntradaNota] = useState('');
   const [savingEntrada, setSavingEntrada] = useState(false);
 
@@ -297,7 +297,11 @@ export default function EstoquePage() {
     ]);
     const estoqueMap: Record<string, number> = {};
     (estoqueSnap || []).forEach((e: any) => { estoqueMap[e.material_id] = e.quantidade_atual || 0; });
-    setEntradaRows((mats || []).map((m: any) => ({ id: m.id, nome: m.nome, categoria: m.categoria, estoque_atual: estoqueMap[m.id] || 0, entrada: '' })));
+    // Also fetch prices
+    const { data: matsWithPrice } = await supabase.from('materiais').select('id, preco_unitario').eq('ativo', true);
+    const priceMap: Record<string, number | null> = {};
+    (matsWithPrice || []).forEach((m: any) => { priceMap[m.id] = m.preco_unitario; });
+    setEntradaRows((mats || []).map((m: any) => ({ id: m.id, nome: m.nome, categoria: m.categoria, estoque_atual: estoqueMap[m.id] || 0, entrada: '', preco_unitario: priceMap[m.id] != null ? String(priceMap[m.id]) : '' })));
   };
 
   const confirmEntrada = async () => {
@@ -307,6 +311,14 @@ export default function EstoquePage() {
     if (entradas.length === 0) { toast.error('Nenhuma quantidade informada'); return; }
     setSavingEntrada(true);
     try {
+      // Update prices for all rows that have a price set (even without entrada)
+      const priceUpdates = entradaRows.filter(r => r.preco_unitario !== '');
+      for (const row of priceUpdates) {
+        const price = parseFloat(row.preco_unitario);
+        if (!isNaN(price) && price >= 0) {
+          await supabase.from('materiais').update({ preco_unitario: price }).eq('id', row.id);
+        }
+      }
       for (const row of entradas) {
         const qtd = parseInt(row.entrada);
         await supabase.from('movimentacoes_estoque').insert({ material_id: row.id, tipo: 'entrada', quantidade: qtd, observacao: entradaNota || null, usuario_id: userId });
@@ -669,13 +681,18 @@ export default function EstoquePage() {
 
 /* ─── Entrada Panel ─── */
 function EntradaPanel({ rows, setRows, nota, setNota, saving, onConfirm, onClose }: {
-  rows: { id: string; nome: string; categoria: string; estoque_atual: number; entrada: string }[];
+  rows: { id: string; nome: string; categoria: string; estoque_atual: number; entrada: string; preco_unitario: string }[];
   setRows: React.Dispatch<React.SetStateAction<typeof rows>>;
   nota: string; setNota: (v: string) => void; saving: boolean; onConfirm: () => void; onClose: () => void;
 }) {
   const [search, setSearch] = useState('');
   const qtdItens = rows.filter(r => r.entrada && parseInt(r.entrada) > 0).length;
   const filtered = rows.filter(r => !search || r.nome.toLowerCase().includes(search.toLowerCase()));
+  const totalValor = rows.reduce((sum, r) => {
+    const qtd = parseInt(r.entrada) || 0;
+    const preco = parseFloat(r.preco_unitario) || 0;
+    return sum + (qtd * preco);
+  }, 0);
   return (
     <div className="flex flex-col overflow-hidden h-full p-4">
       <div className="flex items-center justify-between mb-3">
@@ -690,7 +707,8 @@ function EntradaPanel({ rows, setRows, nota, setNota, saving, onConfirm, onClose
             <tr className="text-sm text-muted-foreground">
               <th className="py-3 px-3 text-left">Material</th>
               <th className="py-3 px-3 text-center w-20">Atual</th>
-              <th className="py-3 px-3 text-center w-28">+ Entrada</th>
+              <th className="py-3 px-3 text-center w-24">R$ Unit.</th>
+              <th className="py-3 px-3 text-center w-24">+ Entrada</th>
             </tr>
           </thead>
           <tbody>
@@ -700,6 +718,11 @@ function EntradaPanel({ rows, setRows, nota, setNota, saving, onConfirm, onClose
                 <tr key={row.id} className="border-t border-border/30 hover:bg-muted/20">
                   <td className="py-2 px-3"><span className="mr-1">{CATEGORIA_ICONS[row.categoria] || '📦'}</span>{row.nome}</td>
                   <td className="py-2 px-3 text-center font-medium">{row.estoque_atual}</td>
+                  <td className="py-2 px-3 text-center">
+                    <input className="w-20 rounded-lg border border-input bg-background px-2 py-2 text-center text-sm h-[44px]"
+                      type="number" min="0" step="0.01" inputMode="decimal" value={row.preco_unitario} placeholder="0.00"
+                      onChange={e => { const n = [...rows]; n[origIdx] = { ...n[origIdx], preco_unitario: e.target.value }; setRows(n); }} />
+                  </td>
                   <td className="py-2 px-3 text-center">
                     <input className="w-20 rounded-lg border border-input bg-background px-2 py-2 text-center text-base h-[44px]"
                       type="number" min="0" inputMode="numeric" value={row.entrada} placeholder="0"
@@ -712,7 +735,9 @@ function EntradaPanel({ rows, setRows, nota, setNota, saving, onConfirm, onClose
         </table>
       </div>
       <div className="flex items-center justify-between pt-3">
-        <span className="text-sm text-muted-foreground">{qtdItens} itens com entrada</span>
+        <div className="text-sm text-muted-foreground">
+          {qtdItens} itens · <span className="font-bold text-foreground">R$ {totalValor.toFixed(2)}</span>
+        </div>
         <button onClick={onConfirm} disabled={saving || qtdItens === 0}
           className="flex items-center gap-2 px-6 py-3 rounded-xl bg-primary text-primary-foreground font-medium text-base h-[48px] disabled:opacity-50">
           {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : null} Confirmar {qtdItens} entradas

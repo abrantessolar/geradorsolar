@@ -11,7 +11,7 @@ type MatRow = {
   categoria: string;
   estoque_atual: number;
   entrada: string;
-  preco_unitario: number | null;
+  preco_unitario: number | null | string;
 };
 
 export default function EntradaLoteModal({ onClose, onDone }: { onClose: () => void; onDone: () => void }) {
@@ -45,6 +45,12 @@ export default function EntradaLoteModal({ onClose, onDone }: { onClose: () => v
     if (entradas.length === 0) { toast.error('Nenhuma quantidade informada'); return; }
     setSaving(true);
     try {
+      // Save price updates for all rows with a price
+      for (const row of rows) {
+        if (row.preco_unitario != null) {
+          await supabase.from('materiais').update({ preco_unitario: Number(row.preco_unitario) }).eq('id', row.id);
+        }
+      }
       for (const row of entradas) {
         const qtd = parseInt(row.entrada);
         // Register movement
@@ -76,7 +82,7 @@ export default function EntradaLoteModal({ onClose, onDone }: { onClose: () => v
 
   const totalEntrada = rows.reduce((sum, r) => {
     const qtd = parseInt(r.entrada) || 0;
-    return sum + (qtd * (r.preco_unitario || 0));
+    return sum + (qtd * (Number(r.preco_unitario) || 0));
   }, 0);
   const qtdItens = rows.filter(r => r.entrada && parseInt(r.entrada) > 0).length;
 
@@ -105,7 +111,7 @@ export default function EntradaLoteModal({ onClose, onDone }: { onClose: () => v
                   <th className="py-2 px-3">Material</th>
                   <th className="py-2 px-3 text-center w-24">Qtd Atual</th>
                   <th className="py-2 px-3 text-center w-32">+ Entrada</th>
-                  <th className="py-2 px-3 text-right w-28">Preço Unit.</th>
+                  <th className="py-2 px-3 text-center w-28">R$ Unit.</th>
                 </tr>
               </thead>
               <tbody>
@@ -129,8 +135,18 @@ export default function EntradaLoteModal({ onClose, onDone }: { onClose: () => v
                         placeholder="0"
                       />
                     </td>
-                    <td className="py-2 px-3 text-right text-muted-foreground">
-                      {row.preco_unitario ? `R$ ${row.preco_unitario.toFixed(2)}` : '—'}
+                    <td className="py-2 px-3 text-center">
+                      <input
+                        className="solar-input w-20 text-center mx-auto"
+                        type="number" min="0" step="0.01"
+                        value={row.preco_unitario != null ? String(row.preco_unitario) : ''}
+                        onChange={e => {
+                          const newRows = [...rows];
+                          newRows[idx] = { ...newRows[idx], preco_unitario: e.target.value ? Number(e.target.value) : null };
+                          setRows(newRows);
+                        }}
+                        placeholder="0.00"
+                      />
                     </td>
                   </tr>
                 ))}
