@@ -297,7 +297,11 @@ export default function EstoquePage() {
     ]);
     const estoqueMap: Record<string, number> = {};
     (estoqueSnap || []).forEach((e: any) => { estoqueMap[e.material_id] = e.quantidade_atual || 0; });
-    setEntradaRows((mats || []).map((m: any) => ({ id: m.id, nome: m.nome, categoria: m.categoria, estoque_atual: estoqueMap[m.id] || 0, entrada: '' })));
+    // Also fetch prices
+    const { data: matsWithPrice } = await supabase.from('materiais').select('id, preco_unitario').eq('ativo', true);
+    const priceMap: Record<string, number | null> = {};
+    (matsWithPrice || []).forEach((m: any) => { priceMap[m.id] = m.preco_unitario; });
+    setEntradaRows((mats || []).map((m: any) => ({ id: m.id, nome: m.nome, categoria: m.categoria, estoque_atual: estoqueMap[m.id] || 0, entrada: '', preco_unitario: priceMap[m.id] != null ? String(priceMap[m.id]) : '' })));
   };
 
   const confirmEntrada = async () => {
