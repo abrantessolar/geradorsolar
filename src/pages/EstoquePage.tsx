@@ -79,7 +79,7 @@ export default function EstoquePage() {
   const [activeAction, setActiveAction] = useState<'entrada' | 'retorno' | 'estoque' | null>(null);
 
   // Entrada em lote
-  const [entradaRows, setEntradaRows] = useState<{ id: string; nome: string; categoria: string; estoque_atual: number; entrada: string }[]>([]);
+  const [entradaRows, setEntradaRows] = useState<{ id: string; nome: string; categoria: string; estoque_atual: number; entrada: string; preco_unitario: string }[]>([]);
   const [entradaNota, setEntradaNota] = useState('');
   const [savingEntrada, setSavingEntrada] = useState(false);
 
