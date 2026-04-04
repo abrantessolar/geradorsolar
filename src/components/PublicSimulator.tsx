@@ -147,8 +147,9 @@ export default function PublicSimulator() {
 
     const chartData = MONTH_LABELS.map((label, i) => {
       const gen = Math.round(actualKwp * irrValues[i] * 30 * (1 - loss));
-      const cons = Math.round(totalConsumption * SEASONAL_FACTORS[MONTH_KEYS[i]]);
-      const row: any = { name: label, Geração: gen, Consumo: cons };
+      // Base consumption without equipment
+      const baseCons = Math.round(effectiveAvg * SEASONAL_FACTORS[MONTH_KEYS[i]]);
+      const row: any = { name: label, Geração: gen, Consumo: baseCons };
       equipments.forEach(eq => {
         const fator = eq.catalog.fatorServico ?? 1;
         const eqKwh = eq.catalog.unit === 'km'
