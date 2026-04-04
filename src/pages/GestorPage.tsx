@@ -241,29 +241,25 @@ export default function GestorPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <h1 className="text-lg sm:text-2xl font-bold text-primary">Painel do Gestor</h1>
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => navigate('/estoque')}
-            className="flex items-center gap-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
-          >
-            <Package className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Estoque
-          </button>
-          <button
-            onClick={async () => {
-              try {
-                toast.info('Sincronizando com Google Sheets...');
-                const { data, error } = await supabase.functions.invoke('sync-to-sheets', {
-                  body: { sync_all: true },
-                });
-                if (error) throw error;
-                toast.success(`Sincronização concluída! ${data?.synced_obras || data?.synced || 0} obras, ${data?.synced_clientes || 0} clientes.`);
-              } catch (err: any) {
-                toast.error('Erro na sincronização: ' + (err.message || err));
-              }
-            }}
-            className="flex items-center gap-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-medium bg-accent text-accent-foreground hover:bg-accent/80 transition-colors"
-          >
-            <RefreshCw className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Sincronizar Sheets
-          </button>
+          {permissions.sincronizar_sheets && (
+            <button
+              onClick={async () => {
+                try {
+                  toast.info('Sincronizando com Google Sheets...');
+                  const { data, error } = await supabase.functions.invoke('sync-to-sheets', {
+                    body: { sync_all: true },
+                  });
+                  if (error) throw error;
+                  toast.success(`Sincronização concluída! ${data?.synced_obras || data?.synced || 0} obras, ${data?.synced_clientes || 0} clientes.`);
+                } catch (err: any) {
+                  toast.error('Erro na sincronização: ' + (err.message || err));
+                }
+              }}
+              className="flex items-center gap-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-medium bg-accent text-accent-foreground hover:bg-accent/80 transition-colors"
+            >
+              <RefreshCw className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Sincronizar Sheets
+            </button>
+          )}
         </div>
       </div>
 
