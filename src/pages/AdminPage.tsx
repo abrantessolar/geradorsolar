@@ -21,7 +21,17 @@ import { toast } from 'sonner';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import SiteContentTab from '@/components/admin/SiteContentTab';
 import EquipmentTab from '@/components/admin/EquipmentTab';
+import ModelosDocumentos from '@/components/gestor/ModelosDocumentos';
 import { useNavigate } from 'react-router-dom';
+
+function ModelosDocumentosWrapper() {
+  return (
+    <div className="solar-card p-6">
+      <h2 className="text-lg font-bold text-primary mb-4">Modelos de Documentos</h2>
+      <ModelosDocumentos />
+    </div>
+  );
+}
 
 const ROLE_LABELS: Record<string, string> = {
   admin: 'Administrador',
