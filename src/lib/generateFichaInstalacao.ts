@@ -195,14 +195,14 @@ export async function generateFichaInstalacao(projeto: ProjetoData) {
 
   const nomeArquivo = `Ficha_${nome.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0, 10)}.pdf`;
 
-  await html2pdf().set({
+  await (html2pdf as any)().set({
     margin: 15,
     filename: nomeArquivo,
     image: { type: 'jpeg', quality: 0.95 },
     html2canvas: { scale: 0.95, useCORS: true, logging: false },
     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
     pagebreak: { mode: ['avoid-all', 'css', 'legacy'] },
-  }).from(container.firstElementChild).save();
+  }).from(container.firstElementChild as HTMLElement).save();
 
   document.body.removeChild(container);
 }
