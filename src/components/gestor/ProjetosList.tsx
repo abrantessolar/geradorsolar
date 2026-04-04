@@ -206,6 +206,7 @@ export default function ProjetosList({ projetos, loading, onEdit, onDocumentos, 
                 <button onClick={() => onEdit(p.id)} className="text-primary hover:text-primary/80 p-1" title="Editar"><Edit2 className="w-4 h-4" /></button>
                 <button onClick={() => onDocumentos(p)} className="text-primary hover:text-primary/80 p-1" title="Documentos"><FileText className="w-4 h-4" /></button>
                 <button onClick={() => setMateriaisProjeto(p)} className="text-primary hover:text-primary/80 p-1" title="Lista de Materiais"><ClipboardList className="w-4 h-4" /></button>
+                <button onClick={() => generateFichaInstalacao(p)} className="text-primary hover:text-primary/80 p-1" title="Ficha de Instalação"><FileDown className="w-4 h-4" /></button>
                 <button onClick={() => setRetirarProjeto(p)} className="text-primary hover:text-primary/80 p-1" title="Retirar Material"><Package className="w-4 h-4" /></button>
                 <button onClick={() => setCongelarId(p.congelado ? null : p.id)} className="text-primary hover:text-primary/80 p-1"><Snowflake className="w-4 h-4" /></button>
                 <button onClick={() => setLayoutProjeto(p)} className={`${p.layout_url ? 'text-accent-foreground' : 'text-muted-foreground'} hover:text-primary p-1`}><ImageIcon className="w-4 h-4" /></button>
