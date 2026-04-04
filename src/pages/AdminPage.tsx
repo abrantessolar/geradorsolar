@@ -77,6 +77,7 @@ export default function AdminPage() {
       {tab === 'leads' && <LeadsTab />}
       {tab === 'prices' && <PriceTableTab />}
       {tab === 'equipment' && <EquipmentTab />}
+      {tab === 'modelos' && <ModelosDocumentosWrapper />}
       {tab === 'pricing' && <PricingTab />}
       {tab === 'irradiation' && <IrradiationTab />}
       {tab === 'company' && <CompanyTab />}

@@ -283,8 +283,7 @@ export default function GestorPage() {
           {obrasSubTab === 'editar' && editId && (
             <ProjetoForm projetoId={editId} onSaved={handleSaved} onCancel={() => { setObrasSubTab('projetos'); setEditId(null); }} />
           )}
-          {obrasSubTab === 'modelos' && <ModelosDocumentos />}
-          {obrasSubTab === 'importar' && <ImportCSV onImported={loadProjetos} />}
+          {obrasSubTab === 'importar' && isAdmin && <ImportCSV onImported={loadProjetos} />}
         </TabsContent>
 
         <TabsContent value="clientes" className="space-y-4">
