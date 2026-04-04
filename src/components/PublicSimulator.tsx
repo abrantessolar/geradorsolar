@@ -541,7 +541,7 @@ export default function PublicSimulator() {
               )}
 
               {/* Panel adjustment controls */}
-              <div className="flex items-center justify-center gap-4 p-4 rounded-xl bg-primary/5 border border-primary/20">
+              <div className="relative z-30 flex items-center justify-center gap-4 p-4 rounded-xl bg-primary/5 border border-primary/20">
                 <span className="text-sm font-semibold text-foreground">Ajustar placas:</span>
                 <button
                   onClick={() => setPanelDelta(d => d - 1)}
