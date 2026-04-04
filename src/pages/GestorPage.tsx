@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import {
-  BarChart3, ClipboardList, Plus, RefreshCw, Users, Wrench, Package, Cpu,
+  BarChart3, ClipboardList, Plus, RefreshCw, Users, Wrench, Package, Cpu, DollarSign,
 } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import GestorDashboard from '@/components/gestor/GestorDashboard';
@@ -16,6 +16,7 @@ import ClientesList, { type ClienteBase } from '@/components/gestor/ClientesList
 
 import MateriaisModule from '@/components/gestor/materiais/MateriaisModule';
 import EquipmentDashboard from '@/components/gestor/EquipmentDashboard';
+import CustosModule from '@/components/gestor/custos/CustosModule';
 
 export type Projeto = {
   id: string;
@@ -92,7 +93,7 @@ type ObrasSubTab = 'dashboard' | 'projetos' | 'novo' | 'editar' | 'importar';
 export default function GestorPage() {
   const navigate = useNavigate();
   const { session, isAdmin } = useAuth();
-  const [mainTab, setMainTab] = useState<'obras' | 'clientes' | 'materiais' | 'equipamentos'>('obras');
+  const [mainTab, setMainTab] = useState<'obras' | 'clientes' | 'materiais' | 'equipamentos' | 'custos'>('obras');
   const [obrasSubTab, setObrasSubTab] = useState<ObrasSubTab>('dashboard');
   
   const [projetos, setProjetos] = useState<Projeto[]>([]);
@@ -271,6 +272,9 @@ export default function GestorPage() {
           <TabsTrigger value="equipamentos" className="flex items-center gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-3 sm:px-6 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm whitespace-nowrap">
             <Cpu className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Equipamentos
           </TabsTrigger>
+          <TabsTrigger value="custos" className="flex items-center gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-3 sm:px-6 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm whitespace-nowrap">
+            <DollarSign className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Custos
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="obras" className="space-y-3 sm:space-y-4">
@@ -311,6 +315,10 @@ export default function GestorPage() {
 
         <TabsContent value="equipamentos" className="space-y-4">
           <EquipmentDashboard clientes={clientes} />
+        </TabsContent>
+
+        <TabsContent value="custos" className="space-y-4">
+          <CustosModule />
         </TabsContent>
       </Tabs>
 
