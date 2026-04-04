@@ -328,9 +328,6 @@ export default function GestorPage() {
           <EquipmentDashboard clientes={clientes} />
         </TabsContent>
 
-        <TabsContent value="custos" className="space-y-4">
-          <CustosModule />
-        </TabsContent>
       </Tabs>
 
       {docProjeto && (
