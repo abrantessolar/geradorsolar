@@ -16,7 +16,7 @@ import ClientesList, { type ClienteBase } from '@/components/gestor/ClientesList
 
 import MateriaisModule from '@/components/gestor/materiais/MateriaisModule';
 import EquipmentDashboard from '@/components/gestor/EquipmentDashboard';
-import CustosModule from '@/components/gestor/custos/CustosModule';
+
 
 export type Projeto = {
   id: string;
