@@ -510,38 +510,9 @@ export default function PublicSimulator() {
 
           {/* Results */}
           {showResults && results && (
-            <div className="space-y-6 pt-6 border-t border-border animate-fade-in-up relative" style={{ minHeight: '500px' }}>
-              {/* Blurred overlay when not unlocked */}
-              {!isUnlocked && (
-                <>
-                  <div className="absolute inset-0 z-10" style={{ backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}>
-                    <div className="absolute inset-0 bg-background/40" />
-                  </div>
-                  <div className="absolute inset-0 z-20 flex items-center justify-center px-4">
-                    <div className="bg-card border border-border rounded-2xl p-6 max-w-sm w-full shadow-2xl space-y-4 text-center">
-                      <div className="mx-auto w-14 h-14 rounded-full bg-secondary/10 flex items-center justify-center">
-                        <Lock className="w-7 h-7 text-secondary" />
-                      </div>
-                      <h3 className="text-lg font-bold text-primary">Resultado pronto!</h3>
-                      <p className="text-sm text-muted-foreground">
-                        Preencha seu nome e WhatsApp para desbloquear o resultado completo da simulação.
-                      </p>
-                      <div className="space-y-3 text-left">
-                        <input className="solar-input" placeholder="Seu nome" value={leadName} onChange={e => setLeadName(e.target.value)} />
-                        <input className="solar-input" placeholder="WhatsApp (XX) XXXXX-XXXX" value={leadPhone} onChange={e => setLeadPhone(e.target.value)} />
-                      </div>
-                      <button onClick={handleUnlock} disabled={savingLead || !leadName.trim() || !leadPhone.trim()}
-                        className="w-full solar-btn-primary py-3 flex items-center justify-center gap-2 disabled:opacity-50">
-                        {savingLead ? 'Enviando...' : (<><Shield className="w-4 h-4" /> Desbloquear resultado</>)}
-                      </button>
-                      <p className="text-xs text-muted-foreground">Seus dados estão seguros. Não fazemos spam.</p>
-                    </div>
-                  </div>
-                </>
-              )}
-
-              {/* Panel adjustment controls */}
-              <div className="relative z-30 flex items-center justify-center gap-4 p-4 rounded-xl bg-primary/5 border border-primary/20">
+            <div className="space-y-6 pt-6 border-t border-border animate-fade-in-up">
+              {/* Panel adjustment controls - always accessible */}
+              <div className="flex items-center justify-center gap-4 p-4 rounded-xl bg-primary/5 border border-primary/20">
                 <span className="text-sm font-semibold text-foreground">Ajustar placas:</span>
                 <button
                   onClick={() => setPanelDelta(d => d - 1)}
@@ -570,53 +541,86 @@ export default function PublicSimulator() {
                 )}
               </div>
 
-              {/* Results cards */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="text-center p-4 rounded-xl bg-primary/5">
-                  <p className="text-2xl md:text-3xl font-bold text-primary">{results.panelCount}</p>
-                  <p className="text-xs text-muted-foreground">Placas solares</p>
-                </div>
-                <div className="text-center p-4 rounded-xl bg-secondary/5">
-                  <p className="text-2xl md:text-3xl font-bold text-secondary">{results.powerKwp.toFixed(2)}</p>
-                  <p className="text-xs text-muted-foreground">kWp do sistema</p>
-                </div>
-                <div className="text-center p-4 rounded-xl bg-primary/5">
-                  <p className="text-2xl md:text-3xl font-bold text-primary">{results.avgGen}</p>
-                  <p className="text-xs text-muted-foreground">kWh/mês gerados</p>
-                </div>
-                <div className="text-center p-4 rounded-xl bg-secondary/5">
-                  <p className="text-2xl md:text-3xl font-bold text-secondary">{results.totalConsumption}</p>
-                  <p className="text-xs text-muted-foreground">kWh/mês consumo total</p>
-                </div>
-              </div>
+              {/* Results content with blur overlay */}
+              <div className="relative" style={{ minHeight: '400px' }}>
+                {!isUnlocked && (
+                  <>
+                    <div className="absolute inset-0 z-10" style={{ backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}>
+                      <div className="absolute inset-0 bg-background/40" />
+                    </div>
+                    <div className="absolute inset-0 z-20 flex items-center justify-center px-4">
+                      <div className="bg-card border border-border rounded-2xl p-6 max-w-sm w-full shadow-2xl space-y-4 text-center">
+                        <div className="mx-auto w-14 h-14 rounded-full bg-secondary/10 flex items-center justify-center">
+                          <Lock className="w-7 h-7 text-secondary" />
+                        </div>
+                        <h3 className="text-lg font-bold text-primary">Resultado pronto!</h3>
+                        <p className="text-sm text-muted-foreground">
+                          Preencha seu nome e WhatsApp para desbloquear o resultado completo da simulação.
+                        </p>
+                        <div className="space-y-3 text-left">
+                          <input className="solar-input" placeholder="Seu nome" value={leadName} onChange={e => setLeadName(e.target.value)} />
+                          <input className="solar-input" placeholder="WhatsApp (XX) XXXXX-XXXX" value={leadPhone} onChange={e => setLeadPhone(e.target.value)} />
+                        </div>
+                        <button onClick={handleUnlock} disabled={savingLead || !leadName.trim() || !leadPhone.trim()}
+                          className="w-full solar-btn-primary py-3 flex items-center justify-center gap-2 disabled:opacity-50">
+                          {savingLead ? 'Enviando...' : (<><Shield className="w-4 h-4" /> Desbloquear resultado</>)}
+                        </button>
+                        <p className="text-xs text-muted-foreground">Seus dados estão seguros. Não fazemos spam.</p>
+                      </div>
+                    </div>
+                  </>
+                )}
 
-              {/* Chart */}
-              <div className="h-64 md:h-72">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={results.chartData} margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
-                    <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-                    <YAxis tick={{ fontSize: 11 }} />
-                    <Tooltip formatter={(v: number) => `${v} kWh`} />
-                    <Legend wrapperStyle={{ fontSize: '11px' }} />
-                    <Bar dataKey="Geração" fill="#4A5A2A" radius={[3, 3, 0, 0]} />
-                    <Bar dataKey="Consumo" stackId="consumption" fill="#E8B84B" radius={[3, 3, 0, 0]} />
-                    {equipments.map((eq, idx) => {
-                      const eqLabel = eq.quantity > 1 ? `${eq.catalog.label} (x${eq.quantity})` : eq.catalog.label;
-                      return <Bar key={eq.id} dataKey={eqLabel} stackId="consumption" fill={EQUIPMENT_COLORS[idx % EQUIPMENT_COLORS.length]} radius={[2, 2, 0, 0]} />;
-                    })}
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
+                {/* Results cards */}
+                <div className="space-y-6">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="text-center p-4 rounded-xl bg-primary/5">
+                      <p className="text-2xl md:text-3xl font-bold text-primary">{results.panelCount}</p>
+                      <p className="text-xs text-muted-foreground">Placas solares</p>
+                    </div>
+                    <div className="text-center p-4 rounded-xl bg-secondary/5">
+                      <p className="text-2xl md:text-3xl font-bold text-secondary">{results.powerKwp.toFixed(2)}</p>
+                      <p className="text-xs text-muted-foreground">kWp do sistema</p>
+                    </div>
+                    <div className="text-center p-4 rounded-xl bg-primary/5">
+                      <p className="text-2xl md:text-3xl font-bold text-primary">{results.avgGen}</p>
+                      <p className="text-xs text-muted-foreground">kWh/mês gerados</p>
+                    </div>
+                    <div className="text-center p-4 rounded-xl bg-secondary/5">
+                      <p className="text-2xl md:text-3xl font-bold text-secondary">{results.totalConsumption}</p>
+                      <p className="text-xs text-muted-foreground">kWh/mês consumo total</p>
+                    </div>
+                  </div>
 
-              {/* CTA */}
-              <div className="text-center pt-4">
-                <a
-                  href="https://wa.me/5567996448995?text=Olá!%20Fiz%20uma%20simulação%20no%20site%20e%20gostaria%20de%20um%20orçamento."
-                  target="_blank" rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 solar-btn-secondary text-lg px-8 py-4"
-                >
-                  Solicitar Orçamento <ArrowRight className="w-5 h-5" />
-                </a>
+                  {/* Chart */}
+                  <div className="h-64 md:h-72">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={results.chartData} margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
+                        <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                        <YAxis tick={{ fontSize: 11 }} />
+                        <Tooltip formatter={(v: number) => `${v} kWh`} />
+                        <Legend wrapperStyle={{ fontSize: '11px' }} />
+                        <Bar dataKey="Geração" fill="#4A5A2A" radius={[3, 3, 0, 0]} />
+                        <Bar dataKey="Consumo" stackId="consumption" fill="#E8B84B" radius={[3, 3, 0, 0]} />
+                        {equipments.map((eq, idx) => {
+                          const eqLabel = eq.quantity > 1 ? `${eq.catalog.label} (x${eq.quantity})` : eq.catalog.label;
+                          return <Bar key={eq.id} dataKey={eqLabel} stackId="consumption" fill={EQUIPMENT_COLORS[idx % EQUIPMENT_COLORS.length]} radius={[2, 2, 0, 0]} />;
+                        })}
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+
+                  {/* CTA */}
+                  <div className="text-center pt-4">
+                    <a
+                      href="https://wa.me/5567996448995?text=Olá!%20Fiz%20uma%20simulação%20no%20site%20e%20gostaria%20de%20um%20orçamento."
+                      target="_blank" rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 solar-btn-secondary text-lg px-8 py-4"
+                    >
+                      Solicitar Orçamento <ArrowRight className="w-5 h-5" />
+                    </a>
+                  </div>
+                </div>
               </div>
             </div>
           )}
