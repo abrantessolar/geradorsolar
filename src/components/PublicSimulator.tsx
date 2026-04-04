@@ -1,12 +1,13 @@
 import { useState, useMemo, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { Zap, ArrowRight, Search, Plus, Minus, Trash2, ChevronDown, Lock, Shield, AlertTriangle } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
 import { searchCidadesDB } from '@/data/supabaseStore';
 import { supabase } from '@/integrations/supabase/client';
 import { MONTH_LABELS, MONTH_KEYS, SEASONAL_FACTORS } from '@/data/types';
-import type { EquipmentCatalogItem } from '@/data/types';
-
-const LOSS = 0.21;
+import type { MonthlyConsumption, EquipmentCatalogItem } from '@/data/types';
+import { estimateFullConsumption } from '@/data/calculations';
+import { getSettings } from '@/data/store';
 
 interface CityResult {
   cidade: string;
@@ -32,6 +33,11 @@ const QUICK_CITIES = [
 
 const LS_KEY = 'tls_lead_data';
 
+const emptyMonthly = (): MonthlyConsumption => ({
+  jan: 0, feb: 0, mar: 0, apr: 0, may: 0, jun: 0,
+  jul: 0, aug: 0, sep: 0, oct: 0, nov: 0, dec: 0,
+});
+
 function getSavedLead(): { nome: string; telefone: string } | null {
   try {
     const raw = localStorage.getItem(LS_KEY);
@@ -44,7 +50,10 @@ function getSavedLead(): { nome: string; telefone: string } | null {
 }
 
 export default function PublicSimulator() {
+  const [consumptionMode, setConsumptionMode] = useState<'average' | 'monthly'>('average');
   const [avgConsumption, setAvgConsumption] = useState('');
+  const [monthlyValues, setMonthlyValues] = useState<MonthlyConsumption>(emptyMonthly());
+  const [panelDelta, setPanelDelta] = useState(0);
   const [citySearch, setCitySearch] = useState('');
   const [selectedCity, setSelectedCity] = useState<CityResult | null>(null);
   const [showResults, setShowResults] = useState(false);
@@ -55,7 +64,6 @@ export default function PublicSimulator() {
   const [showEquipmentPanel, setShowEquipmentPanel] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('');
 
-  // Dynamic equipment catalog from DB
   const [dbEquipment, setDbEquipment] = useState<EquipmentCatalogItem[]>([]);
   const [dbCategories, setDbCategories] = useState<string[]>([]);
 
@@ -64,9 +72,7 @@ export default function PublicSimulator() {
       const { data } = await supabase.from('equipamentos_calculadora').select('*').eq('ativo', true).order('categoria').order('nome');
       if (data && data.length > 0) {
         const mapped: EquipmentCatalogItem[] = (data as any[]).map(d => ({
-          type: d.id,
-          label: d.nome,
-          category: d.categoria,
+          type: d.id, label: d.nome, category: d.categoria,
           powerKw: Number(d.potencia_kw),
           defaultHoursPerDay: Number(d.horas_dia_padrao) || 0,
           defaultDaysPerMonth: d.dias_mes_padrao,
@@ -82,10 +88,7 @@ export default function PublicSimulator() {
     loadEquipment();
   }, []);
 
-  // Validation state
   const [errors, setErrors] = useState<{ city?: string; consumption?: string }>({});
-
-  // Lead capture state
   const savedLead = getSavedLead();
   const [isUnlocked, setIsUnlocked] = useState(!!savedLead);
   const [leadName, setLeadName] = useState(savedLead?.nome || '');
@@ -93,10 +96,7 @@ export default function PublicSimulator() {
   const [savingLead, setSavingLead] = useState(false);
 
   useEffect(() => {
-    if (citySearch.length < 2) {
-      setCityResults([]);
-      return;
-    }
+    if (citySearch.length < 2) { setCityResults([]); return; }
     setSearching(true);
     const timer = setTimeout(async () => {
       const results = await searchCidadesDB(citySearch);
@@ -105,6 +105,17 @@ export default function PublicSimulator() {
     }, 300);
     return () => clearTimeout(timer);
   }, [citySearch]);
+
+  // Compute effective average consumption based on mode
+  const effectiveAvg = useMemo(() => {
+    if (consumptionMode === 'monthly') {
+      const vals = MONTH_KEYS.map(k => monthlyValues[k]);
+      const filled = vals.filter(v => v > 0);
+      if (filled.length === 0) return 0;
+      return filled.reduce((a, b) => a + b, 0) / 12;
+    }
+    return parseFloat(avgConsumption) || 0;
+  }, [consumptionMode, avgConsumption, monthlyValues]);
 
   const equipmentMonthlyKwh = useMemo(() => {
     return equipments.reduce((total, eq) => {
@@ -117,24 +128,27 @@ export default function PublicSimulator() {
   }, [equipments]);
 
   const results = useMemo(() => {
-    if (!selectedCity || !avgConsumption) return null;
-    const avg = parseFloat(avgConsumption);
-    if (isNaN(avg) || avg <= 0) return null;
+    if (!selectedCity || effectiveAvg <= 0) return null;
 
-    const totalConsumption = avg + equipmentMonthlyKwh;
+    const settings = getSettings();
+    const loss = settings.systemLoss / 100;
+    const surplusFactor = 1 + (settings.surplusFactor ?? 20) / 100;
+
+    const totalConsumption = effectiveAvg + equipmentMonthlyKwh;
+    const adjustedConsumption = totalConsumption * surplusFactor;
     const irrValues = selectedCity.monthly;
     const avgIrr = irrValues.reduce((a, b) => a + b, 0) / 12;
 
-    const avgDaily = totalConsumption / 30;
-    const powerKwp = avgDaily / (avgIrr * (1 - LOSS));
-    const panelCount = Math.ceil(powerKwp / 0.570);
-    const actualKwp = panelCount * 0.570;
+    const avgDaily = adjustedConsumption / 30;
+    const powerKwp = avgDaily / (avgIrr * (1 - loss));
+    const basePanelCount = Math.ceil(powerKwp / 0.570);
+    const finalPanels = Math.max(1, basePanelCount + panelDelta);
+    const actualKwp = finalPanels * 0.570;
 
     const chartData = MONTH_LABELS.map((label, i) => {
-      const gen = Math.round(actualKwp * irrValues[i] * 30 * (1 - LOSS));
+      const gen = Math.round(actualKwp * irrValues[i] * 30 * (1 - loss));
       const cons = Math.round(totalConsumption * SEASONAL_FACTORS[MONTH_KEYS[i]]);
       const row: any = { name: label, Geração: gen, Consumo: cons };
-      // Add equipment bars
       equipments.forEach(eq => {
         const fator = eq.catalog.fatorServico ?? 1;
         const eqKwh = eq.catalog.unit === 'km'
@@ -150,15 +164,24 @@ export default function PublicSimulator() {
     const avgGen = Math.round(totalGen / 12);
     const surplus = Math.max(0, avgGen - totalConsumption);
 
-    return { panelCount, powerKwp: actualKwp, avgGen, surplus, chartData, totalConsumption: Math.round(totalConsumption) };
-  }, [selectedCity, avgConsumption, equipmentMonthlyKwh, equipments]);
+    return {
+      basePanelCount,
+      panelCount: finalPanels,
+      powerKwp: actualKwp,
+      avgGen,
+      surplus,
+      chartData,
+      totalConsumption: Math.round(totalConsumption),
+    };
+  }, [selectedCity, effectiveAvg, equipmentMonthlyKwh, equipments, panelDelta]);
 
   const handleSimulate = () => {
     const newErrors: { city?: string; consumption?: string } = {};
     if (!selectedCity) newErrors.city = '⚠ Selecione uma cidade para calcular a irradiância correta';
-    if (!avgConsumption || parseFloat(avgConsumption) <= 0) newErrors.consumption = '⚠ Informe o consumo mensal em kWh';
+    if (effectiveAvg <= 0) newErrors.consumption = '⚠ Informe o consumo mensal em kWh';
     setErrors(newErrors);
     if (Object.keys(newErrors).length > 0) return;
+    setPanelDelta(0);
     setShowResults(true);
   };
 
@@ -175,15 +198,12 @@ export default function PublicSimulator() {
   const handleUnlock = async () => {
     if (!leadName.trim() || !leadPhone.trim()) return;
     if (!results || !selectedCity) return;
-
     setSavingLead(true);
     try {
       const leadData = {
-        nome: leadName.trim(),
-        telefone: leadPhone.trim(),
-        cidade: selectedCity.cidade,
-        uf: selectedCity.uf,
-        consumo_kwh: parseFloat(avgConsumption) + equipmentMonthlyKwh,
+        nome: leadName.trim(), telefone: leadPhone.trim(),
+        cidade: selectedCity.cidade, uf: selectedCity.uf,
+        consumo_kwh: effectiveAvg + equipmentMonthlyKwh,
         resultado_placas: results.panelCount,
         resultado_potencia_kwp: results.powerKwp,
       };
@@ -191,17 +211,13 @@ export default function PublicSimulator() {
       supabase.functions.invoke('notify-lead', { body: leadData }).catch(() => {});
       localStorage.setItem(LS_KEY, JSON.stringify({ nome: leadName.trim(), telefone: leadPhone.trim() }));
       setIsUnlocked(true);
-    } catch (err) {
-      console.error('Error saving lead:', err);
-    }
+    } catch (err) { console.error('Error saving lead:', err); }
     setSavingLead(false);
   };
 
   const addEquipment = (catalog: EquipmentCatalogItem) => {
     setEquipments(prev => [...prev, {
-      id: crypto.randomUUID(),
-      catalog,
-      quantity: 1,
+      id: crypto.randomUUID(), catalog, quantity: 1,
       hoursPerDay: catalog.defaultHoursPerDay,
       daysPerMonth: catalog.defaultDaysPerMonth,
       kmPerMonth: catalog.unit === 'km' ? 1000 : undefined,
@@ -216,6 +232,16 @@ export default function PublicSimulator() {
 
   const updateEquipment = (id: string, field: string, value: number) => {
     setEquipments(prev => prev.map(e => e.id === id ? { ...e, [field]: value } : e));
+    setShowResults(false);
+  };
+
+  const handleEstimateMonthly = () => {
+    const estimated = estimateFullConsumption(monthlyValues);
+    setMonthlyValues(estimated);
+  };
+
+  const updateMonthlyValue = (key: keyof MonthlyConsumption, val: number) => {
+    setMonthlyValues(prev => ({ ...prev, [key]: val }));
     setShowResults(false);
   };
 
@@ -258,18 +284,14 @@ export default function PublicSimulator() {
                 {errors.city}
               </p>
             )}
-            {/* Quick city buttons */}
             <div className="flex flex-wrap gap-2 mt-2">
               {QUICK_CITIES.map(c => (
-                <button
-                  key={c.cidade}
-                  onClick={() => handleQuickCity(c)}
+                <button key={c.cidade} onClick={() => handleQuickCity(c)}
                   className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors border ${
                     selectedCity?.cidade === c.cidade && selectedCity?.uf === c.uf
                       ? 'bg-primary text-primary-foreground border-primary'
                       : 'bg-muted-foreground/5 text-muted-foreground hover:bg-muted-foreground/10 border-border'
-                  }`}
-                >
+                  }`}>
                   {c.label}
                 </button>
               ))}
@@ -278,16 +300,13 @@ export default function PublicSimulator() {
               <div className="absolute z-20 mt-1 w-full bg-card border border-border rounded-xl shadow-xl max-h-60 overflow-y-auto">
                 {searching && <div className="px-4 py-3 text-sm text-muted-foreground">Buscando...</div>}
                 {cityResults.map((c, i) => (
-                  <button
-                    key={i}
-                    className="w-full text-left px-4 py-3 hover:bg-muted text-sm transition-colors"
+                  <button key={i} className="w-full text-left px-4 py-3 hover:bg-muted text-sm transition-colors"
                     onClick={() => {
                       setSelectedCity(c);
                       setCitySearch(`${c.cidade} - ${c.uf}`);
                       setShowCityDropdown(false);
                       setErrors(prev => ({ ...prev, city: undefined }));
-                    }}
-                  >
+                    }}>
                     <span className="font-medium">{c.cidade}</span>
                     <span className="text-muted-foreground"> — {c.uf}</span>
                   </button>
@@ -296,21 +315,70 @@ export default function PublicSimulator() {
             )}
           </div>
 
-          {/* Step 2: Consumo */}
+          {/* Step 2: Consumo with mode toggle */}
           <div>
-            <label className="block text-sm font-bold text-foreground mb-2">2. Consumo médio mensal (kWh)</label>
-            <input
-              type="number"
-              className={`solar-input text-lg ${errors.consumption ? 'border-destructive' : ''}`}
-              placeholder="Ex: 350"
-              value={avgConsumption}
-              onChange={e => {
-                setAvgConsumption(e.target.value);
-                setShowResults(false);
-                if (errors.consumption) setErrors(prev => ({ ...prev, consumption: undefined }));
-              }}
-            />
-            {errors.consumption && (
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-sm font-bold text-foreground">2. Consumo mensal (kWh)</label>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground">{consumptionMode === 'average' ? 'Média' : 'Mês a mês'}</span>
+                <Switch
+                  checked={consumptionMode === 'monthly'}
+                  onCheckedChange={(checked) => {
+                    setConsumptionMode(checked ? 'monthly' : 'average');
+                    setShowResults(false);
+                  }}
+                />
+              </div>
+            </div>
+
+            {consumptionMode === 'average' ? (
+              <div>
+                <input
+                  type="number"
+                  className={`solar-input text-lg ${errors.consumption ? 'border-destructive' : ''}`}
+                  placeholder="Ex: 350"
+                  value={avgConsumption}
+                  onChange={e => {
+                    setAvgConsumption(e.target.value);
+                    setShowResults(false);
+                    if (errors.consumption) setErrors(prev => ({ ...prev, consumption: undefined }));
+                  }}
+                />
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                  {MONTH_KEYS.map((k, i) => (
+                    <div key={k}>
+                      <label className="text-xs text-muted-foreground font-medium">{MONTH_LABELS[i]}</label>
+                      <input
+                        type="number"
+                        className="solar-input text-sm mt-0.5"
+                        placeholder="0"
+                        value={monthlyValues[k] || ''}
+                        onChange={e => updateMonthlyValue(k, Math.max(0, parseInt(e.target.value) || 0))}
+                      />
+                    </div>
+                  ))}
+                </div>
+                <div className="flex items-center justify-between">
+                  <button
+                    type="button"
+                    onClick={handleEstimateMonthly}
+                    className="text-xs text-primary hover:underline font-semibold"
+                  >
+                    ✨ Estimar meses não preenchidos
+                  </button>
+                  {effectiveAvg > 0 && (
+                    <span className="text-xs font-semibold text-foreground">
+                      Média: {Math.round(effectiveAvg)} kWh/mês
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {errors.consumption && consumptionMode === 'average' && (
               <p className="text-sm mt-1 flex items-center gap-1 text-destructive animate-fade-in-up">
                 <AlertTriangle className="w-3.5 h-3.5" style={{ color: '#E8B84B' }} />
                 {errors.consumption}
@@ -338,15 +406,12 @@ export default function PublicSimulator() {
 
                 <div className="flex flex-wrap gap-2">
                   {dbCategories.map(cat => (
-                    <button
-                      key={cat}
-                      onClick={() => setSelectedCategory(cat)}
+                    <button key={cat} onClick={() => setSelectedCategory(cat)}
                       className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
                         selectedCategory === cat
                           ? 'bg-primary text-primary-foreground'
                           : 'bg-muted-foreground/10 text-muted-foreground hover:bg-muted-foreground/20'
-                      }`}
-                    >
+                      }`}>
                       {cat}
                     </button>
                   ))}
@@ -354,11 +419,8 @@ export default function PublicSimulator() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto">
                   {dbEquipment.filter(e => e.category === selectedCategory).map(eq => (
-                    <button
-                      key={eq.type}
-                      onClick={() => addEquipment(eq)}
-                      className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border hover:border-primary hover:bg-primary/5 text-left text-sm transition-colors"
-                    >
+                    <button key={eq.type} onClick={() => addEquipment(eq)}
+                      className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border hover:border-primary hover:bg-primary/5 text-left text-sm transition-colors">
                       <Plus className="w-3.5 h-3.5 text-primary shrink-0" />
                       <span className="truncate">{eq.label}</span>
                       <span className="text-xs text-muted-foreground ml-auto shrink-0">{(eq.powerKw * 1000).toFixed(0)}W</span>
@@ -382,7 +444,6 @@ export default function PublicSimulator() {
                               <Trash2 className="w-4 h-4" />
                             </button>
                           </div>
-
                           <div className="flex flex-wrap items-center gap-3">
                             {eq.catalog.unit === 'km' ? (
                               <label className="flex items-center gap-1">
@@ -410,23 +471,17 @@ export default function PublicSimulator() {
                                 </label>
                               </>
                             )}
-
-                            {/* Quantity controls */}
                             <div className="flex items-center gap-1">
                               <span className="text-xs text-muted-foreground">Qtd:</span>
                               <button onClick={() => updateEquipment(eq.id, 'quantity', Math.max(1, eq.quantity - 1))}
                                 className="w-7 h-7 rounded bg-muted-foreground/10 flex items-center justify-center hover:bg-muted-foreground/20 transition-colors"
-                                disabled={eq.quantity <= 1}>
-                                <Minus className="w-3 h-3" />
-                              </button>
+                                disabled={eq.quantity <= 1}><Minus className="w-3 h-3" /></button>
                               <span className="w-8 text-center font-semibold text-sm">{eq.quantity}</span>
                               <button onClick={() => updateEquipment(eq.id, 'quantity', Math.min(20, eq.quantity + 1))}
                                 className="w-7 h-7 rounded bg-muted-foreground/10 flex items-center justify-center hover:bg-muted-foreground/20 transition-colors">
-                                <Plus className="w-3 h-3" />
-                              </button>
+                                <Plus className="w-3 h-3" /></button>
                             </div>
                           </div>
-
                           <div className="text-xs font-semibold text-secondary text-right space-y-0.5">
                             <div>Consumo total: +{Math.round(eqKwh)} kWh/mês</div>
                             {fator < 1 && (
@@ -438,7 +493,6 @@ export default function PublicSimulator() {
                         </div>
                       );
                     })}
-
                     {equipmentMonthlyKwh > 0 && (
                       <div className="text-right text-sm font-bold text-primary">
                         Consumo adicional: +{Math.round(equipmentMonthlyKwh)} kWh/mês
@@ -450,10 +504,7 @@ export default function PublicSimulator() {
             )}
           </div>
 
-          <button
-            onClick={handleSimulate}
-            className="w-full solar-btn-primary text-lg py-4 flex items-center justify-center gap-2"
-          >
+          <button onClick={handleSimulate} className="w-full solar-btn-primary text-lg py-4 flex items-center justify-center gap-2">
             <Zap className="w-5 h-5" /> Simular
           </button>
 
@@ -466,7 +517,6 @@ export default function PublicSimulator() {
                   <div className="absolute inset-0 z-10" style={{ backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}>
                     <div className="absolute inset-0 bg-background/40" />
                   </div>
-                  {/* Unlock card */}
                   <div className="absolute inset-0 z-20 flex items-center justify-center px-4">
                     <div className="bg-card border border-border rounded-2xl p-6 max-w-sm w-full shadow-2xl space-y-4 text-center">
                       <div className="mx-auto w-14 h-14 rounded-full bg-secondary/10 flex items-center justify-center">
@@ -477,39 +527,50 @@ export default function PublicSimulator() {
                         Preencha seu nome e WhatsApp para desbloquear o resultado completo da simulação.
                       </p>
                       <div className="space-y-3 text-left">
-                        <input
-                          className="solar-input"
-                          placeholder="Seu nome"
-                          value={leadName}
-                          onChange={e => setLeadName(e.target.value)}
-                        />
-                        <input
-                          className="solar-input"
-                          placeholder="WhatsApp (XX) XXXXX-XXXX"
-                          value={leadPhone}
-                          onChange={e => setLeadPhone(e.target.value)}
-                        />
+                        <input className="solar-input" placeholder="Seu nome" value={leadName} onChange={e => setLeadName(e.target.value)} />
+                        <input className="solar-input" placeholder="WhatsApp (XX) XXXXX-XXXX" value={leadPhone} onChange={e => setLeadPhone(e.target.value)} />
                       </div>
-                      <button
-                        onClick={handleUnlock}
-                        disabled={savingLead || !leadName.trim() || !leadPhone.trim()}
-                        className="w-full solar-btn-primary py-3 flex items-center justify-center gap-2 disabled:opacity-50"
-                      >
-                        {savingLead ? 'Enviando...' : (
-                          <>
-                            <Shield className="w-4 h-4" /> Desbloquear resultado
-                          </>
-                        )}
+                      <button onClick={handleUnlock} disabled={savingLead || !leadName.trim() || !leadPhone.trim()}
+                        className="w-full solar-btn-primary py-3 flex items-center justify-center gap-2 disabled:opacity-50">
+                        {savingLead ? 'Enviando...' : (<><Shield className="w-4 h-4" /> Desbloquear resultado</>)}
                       </button>
-                      <p className="text-xs text-muted-foreground">
-                        Seus dados estão seguros. Não fazemos spam.
-                      </p>
+                      <p className="text-xs text-muted-foreground">Seus dados estão seguros. Não fazemos spam.</p>
                     </div>
                   </div>
                 </>
               )}
 
-              {/* Results content */}
+              {/* Panel adjustment controls */}
+              <div className="flex items-center justify-center gap-4 p-4 rounded-xl bg-primary/5 border border-primary/20">
+                <span className="text-sm font-semibold text-foreground">Ajustar placas:</span>
+                <button
+                  onClick={() => setPanelDelta(d => d - 1)}
+                  disabled={results.panelCount <= 1}
+                  className="w-10 h-10 rounded-lg bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/90 transition-colors disabled:opacity-40"
+                >
+                  <Minus className="w-5 h-5" />
+                </button>
+                <div className="text-center min-w-[80px]">
+                  <p className="text-2xl font-bold text-primary">{results.panelCount}</p>
+                  <p className="text-xs text-muted-foreground">placas</p>
+                </div>
+                <button
+                  onClick={() => setPanelDelta(d => d + 1)}
+                  className="w-10 h-10 rounded-lg bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/90 transition-colors"
+                >
+                  <Plus className="w-5 h-5" />
+                </button>
+                {panelDelta !== 0 && (
+                  <button
+                    onClick={() => setPanelDelta(0)}
+                    className="text-xs text-muted-foreground hover:text-foreground underline"
+                  >
+                    Resetar ({results.basePanelCount} sugeridas)
+                  </button>
+                )}
+              </div>
+
+              {/* Results cards */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="text-center p-4 rounded-xl bg-primary/5">
                   <p className="text-2xl md:text-3xl font-bold text-primary">{results.panelCount}</p>
@@ -551,8 +612,7 @@ export default function PublicSimulator() {
               <div className="text-center pt-4">
                 <a
                   href="https://wa.me/5567996448995?text=Olá!%20Fiz%20uma%20simulação%20no%20site%20e%20gostaria%20de%20um%20orçamento."
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  target="_blank" rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 solar-btn-secondary text-lg px-8 py-4"
                 >
                   Solicitar Orçamento <ArrowRight className="w-5 h-5" />
