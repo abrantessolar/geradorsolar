@@ -311,6 +311,14 @@ export default function EstoquePage() {
     if (entradas.length === 0) { toast.error('Nenhuma quantidade informada'); return; }
     setSavingEntrada(true);
     try {
+      // Update prices for all rows that have a price set (even without entrada)
+      const priceUpdates = entradaRows.filter(r => r.preco_unitario !== '');
+      for (const row of priceUpdates) {
+        const price = parseFloat(row.preco_unitario);
+        if (!isNaN(price) && price >= 0) {
+          await supabase.from('materiais').update({ preco_unitario: price }).eq('id', row.id);
+        }
+      }
       for (const row of entradas) {
         const qtd = parseInt(row.entrada);
         await supabase.from('movimentacoes_estoque').insert({ material_id: row.id, tipo: 'entrada', quantidade: qtd, observacao: entradaNota || null, usuario_id: userId });
