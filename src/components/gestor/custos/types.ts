@@ -26,6 +26,7 @@ export type ProjetoComCusto = {
   status: string;
   instalador?: string;
   data_instalacao?: string;
+  data_fechamento?: string;
   criado_em: string;
   custo?: CustoObra;
 };
