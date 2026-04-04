@@ -1213,6 +1213,54 @@ export type Database = {
           },
         ]
       }
+      user_permissions: {
+        Row: {
+          admin: boolean
+          calculadora: boolean
+          estoque: boolean
+          gestor_clientes: boolean
+          gestor_custos: boolean
+          gestor_equipamentos: boolean
+          gestor_materiais: boolean
+          gestor_obras: boolean
+          id: string
+          importar_dados: boolean
+          sincronizar_sheets: boolean
+          user_id: string
+          zerar_base: boolean
+        }
+        Insert: {
+          admin?: boolean
+          calculadora?: boolean
+          estoque?: boolean
+          gestor_clientes?: boolean
+          gestor_custos?: boolean
+          gestor_equipamentos?: boolean
+          gestor_materiais?: boolean
+          gestor_obras?: boolean
+          id?: string
+          importar_dados?: boolean
+          sincronizar_sheets?: boolean
+          user_id: string
+          zerar_base?: boolean
+        }
+        Update: {
+          admin?: boolean
+          calculadora?: boolean
+          estoque?: boolean
+          gestor_clientes?: boolean
+          gestor_custos?: boolean
+          gestor_equipamentos?: boolean
+          gestor_materiais?: boolean
+          gestor_obras?: boolean
+          id?: string
+          importar_dados?: boolean
+          sincronizar_sheets?: boolean
+          user_id?: string
+          zerar_base?: boolean
+        }
+        Relationships: []
+      }
       user_profiles: {
         Row: {
           acesso_painel_gestor: boolean

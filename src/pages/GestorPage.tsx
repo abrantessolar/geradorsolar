@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import {
-  BarChart3, ClipboardList, Plus, RefreshCw, Users, Wrench, Package, Cpu, DollarSign,
+  BarChart3, ClipboardList, Plus, RefreshCw, Users, Wrench, Package, Cpu,
 } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import GestorDashboard from '@/components/gestor/GestorDashboard';
@@ -16,7 +16,7 @@ import ClientesList, { type ClienteBase } from '@/components/gestor/ClientesList
 
 import MateriaisModule from '@/components/gestor/materiais/MateriaisModule';
 import EquipmentDashboard from '@/components/gestor/EquipmentDashboard';
-import CustosModule from '@/components/gestor/custos/CustosModule';
+
 
 export type Projeto = {
   id: string;
@@ -92,8 +92,18 @@ type ObrasSubTab = 'dashboard' | 'projetos' | 'novo' | 'editar' | 'importar';
 
 export default function GestorPage() {
   const navigate = useNavigate();
-  const { session, isAdmin } = useAuth();
-  const [mainTab, setMainTab] = useState<'obras' | 'clientes' | 'materiais' | 'equipamentos' | 'custos'>('obras');
+  const { session, isAdmin, permissions } = useAuth();
+  
+  // Determine initial tab based on permissions
+  const getInitialTab = () => {
+    if (permissions.gestor_obras) return 'obras';
+    if (permissions.gestor_clientes) return 'clientes';
+    if (permissions.gestor_materiais) return 'materiais';
+    if (permissions.gestor_equipamentos) return 'equipamentos';
+    return 'obras';
+  };
+  
+  const [mainTab, setMainTab] = useState<'obras' | 'clientes' | 'materiais' | 'equipamentos'>(getInitialTab());
   const [obrasSubTab, setObrasSubTab] = useState<ObrasSubTab>('dashboard');
   
   const [projetos, setProjetos] = useState<Projeto[]>([]);
@@ -231,50 +241,51 @@ export default function GestorPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <h1 className="text-lg sm:text-2xl font-bold text-primary">Painel do Gestor</h1>
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => navigate('/estoque')}
-            className="flex items-center gap-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
-          >
-            <Package className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Estoque
-          </button>
-          <button
-            onClick={async () => {
-              try {
-                toast.info('Sincronizando com Google Sheets...');
-                const { data, error } = await supabase.functions.invoke('sync-to-sheets', {
-                  body: { sync_all: true },
-                });
-                if (error) throw error;
-                toast.success(`Sincronização concluída! ${data?.synced_obras || data?.synced || 0} obras, ${data?.synced_clientes || 0} clientes.`);
-              } catch (err: any) {
-                toast.error('Erro na sincronização: ' + (err.message || err));
-              }
-            }}
-            className="flex items-center gap-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-medium bg-accent text-accent-foreground hover:bg-accent/80 transition-colors"
-          >
-            <RefreshCw className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Sincronizar Sheets
-          </button>
+          {permissions.sincronizar_sheets && (
+            <button
+              onClick={async () => {
+                try {
+                  toast.info('Sincronizando com Google Sheets...');
+                  const { data, error } = await supabase.functions.invoke('sync-to-sheets', {
+                    body: { sync_all: true },
+                  });
+                  if (error) throw error;
+                  toast.success(`Sincronização concluída! ${data?.synced_obras || data?.synced || 0} obras, ${data?.synced_clientes || 0} clientes.`);
+                } catch (err: any) {
+                  toast.error('Erro na sincronização: ' + (err.message || err));
+                }
+              }}
+              className="flex items-center gap-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-medium bg-accent text-accent-foreground hover:bg-accent/80 transition-colors"
+            >
+              <RefreshCw className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Sincronizar Sheets
+            </button>
+          )}
         </div>
       </div>
 
       {/* Main tabs: Obras / Clientes */}
       <Tabs value={mainTab} onValueChange={(v) => setMainTab(v as any)}>
         <TabsList className="w-full justify-start gap-1 bg-transparent p-0 overflow-x-auto flex-nowrap">
-          <TabsTrigger value="obras" className="flex items-center gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-3 sm:px-6 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm whitespace-nowrap">
-            <Wrench className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Obras
-          </TabsTrigger>
-          <TabsTrigger value="clientes" className="flex items-center gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-3 sm:px-6 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm whitespace-nowrap">
-            <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Clientes
-          </TabsTrigger>
-          <TabsTrigger value="materiais" className="flex items-center gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-3 sm:px-6 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm whitespace-nowrap">
-            <Package className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Materiais
-          </TabsTrigger>
-          <TabsTrigger value="equipamentos" className="flex items-center gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-3 sm:px-6 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm whitespace-nowrap">
-            <Cpu className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Equipamentos
-          </TabsTrigger>
-          <TabsTrigger value="custos" className="flex items-center gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-3 sm:px-6 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm whitespace-nowrap">
-            <DollarSign className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Custos
-          </TabsTrigger>
+          {permissions.gestor_obras && (
+            <TabsTrigger value="obras" className="flex items-center gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-3 sm:px-6 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm whitespace-nowrap">
+              <Wrench className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Obras
+            </TabsTrigger>
+          )}
+          {permissions.gestor_clientes && (
+            <TabsTrigger value="clientes" className="flex items-center gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-3 sm:px-6 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm whitespace-nowrap">
+              <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Clientes
+            </TabsTrigger>
+          )}
+          {permissions.gestor_materiais && (
+            <TabsTrigger value="materiais" className="flex items-center gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-3 sm:px-6 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm whitespace-nowrap">
+              <Package className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Materiais
+            </TabsTrigger>
+          )}
+          {permissions.gestor_equipamentos && (
+            <TabsTrigger value="equipamentos" className="flex items-center gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-3 sm:px-6 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm whitespace-nowrap">
+              <Cpu className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Equipamentos
+            </TabsTrigger>
+          )}
         </TabsList>
 
         <TabsContent value="obras" className="space-y-3 sm:space-y-4">
@@ -317,9 +328,6 @@ export default function GestorPage() {
           <EquipmentDashboard clientes={clientes} />
         </TabsContent>
 
-        <TabsContent value="custos" className="space-y-4">
-          <CustosModule />
-        </TabsContent>
       </Tabs>
 
       {docProjeto && (

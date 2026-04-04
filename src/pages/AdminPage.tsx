@@ -98,13 +98,66 @@ export default function AdminPage() {
   );
 }
 
+/* ─── Permission Checkboxes Component ─── */
+const PERMISSION_LABELS: { key: string; label: string; group?: string }[] = [
+  { key: 'calculadora', label: 'Calculadora — acesso à calculadora interna' },
+  { key: 'gestor_obras', label: 'Gestor — Obras', group: 'Gestor' },
+  { key: 'gestor_clientes', label: 'Gestor — Clientes', group: 'Gestor' },
+  { key: 'gestor_materiais', label: 'Gestor — Materiais', group: 'Gestor' },
+  { key: 'gestor_equipamentos', label: 'Gestor — Equipamentos', group: 'Gestor' },
+  { key: 'gestor_custos', label: 'Gestor — Custos', group: 'Gestor' },
+  { key: 'estoque', label: 'Estoque — acesso à tela de estoque' },
+  { key: 'admin', label: 'Admin — acesso total à área administrativa' },
+  { key: 'importar_dados', label: 'Importar dados — importar JSON' },
+  { key: 'sincronizar_sheets', label: 'Sincronizar Sheets — Google Sheets' },
+  { key: 'zerar_base', label: 'Zerar base — apagar todos os dados' },
+];
+
+const DEFAULT_PERMS = {
+  calculadora: false, gestor_obras: false, gestor_clientes: false,
+  gestor_materiais: false, gestor_equipamentos: false, gestor_custos: false,
+  estoque: false, admin: false, importar_dados: false, sincronizar_sheets: false, zerar_base: false,
+};
+
+function PermissionCheckboxes({ perms, onChange, disabled }: { perms: Record<string, boolean>; onChange: (p: Record<string, boolean>) => void; disabled?: boolean }) {
+  const isAdmin = perms.admin;
+
+  const toggle = (key: string) => {
+    if (disabled) return;
+    const newPerms = { ...perms, [key]: !perms[key] };
+    // If admin toggled on, enable all
+    if (key === 'admin' && !perms.admin) {
+      Object.keys(newPerms).forEach(k => { newPerms[k] = true; });
+    }
+    onChange(newPerms);
+  };
+
+  return (
+    <div className="space-y-1.5 max-h-[240px] overflow-y-auto pr-1">
+      {PERMISSION_LABELS.map(p => (
+        <label key={p.key} className={`flex items-center gap-2 py-1 px-2 rounded cursor-pointer hover:bg-muted/50 text-sm ${isAdmin && p.key !== 'admin' ? 'opacity-50' : ''}`}>
+          <input
+            type="checkbox"
+            checked={isAdmin || perms[p.key] || false}
+            onChange={() => toggle(p.key)}
+            disabled={disabled || (isAdmin && p.key !== 'admin')}
+            className="rounded border-border"
+          />
+          <span>{p.label}</span>
+        </label>
+      ))}
+    </div>
+  );
+}
+
 /* ─── USUÁRIOS ─── */
 function UsersTab() {
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [editUser, setEditUser] = useState<any>(null);
-  const [form, setForm] = useState({ nome: '', email: '', telefone: '', role: 'vendedor', password: '', confirmPassword: '' });
+  const [form, setForm] = useState({ nome: '', email: '', telefone: '', password: '', confirmPassword: '' });
+  const [formPerms, setFormPerms] = useState<Record<string, boolean>>({ ...DEFAULT_PERMS });
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
   const { session } = useAuth();
@@ -126,16 +179,25 @@ function UsersTab() {
 
   useEffect(() => { loadUsers(); }, []);
 
+  const deriveRole = (perms: Record<string, boolean>) => {
+    if (perms.admin) return 'admin';
+    if (perms.gestor_obras || perms.gestor_clientes || perms.gestor_materiais || perms.gestor_equipamentos || perms.gestor_custos) return 'gestor';
+    if (perms.calculadora) return 'orcamentista';
+    return 'vendedor';
+  };
+
   const handleCreate = async () => {
     setError('');
     if (!form.nome || !form.email || !form.password) { setError('Preencha todos os campos.'); return; }
     if (form.password.length < 6) { setError('Senha deve ter pelo menos 6 caracteres.'); return; }
     if (form.password !== form.confirmPassword) { setError('As senhas não coincidem.'); return; }
     setSaving(true);
-    const { data, error: err } = await callApi({ action: 'create', ...form, acesso_painel_gestor: form.role === 'gestor' || form.role === 'admin' });
+    const role = deriveRole(formPerms);
+    const { data, error: err } = await callApi({ action: 'create', ...form, role, permissions: formPerms });
     if (err || data?.error) { setError(data?.error || 'Erro ao criar usuário.'); setSaving(false); return; }
     setShowCreate(false);
-    setForm({ nome: '', email: '', telefone: '', role: 'vendedor', password: '', confirmPassword: '' });
+    setForm({ nome: '', email: '', telefone: '', password: '', confirmPassword: '' });
+    setFormPerms({ ...DEFAULT_PERMS });
     setSaving(false);
     loadUsers();
   };
@@ -145,7 +207,19 @@ function UsersTab() {
     loadUsers();
   };
 
-  
+  const getPermsSummary = (u: any) => {
+    const p = u.permissions;
+    if (!p) return '—';
+    if (p.admin) return 'Acesso total';
+    const items: string[] = [];
+    if (p.calculadora) items.push('Calc');
+    if (p.gestor_obras) items.push('Obras');
+    if (p.gestor_clientes) items.push('Clientes');
+    if (p.gestor_materiais) items.push('Mat');
+    if (p.gestor_custos) items.push('Custos');
+    if (p.estoque) items.push('Estoq');
+    return items.length > 0 ? items.join(', ') : 'Nenhuma';
+  };
 
   return (
     <div className="solar-card p-6 space-y-4">
@@ -159,7 +233,7 @@ function UsersTab() {
       {/* Create modal */}
       {showCreate && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center" onClick={() => setShowCreate(false)}>
-          <div className="bg-card rounded-xl p-6 max-w-md w-full mx-4 space-y-4" onClick={e => e.stopPropagation()}>
+          <div className="bg-card rounded-xl p-6 max-w-md w-full mx-4 space-y-4 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-bold text-primary">Novo Usuário</h3>
               <button onClick={() => setShowCreate(false)}><X className="w-5 h-5 text-muted-foreground" /></button>
@@ -172,13 +246,10 @@ function UsersTab() {
                 <input className="solar-input" type="email" value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))} /></div>
               <div><label className="block text-sm font-medium mb-1">Telefone/WhatsApp</label>
                 <input className="solar-input" value={form.telefone} onChange={e => setForm(p => ({ ...p, telefone: e.target.value }))} placeholder="(XX) XXXXX-XXXX" /></div>
-              <div><label className="block text-sm font-medium mb-1">Nível de permissão</label>
-                <select className="solar-input" value={form.role} onChange={e => setForm(p => ({ ...p, role: e.target.value }))}>
-                  <option value="vendedor">Vendedor</option>
-                  <option value="gestor">Gestor</option>
-                  <option value="orcamentista">Orçamentista</option>
-                  <option value="admin">Administrador</option>
-                </select></div>
+              <div>
+                <label className="block text-sm font-medium mb-2">Permissões de acesso</label>
+                <PermissionCheckboxes perms={formPerms} onChange={setFormPerms} />
+              </div>
               <div><label className="block text-sm font-medium mb-1">Senha</label>
                 <input className="solar-input" type="password" value={form.password} onChange={e => setForm(p => ({ ...p, password: e.target.value }))} /></div>
               <div><label className="block text-sm font-medium mb-1">Confirmar senha</label>
@@ -201,7 +272,7 @@ function UsersTab() {
                 <th className="py-2 px-2">Nome</th>
                 <th className="py-2 px-2">E-mail</th>
                 <th className="py-2 px-2">Telefone</th>
-                <th className="py-2 px-2">Nível</th>
+                <th className="py-2 px-2">Permissões</th>
                 <th className="py-2 px-2">Status</th>
                 <th className="py-2 px-2">Último acesso</th>
                 <th className="py-2 px-2">Ações</th>
@@ -213,10 +284,8 @@ function UsersTab() {
                   <td className="py-2 px-2 font-medium">{u.nome}</td>
                   <td className="py-2 px-2">{u.email}</td>
                   <td className="py-2 px-2 text-sm text-muted-foreground">{u.telefone || '—'}</td>
-                  <td className="py-2 px-2">
-                    <span className={`solar-badge text-xs ${u.role === 'admin' ? 'bg-primary/10 text-primary' : u.role === 'gestor' ? 'bg-emerald-100 text-emerald-800' : u.role === 'orcamentista' ? 'bg-blue-100 text-blue-800' : 'bg-amber-100 text-amber-800'}`}>
-                      {ROLE_LABELS[u.role] || u.role}
-                    </span>
+                  <td className="py-2 px-2 text-xs text-muted-foreground max-w-[180px] truncate" title={getPermsSummary(u)}>
+                    {getPermsSummary(u)}
                   </td>
                   <td className="py-2 px-2">
                     <span className={`solar-badge text-xs ${u.ativo ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
@@ -264,16 +333,36 @@ function EditUserModal({ user, onClose, callApi }: { user: any; onClose: () => v
   const [nome, setNome] = useState(user.nome);
   const [email, setEmail] = useState(user.email);
   const [telefone, setTelefone] = useState(user.telefone || '');
-  const [role, setRole] = useState(user.role);
-  const [acessoGestor, setAcessoGestor] = useState(user.role === 'gestor' || user.role === 'admin');
+  const [perms, setPerms] = useState<Record<string, boolean>>(() => {
+    if (user.permissions) {
+      const p = user.permissions;
+      return {
+        calculadora: p.calculadora ?? false, gestor_obras: p.gestor_obras ?? false,
+        gestor_clientes: p.gestor_clientes ?? false, gestor_materiais: p.gestor_materiais ?? false,
+        gestor_equipamentos: p.gestor_equipamentos ?? false, gestor_custos: p.gestor_custos ?? false,
+        estoque: p.estoque ?? false, admin: p.admin ?? false,
+        importar_dados: p.importar_dados ?? false, sincronizar_sheets: p.sincronizar_sheets ?? false,
+        zerar_base: p.zerar_base ?? false,
+      };
+    }
+    return { ...DEFAULT_PERMS, admin: user.role === 'admin' };
+  });
   const [password, setPassword] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
+  const deriveRole = (p: Record<string, boolean>) => {
+    if (p.admin) return 'admin';
+    if (p.gestor_obras || p.gestor_clientes || p.gestor_materiais || p.gestor_equipamentos || p.gestor_custos) return 'gestor';
+    if (p.calculadora) return 'orcamentista';
+    return 'vendedor';
+  };
+
   const handleSave = async () => {
     setSaving(true);
     setError('');
-    const updates: any = { nome, role, telefone, acesso_painel_gestor: role === 'gestor' || role === 'admin' };
+    const role = deriveRole(perms);
+    const updates: any = { nome, role, telefone, permissions: perms };
     if (email !== user.email) updates.email = email;
     if (password) updates.password = password;
     const { data, error: err } = await callApi({ action: 'update', user_id: user.user_id, ...updates });
@@ -288,7 +377,7 @@ function EditUserModal({ user, onClose, callApi }: { user: any; onClose: () => v
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center" onClick={onClose}>
-      <div className="bg-card rounded-xl p-6 max-w-md w-full mx-4 space-y-4" onClick={e => e.stopPropagation()}>
+      <div className="bg-card rounded-xl p-6 max-w-md w-full mx-4 space-y-4 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-bold text-primary">Editar Usuário</h3>
           <button onClick={onClose}><X className="w-5 h-5 text-muted-foreground" /></button>
@@ -301,13 +390,10 @@ function EditUserModal({ user, onClose, callApi }: { user: any; onClose: () => v
             <input className="solar-input" type="email" value={email} onChange={e => setEmail(e.target.value)} /></div>
           <div><label className="block text-sm font-medium mb-1">Telefone/WhatsApp</label>
             <input className="solar-input" value={telefone} onChange={e => setTelefone(e.target.value)} placeholder="(XX) XXXXX-XXXX" /></div>
-          <div><label className="block text-sm font-medium mb-1">Nível</label>
-            <select className="solar-input" value={role} onChange={e => setRole(e.target.value)}>
-              <option value="vendedor">Vendedor</option>
-              <option value="gestor">Gestor</option>
-              <option value="orcamentista">Orçamentista</option>
-              <option value="admin">Administrador</option>
-            </select></div>
+          <div>
+            <label className="block text-sm font-medium mb-2">Permissões de acesso</label>
+            <PermissionCheckboxes perms={perms} onChange={setPerms} />
+          </div>
           <div><label className="block text-sm font-medium mb-1">Nova senha (deixe vazio para manter)</label>
             <input className="solar-input" type="password" value={password} onChange={e => setPassword(e.target.value)} /></div>
           <button className="w-full solar-btn-primary" onClick={handleSave} disabled={saving}>

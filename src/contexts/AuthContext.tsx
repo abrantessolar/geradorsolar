@@ -12,9 +12,30 @@ interface UserProfile {
   acesso_painel_gestor?: boolean;
 }
 
+export interface UserPermissions {
+  calculadora: boolean;
+  gestor_obras: boolean;
+  gestor_clientes: boolean;
+  gestor_materiais: boolean;
+  gestor_equipamentos: boolean;
+  gestor_custos: boolean;
+  estoque: boolean;
+  admin: boolean;
+  importar_dados: boolean;
+  sincronizar_sheets: boolean;
+  zerar_base: boolean;
+}
+
+const DEFAULT_PERMISSIONS: UserPermissions = {
+  calculadora: false, gestor_obras: false, gestor_clientes: false,
+  gestor_materiais: false, gestor_equipamentos: false, gestor_custos: false,
+  estoque: false, admin: false, importar_dados: false, sincronizar_sheets: false, zerar_base: false,
+};
+
 interface AuthContextType {
   session: any;
   profile: UserProfile | null;
+  permissions: UserPermissions;
   loading: boolean;
   isAdmin: boolean;
   isGestor: boolean;
@@ -31,20 +52,55 @@ const SESSION_MAX_HOURS = 8;
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<any>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [permissions, setPermissions] = useState<UserPermissions>(DEFAULT_PERMISSIONS);
   const [loading, setLoading] = useState(true);
 
   const fetchProfile = async (userId: string) => {
-    const { data } = await supabase
-      .from('user_profiles')
-      .select('*')
-      .eq('user_id', userId)
-      .maybeSingle();
-    if (data) {
-      setProfile(data as unknown as UserProfile);
-      // Update last access
+    const [{ data: profileData }, { data: permsData }] = await Promise.all([
+      supabase.from('user_profiles').select('*').eq('user_id', userId).maybeSingle(),
+      supabase.from('user_permissions').select('*').eq('user_id', userId).maybeSingle(),
+    ]);
+    if (profileData) {
+      setProfile(profileData as unknown as UserProfile);
       supabase.from('user_profiles').update({ ultimo_acesso: new Date().toISOString() }).eq('user_id', userId).then(() => {});
     } else {
       setProfile(null);
+    }
+    if (permsData) {
+      const p = permsData as any;
+      // Admin always has all permissions
+      if (p.admin || profileData?.role === 'admin') {
+        setPermissions({
+          calculadora: true, gestor_obras: true, gestor_clientes: true,
+          gestor_materiais: true, gestor_equipamentos: true, gestor_custos: true,
+          estoque: true, admin: true, importar_dados: true, sincronizar_sheets: true, zerar_base: true,
+        });
+      } else {
+        setPermissions({
+          calculadora: p.calculadora ?? false,
+          gestor_obras: p.gestor_obras ?? false,
+          gestor_clientes: p.gestor_clientes ?? false,
+          gestor_materiais: p.gestor_materiais ?? false,
+          gestor_equipamentos: p.gestor_equipamentos ?? false,
+          gestor_custos: p.gestor_custos ?? false,
+          estoque: p.estoque ?? false,
+          admin: p.admin ?? false,
+          importar_dados: p.importar_dados ?? false,
+          sincronizar_sheets: p.sincronizar_sheets ?? false,
+          zerar_base: p.zerar_base ?? false,
+        });
+      }
+    } else {
+      // No permissions row — fallback based on role
+      if (profileData?.role === 'admin') {
+        setPermissions({
+          calculadora: true, gestor_obras: true, gestor_clientes: true,
+          gestor_materiais: true, gestor_equipamentos: true, gestor_custos: true,
+          estoque: true, admin: true, importar_dados: true, sincronizar_sheets: true, zerar_base: true,
+        });
+      } else {
+        setPermissions(DEFAULT_PERMISSIONS);
+      }
     }
   };
 
@@ -64,12 +120,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let mounted = true;
 
-    // Set up listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (!mounted) return;
       if (session && checkSessionAge(session)) {
         setSession(session);
-        // Use setTimeout to avoid Supabase deadlock on nested calls
         setTimeout(async () => {
           if (mounted) {
             await fetchProfile(session.user.id);
@@ -79,11 +133,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else {
         setSession(null);
         setProfile(null);
+        setPermissions(DEFAULT_PERMISSIONS);
         setLoading(false);
       }
     });
 
-    // Then get initial session
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!mounted) return;
       if (session && checkSessionAge(session)) {
@@ -93,7 +147,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false);
     });
 
-    // Safety timeout - never stay loading forever
     const timeout = setTimeout(() => {
       if (mounted) setLoading(false);
     }, 5000);
@@ -109,12 +162,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await supabase.auth.signOut();
     setSession(null);
     setProfile(null);
+    setPermissions(DEFAULT_PERMISSIONS);
   };
 
   return (
     <AuthContext.Provider value={{
       session,
       profile,
+      permissions,
       loading,
       isAdmin: profile?.role === 'admin',
       isGestor: profile?.role === 'gestor',
