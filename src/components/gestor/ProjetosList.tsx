@@ -3,6 +3,16 @@ import type { Projeto } from '@/pages/GestorPage';
 import { Edit2, FileText, Snowflake, Image as ImageIcon, CheckCircle, ArrowUpDown, ArrowUp, ArrowDown, GripVertical, Trash2, ClipboardList, Package, FileDown } from 'lucide-react';
 import WhatsAppLink from './WhatsAppLink';
 import { generateFichaInstalacao } from '@/lib/generateFichaInstalacao';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+
+function Tip({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <Tooltip delayDuration={300}>
+      <TooltipTrigger asChild>{children}</TooltipTrigger>
+      <TooltipContent side="top"><p>{label}</p></TooltipContent>
+    </Tooltip>
+  );
+}
 import InstaladorSelect from './InstaladorSelect';
 import CongelarModal from './CongelarModal';
 import ObraConcluidaModal from './ObraConcluidaModal';
@@ -140,15 +150,17 @@ export default function ProjetosList({ projetos, loading, onEdit, onDocumentos, 
       case 'acoes': return (
         <td key={key} className="py-2 px-2">
           <div className="flex gap-1 items-center">
-            <button onClick={() => onEdit(p.id)} className="text-primary hover:text-primary/80" title="Editar"><Edit2 className="w-4 h-4" /></button>
-            <button onClick={() => onDocumentos(p)} className="text-primary hover:text-primary/80" title="Documentos"><FileText className="w-4 h-4" /></button>
-            <button onClick={() => setMateriaisProjeto(p)} className="text-primary hover:text-primary/80" title="Lista de Materiais"><ClipboardList className="w-4 h-4" /></button>
-            <button onClick={() => generateFichaInstalacao(p)} className="text-primary hover:text-primary/80" title="Ficha de Instalação"><FileDown className="w-4 h-4" /></button>
-            <button onClick={() => setRetirarProjeto(p)} className="text-primary hover:text-primary/80" title="Retirar Material"><Package className="w-4 h-4" /></button>
-            <button onClick={() => setCongelarId(p.congelado ? null : p.id)} className="text-primary hover:text-primary/80" title={p.congelado ? 'Já congelada' : 'Congelar'}><Snowflake className="w-4 h-4" /></button>
-            <button onClick={() => setLayoutProjeto(p)} className={`${p.layout_url ? 'text-accent-foreground' : 'text-muted-foreground'} hover:text-primary`} title="Layout"><ImageIcon className="w-4 h-4" /></button>
-            <button onClick={() => setConcluidaProjeto(p)} className="text-primary hover:text-primary/80" title="Obra Concluída"><CheckCircle className="w-4 h-4" /></button>
-            <button onClick={() => setDeleteProjeto(p)} className="text-destructive hover:text-destructive/80" title="Excluir"><Trash2 className="w-4 h-4" /></button>
+            <TooltipProvider>
+              <Tip label="Editar projeto"><button onClick={() => onEdit(p.id)} className="text-primary hover:text-primary/80"><Edit2 className="w-4 h-4" /></button></Tip>
+              <Tip label="Gerar documentos"><button onClick={() => onDocumentos(p)} className="text-primary hover:text-primary/80"><FileText className="w-4 h-4" /></button></Tip>
+              <Tip label="Lista de materiais"><button onClick={() => setMateriaisProjeto(p)} className="text-primary hover:text-primary/80"><ClipboardList className="w-4 h-4" /></button></Tip>
+              <Tip label="Ficha de instalação"><button onClick={() => generateFichaInstalacao(p)} className="text-primary hover:text-primary/80"><FileDown className="w-4 h-4" /></button></Tip>
+              <Tip label="Retirar material"><button onClick={() => setRetirarProjeto(p)} className="text-primary hover:text-primary/80"><Package className="w-4 h-4" /></button></Tip>
+              <Tip label={p.congelado ? 'Obra congelada' : 'Congelar obra'}><button onClick={() => setCongelarId(p.congelado ? null : p.id)} className="text-primary hover:text-primary/80"><Snowflake className="w-4 h-4" /></button></Tip>
+              <Tip label="Layout da obra"><button onClick={() => setLayoutProjeto(p)} className={`${p.layout_url ? 'text-accent-foreground' : 'text-muted-foreground'} hover:text-primary`}><ImageIcon className="w-4 h-4" /></button></Tip>
+              <Tip label="Obra concluída"><button onClick={() => setConcluidaProjeto(p)} className="text-primary hover:text-primary/80"><CheckCircle className="w-4 h-4" /></button></Tip>
+              <Tip label="Excluir"><button onClick={() => setDeleteProjeto(p)} className="text-destructive hover:text-destructive/80"><Trash2 className="w-4 h-4" /></button></Tip>
+            </TooltipProvider>
           </div>
         </td>
       );
