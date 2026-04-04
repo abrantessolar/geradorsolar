@@ -160,14 +160,16 @@ export default function ClientesList({
       case 'acoes': return (
         <td key={key} className="py-2 px-2">
           <div className="flex gap-1">
-            <button onClick={() => setSelectedCliente(c)} className="text-primary hover:text-primary/80" title="Ver detalhes"><Eye className="w-4 h-4" /></button>
-            <button onClick={() => setEditCliente(c)} className="text-primary hover:text-primary/80" title="Editar"><Edit2 className="w-4 h-4" /></button>
-            {!c.projeto_id && !c.id.startsWith('proj-') && (
-              <button onClick={() => onPromover(c)} className="text-primary hover:text-primary/80" title="Promover para Obra"><ArrowUpRight className="w-4 h-4" /></button>
-            )}
-            {!c.id.startsWith('proj-') && (
-              <button onClick={() => setDeleteCliente(c)} className="text-destructive hover:text-destructive/80" title="Excluir"><Trash2 className="w-4 h-4" /></button>
-            )}
+            <TooltipProvider>
+              <Tooltip delayDuration={300}><TooltipTrigger asChild><button onClick={() => setSelectedCliente(c)} className="text-primary hover:text-primary/80"><Eye className="w-4 h-4" /></button></TooltipTrigger><TooltipContent side="top"><p>Ver detalhes</p></TooltipContent></Tooltip>
+              <Tooltip delayDuration={300}><TooltipTrigger asChild><button onClick={() => setEditCliente(c)} className="text-primary hover:text-primary/80"><Edit2 className="w-4 h-4" /></button></TooltipTrigger><TooltipContent side="top"><p>Editar cliente</p></TooltipContent></Tooltip>
+              {!c.projeto_id && !c.id.startsWith('proj-') && (
+                <Tooltip delayDuration={300}><TooltipTrigger asChild><button onClick={() => onPromover(c)} className="text-primary hover:text-primary/80"><ArrowUpRight className="w-4 h-4" /></button></TooltipTrigger><TooltipContent side="top"><p>Promover para obra</p></TooltipContent></Tooltip>
+              )}
+              {!c.id.startsWith('proj-') && (
+                <Tooltip delayDuration={300}><TooltipTrigger asChild><button onClick={() => setDeleteCliente(c)} className="text-destructive hover:text-destructive/80"><Trash2 className="w-4 h-4" /></button></TooltipTrigger><TooltipContent side="top"><p>Excluir</p></TooltipContent></Tooltip>
+              )}
+            </TooltipProvider>
           </div>
         </td>
       );
