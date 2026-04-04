@@ -48,7 +48,7 @@ Deno.serve(async (req) => {
     const { action } = body;
 
     if (action === 'create') {
-      const { email, password, nome, role, telefone } = body;
+      const { email, password, nome, role, telefone, permissions } = body;
 
       const { data, error } = await supabaseAdmin.auth.admin.createUser({
         email,
@@ -62,14 +62,33 @@ Deno.serve(async (req) => {
         });
       }
 
+      const effectiveRole = role || 'vendedor';
+      const isAdminRole = effectiveRole === 'admin';
+
       await supabaseAdmin.from('user_profiles').insert({
         user_id: data.user.id,
         nome,
         email,
-        role: role || 'vendedor',
+        role: effectiveRole,
         telefone: telefone || null,
-        acesso_painel_gestor: body.acesso_painel_gestor || false,
+        acesso_painel_gestor: permissions?.gestor_obras || permissions?.gestor_clientes || permissions?.gestor_materiais || permissions?.gestor_equipamentos || permissions?.gestor_custos || isAdminRole || false,
       });
+
+      // Create permissions
+      if (permissions && !isAdminRole) {
+        await supabaseAdmin.from('user_permissions').insert({
+          user_id: data.user.id,
+          ...permissions,
+        });
+      } else {
+        // Admin gets all permissions
+        await supabaseAdmin.from('user_permissions').insert({
+          user_id: data.user.id,
+          calculadora: true, gestor_obras: true, gestor_clientes: true,
+          gestor_materiais: true, gestor_equipamentos: true, gestor_custos: true,
+          estoque: true, admin: true, importar_dados: true, sincronizar_sheets: true, zerar_base: true,
+        });
+      }
 
       return new Response(JSON.stringify({ user: data.user }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -77,7 +96,7 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'update') {
-      const { user_id, nome, role, ativo, password, email } = body;
+      const { user_id, nome, role, ativo, password, email, permissions } = body;
 
       const updates: Record<string, any> = {};
       if (nome !== undefined) updates.nome = nome;
@@ -85,10 +104,33 @@ Deno.serve(async (req) => {
       if (ativo !== undefined) updates.ativo = ativo;
       if (email !== undefined) updates.email = email;
       if (body.telefone !== undefined) updates.telefone = body.telefone;
-      if (body.acesso_painel_gestor !== undefined) updates.acesso_painel_gestor = body.acesso_painel_gestor;
+
+      // Update acesso_painel_gestor based on permissions
+      if (permissions) {
+        updates.acesso_painel_gestor = permissions.gestor_obras || permissions.gestor_clientes || permissions.gestor_materiais || permissions.gestor_equipamentos || permissions.gestor_custos || permissions.admin || false;
+      } else if (body.acesso_painel_gestor !== undefined) {
+        updates.acesso_painel_gestor = body.acesso_painel_gestor;
+      }
 
       if (Object.keys(updates).length > 0) {
         await supabaseAdmin.from('user_profiles').update(updates).eq('user_id', user_id);
+      }
+
+      // Update permissions
+      if (permissions) {
+        const isAdminRole = role === 'admin' || permissions.admin;
+        const permData = isAdminRole ? {
+          calculadora: true, gestor_obras: true, gestor_clientes: true,
+          gestor_materiais: true, gestor_equipamentos: true, gestor_custos: true,
+          estoque: true, admin: true, importar_dados: true, sincronizar_sheets: true, zerar_base: true,
+        } : permissions;
+
+        const { data: existingPerm } = await supabaseAdmin.from('user_permissions').select('id').eq('user_id', user_id).maybeSingle();
+        if (existingPerm) {
+          await supabaseAdmin.from('user_permissions').update(permData).eq('user_id', user_id);
+        } else {
+          await supabaseAdmin.from('user_permissions').insert({ user_id, ...permData });
+        }
       }
 
       // Update auth user if password or email changed
@@ -106,6 +148,7 @@ Deno.serve(async (req) => {
 
     if (action === 'delete') {
       const { user_id } = body;
+      await supabaseAdmin.from('user_permissions').delete().eq('user_id', user_id);
       await supabaseAdmin.from('user_profiles').delete().eq('user_id', user_id);
       await supabaseAdmin.auth.admin.deleteUser(user_id);
       return new Response(JSON.stringify({ ok: true }), {
@@ -114,8 +157,12 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'list') {
-      const { data } = await supabaseAdmin.from('user_profiles').select('*').order('criado_em');
-      return new Response(JSON.stringify({ users: data || [] }), {
+      const { data: users } = await supabaseAdmin.from('user_profiles').select('*').order('criado_em');
+      const { data: allPerms } = await supabaseAdmin.from('user_permissions').select('*');
+      const permsMap: Record<string, any> = {};
+      (allPerms || []).forEach((p: any) => { permsMap[p.user_id] = p; });
+      const enriched = (users || []).map((u: any) => ({ ...u, permissions: permsMap[u.user_id] || null }));
+      return new Response(JSON.stringify({ users: enriched }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
