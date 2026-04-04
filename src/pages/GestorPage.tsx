@@ -92,8 +92,18 @@ type ObrasSubTab = 'dashboard' | 'projetos' | 'novo' | 'editar' | 'importar';
 
 export default function GestorPage() {
   const navigate = useNavigate();
-  const { session, isAdmin } = useAuth();
-  const [mainTab, setMainTab] = useState<'obras' | 'clientes' | 'materiais' | 'equipamentos' | 'custos'>('obras');
+  const { session, isAdmin, permissions } = useAuth();
+  
+  // Determine initial tab based on permissions
+  const getInitialTab = () => {
+    if (permissions.gestor_obras) return 'obras';
+    if (permissions.gestor_clientes) return 'clientes';
+    if (permissions.gestor_materiais) return 'materiais';
+    if (permissions.gestor_equipamentos) return 'equipamentos';
+    return 'obras';
+  };
+  
+  const [mainTab, setMainTab] = useState<'obras' | 'clientes' | 'materiais' | 'equipamentos'>(getInitialTab as any);
   const [obrasSubTab, setObrasSubTab] = useState<ObrasSubTab>('dashboard');
   
   const [projetos, setProjetos] = useState<Projeto[]>([]);
