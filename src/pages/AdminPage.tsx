@@ -41,6 +41,7 @@ export default function AdminPage() {
     { key: 'prices' as const, label: 'Tabela de Preços', icon: DollarSign, roles: ['admin', 'orcamentista'] },
     { key: 'pricing' as const, label: 'Precificação', icon: Settings, roles: ['admin', 'orcamentista'] },
     { key: 'equipment' as const, label: 'Equipamentos', icon: Cpu, roles: ['admin'] },
+    { key: 'modelos' as const, label: 'Modelos Docs', icon: FileText, roles: ['admin'] },
     { key: 'irradiation' as const, label: 'Irradiação', icon: MapPin, roles: ['admin', 'orcamentista'] },
     { key: 'company' as const, label: 'Empresa', icon: Building2, roles: ['admin'] },
     { key: 'proposals' as const, label: 'Propostas', icon: FileText, roles: ['admin', 'orcamentista', 'vendedor'] },
