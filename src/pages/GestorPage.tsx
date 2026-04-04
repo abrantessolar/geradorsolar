@@ -266,21 +266,26 @@ export default function GestorPage() {
       {/* Main tabs: Obras / Clientes */}
       <Tabs value={mainTab} onValueChange={(v) => setMainTab(v as any)}>
         <TabsList className="w-full justify-start gap-1 bg-transparent p-0 overflow-x-auto flex-nowrap">
-          <TabsTrigger value="obras" className="flex items-center gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-3 sm:px-6 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm whitespace-nowrap">
-            <Wrench className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Obras
-          </TabsTrigger>
-          <TabsTrigger value="clientes" className="flex items-center gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-3 sm:px-6 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm whitespace-nowrap">
-            <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Clientes
-          </TabsTrigger>
-          <TabsTrigger value="materiais" className="flex items-center gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-3 sm:px-6 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm whitespace-nowrap">
-            <Package className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Materiais
-          </TabsTrigger>
-          <TabsTrigger value="equipamentos" className="flex items-center gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-3 sm:px-6 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm whitespace-nowrap">
-            <Cpu className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Equipamentos
-          </TabsTrigger>
-          <TabsTrigger value="custos" className="flex items-center gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-3 sm:px-6 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm whitespace-nowrap">
-            <DollarSign className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Custos
-          </TabsTrigger>
+          {permissions.gestor_obras && (
+            <TabsTrigger value="obras" className="flex items-center gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-3 sm:px-6 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm whitespace-nowrap">
+              <Wrench className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Obras
+            </TabsTrigger>
+          )}
+          {permissions.gestor_clientes && (
+            <TabsTrigger value="clientes" className="flex items-center gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-3 sm:px-6 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm whitespace-nowrap">
+              <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Clientes
+            </TabsTrigger>
+          )}
+          {permissions.gestor_materiais && (
+            <TabsTrigger value="materiais" className="flex items-center gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-3 sm:px-6 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm whitespace-nowrap">
+              <Package className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Materiais
+            </TabsTrigger>
+          )}
+          {permissions.gestor_equipamentos && (
+            <TabsTrigger value="equipamentos" className="flex items-center gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-3 sm:px-6 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm whitespace-nowrap">
+              <Cpu className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Equipamentos
+            </TabsTrigger>
+          )}
         </TabsList>
 
         <TabsContent value="obras" className="space-y-3 sm:space-y-4">
