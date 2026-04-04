@@ -85,7 +85,7 @@ export type Projeto = {
   inversor?: { marca: string; modelo: string; potencia_kw: number; tipo: string };
 };
 
-type ObrasSubTab = 'dashboard' | 'projetos' | 'novo' | 'editar' | 'modelos' | 'importar';
+type ObrasSubTab = 'dashboard' | 'projetos' | 'novo' | 'editar' | 'importar';
 
 
 export default function GestorPage() {
