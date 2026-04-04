@@ -3,14 +3,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import {
-  BarChart3, ClipboardList, Plus, FileText, Upload, RefreshCw, Users, Wrench, Package, Cpu,
+  BarChart3, ClipboardList, Plus, RefreshCw, Users, Wrench, Package, Cpu,
 } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import GestorDashboard from '@/components/gestor/GestorDashboard';
 import ProjetoForm from '@/components/gestor/ProjetoForm';
 import ProjetosList from '@/components/gestor/ProjetosList';
 import DocumentosModal from '@/components/gestor/DocumentosModal';
-import ModelosDocumentos from '@/components/gestor/ModelosDocumentos';
 import ImportCSV from '@/components/gestor/ImportCSV';
 import ClientesList, { type ClienteBase } from '@/components/gestor/ClientesList';
 
@@ -86,7 +85,7 @@ export type Projeto = {
   inversor?: { marca: string; modelo: string; potencia_kw: number; tipo: string };
 };
 
-type ObrasSubTab = 'dashboard' | 'projetos' | 'novo' | 'editar' | 'modelos' | 'importar';
+type ObrasSubTab = 'dashboard' | 'projetos' | 'novo' | 'editar' | 'importar';
 
 
 export default function GestorPage() {
@@ -222,8 +221,6 @@ export default function GestorPage() {
     { key: 'dashboard' as const, label: 'Dashboard', icon: BarChart3 },
     { key: 'projetos' as const, label: 'Projetos', icon: ClipboardList },
     { key: 'novo' as const, label: 'Novo Projeto', icon: Plus },
-    { key: 'modelos' as const, label: 'Modelos', icon: FileText },
-    ...(isAdmin ? [{ key: 'importar' as const, label: 'Importar JSON', icon: Upload }] : []),
   ];
 
   return (
@@ -286,8 +283,7 @@ export default function GestorPage() {
           {obrasSubTab === 'editar' && editId && (
             <ProjetoForm projetoId={editId} onSaved={handleSaved} onCancel={() => { setObrasSubTab('projetos'); setEditId(null); }} />
           )}
-          {obrasSubTab === 'modelos' && <ModelosDocumentos />}
-          {obrasSubTab === 'importar' && <ImportCSV onImported={loadProjetos} />}
+          {obrasSubTab === 'importar' && isAdmin && <ImportCSV onImported={loadProjetos} />}
         </TabsContent>
 
         <TabsContent value="clientes" className="space-y-4">

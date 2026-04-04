@@ -21,7 +21,17 @@ import { toast } from 'sonner';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import SiteContentTab from '@/components/admin/SiteContentTab';
 import EquipmentTab from '@/components/admin/EquipmentTab';
+import ModelosDocumentos from '@/components/gestor/ModelosDocumentos';
 import { useNavigate } from 'react-router-dom';
+
+function ModelosDocumentosWrapper() {
+  return (
+    <div className="solar-card p-6">
+      <h2 className="text-lg font-bold text-primary mb-4">Modelos de Documentos</h2>
+      <ModelosDocumentos />
+    </div>
+  );
+}
 
 const ROLE_LABELS: Record<string, string> = {
   admin: 'Administrador',
@@ -41,6 +51,7 @@ export default function AdminPage() {
     { key: 'prices' as const, label: 'Tabela de Preços', icon: DollarSign, roles: ['admin', 'orcamentista'] },
     { key: 'pricing' as const, label: 'Precificação', icon: Settings, roles: ['admin', 'orcamentista'] },
     { key: 'equipment' as const, label: 'Equipamentos', icon: Cpu, roles: ['admin'] },
+    { key: 'modelos' as const, label: 'Modelos Docs', icon: FileText, roles: ['admin'] },
     { key: 'irradiation' as const, label: 'Irradiação', icon: MapPin, roles: ['admin', 'orcamentista'] },
     { key: 'company' as const, label: 'Empresa', icon: Building2, roles: ['admin'] },
     { key: 'proposals' as const, label: 'Propostas', icon: FileText, roles: ['admin', 'orcamentista', 'vendedor'] },
@@ -76,6 +87,7 @@ export default function AdminPage() {
       {tab === 'leads' && <LeadsTab />}
       {tab === 'prices' && <PriceTableTab />}
       {tab === 'equipment' && <EquipmentTab />}
+      {tab === 'modelos' && <ModelosDocumentosWrapper />}
       {tab === 'pricing' && <PricingTab />}
       {tab === 'irradiation' && <IrradiationTab />}
       {tab === 'company' && <CompanyTab />}
