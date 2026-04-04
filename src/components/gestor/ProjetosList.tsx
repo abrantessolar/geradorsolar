@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import type { Projeto } from '@/pages/GestorPage';
-import { Edit2, FileText, Snowflake, Image as ImageIcon, CheckCircle, ArrowUpDown, ArrowUp, ArrowDown, GripVertical, Trash2, ClipboardList, Package } from 'lucide-react';
+import { Edit2, FileText, Snowflake, Image as ImageIcon, CheckCircle, ArrowUpDown, ArrowUp, ArrowDown, GripVertical, Trash2, ClipboardList, Package, FileDown } from 'lucide-react';
 import WhatsAppLink from './WhatsAppLink';
+import { generateFichaInstalacao } from '@/lib/generateFichaInstalacao';
 import InstaladorSelect from './InstaladorSelect';
 import CongelarModal from './CongelarModal';
 import ObraConcluidaModal from './ObraConcluidaModal';
