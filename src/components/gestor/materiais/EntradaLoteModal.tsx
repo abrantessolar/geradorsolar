@@ -82,7 +82,7 @@ export default function EntradaLoteModal({ onClose, onDone }: { onClose: () => v
 
   const totalEntrada = rows.reduce((sum, r) => {
     const qtd = parseInt(r.entrada) || 0;
-    return sum + (qtd * (r.preco_unitario || 0));
+    return sum + (qtd * (Number(r.preco_unitario) || 0));
   }, 0);
   const qtdItens = rows.filter(r => r.entrada && parseInt(r.entrada) > 0).length;
 
