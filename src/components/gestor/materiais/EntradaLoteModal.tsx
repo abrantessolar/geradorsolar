@@ -45,6 +45,12 @@ export default function EntradaLoteModal({ onClose, onDone }: { onClose: () => v
     if (entradas.length === 0) { toast.error('Nenhuma quantidade informada'); return; }
     setSaving(true);
     try {
+      // Save price updates for all rows with a price
+      for (const row of rows) {
+        if (row.preco_unitario != null) {
+          await supabase.from('materiais').update({ preco_unitario: Number(row.preco_unitario) }).eq('id', row.id);
+        }
+      }
       for (const row of entradas) {
         const qtd = parseInt(row.entrada);
         // Register movement
