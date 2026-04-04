@@ -5,9 +5,10 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import {
   Package, Send, RotateCcw, BarChart3, RefreshCw, ArrowLeft,
-  Check, AlertTriangle, Loader2, X, Phone, MapPin, Wrench, Plus, Trash2
+  Check, AlertTriangle, Loader2, X, Phone, MapPin, Wrench, Plus, Trash2, FileDown
 } from 'lucide-react';
 import { CATEGORIA_ICONS } from '@/components/gestor/materiais/types';
+import { generateFichaInstalacao } from '@/lib/generateFichaInstalacao';
 
 /* ─── Types ─── */
 type ObraCard = {
