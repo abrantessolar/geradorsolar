@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Calculator, Settings, Menu, X, LogOut, Megaphone, HardHat } from 'lucide-react';
+import { Calculator, Settings, Menu, X, LogOut, HardHat, Package, DollarSign } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNewLeadsCount } from '@/components/LeadNotification';
@@ -8,23 +8,27 @@ import logoImg from '@/assets/logo.png';
 export default function Layout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { profile, signOut, isAdmin, isGestor, isOrcamentista, hasGestorAccess } = useAuth();
+  const { profile, signOut, permissions } = useAuth();
   const isProposal = location.pathname.startsWith('/proposta/');
   const newLeadsCount = useNewLeadsCount();
 
   if (isProposal) return <>{children}</>;
 
+  const hasAnyGestor = permissions.gestor_obras || permissions.gestor_clientes || permissions.gestor_materiais || permissions.gestor_equipamentos;
+
   const navItems = [
-    ...(!isGestor ? [{ path: '/orcamentos', label: 'Calculadora', icon: Calculator, badge: 0 }] : []),
-    ...((isAdmin || isOrcamentista) ? [{ path: '/admin', label: 'Admin', icon: Settings, badge: newLeadsCount }] : []),
-    ...(hasGestorAccess ? [{ path: '/gestor', label: 'Gestor', icon: HardHat, badge: 0 }] : []),
+    ...(permissions.calculadora ? [{ path: '/orcamentos', label: 'Calculadora', icon: Calculator, badge: 0 }] : []),
+    ...(permissions.estoque ? [{ path: '/estoque', label: 'Estoque', icon: Package, badge: 0 }] : []),
+    ...(permissions.gestor_custos ? [{ path: '/custos', label: 'Custos', icon: DollarSign, badge: 0 }] : []),
+    ...(permissions.admin ? [{ path: '/admin', label: 'Admin', icon: Settings, badge: newLeadsCount }] : []),
+    ...(hasAnyGestor ? [{ path: '/gestor', label: 'Gestor', icon: HardHat, badge: 0 }] : []),
   ];
 
   return (
     <div className="min-h-screen bg-background">
       <header className="no-print sticky top-0 z-50 bg-card border-b border-border/50 shadow-sm">
         <div className="container flex items-center justify-between h-16">
-          <Link to="/orcamentos" className="flex items-center gap-3 group">
+          <Link to="/" className="flex items-center gap-3 group">
             <img src={logoImg} alt="Três Lagoas Solar" className="w-10 h-10 object-contain" />
             <div className="hidden sm:block">
               <span className="text-lg font-bold text-primary leading-none">Três Lagoas Solar</span>
