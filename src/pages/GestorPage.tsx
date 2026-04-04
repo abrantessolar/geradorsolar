@@ -272,6 +272,9 @@ export default function GestorPage() {
           <TabsTrigger value="equipamentos" className="flex items-center gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-3 sm:px-6 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm whitespace-nowrap">
             <Cpu className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Equipamentos
           </TabsTrigger>
+          <TabsTrigger value="custos" className="flex items-center gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-3 sm:px-6 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm whitespace-nowrap">
+            <DollarSign className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Custos
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="obras" className="space-y-3 sm:space-y-4">
