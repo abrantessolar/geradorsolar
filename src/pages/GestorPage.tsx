@@ -10,7 +10,6 @@ import GestorDashboard from '@/components/gestor/GestorDashboard';
 import ProjetoForm from '@/components/gestor/ProjetoForm';
 import ProjetosList from '@/components/gestor/ProjetosList';
 import DocumentosModal from '@/components/gestor/DocumentosModal';
-import ModelosDocumentos from '@/components/gestor/ModelosDocumentos';
 import ImportCSV from '@/components/gestor/ImportCSV';
 import ClientesList, { type ClienteBase } from '@/components/gestor/ClientesList';
 
