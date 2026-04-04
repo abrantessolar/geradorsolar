@@ -111,7 +111,7 @@ export default function EntradaLoteModal({ onClose, onDone }: { onClose: () => v
                   <th className="py-2 px-3">Material</th>
                   <th className="py-2 px-3 text-center w-24">Qtd Atual</th>
                   <th className="py-2 px-3 text-center w-32">+ Entrada</th>
-                  <th className="py-2 px-3 text-right w-28">Preço Unit.</th>
+                  <th className="py-2 px-3 text-center w-28">R$ Unit.</th>
                 </tr>
               </thead>
               <tbody>
