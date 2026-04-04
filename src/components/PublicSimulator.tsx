@@ -392,7 +392,7 @@ export default function PublicSimulator() {
             <button
               type="button"
               onClick={() => setShowEquipmentPanel(!showEquipmentPanel)}
-              className="flex items-center gap-2 text-base font-bold text-white bg-primary hover:bg-primary/90 transition-colors px-4 py-3 rounded-lg w-full justify-center"
+              className="flex items-center gap-2 text-base font-bold text-white transition-colors px-4 py-3 rounded-lg w-full justify-center bg-secondary"
             >
               <Plus className="w-5 h-5" />
               Clique aqui para adicionar +Ar condicionado, ou outros eletrodomésticos.
