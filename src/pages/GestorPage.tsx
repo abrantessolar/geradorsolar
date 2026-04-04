@@ -90,6 +90,7 @@ type ObrasSubTab = 'dashboard' | 'projetos' | 'novo' | 'editar' | 'importar';
 
 
 export default function GestorPage() {
+  const navigate = useNavigate();
   const { session, isAdmin } = useAuth();
   const [mainTab, setMainTab] = useState<'obras' | 'clientes' | 'materiais' | 'equipamentos'>('obras');
   const [obrasSubTab, setObrasSubTab] = useState<ObrasSubTab>('dashboard');
