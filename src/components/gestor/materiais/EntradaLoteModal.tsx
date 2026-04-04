@@ -11,7 +11,7 @@ type MatRow = {
   categoria: string;
   estoque_atual: number;
   entrada: string;
-  preco_unitario: number | null;
+  preco_unitario: number | null | string;
 };
 
 export default function EntradaLoteModal({ onClose, onDone }: { onClose: () => void; onDone: () => void }) {
