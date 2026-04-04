@@ -295,6 +295,68 @@ export type Database = {
         }
         Relationships: []
       }
+      custos_obra: {
+        Row: {
+          atualizado_em: string
+          criado_em: string
+          custo_comissao: number | null
+          custo_frete: number | null
+          custo_homologacao: number | null
+          custo_instalacao: number | null
+          custo_kit: number | null
+          custo_materiais: number | null
+          custo_outros: number | null
+          custo_trt: number | null
+          descricao_outros: string | null
+          id: string
+          observacoes: string | null
+          preco_venda: number | null
+          projeto_id: string
+        }
+        Insert: {
+          atualizado_em?: string
+          criado_em?: string
+          custo_comissao?: number | null
+          custo_frete?: number | null
+          custo_homologacao?: number | null
+          custo_instalacao?: number | null
+          custo_kit?: number | null
+          custo_materiais?: number | null
+          custo_outros?: number | null
+          custo_trt?: number | null
+          descricao_outros?: string | null
+          id?: string
+          observacoes?: string | null
+          preco_venda?: number | null
+          projeto_id: string
+        }
+        Update: {
+          atualizado_em?: string
+          criado_em?: string
+          custo_comissao?: number | null
+          custo_frete?: number | null
+          custo_homologacao?: number | null
+          custo_instalacao?: number | null
+          custo_kit?: number | null
+          custo_materiais?: number | null
+          custo_outros?: number | null
+          custo_trt?: number | null
+          descricao_outros?: string | null
+          id?: string
+          observacoes?: string | null
+          preco_venda?: number | null
+          projeto_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custos_obra_projeto_id_fkey"
+            columns: ["projeto_id"]
+            isOneToOne: true
+            referencedRelation: "projetos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       distribuidoras: {
         Row: {
           id: string
