@@ -409,9 +409,7 @@ function EditUserModal({ user, onClose, callApi }: { user: any; onClose: () => v
 /* ─── TABELA DE PREÇOS ─── */
 function PriceTableTab() {
   const MAX_PANELS = 25;
-  const stored = getPriceTable();
-  const filteredStored = stored.filter(r => r.panels <= MAX_PANELS);
-  const initial: PriceTableEntry[] = filteredStored.length > 0 ? filteredStored : 
+  const emptyTable = (): PriceTableEntry[] =>
     Array.from({ length: MAX_PANELS - 3 }, (_, i) => ({
       panels: i + 4,
       acesso: null,
@@ -420,7 +418,19 @@ function PriceTableTab() {
       estimated: {},
       details: {},
     }));
-  const [table, setTable] = useState<PriceTableEntry[]>(initial);
+  const stored = getPriceTable();
+  const filteredStored = stored.filter(r => r.panels <= MAX_PANELS);
+  const [table, setTable] = useState<PriceTableEntry[]>(filteredStored.length > 0 ? filteredStored : emptyTable());
+
+  // Sync from DB on mount
+  useEffect(() => {
+    syncPriceTableFromDB().then(dbTable => {
+      if (dbTable.length > 0) {
+        const filtered = dbTable.filter(r => r.panels <= MAX_PANELS);
+        if (filtered.length > 0) setTable(filtered);
+      }
+    });
+  }, []);
   const [bulkFillCol, setBulkFillCol] = useState<string | null>(null);
   const [bulkFillValue, setBulkFillValue] = useState('');
   const [showSaveWarning, setShowSaveWarning] = useState(false);
