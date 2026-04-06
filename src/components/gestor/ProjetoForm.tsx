@@ -8,7 +8,7 @@ import { getPotenciaKey, generateMaterialList, hasExistingList } from './materia
 const STATUS_LIST = ['Vendido', 'Equipamento Comprado', 'Entregue', 'Em Instalação', 'Instalado', 'Projeto Submetido', 'Homologado'];
 const CONC_LIST = ['ELEKTRO', 'ENERGISA', 'COPEL', 'OUTRA'];
 const PAGAMENTO_STATUS_LIST = ['Pago', 'Pendente', 'Parcial'];
-const ESTRUTURA_LIST = ['Fibrocimento', 'Fibrometal', 'Cerâmico Madeira', 'Cerâmico Metal', 'Mini Trilho Elevado', 'Solo', 'Sem Estrutura'];
+const ESTRUTURA_LIST = ['Fibrocimento', 'Fibrometal', 'Cerâmico Madeira', 'Cerâmico Metal', 'Mini Trilho Elevado', 'Solo', 'Laje', 'Calhetão', 'Sem Estrutura'];
 
 function maskCpf(v: string) {
   return v.replace(/\D/g, '').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d{1,2})$/, '$1-$2').slice(0, 14);

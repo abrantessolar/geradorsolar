@@ -645,23 +645,17 @@ export default function EstoquePage() {
                     ✅ Confirmar Retirada ({obraDetails.materiais.filter(m => !m.separado).length} itens)
                   </button>
                 )}
-                <button onClick={() => {
-                  // Build a projeto-like object from selectedObra
-                  const p: any = {
-                    id: selectedObra.id,
-                    nome_completo: selectedObra.nome,
-                    telefone: selectedObra.telefone,
-                    endereco_completo: selectedObra.endereco,
-                    qtd_placas: selectedObra.qtd_placas,
-                    marca_placa: selectedObra.marca_placa,
-                    potencia_placa: selectedObra.potencia_placa,
-                    qtd_inversores: selectedObra.qtd_inversores,
-                    marca_inversor: selectedObra.marca_inversor,
-                    potencia_inversor: selectedObra.potencia_inversor,
-                    sistema: selectedObra.sistema,
-                    instalador: selectedObra.instalador,
-                  };
-                  generateFichaInstalacao(p);
+                <button onClick={async () => {
+                  // Fetch full project data for complete ficha
+                  const { data: fullProjeto } = await supabase.from('projetos')
+                    .select('*')
+                    .eq('id', selectedObra.id)
+                    .maybeSingle();
+                  if (fullProjeto) {
+                    generateFichaInstalacao(fullProjeto as any);
+                  } else {
+                    toast.error('Não foi possível carregar dados do projeto');
+                  }
                 }}
                   className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 border-primary text-primary font-medium text-base h-[56px]">
                   <FileDown className="w-5 h-5" /> 📋 Ficha de Instalação
