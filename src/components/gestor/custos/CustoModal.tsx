@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { CustoObra, calcCustoTotal, calcLucroBruto, calcMargem, margemBgColor, fmt } from './types';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import MoneyInput from '@/components/ui/money-input';
 
 type Props = {
   open: boolean;
@@ -177,7 +178,7 @@ export default function CustoModal({ open, onClose, projetoId, nomeCliente, qtdP
                 <h4 className="font-semibold text-sm">💼 Kit (Placas + Inversor)</h4>
                 <div>
                   <Label className="text-xs">Custo do Kit (R$)</Label>
-                  <Input type="number" value={form.custo_kit} onChange={e => setField('custo_kit', +e.target.value)} />
+                  <MoneyInput className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={form.custo_kit} onChange={v => setField('custo_kit', v)} />
                 </div>
               </div>
 
@@ -187,7 +188,7 @@ export default function CustoModal({ open, onClose, projetoId, nomeCliente, qtdP
                 <div className="grid grid-cols-3 gap-2">
                   <div>
                     <Label className="text-xs">Valor/placa</Label>
-                    <Input type="number" value={form.custo_instalacao / (qtdPlacas || 1)} onChange={e => setField('custo_instalacao', +e.target.value * (qtdPlacas || 1))} />
+                    <MoneyInput className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={form.custo_instalacao / (qtdPlacas || 1)} onChange={v => setField('custo_instalacao', v * (qtdPlacas || 1))} />
                   </div>
                   <div>
                     <Label className="text-xs">Placas</Label>
@@ -205,7 +206,7 @@ export default function CustoModal({ open, onClose, projetoId, nomeCliente, qtdP
                 <h4 className="font-semibold text-sm">📋 TRT</h4>
                 <div>
                   <Label className="text-xs">Valor TRT (R$)</Label>
-                  <Input type="number" value={form.custo_trt} onChange={e => setField('custo_trt', +e.target.value)} />
+                  <MoneyInput className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={form.custo_trt} onChange={v => setField('custo_trt', v)} />
                 </div>
               </div>
 
@@ -238,19 +239,19 @@ export default function CustoModal({ open, onClose, projetoId, nomeCliente, qtdP
                 <div className="grid grid-cols-2 gap-2">
                   <div>
                     <Label className="text-xs">Frete (R$)</Label>
-                    <Input type="number" value={form.custo_frete} onChange={e => setField('custo_frete', +e.target.value)} />
+                    <MoneyInput className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={form.custo_frete} onChange={v => setField('custo_frete', v)} />
                   </div>
                   <div>
                     <Label className="text-xs">Homologação (R$)</Label>
-                    <Input type="number" value={form.custo_homologacao} onChange={e => setField('custo_homologacao', +e.target.value)} />
+                    <MoneyInput className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={form.custo_homologacao} onChange={v => setField('custo_homologacao', v)} />
                   </div>
                   <div>
                     <Label className="text-xs">Comissão (R$)</Label>
-                    <Input type="number" value={form.custo_comissao} onChange={e => setField('custo_comissao', +e.target.value)} />
+                    <MoneyInput className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={form.custo_comissao} onChange={v => setField('custo_comissao', v)} />
                   </div>
                   <div>
                     <Label className="text-xs">Outros (R$)</Label>
-                    <Input type="number" value={form.custo_outros} onChange={e => setField('custo_outros', +e.target.value)} />
+                    <MoneyInput className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={form.custo_outros} onChange={v => setField('custo_outros', v)} />
                   </div>
                 </div>
                 {(form.custo_outros || 0) > 0 && (

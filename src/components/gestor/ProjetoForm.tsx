@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import MoneyInput from '@/components/ui/money-input';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -470,7 +471,7 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
       {step === 4 && (
         <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div><label className={labelClass}>Preço de Venda (R$)</label><input className={inputClass} type="number" step="0.01" value={form.preco_venda} onChange={e => set('preco_venda', e.target.value)} /></div>
+            <div><label className={labelClass}>Preço de Venda (R$)</label><MoneyInput className={inputClass} value={form.preco_venda ? parseFloat(form.preco_venda) : 0} onChange={v => set('preco_venda', String(v))} /></div>
             <div><label className={labelClass}>Forma de Pagamento</label><input className={inputClass} value={form.forma_pagamento} onChange={e => set('forma_pagamento', e.target.value)} placeholder="Ex: À Vista, Financ Solfacil, 70% assinatura 30% término" /></div>
             <div><label className={labelClass}>Distribuidor</label><input className={inputClass} value={form.distribuidor} onChange={e => set('distribuidor', e.target.value)} placeholder="Ex: BELENUS, AVT, SOLFACIL" /></div>
             <div><label className={labelClass}>Instalador</label><input className={inputClass} value={form.instalador} onChange={e => set('instalador', e.target.value)} placeholder="Ex: GUSTAVO, MATHEUS" /></div>
