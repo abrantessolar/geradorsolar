@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { AlertTriangle, CheckCircle, Zap } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { getSettings } from '@/data/store';
-import { getCaMaterialCost, calcMicroInverterCount, formatCurrency, formatNumber } from '@/data/calculations';
+import { getCaMaterialCost, calcMicroInverterCount, formatCurrency, formatNumber, getOverloadStatus } from '@/data/calculations';
 
 export interface CustomKitData {
   enabled: boolean;
