@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Calculator, Settings, Menu, X, LogOut, HardHat, Package, DollarSign } from 'lucide-react';
+import { Calculator, Settings, Menu, X, LogOut, HardHat, Package, DollarSign, Users } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNewLeadsCount } from '@/components/LeadNotification';
@@ -14,11 +14,14 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
   if (isProposal) return <>{children}</>;
 
-  const hasAnyGestor = permissions.gestor_obras || permissions.gestor_clientes || permissions.gestor_materiais || permissions.gestor_equipamentos;
+  // hasAnyGestor moved below navItems
+
+  const hasAnyGestor = permissions.gestor_obras || permissions.gestor_materiais || permissions.gestor_equipamentos;
 
   const navItems = [
-    ...(permissions.calculadora ? [{ path: '/orcamentos', label: 'Calculadora', icon: Calculator, badge: 0 }] : []),
     ...(permissions.estoque ? [{ path: '/estoque', label: 'Estoque', icon: Package, badge: 0 }] : []),
+    ...(permissions.calculadora ? [{ path: '/orcamentos', label: 'Calculadora', icon: Calculator, badge: 0 }] : []),
+    ...(permissions.gestor_clientes ? [{ path: '/clientes', label: 'Clientes', icon: Users, badge: 0 }] : []),
     ...(permissions.gestor_custos ? [{ path: '/custos', label: 'Custos', icon: DollarSign, badge: 0 }] : []),
     ...(permissions.admin ? [{ path: '/admin', label: 'Admin', icon: Settings, badge: newLeadsCount }] : []),
     ...(hasAnyGestor ? [{ path: '/gestor', label: 'Gestor', icon: HardHat, badge: 0 }] : []),

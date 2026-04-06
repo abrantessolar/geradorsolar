@@ -15,6 +15,7 @@ import ResetPasswordPage from "@/pages/ResetPasswordPage";
 import GestorPage from "@/pages/GestorPage";
 import EstoquePage from "@/pages/EstoquePage";
 import CustosPage from "@/pages/CustosPage";
+import ClientesPage from "@/pages/ClientesPage";
 import UnauthorizedPage from "@/pages/UnauthorizedPage";
 import LeadNotification from "@/components/LeadNotification";
 import NotFound from "@/pages/NotFound";
@@ -121,6 +122,11 @@ const App = () => (
             <Route path="/custos" element={
               <ProtectedRoute permissionKey="gestor_custos">
                 <SeoNoIndex /><Layout><CustosPage /></Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/clientes" element={
+              <ProtectedRoute permissionKey="gestor_clientes">
+                <SeoNoIndex /><Layout><ClientesPage /></Layout>
               </ProtectedRoute>
             } />
             <Route path="*" element={<NotFound />} />
