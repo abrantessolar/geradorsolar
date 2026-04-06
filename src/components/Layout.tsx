@@ -14,7 +14,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
   if (isProposal) return <>{children}</>;
 
-  // hasAnyGestor moved below navItems
+  
 
   const hasAnyGestor = permissions.gestor_obras || permissions.gestor_materiais || permissions.gestor_equipamentos;
 
