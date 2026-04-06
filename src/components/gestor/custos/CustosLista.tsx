@@ -7,6 +7,7 @@ import { DollarSign, Download, RefreshCw, Pencil, Check, X } from 'lucide-react'
 import { ProjetoComCusto, CustoObra, calcCustoTotal, calcLucroBruto, calcMargem, margemColor, fmt } from './types';
 import CustoModal from './CustoModal';
 import { toast } from 'sonner';
+import MoneyInput, { parseBRL } from '@/components/ui/money-input';
 
 type Props = {
   onExport: (data: ProjetoComCusto[]) => void;
@@ -184,11 +185,10 @@ export default function CustosLista({ onExport }: Props) {
                   <td className="p-2 text-right">
                     {editingVendaId === p.id ? (
                       <div className="flex items-center gap-1">
-                        <Input
-                          type="number"
-                          value={editingVendaValue}
-                          onChange={e => setEditingVendaValue(e.target.value)}
-                          className="h-6 w-24 text-xs"
+                        <MoneyInput
+                          value={parseBRL(editingVendaValue)}
+                          onChange={v => setEditingVendaValue(String(v))}
+                          className="flex h-6 w-24 rounded-md border border-input bg-background px-2 text-xs"
                           autoFocus
                           onKeyDown={e => { if (e.key === 'Enter') saveVenda(p.id); if (e.key === 'Escape') setEditingVendaId(null); }}
                         />
