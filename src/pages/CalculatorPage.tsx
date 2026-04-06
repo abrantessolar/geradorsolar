@@ -348,11 +348,12 @@ export default function CalculatorPage() {
 
       let costBreakdown: typeof baseCostBreakdown;
       if (hasPriceTableCost) {
-        const salePrice = ptEntry[line]!;
-        const equipmentCost = baseCostBreakdown.equipmentCost;
+        // ptEntry[line] is the COST from the price table, not the sale price
+        const equipmentCost = ptEntry[line]!;
         const totalCost = equipmentCost + installationCost + homologationCost + caMaterialCost + trunkCableCost;
+        const salePrice = totalCost / (1 - settings.profitMargin / 100);
         const grossProfit = salePrice - totalCost;
-        const profitMargin = salePrice > 0 ? (grossProfit / salePrice) * 100 : 0;
+        const profitMargin = settings.profitMargin;
         costBreakdown = {
           equipmentCost, installationCost, homologationCost,
           caMaterialCost, trunkCableCost, totalCost,
