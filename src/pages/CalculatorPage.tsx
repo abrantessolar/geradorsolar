@@ -976,7 +976,7 @@ export default function CalculatorPage() {
 
                 <div className="text-center py-3 border-y border-border">
                   <p className="text-xs text-muted-foreground mb-1">Investimento</p>
-                  <p className="text-2xl font-bold text-primary">{formatCurrency(card.costBreakdown.salePrice)}</p>
+                  <p className="text-2xl font-bold text-primary">{formatCurrency(card.totalPrice)}</p>
                 </div>
 
                 {/* Payment tabs */}
@@ -1036,7 +1036,7 @@ export default function CalculatorPage() {
                         <div className="flex justify-between"><span className="text-muted-foreground">Equipamentos</span><span>{formatCurrency(card.costBreakdown.equipmentCost)}</span></div>
                         <div className="flex justify-between"><span className="text-muted-foreground">Instalação ({card.panelCount}× R$100)</span><span>{formatCurrency(card.costBreakdown.installationCost)}</span></div>
                         <div className="flex justify-between"><span className="text-muted-foreground">Homologação</span><span>{formatCurrency(card.costBreakdown.homologationCost)}</span></div>
-                        <div className="flex justify-between"><span className="text-muted-foreground">Material CA ({card.inverter?.power || 0} kW)</span><span>{formatCurrency(card.costBreakdown.caMaterialCost)}</span></div>
+                        <div className="flex justify-between"><span className="text-muted-foreground">Material CA ({card.caInverterKw || card.inverter?.power || 0} kW)</span><span>{formatCurrency(card.costBreakdown.caMaterialCost)}</span></div>
                         {card.costBreakdown.trunkCableCost > 0 && (
                           <div className="flex justify-between"><span className="text-muted-foreground">Cabo tronco</span><span>{formatCurrency(card.costBreakdown.trunkCableCost)}</span></div>
                         )}
