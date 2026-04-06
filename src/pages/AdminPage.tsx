@@ -763,11 +763,14 @@ function PriceTableTab() {
                       <tr className="border-b border-border/30">
                         <td colSpan={2 + TOTAL_COLS} className="py-0.5 px-2">
                           <div className="flex flex-wrap gap-4 text-[10px] text-muted-foreground">
-                            {validations.filter(x => x.v !== null).map(x => (
-                              <span key={x.key} className={!x.v!.valid ? 'text-destructive' : 'text-green-600'}>
-                                {LINE_NAMES[x.key]}: {x.v!.totalPanelKwp.toFixed(2)} kWp | Lim: {x.v!.limit.toFixed(2)} kWp | Margem: {x.v!.margin.toFixed(2)} kWp
-                              </span>
-                            ))}
+                            {validations.filter(x => x.v !== null).map(x => {
+                              const color = x.v!.level === 'red' ? 'text-destructive' : x.v!.level === 'yellow' ? 'text-yellow-600' : 'text-green-600';
+                              return (
+                                <span key={x.key} className={color}>
+                                  {x.v!.level === 'green' ? '🟢' : x.v!.level === 'yellow' ? '🟡' : '🔴'} {LINE_NAMES[x.key]}: {x.v!.totalPanelKwp.toFixed(2)} kWp | Lim: {x.v!.limit.toFixed(2)} kWp | Margem: {x.v!.margin.toFixed(2)} kWp
+                                </span>
+                              );
+                            })}
                           </div>
                         </td>
                       </tr>
