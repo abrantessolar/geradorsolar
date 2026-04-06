@@ -944,6 +944,7 @@ export type Database = {
           distribuidor: string | null
           endereco_completo: string | null
           estado: string | null
+          estrutura: string | null
           forma_pagamento: string | null
           geracao_estimada_kwh: number | null
           id: string
@@ -1011,6 +1012,7 @@ export type Database = {
           distribuidor?: string | null
           endereco_completo?: string | null
           estado?: string | null
+          estrutura?: string | null
           forma_pagamento?: string | null
           geracao_estimada_kwh?: number | null
           id?: string
@@ -1078,6 +1080,7 @@ export type Database = {
           distribuidor?: string | null
           endereco_completo?: string | null
           estado?: string | null
+          estrutura?: string | null
           forma_pagamento?: string | null
           geracao_estimada_kwh?: number | null
           id?: string
