@@ -695,15 +695,28 @@ function PriceTableTab() {
                     <tr className={`border-b border-border/50 hover:bg-muted/30 ${hasViolation ? 'bg-destructive/5' : ''}`}>
                       <td className="py-1 px-1 font-medium text-muted-foreground">{row.panels}</td>
                       <td className="py-1 px-1">
-                        {hasViolation ? (
+                        {validations.some(x => x.v && x.v.level === 'red') ? (
                           <Tooltip>
                             <TooltipTrigger>
                               <AlertTriangle className="w-3.5 h-3.5 text-destructive" />
                             </TooltipTrigger>
                             <TooltipContent className="max-w-xs text-xs">
-                              {validations.filter(x => x.v && !x.v.valid).map(x => (
+                              {validations.filter(x => x.v && x.v.level === 'red').map(x => (
                                 <p key={x.key}>
-                                  {LINE_NAMES[x.key]}: Potência das placas ({x.v!.totalPanelKwp.toFixed(2)} kWp) ultrapassa 1,5x do inversor ({x.v!.inverterKw} kW). Máximo: {x.v!.limit.toFixed(2)} kWp
+                                  {LINE_NAMES[x.key]}: Potência das placas ({x.v!.totalPanelKwp.toFixed(2)} kWp) ultrapassa 1,7x do inversor ({x.v!.inverterKw} kW). Máximo: {x.v!.limit.toFixed(2)} kWp
+                                </p>
+                              ))}
+                            </TooltipContent>
+                          </Tooltip>
+                        ) : validations.some(x => x.v && x.v.level === 'yellow') ? (
+                          <Tooltip>
+                            <TooltipTrigger>
+                              <AlertTriangle className="w-3.5 h-3.5 text-yellow-500" />
+                            </TooltipTrigger>
+                            <TooltipContent className="max-w-xs text-xs">
+                              {validations.filter(x => x.v && x.v.level === 'yellow').map(x => (
+                                <p key={x.key}>
+                                  {LINE_NAMES[x.key]}: Sobrecarga moderada ({x.v!.totalPanelKwp.toFixed(2)} kWp / {x.v!.inverterKw} kW)
                                 </p>
                               ))}
                             </TooltipContent>
