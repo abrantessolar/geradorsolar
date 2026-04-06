@@ -7,8 +7,8 @@ import { getPotenciaKey, generateMaterialList, hasExistingList } from './materia
 
 const STATUS_LIST = ['Vendido', 'Equipamento Comprado', 'Entregue', 'Em Instalação', 'Instalado', 'Projeto Submetido', 'Homologado'];
 const CONC_LIST = ['ELEKTRO', 'ENERGISA', 'COPEL', 'OUTRA'];
-const LOCAL_ENTREGA_LIST = ['LOJA', 'CASA DO CLIENTE', 'OUTRO'];
 const PAGAMENTO_STATUS_LIST = ['Pago', 'Pendente', 'Parcial'];
+const ESTRUTURA_LIST = ['Fibrocimento', 'Fibrometal', 'Cerâmico Madeira', 'Cerâmico Metal', 'Mini Trilho Elevado', 'Solo', 'Sem Estrutura'];
 
 function maskCpf(v: string) {
   return v.replace(/\D/g, '').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d{1,2})$/, '$1-$2').slice(0, 14);
@@ -53,15 +53,15 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
     placa_id: '', qtd_placas: '',
     inversor_id: '', qtd_inversores: '',
     geracao_estimada_kwh: '', sistema: '',
-    nome_planta: '', wifi_nome: '', wifi_senha: '', cabo_usado: '',
+    nome_planta: '', wifi_nome: '', wifi_senha: '',
+    estrutura: '',
     unidade_geradora_cep: '', unidade_geradora_endereco: '', unidade_geradora_codigo_uc: '', unidade_geradora_padrao: '',
     unidade_beneficiaria1_cep: '', unidade_beneficiaria1_endereco: '', unidade_beneficiaria1_codigo_uc: '', unidade_beneficiaria1_percentual: '',
     unidade_beneficiaria2_cep: '', unidade_beneficiaria2_endereco: '', unidade_beneficiaria2_codigo_uc: '', unidade_beneficiaria2_percentual: '',
     preco_venda: '', forma_pagamento: '',
-    data_fechamento: '', local_entrega: 'CASA DO CLIENTE', local_entrega_outro: '', objecoes: '',
-    status: 'Vendido', data_instalacao: '',
+    data_fechamento: '', objecoes: '',
+    data_instalacao: '',
     distribuidor: '', instalador: '', pagamento_status: 'Pendente',
-    projeto_enviado_em: '', projeto_aprovado: '', vistoriado_em: '',
   });
 
   useEffect(() => {
@@ -74,7 +74,6 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
     supabase.from('projetos' as any).select('*').eq('id', projetoId).maybeSingle().then(({ data }) => {
       if (!data) return;
       const p = data as any;
-      const localEntrega = ['LOJA', 'CASA DO CLIENTE'].includes(p.local_entrega?.toUpperCase()) ? p.local_entrega.toUpperCase() : (p.local_entrega ? 'OUTRO' : 'CASA DO CLIENTE');
       setForm({
         tipo_pessoa: p.tipo_pessoa || 'PF',
         nome_completo: p.nome_completo || '', cpf: p.cpf || '', data_nascimento: p.data_nascimento || '',
@@ -85,18 +84,16 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
         placa_id: p.placa_id || '', qtd_placas: p.qtd_placas?.toString() || '',
         inversor_id: p.inversor_id || '', qtd_inversores: p.qtd_inversores?.toString() || '',
         geracao_estimada_kwh: p.geracao_estimada_kwh?.toString() || '', sistema: p.sistema || '',
-        nome_planta: p.nome_planta || '', wifi_nome: p.wifi_nome || '', wifi_senha: p.wifi_senha || '', cabo_usado: p.cabo_usado || '',
+        nome_planta: p.nome_planta || '', wifi_nome: p.wifi_nome || '', wifi_senha: p.wifi_senha || '',
+        estrutura: (p as any).estrutura || '',
         unidade_geradora_cep: p.unidade_geradora_cep || '', unidade_geradora_endereco: p.unidade_geradora_endereco || '', unidade_geradora_codigo_uc: p.unidade_geradora_codigo_uc || '', unidade_geradora_padrao: p.unidade_geradora_padrao || '',
         unidade_beneficiaria1_cep: p.unidade_beneficiaria1_cep || '', unidade_beneficiaria1_endereco: p.unidade_beneficiaria1_endereco || '', unidade_beneficiaria1_codigo_uc: p.unidade_beneficiaria1_codigo_uc || '', unidade_beneficiaria1_percentual: p.unidade_beneficiaria1_percentual?.toString() || '',
         unidade_beneficiaria2_cep: p.unidade_beneficiaria2_cep || '', unidade_beneficiaria2_endereco: p.unidade_beneficiaria2_endereco || '', unidade_beneficiaria2_codigo_uc: p.unidade_beneficiaria2_codigo_uc || '', unidade_beneficiaria2_percentual: p.unidade_beneficiaria2_percentual?.toString() || '',
         preco_venda: p.preco_venda?.toString() || '', forma_pagamento: p.forma_pagamento || '',
-        data_fechamento: p.data_fechamento || '', 
-        local_entrega: localEntrega,
-        local_entrega_outro: localEntrega === 'OUTRO' ? (p.local_entrega || '') : '',
+        data_fechamento: p.data_fechamento || '',
         objecoes: p.objecoes || '',
-        status: p.status || 'Vendido', data_instalacao: p.data_instalacao || '',
+        data_instalacao: p.data_instalacao || '',
         distribuidor: p.distribuidor || '', instalador: p.instalador || '', pagamento_status: p.pagamento_status || 'Pendente',
-        projeto_enviado_em: p.projeto_enviado_em || '', projeto_aprovado: p.projeto_aprovado || '', vistoriado_em: p.vistoriado_em || '',
       });
     });
   }, [projetoId]);
