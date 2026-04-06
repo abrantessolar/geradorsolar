@@ -58,7 +58,7 @@ function GestorProtectedRoute({ children }: { children: React.ReactNode }) {
 
   if (!session) return <Navigate to="/login" replace />;
 
-  const hasAny = permissions.gestor_obras || permissions.gestor_clientes || permissions.gestor_materiais || permissions.gestor_equipamentos || permissions.gestor_custos;
+  const hasAny = permissions.gestor_obras || permissions.gestor_materiais || permissions.gestor_equipamentos || permissions.gestor_custos;
   if (!hasAny) return <Navigate to="/unauthorized" replace />;
 
   return <>{children}</>;
