@@ -417,6 +417,16 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
               {kwp > 0 && <p className="text-xs text-muted-foreground mt-1">Sugestão: {geracaoAuto} kWh (HSP 4,8 × 30d × 0,75)</p>}
             </div>
           </div>
+
+          <hr className="border-border" />
+          <h3 className="text-sm font-semibold">Estrutura de Fixação</h3>
+          <div>
+            <label className={labelClass}>Tipo de Estrutura</label>
+            <select className={inputClass} value={form.estrutura} onChange={e => set('estrutura', e.target.value)}>
+              <option value="">Selecione...</option>
+              {ESTRUTURA_LIST.map(e => <option key={e} value={e}>{e}</option>)}
+            </select>
+          </div>
         </div>
         );
       })()}
