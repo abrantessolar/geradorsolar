@@ -118,6 +118,11 @@ const App = () => (
                 <SeoNoIndex /><EstoquePage />
               </ProtectedRoute>
             } />
+            <Route path="/clientes" element={
+              <ProtectedRoute permissionKey="gestor_clientes">
+                <SeoNoIndex /><Layout><ClientesPage /></Layout>
+              </ProtectedRoute>
+            } />
             <Route path="/custos" element={
               <ProtectedRoute permissionKey="gestor_custos">
                 <SeoNoIndex /><Layout><CustosPage /></Layout>

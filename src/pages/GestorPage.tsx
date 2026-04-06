@@ -184,6 +184,7 @@ export default function GestorPage() {
       telefone_3: null,
       observacoes: p.objecoes || null,
       kwp: p.qtd_placas && p.potencia_placa ? (p.qtd_placas * parseFloat(p.potencia_placa || '0')) / 1000 : null,
+      data_fechamento: p.data_fechamento || null,
     }));
 
     setClientes([...fromBase, ...fromProjetos]);
