@@ -468,7 +468,7 @@ function PriceTableTab() {
     else if (e.key === 'Escape') { e.preventDefault(); (e.target as HTMLInputElement).blur(); setActiveCell(null); }
   };
 
-  // 1.5x validation helper
+  // 1.7x validation helper with 3-tier color system
   const getValidation = (row: PriceTableEntry, lineKey: string) => {
     const details = (row.details as any)?.[lineKey] as PriceTableLineDetails | undefined;
     const inverterPowerStr = details?.inverterPower;
@@ -480,9 +480,11 @@ function PriceTableTab() {
     if (lineKey === 'premium') return null; // micro inverters don't apply
     const panelKwp = panelWp / 1000;
     const totalPanelKwp = row.panels * panelKwp;
-    const limit = inverterKw * 1.5;
+    const limit = inverterKw * 1.7;
     const margin = limit - totalPanelKwp;
-    return { totalPanelKwp, limit, margin, valid: totalPanelKwp <= limit, inverterKw };
+    const ratio = totalPanelKwp / inverterKw;
+    const level: 'green' | 'yellow' | 'red' = ratio <= 1.5 ? 'green' : ratio <= 1.7 ? 'yellow' : 'red';
+    return { totalPanelKwp, limit, margin, valid: ratio <= 1.7, level, inverterKw };
   };
 
   const hasAnyViolation = table.some(row =>
@@ -614,10 +616,10 @@ function PriceTableTab() {
             <div className="bg-card rounded-xl p-6 max-w-md w-full mx-4 space-y-4" onClick={e => e.stopPropagation()}>
               <div className="flex items-center gap-2 text-amber-500">
                 <AlertTriangle className="w-6 h-6" />
-                <h3 className="text-lg font-bold">Atenção — Limite 1,5x ultrapassado</h3>
+                <h3 className="text-lg font-bold">Atenção — Sobrecarga acima de 1,7x</h3>
               </div>
               <p className="text-sm text-muted-foreground">
-                Algumas combinações na tabela ultrapassam o limite técnico de 1,5x da potência do inversor.
+                Algumas combinações na tabela ultrapassam o limite técnico de 1,7x da potência do inversor.
                 Deseja salvar mesmo assim?
               </p>
               <div className="flex gap-2 justify-end">
@@ -693,15 +695,28 @@ function PriceTableTab() {
                     <tr className={`border-b border-border/50 hover:bg-muted/30 ${hasViolation ? 'bg-destructive/5' : ''}`}>
                       <td className="py-1 px-1 font-medium text-muted-foreground">{row.panels}</td>
                       <td className="py-1 px-1">
-                        {hasViolation ? (
+                        {validations.some(x => x.v && x.v.level === 'red') ? (
                           <Tooltip>
                             <TooltipTrigger>
                               <AlertTriangle className="w-3.5 h-3.5 text-destructive" />
                             </TooltipTrigger>
                             <TooltipContent className="max-w-xs text-xs">
-                              {validations.filter(x => x.v && !x.v.valid).map(x => (
+                              {validations.filter(x => x.v && x.v.level === 'red').map(x => (
                                 <p key={x.key}>
-                                  {LINE_NAMES[x.key]}: Potência das placas ({x.v!.totalPanelKwp.toFixed(2)} kWp) ultrapassa 1,5x do inversor ({x.v!.inverterKw} kW). Máximo: {x.v!.limit.toFixed(2)} kWp
+                                  {LINE_NAMES[x.key]}: Potência das placas ({x.v!.totalPanelKwp.toFixed(2)} kWp) ultrapassa 1,7x do inversor ({x.v!.inverterKw} kW). Máximo: {x.v!.limit.toFixed(2)} kWp
+                                </p>
+                              ))}
+                            </TooltipContent>
+                          </Tooltip>
+                        ) : validations.some(x => x.v && x.v.level === 'yellow') ? (
+                          <Tooltip>
+                            <TooltipTrigger>
+                              <AlertTriangle className="w-3.5 h-3.5 text-yellow-500" />
+                            </TooltipTrigger>
+                            <TooltipContent className="max-w-xs text-xs">
+                              {validations.filter(x => x.v && x.v.level === 'yellow').map(x => (
+                                <p key={x.key}>
+                                  {LINE_NAMES[x.key]}: Sobrecarga moderada ({x.v!.totalPanelKwp.toFixed(2)} kWp / {x.v!.inverterKw} kW)
                                 </p>
                               ))}
                             </TooltipContent>
@@ -748,11 +763,14 @@ function PriceTableTab() {
                       <tr className="border-b border-border/30">
                         <td colSpan={2 + TOTAL_COLS} className="py-0.5 px-2">
                           <div className="flex flex-wrap gap-4 text-[10px] text-muted-foreground">
-                            {validations.filter(x => x.v !== null).map(x => (
-                              <span key={x.key} className={!x.v!.valid ? 'text-destructive' : 'text-green-600'}>
-                                {LINE_NAMES[x.key]}: {x.v!.totalPanelKwp.toFixed(2)} kWp | Lim: {x.v!.limit.toFixed(2)} kWp | Margem: {x.v!.margin.toFixed(2)} kWp
-                              </span>
-                            ))}
+                            {validations.filter(x => x.v !== null).map(x => {
+                              const color = x.v!.level === 'red' ? 'text-destructive' : x.v!.level === 'yellow' ? 'text-yellow-600' : 'text-green-600';
+                              return (
+                                <span key={x.key} className={color}>
+                                  {x.v!.level === 'green' ? '🟢' : x.v!.level === 'yellow' ? '🟡' : '🔴'} {LINE_NAMES[x.key]}: {x.v!.totalPanelKwp.toFixed(2)} kWp | Lim: {x.v!.limit.toFixed(2)} kWp | Margem: {x.v!.margin.toFixed(2)} kWp
+                                </span>
+                              );
+                            })}
                           </div>
                         </td>
                       </tr>
