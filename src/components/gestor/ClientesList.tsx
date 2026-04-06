@@ -43,6 +43,7 @@ export type ClienteBase = {
   telefone_3: string | null;
   observacoes: string | null;
   kwp: number | null;
+  data_fechamento?: string | null;
 };
 
 function calcKwp(qtd?: number | null, potW?: string | null): string {
