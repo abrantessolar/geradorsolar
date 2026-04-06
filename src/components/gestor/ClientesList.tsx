@@ -43,6 +43,7 @@ export type ClienteBase = {
   telefone_3: string | null;
   observacoes: string | null;
   kwp: number | null;
+  data_fechamento: string | null;
 };
 
 function calcKwp(qtd?: number | null, potW?: string | null): string {
@@ -52,7 +53,16 @@ function calcKwp(qtd?: number | null, potW?: string | null): string {
   return ((qtd * pot) / 1000).toFixed(2);
 }
 
-const COL_KEYS = ['nome', 'cpf', 'telefone', 'endereco', 'uc', 'concessionaria', 'marca_inv', 'pot_inv', 'qtd_placas', 'marca_placa', 'pot_placa', 'kwp', 'valor', 'forma_pgto', 'instalacao', 'acoes'];
+function calcMesesDesdeInstalacao(instaladoEm: string | null): string {
+  if (!instaladoEm) return '—';
+  const d = new Date(instaladoEm);
+  if (isNaN(d.getTime())) return '—';
+  const now = new Date();
+  const months = (now.getFullYear() - d.getFullYear()) * 12 + (now.getMonth() - d.getMonth());
+  return months >= 0 ? `${months} meses` : '—';
+}
+
+const COL_KEYS = ['nome', 'cpf', 'telefone', 'endereco', 'uc', 'concessionaria', 'marca_inv', 'pot_inv', 'qtd_placas', 'marca_placa', 'pot_placa', 'kwp', 'valor', 'forma_pgto', 'instalacao', 'data_venda', 'meses_instalacao', 'acoes'];
 
 export default function ClientesList({
   clientes, loading, onPromover, onRefresh,
@@ -103,7 +113,8 @@ export default function ClientesList({
     nome: 'Nome', cpf: 'CPF', telefone: 'Telefone', endereco: 'Endereço', uc: 'UC',
     concessionaria: 'Concessionária', marca_inv: 'Marca Inv.', pot_inv: 'Pot. Inv.',
     qtd_placas: 'Qtd Placas', marca_placa: 'Marca Placa', pot_placa: 'Pot. Placa',
-    kwp: 'KWp', valor: 'Valor', forma_pgto: 'Forma Pgto.', instalacao: 'Instalação', acoes: 'Ações',
+    kwp: 'KWp', valor: 'Valor', forma_pgto: 'Forma Pgto.', instalacao: 'Instalação',
+    data_venda: 'Data Venda', meses_instalacao: 'Meses', acoes: 'Ações',
   };
 
   const renderCell = (key: string, c: ClienteBase) => {
@@ -157,6 +168,8 @@ export default function ClientesList({
       case 'valor': return <td key={key} className="py-2 px-2 text-xs">{c.valor ? `R$ ${Number(c.valor).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '—'}</td>;
       case 'forma_pgto': return <td key={key} className="py-2 px-2 text-xs">{c.forma_pagamento || '—'}</td>;
       case 'instalacao': return <td key={key} className="py-2 px-2 text-xs">{c.instalado_em ? new Date(c.instalado_em).toLocaleDateString('pt-BR') : '—'}</td>;
+      case 'data_venda': return <td key={key} className="py-2 px-2 text-xs">{c.data_fechamento ? new Date(c.data_fechamento).toLocaleDateString('pt-BR') : '—'}</td>;
+      case 'meses_instalacao': return <td key={key} className="py-2 px-2 text-xs">{calcMesesDesdeInstalacao(c.instalado_em)}</td>;
       case 'acoes': return (
         <td key={key} className="py-2 px-2">
           <div className="flex gap-1">
