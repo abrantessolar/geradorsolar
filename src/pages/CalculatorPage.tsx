@@ -15,7 +15,7 @@ import {
   estimateFullConsumption, calcEquipmentMonthly, calcDimensioning,
   findInverterForPanels, findPanel, calcInstallments,
   calcCardInstallments, calcCostBreakdown,
-  formatCurrency, formatNumber, maxPanelsForInverter, calcMicroInverterCount,
+  formatCurrency, formatNumber, maxPanelsForInverter, calcMicroInverterCount, getOverloadStatus,
 } from '@/data/calculations';
 import { getSettings, saveProposal, lookupIrradiation, getPriceTable } from '@/data/store';
 import { savePropostaDB, searchCidadesDB, syncKitsFromDB, syncPriceTableFromDB } from '@/data/supabaseStore';
@@ -836,7 +836,19 @@ export default function CalculatorPage() {
             const isPremium = card.line === 'premium';
             const maxP = card.maxPanels;
             const remaining = card.panelsRemaining;
-            const limitColor = isPremium ? undefined : (remaining <= 0 ? '#E84855' : remaining <= 2 ? '#E8B84B' : undefined);
+            // Compute overload status for non-premium
+            const panelKwpTotal = card.dimensioning.powerKwp;
+            const inverterKwForOverload = (() => {
+              if (isPremium) return 0;
+              if (card.isCustom) {
+                const ck = customKits[card.line];
+                return ck?.inverterPower || 0;
+              }
+              const ptDet = (card.ptDetails as any);
+              return ptDet?.inverterPower ? parseFloat(ptDet.inverterPower) : card.inverter?.power || 0;
+            })();
+            const overload = !isPremium && inverterKwForOverload > 0 ? getOverloadStatus(panelKwpTotal, inverterKwForOverload) : null;
+            const overloadColors = { green: '#22c55e', yellow: '#eab308', red: '#E84855' };
             return (
               <div key={card.line} 
                 className={`solar-card p-6 space-y-4 relative cursor-pointer transition-all ${selectedLine === idx ? 'ring-2 ring-primary shadow-lg' : 'hover:shadow-md'}`}
@@ -885,12 +897,19 @@ export default function CalculatorPage() {
                       <div className="flex justify-between"><span className="text-muted-foreground">Inversor</span><span className="font-medium">{card.inverterBrand} {card.inverterModel}</span></div>
                       <div className="flex justify-between items-start">
                         <span className="text-muted-foreground">Suporta até</span>
-                        <span className="font-medium text-right" style={limitColor ? { color: limitColor } : undefined}>
+                        <span className="font-medium text-right" style={overload ? { color: overloadColors[overload.level] } : undefined}>
                           {maxP} placas de {card.panelPowerLabel}
-                          {remaining <= 2 && remaining > 0 && <span className="block text-xs" style={{ color: '#E8B84B' }}>Quase no limite do inversor</span>}
-                          {remaining <= 0 && <span className="block text-xs text-destructive">Limite atingido — próximo kit usa inversor maior</span>}
                         </span>
                       </div>
+                      {overload && (
+                        <div className={`text-[10px] px-2 py-1 rounded ${
+                          overload.level === 'green' ? 'bg-green-50 text-green-700' :
+                          overload.level === 'yellow' ? 'bg-yellow-50 text-yellow-700' :
+                          'bg-red-50 text-red-700'
+                        }`}>
+                          {LINE_NAMES[card.line]}: {formatNumber(panelKwpTotal)} kWp | Lim: {formatNumber(inverterKwForOverload * 1.7)} kWp | Margem: {formatNumber(overload.margin)} kWp — {overload.label}
+                        </div>
+                      )}
                     </>
                   )}
                   <div className="flex justify-between"><span className="text-muted-foreground">Placas</span><span className="font-medium">{card.panelCount}× {card.panelBrand} ({card.panelPowerLabel})</span></div>
