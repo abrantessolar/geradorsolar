@@ -14,7 +14,7 @@ import type { EquipmentCatalogItem } from '@/data/types';
 import {
   estimateFullConsumption, calcEquipmentMonthly, calcDimensioning,
   findInverterForPanels, findPanel, calcInstallments,
-  calcCardInstallments, calcCostBreakdown,
+  calcCardInstallments, calcCostBreakdown, getCaMaterialCost, calcTrunkCableCost,
   formatCurrency, formatNumber, maxPanelsForInverter, calcMicroInverterCount, getOverloadStatus,
 } from '@/data/calculations';
 import { getSettings, saveProposal, lookupIrradiation, getPriceTable } from '@/data/store';
@@ -318,25 +318,74 @@ export default function CalculatorPage() {
       const inverter = findInverterForPanels(line, usedPanels, panelPowerKwp);
       const powerKwp = usedPanels * panelPowerKwp;
       const hasPriceTableCost = ptEntry && ptEntry[line] !== null && ptEntry[line]! > 0;
-      const costBreakdown = calcCostBreakdown(inverter, panel, usedPanels, line);
-      const totalPrice = hasPriceTableCost ? ptEntry[line]! : costBreakdown.salePrice;
-      const dim = calcDimensioning(consumption, equipment, client.networkType, irradiation, client.kwhPrice, totalPrice, settings.systemLoss);
       const isPremium = line === 'premium';
       const microCount = isPremium ? calcMicroInverterCount(usedPanels) : 0;
+
+      // Determine inverter power from price table or kit
       const ptInverterPower = ptDetails?.inverterPower ? parseFloat(ptDetails.inverterPower) : null;
       const ptPanelPower = ptDetails?.panelPower ? parseFloat(ptDetails.panelPower) : null;
-      const effectiveInverterKw = ptInverterPower || inverter?.power || 0;
+      // If inverter power > 100, it's likely in watts (e.g. micro 2250W), convert to kW
+      const effectiveInverterKw = ptInverterPower 
+        ? (ptInverterPower > 100 ? ptInverterPower / 1000 : ptInverterPower) 
+        : (inverter?.power || 0);
       const effectivePanelWp = ptPanelPower || panel?.power || 570;
       const effectivePanelKwp = effectivePanelWp / 1000;
+
+      // Calculate Material CA using the REAL inverter power from price table
+      let caInverterKw: number;
+      if (isPremium) {
+        caInverterKw = effectiveInverterKw * microCount;
+      } else {
+        caInverterKw = effectiveInverterKw;
+      }
+      const caMaterialCost = getCaMaterialCost(caInverterKw);
+
+      // Build cost breakdown using price table value as sale price
+      const baseCostBreakdown = calcCostBreakdown(inverter, panel, usedPanels, line);
+      const installationCost = settings.installationPricePerPanel * usedPanels;
+      const homologationCost = settings.homologationPrice;
+      const trunkCableCost = isPremium ? calcTrunkCableCost(usedPanels) : 0;
+
+      let costBreakdown: typeof baseCostBreakdown;
+      if (hasPriceTableCost) {
+        const salePrice = ptEntry[line]!;
+        const equipmentCost = baseCostBreakdown.equipmentCost;
+        const totalCost = equipmentCost + installationCost + homologationCost + caMaterialCost + trunkCableCost;
+        const grossProfit = salePrice - totalCost;
+        const profitMargin = salePrice > 0 ? (grossProfit / salePrice) * 100 : 0;
+        costBreakdown = {
+          equipmentCost, installationCost, homologationCost,
+          caMaterialCost, trunkCableCost, totalCost,
+          profitMargin: Math.round(profitMargin * 100) / 100,
+          salePrice, grossProfit,
+        };
+      } else {
+        // Fallback: override CA material cost with corrected value
+        const totalCost = baseCostBreakdown.equipmentCost + installationCost + homologationCost + caMaterialCost + trunkCableCost;
+        const salePrice = totalCost / (1 - settings.profitMargin / 100);
+        costBreakdown = {
+          ...baseCostBreakdown,
+          caMaterialCost,
+          totalCost,
+          salePrice,
+          grossProfit: salePrice - totalCost,
+        };
+      }
+
+      const totalPrice = costBreakdown.salePrice;
+      const dim = calcDimensioning(consumption, equipment, client.networkType, irradiation, client.kwhPrice, totalPrice, settings.systemLoss);
       const maxPanels = isPremium ? 999 : Math.floor((effectiveInverterKw * 1.7) / effectivePanelKwp);
       const panelsRemaining = isPremium ? 999 : maxPanels - usedPanels;
       const monthlyGeneration = powerKwp * irradiation * 30 * (1 - settings.systemLoss / 100);
       const surplus = monthlyGeneration - dim.avgMonthlyKwh;
       const cardInstallments = calcCardInstallments(totalPrice, settings.creditCardRates);
 
+      console.log(`Kit selecionado: ${LINE_NAMES[line]} | ${usedPanels} placas | Custo: R$ ${totalPrice.toFixed(2)} | CA (${caInverterKw} kW): R$ ${caMaterialCost}`);
+
       return {
         line, inverter, panel, panelCount: usedPanels, totalPrice, maxPanels, panelsRemaining, microCount,
         isCustom: false, ptDetails, ptEntry, hasPriceTableCost, costBreakdown, cardInstallments,
+        caInverterKw,
         inverterBrand: ptDetails?.inverterBrand || inverter?.brand || '',
         inverterModel: ptDetails?.inverterPower ? `${ptDetails.inverterPower} kW` : inverter?.model || '',
         panelBrand: ptDetails?.panelBrand || panel?.brand || '',
@@ -930,7 +979,7 @@ export default function CalculatorPage() {
 
                 <div className="text-center py-3 border-y border-border">
                   <p className="text-xs text-muted-foreground mb-1">Investimento</p>
-                  <p className="text-2xl font-bold text-primary">{formatCurrency(card.costBreakdown.salePrice)}</p>
+                  <p className="text-2xl font-bold text-primary">{formatCurrency(card.totalPrice)}</p>
                 </div>
 
                 {/* Payment tabs */}
@@ -990,7 +1039,7 @@ export default function CalculatorPage() {
                         <div className="flex justify-between"><span className="text-muted-foreground">Equipamentos</span><span>{formatCurrency(card.costBreakdown.equipmentCost)}</span></div>
                         <div className="flex justify-between"><span className="text-muted-foreground">Instalação ({card.panelCount}× R$100)</span><span>{formatCurrency(card.costBreakdown.installationCost)}</span></div>
                         <div className="flex justify-between"><span className="text-muted-foreground">Homologação</span><span>{formatCurrency(card.costBreakdown.homologationCost)}</span></div>
-                        <div className="flex justify-between"><span className="text-muted-foreground">Material CA ({card.inverter?.power || 0} kW)</span><span>{formatCurrency(card.costBreakdown.caMaterialCost)}</span></div>
+                        <div className="flex justify-between"><span className="text-muted-foreground">Material CA ({card.caInverterKw || card.inverter?.power || 0} kW)</span><span>{formatCurrency(card.costBreakdown.caMaterialCost)}</span></div>
                         {card.costBreakdown.trunkCableCost > 0 && (
                           <div className="flex justify-between"><span className="text-muted-foreground">Cabo tronco</span><span>{formatCurrency(card.costBreakdown.trunkCableCost)}</span></div>
                         )}
