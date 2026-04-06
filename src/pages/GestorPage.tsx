@@ -12,7 +12,7 @@ import ProjetoForm from '@/components/gestor/ProjetoForm';
 import ProjetosList from '@/components/gestor/ProjetosList';
 import DocumentosModal from '@/components/gestor/DocumentosModal';
 import ImportCSV from '@/components/gestor/ImportCSV';
-import ClientesList, { type ClienteBase } from '@/components/gestor/ClientesList';
+import type { ClienteBase } from '@/components/gestor/ClientesList';
 
 import MateriaisModule from '@/components/gestor/materiais/MateriaisModule';
 import EquipmentDashboard from '@/components/gestor/EquipmentDashboard';
@@ -97,13 +97,12 @@ export default function GestorPage() {
   // Determine initial tab based on permissions
   const getInitialTab = () => {
     if (permissions.gestor_obras) return 'obras';
-    if (permissions.gestor_clientes) return 'clientes';
     if (permissions.gestor_materiais) return 'materiais';
     if (permissions.gestor_equipamentos) return 'equipamentos';
     return 'obras';
   };
   
-  const [mainTab, setMainTab] = useState<'obras' | 'clientes' | 'materiais' | 'equipamentos'>(getInitialTab());
+  const [mainTab, setMainTab] = useState<'obras' | 'materiais' | 'equipamentos'>(getInitialTab());
   const [obrasSubTab, setObrasSubTab] = useState<ObrasSubTab>('dashboard');
   
   const [projetos, setProjetos] = useState<Projeto[]>([]);
@@ -271,11 +270,6 @@ export default function GestorPage() {
               <Wrench className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Obras
             </TabsTrigger>
           )}
-          {permissions.gestor_clientes && (
-            <TabsTrigger value="clientes" className="flex items-center gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-3 sm:px-6 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm whitespace-nowrap">
-              <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Clientes
-            </TabsTrigger>
-          )}
           {permissions.gestor_materiais && (
             <TabsTrigger value="materiais" className="flex items-center gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-3 sm:px-6 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm whitespace-nowrap">
               <Package className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Materiais
@@ -311,14 +305,6 @@ export default function GestorPage() {
           {obrasSubTab === 'importar' && isAdmin && <ImportCSV onImported={loadProjetos} />}
         </TabsContent>
 
-        <TabsContent value="clientes" className="space-y-4">
-          <ClientesList
-            clientes={clientes}
-            loading={loadingClientes}
-            onPromover={handlePromoverParaObra}
-            onRefresh={loadClientes}
-          />
-        </TabsContent>
 
         <TabsContent value="materiais" className="space-y-4">
           <MateriaisModule />
