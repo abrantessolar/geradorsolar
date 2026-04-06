@@ -84,11 +84,23 @@ export function findInverterForPanels(line: string, panelCount: number, panelPow
   const kits = getKits().filter(k => k.line === line && k.type === 'inversor' && k.active);
   kits.sort((a, b) => a.power - b.power);
   const totalPanelKwp = panelCount * panelPowerKwp;
-  return kits.find(k => k.power * 1.5 >= totalPanelKwp) || kits[kits.length - 1] || null;
+  return kits.find(k => k.power * 1.7 >= totalPanelKwp) || kits[kits.length - 1] || null;
 }
 
 export function maxPanelsForInverter(inverterKw: number, panelPowerKwp: number = 0.570): number {
-  return Math.floor((inverterKw * 1.5) / panelPowerKwp);
+  return Math.floor((inverterKw * 1.7) / panelPowerKwp);
+}
+
+export const OVERLOAD_LIMIT = 1.7;
+export const OVERLOAD_IDEAL = 1.5;
+
+export function getOverloadStatus(panelKwp: number, inverterKw: number): { ratio: number; level: 'green' | 'yellow' | 'red'; label: string; margin: number } {
+  const ratio = inverterKw > 0 ? panelKwp / inverterKw : 0;
+  const limit = inverterKw * OVERLOAD_LIMIT;
+  const margin = limit - panelKwp;
+  if (ratio <= OVERLOAD_IDEAL) return { ratio, level: 'green', label: '✓ Dentro do limite ideal', margin };
+  if (ratio <= OVERLOAD_LIMIT) return { ratio, level: 'yellow', label: '⚠ Sobrecarga moderada', margin };
+  return { ratio, level: 'red', label: '✗ Sobrecarga excessiva', margin };
 }
 
 export function calcMicroInverterCount(panelCount: number): number {

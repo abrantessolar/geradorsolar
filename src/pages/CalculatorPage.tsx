@@ -285,7 +285,7 @@ export default function CalculatorPage() {
         const customPrice = customBreakdown.salePrice;
         const isPremium = line === 'premium';
         const microCount = isPremium ? calcMicroInverterCount(custom.panelCount) : 0;
-        const maxPanels = isPremium ? 999 : Math.floor((custom.inverterPower * 1.5) / (custom.panelPowerWp / 1000));
+        const maxPanels = isPremium ? 999 : Math.floor((custom.inverterPower * 1.7) / (custom.panelPowerWp / 1000));
         const panelsRemaining = isPremium ? 999 : maxPanels - custom.panelCount;
         const monthlyGen = customPanelKwp * irradiation * 30 * (1 - settings.systemLoss / 100);
         const dim = calcDimensioning(consumption, equipment, client.networkType, irradiation, client.kwhPrice, customPrice, settings.systemLoss);
@@ -328,7 +328,7 @@ export default function CalculatorPage() {
       const effectiveInverterKw = ptInverterPower || inverter?.power || 0;
       const effectivePanelWp = ptPanelPower || panel?.power || 570;
       const effectivePanelKwp = effectivePanelWp / 1000;
-      const maxPanels = isPremium ? 999 : Math.floor((effectiveInverterKw * 1.5) / effectivePanelKwp);
+      const maxPanels = isPremium ? 999 : Math.floor((effectiveInverterKw * 1.7) / effectivePanelKwp);
       const panelsRemaining = isPremium ? 999 : maxPanels - usedPanels;
       const monthlyGeneration = powerKwp * irradiation * 30 * (1 - settings.systemLoss / 100);
       const surplus = monthlyGeneration - dim.avgMonthlyKwh;

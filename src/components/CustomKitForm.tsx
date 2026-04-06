@@ -92,11 +92,11 @@ interface Props {
 export default function CustomKitForm({ data, onChange, line, isAuthenticated }: Props) {
   const isPremium = line === 'premium';
   const panelKwp = (data.panelPowerWp / 1000) * data.panelCount;
-  const inverterLimit = data.inverterPower * 1.5;
+  const inverterLimit = data.inverterPower * 1.7;
   const microCount = isPremium ? calcMicroInverterCount(data.panelCount) : 0;
   const effectiveInverterKw = isPremium ? data.inverterPower * microCount : data.inverterPower;
-  const effectiveLimit = effectiveInverterKw * 1.5;
-  const exceeds = !isPremium && panelKwp > inverterLimit;
+  const effectiveLimit = effectiveInverterKw * 1.7;
+  const overload = !isPremium ? getOverloadStatus(panelKwp, data.inverterPower) : null;
   const maxPanels = isPremium ? 999 : Math.floor(inverterLimit / (data.panelPowerWp / 1000));
 
   const breakdown = useMemo(() => calcCustomBreakdown(data, line), [data, line]);
@@ -156,13 +156,16 @@ export default function CustomKitForm({ data, onChange, line, isAuthenticated }:
         </div>
       </div>
 
-      {/* 1.5x validation */}
-      {!isPremium && (
-        <div className={`flex items-center gap-1.5 text-[10px] p-2 rounded ${exceeds ? 'bg-destructive/10 text-destructive' : 'bg-green-50 text-green-700'}`}>
-          {exceeds ? <AlertTriangle className="w-3 h-3 shrink-0" /> : <CheckCircle className="w-3 h-3 shrink-0" />}
+      {/* Overload validation */}
+      {!isPremium && overload && (
+        <div className={`flex items-center gap-1.5 text-[10px] p-2 rounded ${
+          overload.level === 'green' ? 'bg-green-50 text-green-700' :
+          overload.level === 'yellow' ? 'bg-yellow-50 text-yellow-700' :
+          'bg-destructive/10 text-destructive'
+        }`}>
+          {overload.level === 'red' ? <AlertTriangle className="w-3 h-3 shrink-0" /> : <CheckCircle className="w-3 h-3 shrink-0" />}
           <span>
-            {formatNumber(panelKwp)} kWp de {formatNumber(inverterLimit)} kWp
-            {exceeds ? ` — Ultrapassa 1,5× (máx ${maxPanels} placas)` : ` — Dentro do limite`}
+            {formatNumber(panelKwp)} kWp | Lim: {formatNumber(inverterLimit)} kWp | Margem: {formatNumber(overload.margin)} kWp — {overload.label}
           </span>
         </div>
       )}
