@@ -319,7 +319,7 @@ export default function CalculatorPage() {
       const powerKwp = usedPanels * panelPowerKwp;
       const hasPriceTableCost = ptEntry && ptEntry[line] !== null && ptEntry[line]! > 0;
       const costBreakdown = calcCostBreakdown(inverter, panel, usedPanels, line);
-      const totalPrice = costBreakdown.salePrice;
+      const totalPrice = hasPriceTableCost ? ptEntry[line]! : costBreakdown.salePrice;
       const dim = calcDimensioning(consumption, equipment, client.networkType, irradiation, client.kwhPrice, totalPrice, settings.systemLoss);
       const isPremium = line === 'premium';
       const microCount = isPremium ? calcMicroInverterCount(usedPanels) : 0;
