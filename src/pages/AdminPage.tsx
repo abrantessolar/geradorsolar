@@ -468,7 +468,7 @@ function PriceTableTab() {
     else if (e.key === 'Escape') { e.preventDefault(); (e.target as HTMLInputElement).blur(); setActiveCell(null); }
   };
 
-  // 1.5x validation helper
+  // 1.7x validation helper with 3-tier color system
   const getValidation = (row: PriceTableEntry, lineKey: string) => {
     const details = (row.details as any)?.[lineKey] as PriceTableLineDetails | undefined;
     const inverterPowerStr = details?.inverterPower;
@@ -480,9 +480,11 @@ function PriceTableTab() {
     if (lineKey === 'premium') return null; // micro inverters don't apply
     const panelKwp = panelWp / 1000;
     const totalPanelKwp = row.panels * panelKwp;
-    const limit = inverterKw * 1.5;
+    const limit = inverterKw * 1.7;
     const margin = limit - totalPanelKwp;
-    return { totalPanelKwp, limit, margin, valid: totalPanelKwp <= limit, inverterKw };
+    const ratio = totalPanelKwp / inverterKw;
+    const level: 'green' | 'yellow' | 'red' = ratio <= 1.5 ? 'green' : ratio <= 1.7 ? 'yellow' : 'red';
+    return { totalPanelKwp, limit, margin, valid: ratio <= 1.7, level, inverterKw };
   };
 
   const hasAnyViolation = table.some(row =>
