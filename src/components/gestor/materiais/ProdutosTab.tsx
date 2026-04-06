@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { Plus, Save, X, Edit2, Trash2, Upload } from 'lucide-react';
 import type { Material, Fornecedor, QuantidadePadrao } from './types';
 import { CATEGORIAS, CATEGORIA_ICONS, POTENCIAS } from './types';
+import MoneyInput from '@/components/ui/money-input';
 
 export default function ProdutosTab() {
   const [materiais, setMateriais] = useState<Material[]>([]);
@@ -180,7 +181,7 @@ export default function ProdutosTab() {
                 <option value="">Sem fornecedor</option>
                 {fornecedores.map(f => <option key={f.id} value={f.id}>{f.nome}</option>)}
               </select>
-              <input className="solar-input" type="number" step="0.01" placeholder="Preço unitário" value={form.preco_unitario} onChange={e => setForm(f => ({ ...f, preco_unitario: e.target.value }))} />
+              <MoneyInput className="solar-input" placeholder="Preço unitário" value={form.preco_unitario ? parseFloat(form.preco_unitario) : 0} onChange={v => setForm(f => ({ ...f, preco_unitario: String(v) }))} />
               <select className="solar-input" value={form.unidade} onChange={e => setForm(f => ({ ...f, unidade: e.target.value }))}>
                 <option value="unidade">Unidade</option>
                 <option value="metros">Metros</option>

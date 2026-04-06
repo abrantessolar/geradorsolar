@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { CATEGORIA_ICONS } from '@/components/gestor/materiais/types';
 import { generateFichaInstalacao } from '@/lib/generateFichaInstalacao';
+import MoneyInput, { formatBRL } from '@/components/ui/money-input';
 
 /* ─── Types ─── */
 type ObraCard = {
@@ -713,9 +714,9 @@ function EntradaPanel({ rows, setRows, nota, setNota, saving, onConfirm, onClose
                   <td className="py-2 px-3"><span className="mr-1">{CATEGORIA_ICONS[row.categoria] || '📦'}</span>{row.nome}</td>
                   <td className="py-2 px-3 text-center font-medium">{row.estoque_atual}</td>
                   <td className="py-2 px-3 text-center">
-                    <input className="w-20 rounded-lg border border-input bg-background px-2 py-2 text-center text-sm h-[44px]"
-                      type="number" min="0" step="0.01" inputMode="decimal" value={row.preco_unitario} placeholder="0.00"
-                      onChange={e => { const n = [...rows]; n[origIdx] = { ...n[origIdx], preco_unitario: e.target.value }; setRows(n); }} />
+                    <MoneyInput className="w-24 rounded-lg border border-input bg-background px-2 py-2 text-center text-sm h-[44px]"
+                      value={parseFloat(row.preco_unitario) || 0} placeholder="0,00"
+                      onChange={v => { const n = [...rows]; n[origIdx] = { ...n[origIdx], preco_unitario: String(v) }; setRows(n); }} />
                   </td>
                   <td className="py-2 px-3 text-center">
                     <input className="w-20 rounded-lg border border-input bg-background px-2 py-2 text-center text-base h-[44px]"
@@ -730,7 +731,7 @@ function EntradaPanel({ rows, setRows, nota, setNota, saving, onConfirm, onClose
       </div>
       <div className="flex items-center justify-between pt-3">
         <div className="text-sm text-muted-foreground">
-          {qtdItens} itens · <span className="font-bold text-foreground">R$ {totalValor.toFixed(2)}</span>
+          {qtdItens} itens · <span className="font-bold text-foreground">R$ {formatBRL(totalValor)}</span>
         </div>
         <button onClick={onConfirm} disabled={saving || qtdItens === 0}
           className="flex items-center gap-2 px-6 py-3 rounded-xl bg-primary text-primary-foreground font-medium text-base h-[48px] disabled:opacity-50">

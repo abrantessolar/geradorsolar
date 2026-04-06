@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { X, Loader2 } from 'lucide-react';
 import { CATEGORIA_ICONS } from './types';
+import MoneyInput, { formatBRL } from '@/components/ui/money-input';
 
 type MatRow = {
   id: string;
@@ -136,16 +137,15 @@ export default function EntradaLoteModal({ onClose, onDone }: { onClose: () => v
                       />
                     </td>
                     <td className="py-2 px-3 text-center">
-                      <input
-                        className="solar-input w-20 text-center mx-auto"
-                        type="number" min="0" step="0.01"
-                        value={row.preco_unitario != null ? String(row.preco_unitario) : ''}
-                        onChange={e => {
+                      <MoneyInput
+                        className="solar-input w-24 text-center mx-auto"
+                        value={row.preco_unitario != null ? Number(row.preco_unitario) : 0}
+                        onChange={v => {
                           const newRows = [...rows];
-                          newRows[idx] = { ...newRows[idx], preco_unitario: e.target.value ? Number(e.target.value) : null };
+                          newRows[idx] = { ...newRows[idx], preco_unitario: v || null };
                           setRows(newRows);
                         }}
-                        placeholder="0.00"
+                        placeholder="0,00"
                       />
                     </td>
                   </tr>
@@ -157,7 +157,7 @@ export default function EntradaLoteModal({ onClose, onDone }: { onClose: () => v
 
         <div className="flex items-center justify-between pt-2">
           <div className="text-sm text-muted-foreground">
-            {qtdItens} itens · Valor estimado: <span className="font-bold text-foreground">R$ {totalEntrada.toFixed(2)}</span>
+            {qtdItens} itens · Valor estimado: <span className="font-bold text-foreground">R$ {formatBRL(totalEntrada)}</span>
           </div>
           <div className="flex gap-2">
             <button onClick={onClose} className="px-4 py-2 rounded-lg text-sm bg-muted text-muted-foreground">Cancelar</button>
