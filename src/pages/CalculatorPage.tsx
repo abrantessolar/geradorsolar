@@ -318,25 +318,71 @@ export default function CalculatorPage() {
       const inverter = findInverterForPanels(line, usedPanels, panelPowerKwp);
       const powerKwp = usedPanels * panelPowerKwp;
       const hasPriceTableCost = ptEntry && ptEntry[line] !== null && ptEntry[line]! > 0;
-      const costBreakdown = calcCostBreakdown(inverter, panel, usedPanels, line);
-      const totalPrice = hasPriceTableCost ? ptEntry[line]! : costBreakdown.salePrice;
-      const dim = calcDimensioning(consumption, equipment, client.networkType, irradiation, client.kwhPrice, totalPrice, settings.systemLoss);
       const isPremium = line === 'premium';
       const microCount = isPremium ? calcMicroInverterCount(usedPanels) : 0;
+
+      // Determine inverter power from price table or kit
       const ptInverterPower = ptDetails?.inverterPower ? parseFloat(ptDetails.inverterPower) : null;
       const ptPanelPower = ptDetails?.panelPower ? parseFloat(ptDetails.panelPower) : null;
       const effectiveInverterKw = ptInverterPower || inverter?.power || 0;
       const effectivePanelWp = ptPanelPower || panel?.power || 570;
       const effectivePanelKwp = effectivePanelWp / 1000;
+
+      // Calculate Material CA using the REAL inverter power from price table
+      let caInverterKw: number;
+      if (isPremium) {
+        caInverterKw = effectiveInverterKw * microCount;
+      } else {
+        caInverterKw = effectiveInverterKw;
+      }
+      const caMaterialCost = getCaMaterialCost(caInverterKw);
+
+      // Build cost breakdown using price table value as sale price
+      const baseCostBreakdown = calcCostBreakdown(inverter, panel, usedPanels, line);
+      const installationCost = settings.installationPricePerPanel * usedPanels;
+      const homologationCost = settings.homologationPrice;
+      const trunkCableCost = isPremium ? calcTrunkCableCost(usedPanels) : 0;
+
+      let costBreakdown: typeof baseCostBreakdown;
+      if (hasPriceTableCost) {
+        const salePrice = ptEntry[line]!;
+        const equipmentCost = baseCostBreakdown.equipmentCost;
+        const totalCost = equipmentCost + installationCost + homologationCost + caMaterialCost + trunkCableCost;
+        const grossProfit = salePrice - totalCost;
+        const profitMargin = salePrice > 0 ? (grossProfit / salePrice) * 100 : 0;
+        costBreakdown = {
+          equipmentCost, installationCost, homologationCost,
+          caMaterialCost, trunkCableCost, totalCost,
+          profitMargin: Math.round(profitMargin * 100) / 100,
+          salePrice, grossProfit,
+        };
+      } else {
+        // Fallback: override CA material cost with corrected value
+        const totalCost = baseCostBreakdown.equipmentCost + installationCost + homologationCost + caMaterialCost + trunkCableCost;
+        const salePrice = totalCost / (1 - settings.profitMargin / 100);
+        costBreakdown = {
+          ...baseCostBreakdown,
+          caMaterialCost,
+          totalCost,
+          salePrice,
+          grossProfit: salePrice - totalCost,
+        };
+      }
+
+      const totalPrice = costBreakdown.salePrice;
+      const dim = calcDimensioning(consumption, equipment, client.networkType, irradiation, client.kwhPrice, totalPrice, settings.systemLoss);
       const maxPanels = isPremium ? 999 : Math.floor((effectiveInverterKw * 1.7) / effectivePanelKwp);
       const panelsRemaining = isPremium ? 999 : maxPanels - usedPanels;
       const monthlyGeneration = powerKwp * irradiation * 30 * (1 - settings.systemLoss / 100);
       const surplus = monthlyGeneration - dim.avgMonthlyKwh;
       const cardInstallments = calcCardInstallments(totalPrice, settings.creditCardRates);
 
+      console.log(`Kit selecionado: ${LINE_NAMES[line]} | ${usedPanels} placas | Custo: R$ ${totalPrice.toFixed(2)} | CA (${caInverterKw} kW): R$ ${caMaterialCost}`);
+
       return {
         line, inverter, panel, panelCount: usedPanels, totalPrice, maxPanels, panelsRemaining, microCount,
         isCustom: false, ptDetails, ptEntry, hasPriceTableCost, costBreakdown, cardInstallments,
+        caInverterKw,
         inverterBrand: ptDetails?.inverterBrand || inverter?.brand || '',
         inverterModel: ptDetails?.inverterPower ? `${ptDetails.inverterPower} kW` : inverter?.model || '',
         panelBrand: ptDetails?.panelBrand || panel?.brand || '',
