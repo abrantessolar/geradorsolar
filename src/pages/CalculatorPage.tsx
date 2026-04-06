@@ -14,7 +14,7 @@ import type { EquipmentCatalogItem } from '@/data/types';
 import {
   estimateFullConsumption, calcEquipmentMonthly, calcDimensioning,
   findInverterForPanels, findPanel, calcInstallments,
-  calcCardInstallments, calcCostBreakdown,
+  calcCardInstallments, calcCostBreakdown, getCaMaterialCost, calcTrunkCableCost,
   formatCurrency, formatNumber, maxPanelsForInverter, calcMicroInverterCount, getOverloadStatus,
 } from '@/data/calculations';
 import { getSettings, saveProposal, lookupIrradiation, getPriceTable } from '@/data/store';
