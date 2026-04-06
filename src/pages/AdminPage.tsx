@@ -616,10 +616,10 @@ function PriceTableTab() {
             <div className="bg-card rounded-xl p-6 max-w-md w-full mx-4 space-y-4" onClick={e => e.stopPropagation()}>
               <div className="flex items-center gap-2 text-amber-500">
                 <AlertTriangle className="w-6 h-6" />
-                <h3 className="text-lg font-bold">Atenção — Limite 1,5x ultrapassado</h3>
+                <h3 className="text-lg font-bold">Atenção — Sobrecarga acima de 1,7x</h3>
               </div>
               <p className="text-sm text-muted-foreground">
-                Algumas combinações na tabela ultrapassam o limite técnico de 1,5x da potência do inversor.
+                Algumas combinações na tabela ultrapassam o limite técnico de 1,7x da potência do inversor.
                 Deseja salvar mesmo assim?
               </p>
               <div className="flex gap-2 justify-end">
