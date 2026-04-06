@@ -324,7 +324,10 @@ export default function CalculatorPage() {
       // Determine inverter power from price table or kit
       const ptInverterPower = ptDetails?.inverterPower ? parseFloat(ptDetails.inverterPower) : null;
       const ptPanelPower = ptDetails?.panelPower ? parseFloat(ptDetails.panelPower) : null;
-      const effectiveInverterKw = ptInverterPower || inverter?.power || 0;
+      // If inverter power > 100, it's likely in watts (e.g. micro 2250W), convert to kW
+      const effectiveInverterKw = ptInverterPower 
+        ? (ptInverterPower > 100 ? ptInverterPower / 1000 : ptInverterPower) 
+        : (inverter?.power || 0);
       const effectivePanelWp = ptPanelPower || panel?.power || 570;
       const effectivePanelKwp = effectivePanelWp / 1000;
 
