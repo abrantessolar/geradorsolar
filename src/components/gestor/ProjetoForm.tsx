@@ -118,7 +118,6 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
   const handleSave = async () => {
     if (!session?.user?.id) { toast.error('Sessão expirada'); return; }
     setSaving(true);
-    const localEntregaFinal = form.local_entrega === 'OUTRO' ? form.local_entrega_outro : form.local_entrega;
     const selectedPlaca = placas.find(p => p.id === form.placa_id);
     const selectedInversor = inversores.find(i => i.id === form.inversor_id);
     const qtdP = form.qtd_placas ? parseInt(form.qtd_placas) : 0;
@@ -157,7 +156,7 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
       nome_planta: form.nome_planta || null,
       wifi_nome: form.wifi_nome || null,
       wifi_senha: form.wifi_senha || null,
-      cabo_usado: form.cabo_usado || null,
+      estrutura: form.estrutura || null,
       preco_venda: form.preco_venda ? parseFloat(form.preco_venda) : null,
       forma_pagamento: form.forma_pagamento || null,
       unidade_geradora_cep: form.unidade_geradora_cep || null,
@@ -174,15 +173,10 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
       unidade_beneficiaria2_percentual: form.unidade_beneficiaria2_percentual ? parseFloat(form.unidade_beneficiaria2_percentual) : null,
       data_fechamento: form.data_fechamento || null,
       data_instalacao: form.data_instalacao || null,
-      local_entrega: localEntregaFinal || null,
       objecoes: form.objecoes || null,
-      status: form.status,
       distribuidor: form.distribuidor || null,
       instalador: form.instalador || null,
       pagamento_status: form.pagamento_status || 'Pendente',
-      projeto_enviado_em: form.projeto_enviado_em || null,
-      projeto_aprovado: form.projeto_aprovado || null,
-      vistoriado_em: form.vistoriado_em || null,
     };
 
     let error;
@@ -476,24 +470,7 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
               </select>
             </div>
             <div><label className={labelClass}>Data de Fechamento</label><input className={inputClass} type="date" value={form.data_fechamento} onChange={e => set('data_fechamento', e.target.value)} /></div>
-            <div>
-              <label className={labelClass}>Local de Entrega</label>
-              <select className={inputClass} value={form.local_entrega} onChange={e => set('local_entrega', e.target.value)}>
-                {LOCAL_ENTREGA_LIST.map(l => <option key={l} value={l}>{l}</option>)}
-              </select>
-            </div>
-            {form.local_entrega === 'OUTRO' && (
-              <div><label className={labelClass}>Especifique local</label><input className={inputClass} value={form.local_entrega_outro} onChange={e => set('local_entrega_outro', e.target.value)} /></div>
-            )}
-            <div><label className={labelClass}>Status</label>
-              <select className={inputClass} value={form.status} onChange={e => set('status', e.target.value)}>
-                {STATUS_LIST.map(s => <option key={s} value={s}>{s}</option>)}
-              </select>
-            </div>
             <div><label className={labelClass}>Data de Instalação</label><input className={inputClass} type="date" value={form.data_instalacao} onChange={e => set('data_instalacao', e.target.value)} /></div>
-            <div><label className={labelClass}>Projeto Enviado em</label><input className={inputClass} type="date" value={form.projeto_enviado_em} onChange={e => set('projeto_enviado_em', e.target.value)} /></div>
-            <div><label className={labelClass}>Projeto Aprovado</label><input className={inputClass} type="date" value={form.projeto_aprovado} onChange={e => set('projeto_aprovado', e.target.value)} /></div>
-            <div><label className={labelClass}>Vistoriado em</label><input className={inputClass} type="date" value={form.vistoriado_em} onChange={e => set('vistoriado_em', e.target.value)} /></div>
           </div>
           <hr className="border-border" />
           <h3 className="text-sm font-semibold">Informações de Instalação</h3>
@@ -501,7 +478,6 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
             <div className="md:col-span-2"><label className={labelClass}>Nome da Planta</label><input className={inputClass} value={form.nome_planta} onChange={e => set('nome_planta', e.target.value)} placeholder="Nome da planta de monitoramento" /></div>
             <div><label className={labelClass}>WiFi — Nome da Rede</label><input className={inputClass} value={form.wifi_nome} onChange={e => set('wifi_nome', e.target.value)} /></div>
             <div><label className={labelClass}>WiFi — Senha</label><input className={inputClass} value={form.wifi_senha} onChange={e => set('wifi_senha', e.target.value)} /></div>
-            <div className="md:col-span-2"><label className={labelClass}>Cabo Utilizado</label><input className={inputClass} value={form.cabo_usado} onChange={e => set('cabo_usado', e.target.value)} placeholder="Preenchido após instalação" /></div>
           </div>
           <div>
             <label className={labelClass}>Observações</label>
