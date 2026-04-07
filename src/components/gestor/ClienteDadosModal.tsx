@@ -94,9 +94,14 @@ function Block({ title, fields }: { title: string; fields: FieldDef[] }) {
 }
 
 export default function ClienteDadosModal({ cliente, onClose }: { cliente: ClienteBase; onClose: () => void }) {
-  const c = cliente;
+  const c = cliente as any;
 
-  const blocks: { title: string; fields: FieldDef[] }[] = [
+  // Build full address from parts if endereco is empty
+  const enderecoCompleto = (() => {
+    if (c.endereco) return c.endereco;
+    const parts = [c.logradouro, c.numero, c.complemento, c.bairro, c.cidade, c.estado].filter(Boolean);
+    return parts.length > 0 ? parts.join(', ') : '';
+  })();
     {
       title: 'Identificação',
       fields: [
