@@ -1,11 +1,12 @@
 import React, { useState, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Eye, Search, ArrowUpRight, Edit2, GripVertical, Trash2 } from 'lucide-react';
+import { Eye, Search, ArrowUpRight, Edit2, GripVertical, Trash2, ClipboardList } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import DeleteConfirmModal from './DeleteConfirmModal';
 import WhatsAppLink from './WhatsAppLink';
 import ClienteEditModal from './ClienteEditModal';
+import ClienteDadosModal from './ClienteDadosModal';
 
 import { useDraggableColumns } from '@/hooks/useDraggableColumns';
 
@@ -78,6 +79,7 @@ export default function ClientesList({
   const [selectedCliente, setSelectedCliente] = useState<ClienteBase | null>(null);
   const [editCliente, setEditCliente] = useState<ClienteBase | null>(null);
   const [deleteCliente, setDeleteCliente] = useState<ClienteBase | null>(null);
+  const [dadosCliente, setDadosCliente] = useState<ClienteBase | null>(null);
 
   const { order, onDragStart, onDragOver, onDragEnd, dragIdx } = useDraggableColumns('gestor-clientes-cols', COL_KEYS);
 
@@ -174,8 +176,9 @@ export default function ClientesList({
         <td key={key} className="py-2 px-2">
           <div className="flex gap-1">
             <TooltipProvider>
-              <Tooltip delayDuration={300}><TooltipTrigger asChild><button onClick={() => setSelectedCliente(c)} className="text-primary hover:text-primary/80"><Eye className="w-4 h-4" /></button></TooltipTrigger><TooltipContent side="top"><p>Ver detalhes</p></TooltipContent></Tooltip>
-              <Tooltip delayDuration={300}><TooltipTrigger asChild><button onClick={() => setEditCliente(c)} className="text-primary hover:text-primary/80"><Edit2 className="w-4 h-4" /></button></TooltipTrigger><TooltipContent side="top"><p>Editar cliente</p></TooltipContent></Tooltip>
+               <Tooltip delayDuration={300}><TooltipTrigger asChild><button onClick={() => setDadosCliente(c)} className="text-primary hover:text-primary/80"><ClipboardList className="w-4 h-4" /></button></TooltipTrigger><TooltipContent side="top"><p>Ver Dados</p></TooltipContent></Tooltip>
+               <Tooltip delayDuration={300}><TooltipTrigger asChild><button onClick={() => setSelectedCliente(c)} className="text-primary hover:text-primary/80"><Eye className="w-4 h-4" /></button></TooltipTrigger><TooltipContent side="top"><p>Ver detalhes</p></TooltipContent></Tooltip>
+               <Tooltip delayDuration={300}><TooltipTrigger asChild><button onClick={() => setEditCliente(c)} className="text-primary hover:text-primary/80"><Edit2 className="w-4 h-4" /></button></TooltipTrigger><TooltipContent side="top"><p>Editar cliente</p></TooltipContent></Tooltip>
               {!c.projeto_id && !c.id.startsWith('proj-') && (
                 <Tooltip delayDuration={300}><TooltipTrigger asChild><button onClick={() => onPromover(c)} className="text-primary hover:text-primary/80"><ArrowUpRight className="w-4 h-4" /></button></TooltipTrigger><TooltipContent side="top"><p>Promover para obra</p></TooltipContent></Tooltip>
               )}
@@ -240,8 +243,9 @@ export default function ClientesList({
                   {c.valor && <div><span className="text-muted-foreground">Valor:</span> R$ {Number(c.valor).toLocaleString('pt-BR')}</div>}
                 </div>
                 <div className="flex gap-1.5 items-center pt-1 border-t border-border/50">
-                  <button onClick={() => setSelectedCliente(c)} className="text-primary hover:text-primary/80 p-1"><Eye className="w-4 h-4" /></button>
-                  <button onClick={() => setEditCliente(c)} className="text-primary hover:text-primary/80 p-1"><Edit2 className="w-4 h-4" /></button>
+                   <button onClick={() => setDadosCliente(c)} className="text-primary hover:text-primary/80 p-1"><ClipboardList className="w-4 h-4" /></button>
+                   <button onClick={() => setSelectedCliente(c)} className="text-primary hover:text-primary/80 p-1"><Eye className="w-4 h-4" /></button>
+                   <button onClick={() => setEditCliente(c)} className="text-primary hover:text-primary/80 p-1"><Edit2 className="w-4 h-4" /></button>
                   {!c.projeto_id && !c.id.startsWith('proj-') && (
                     <button onClick={() => onPromover(c)} className="text-primary hover:text-primary/80 p-1"><ArrowUpRight className="w-4 h-4" /></button>
                   )}
@@ -365,6 +369,10 @@ export default function ClientesList({
           onClose={() => setEditCliente(null)}
           onSaved={() => { onRefresh(); setEditCliente(null); }}
         />
+      )}
+
+      {dadosCliente && (
+        <ClienteDadosModal cliente={dadosCliente} onClose={() => setDadosCliente(null)} />
       )}
 
       {deleteCliente && (
