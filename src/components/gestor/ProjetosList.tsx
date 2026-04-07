@@ -152,17 +152,18 @@ export default function ProjetosList({ projetos, loading, onEdit, onDocumentos, 
       case 'acoes': return (
         <td key={key} className="py-2 px-2">
           <div className="flex gap-1 items-center">
-            <TooltipProvider>
-              <Tip label="Editar projeto"><button onClick={() => onEdit(p.id)} className="text-primary hover:text-primary/80"><Edit2 className="w-4 h-4" /></button></Tip>
-              <Tip label="Gerar documentos"><button onClick={() => onDocumentos(p)} className="text-primary hover:text-primary/80"><FileText className="w-4 h-4" /></button></Tip>
-              <Tip label="Lista de materiais"><button onClick={() => setMateriaisProjeto(p)} className="text-primary hover:text-primary/80"><ClipboardList className="w-4 h-4" /></button></Tip>
-              <Tip label="Ficha de instalação"><button onClick={() => generateFichaInstalacao(p)} className="text-primary hover:text-primary/80"><FileDown className="w-4 h-4" /></button></Tip>
-              <Tip label="Retirar material"><button onClick={() => setRetirarProjeto(p)} className="text-primary hover:text-primary/80"><Package className="w-4 h-4" /></button></Tip>
-              <Tip label={p.congelado ? 'Obra congelada' : 'Congelar obra'}><button onClick={() => setCongelarId(p.congelado ? null : p.id)} className="text-primary hover:text-primary/80"><Snowflake className="w-4 h-4" /></button></Tip>
-              <Tip label="Layout da obra"><button onClick={() => setLayoutProjeto(p)} className={`${p.layout_url ? 'text-accent-foreground' : 'text-muted-foreground'} hover:text-primary`}><ImageIcon className="w-4 h-4" /></button></Tip>
-              <Tip label="Obra concluída"><button onClick={() => setConcluidaProjeto(p)} className="text-primary hover:text-primary/80"><CheckCircle className="w-4 h-4" /></button></Tip>
-              <Tip label="Excluir"><button onClick={() => setDeleteProjeto(p)} className="text-destructive hover:text-destructive/80"><Trash2 className="w-4 h-4" /></button></Tip>
-            </TooltipProvider>
+             <TooltipProvider>
+              <Tip label="Ver dados"><button onClick={() => setDadosProjeto(p)} className="text-primary hover:text-primary/80"><Eye className="w-4 h-4" /></button></Tip>
+               <Tip label="Editar projeto"><button onClick={() => onEdit(p.id)} className="text-primary hover:text-primary/80"><Edit2 className="w-4 h-4" /></button></Tip>
+               <Tip label="Gerar documentos"><button onClick={() => onDocumentos(p)} className="text-primary hover:text-primary/80"><FileText className="w-4 h-4" /></button></Tip>
+               <Tip label="Lista de materiais"><button onClick={() => setMateriaisProjeto(p)} className="text-primary hover:text-primary/80"><ClipboardList className="w-4 h-4" /></button></Tip>
+               <Tip label="Ficha de instalação"><button onClick={() => generateFichaInstalacao(p)} className="text-primary hover:text-primary/80"><FileDown className="w-4 h-4" /></button></Tip>
+               <Tip label="Retirar material"><button onClick={() => setRetirarProjeto(p)} className="text-primary hover:text-primary/80"><Package className="w-4 h-4" /></button></Tip>
+               <Tip label={p.congelado ? 'Obra congelada' : 'Congelar obra'}><button onClick={() => setCongelarId(p.congelado ? null : p.id)} className="text-primary hover:text-primary/80"><Snowflake className="w-4 h-4" /></button></Tip>
+               <Tip label="Layout da obra"><button onClick={() => setLayoutProjeto(p)} className={`${p.layout_url ? 'text-accent-foreground' : 'text-muted-foreground'} hover:text-primary`}><ImageIcon className="w-4 h-4" /></button></Tip>
+               <Tip label="Obra concluída"><button onClick={() => setConcluidaProjeto(p)} className="text-primary hover:text-primary/80"><CheckCircle className="w-4 h-4" /></button></Tip>
+               <Tip label="Excluir"><button onClick={() => setDeleteProjeto(p)} className="text-destructive hover:text-destructive/80"><Trash2 className="w-4 h-4" /></button></Tip>
+             </TooltipProvider>
           </div>
         </td>
       );
@@ -217,6 +218,7 @@ export default function ProjetosList({ projetos, loading, onEdit, onDocumentos, 
                 <div><span className="text-muted-foreground">Pot.:</span> {p.potencia_inversor || p.inversor?.potencia_kw || '—'}</div>
               </div>
               <div className="flex gap-1.5 items-center pt-1 border-t border-border/50">
+                <button onClick={() => setDadosProjeto(p)} className="text-primary hover:text-primary/80 p-1" title="Ver Dados"><Eye className="w-4 h-4" /></button>
                 <button onClick={() => onEdit(p.id)} className="text-primary hover:text-primary/80 p-1" title="Editar"><Edit2 className="w-4 h-4" /></button>
                 <button onClick={() => onDocumentos(p)} className="text-primary hover:text-primary/80 p-1" title="Documentos"><FileText className="w-4 h-4" /></button>
                 <button onClick={() => setMateriaisProjeto(p)} className="text-primary hover:text-primary/80 p-1" title="Lista de Materiais"><ClipboardList className="w-4 h-4" /></button>
@@ -285,6 +287,47 @@ export default function ProjetosList({ projetos, loading, onEdit, onDocumentos, 
       )}
       {retirarProjeto && (
         <RetirarMaterialModal projeto={retirarProjeto} onClose={() => setRetirarProjeto(null)} onDone={onRefresh} />
+      )}
+      {dadosProjeto && (
+        <ClienteDadosModal
+          cliente={{
+            id: dadosProjeto.id,
+            criado_em: dadosProjeto.criado_em,
+            nome_completo: dadosProjeto.nome_completo || dadosProjeto.razao_social || null,
+            cpf: dadosProjeto.cpf || null,
+            data_nascimento: dadosProjeto.data_nascimento || null,
+            telefone: dadosProjeto.telefone || null,
+            telefone_2: null,
+            telefone_3: null,
+            email: null,
+            endereco: dadosProjeto.endereco_completo || null,
+            logradouro: dadosProjeto.logradouro || null,
+            complemento: dadosProjeto.complemento || null,
+            numero: null,
+            bairro: dadosProjeto.bairro || null,
+            cidade: dadosProjeto.cidade || null,
+            estado: dadosProjeto.estado || null,
+            cep: dadosProjeto.cep || null,
+            concessionaria: dadosProjeto.concessionaria || null,
+            uc: dadosProjeto.unidade_geradora_codigo_uc || null,
+            nome_planta: null,
+            instalado_em: dadosProjeto.data_instalacao || null,
+            vistoriado_em: dadosProjeto.vistoriado_em || null,
+            qtd_placas: dadosProjeto.qtd_placas || null,
+            marca_placa: dadosProjeto.marca_placa || null,
+            potencia_placa: dadosProjeto.potencia_placa || null,
+            marca_inversor: dadosProjeto.marca_inversor || null,
+            potencia_inversor: dadosProjeto.potencia_inversor || null,
+            qtd_inversores: dadosProjeto.qtd_inversores || null,
+            kwp: null,
+            sistema: dadosProjeto.sistema || null,
+            valor: dadosProjeto.preco_venda || null,
+            forma_pagamento: dadosProjeto.forma_pagamento || null,
+            observacoes: dadosProjeto.objecoes || null,
+            origem: 'projeto',
+          } as any}
+          onClose={() => setDadosProjeto(null)}
+        />
       )}
     </div>
   );
