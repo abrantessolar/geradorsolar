@@ -94,7 +94,13 @@ function Block({ title, fields }: { title: string; fields: FieldDef[] }) {
 }
 
 export default function ClienteDadosModal({ cliente, onClose }: { cliente: ClienteBase; onClose: () => void }) {
-  const c = cliente;
+  const c = cliente as any;
+
+  // Build full address from parts if endereco is empty
+  const enderecoCompleto = (() => {
+    if (c.endereco) return c.endereco;
+    const parts = [c.logradouro, c.numero, c.complemento, c.bairro, c.cidade, c.estado].filter(Boolean);
+    return parts.length > 0 ? parts.join(', ') : '';
 
   const blocks: { title: string; fields: FieldDef[] }[] = [
     {
@@ -102,7 +108,7 @@ export default function ClienteDadosModal({ cliente, onClose }: { cliente: Clien
       fields: [
         { label: 'Nome completo', value: fmt(c.nome_completo) },
         { label: 'CPF', value: fmt(c.cpf) },
-        { label: 'Data de nascimento', value: fmtDate((c as any).data_nascimento) },
+        { label: 'Data de nascimento', value: fmtDate(c.data_nascimento) },
       ],
     },
     {
@@ -160,13 +166,17 @@ export default function ClienteDadosModal({ cliente, onClose }: { cliente: Clien
     const add = (label: string, value: string) => { if (value) lines.push(`${label}: ${value}`); };
     add('NOME', fmt(c.nome_completo));
     add('CPF', fmt(c.cpf));
-    add('DATA NASCIMENTO', fmtDate((c as any).data_nascimento));
+    add('DATA NASCIMENTO', fmtDate(c.data_nascimento));
     add('TELEFONE', fmt(c.telefone));
     if (c.telefone_2) add('TELEFONE 2', c.telefone_2);
     if (c.telefone_3) add('TELEFONE 3', c.telefone_3);
-    if ((c as any).email) add('EMAIL', (c as any).email);
-    add('ENDEREÇO', fmt(c.endereco));
-    add('CEP', fmt((c as any).cep));
+    if (c.email) add('EMAIL', c.email);
+    add('ENDEREÇO', enderecoCompleto);
+    add('LOGRADOURO', fmt(c.logradouro));
+    add('BAIRRO', fmt(c.bairro));
+    add('CIDADE', fmt(c.cidade));
+    add('ESTADO', fmt(c.estado));
+    add('CEP', fmt(c.cep));
     add('UC', fmt(c.uc));
     add('CONCESSIONÁRIA', fmt(c.concessionaria));
     add('NOME PLANTA', fmt(c.nome_planta));
