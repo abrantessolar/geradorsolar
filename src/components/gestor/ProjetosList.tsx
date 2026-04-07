@@ -20,6 +20,7 @@ import LayoutUploadModal from './LayoutUploadModal';
 import DeleteConfirmModal from './DeleteConfirmModal';
 import ListaMateriaisObraModal from './materiais/ListaMateriaisObraModal';
 import RetirarMaterialModal from './materiais/RetirarMaterialModal';
+import ClienteDadosModal from './ClienteDadosModal';
 import { useDraggableColumns } from '@/hooks/useDraggableColumns';
 
 function daysSince(dateStr?: string): number {
@@ -52,6 +53,7 @@ export default function ProjetosList({ projetos, loading, onEdit, onDocumentos, 
   const [deleteProjeto, setDeleteProjeto] = useState<Projeto | null>(null);
   const [materiaisProjeto, setMateriaisProjeto] = useState<Projeto | null>(null);
   const [retirarProjeto, setRetirarProjeto] = useState<Projeto | null>(null);
+  const [dadosProjeto, setDadosProjeto] = useState<Projeto | null>(null);
   const [tempoSort, setTempoSort] = useState<'asc' | 'desc' | null>(null);
 
   const { order, onDragStart, onDragOver, onDragEnd, dragIdx } = useDraggableColumns('gestor-obras-cols', COL_KEYS);
