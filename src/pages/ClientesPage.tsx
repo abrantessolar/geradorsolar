@@ -45,7 +45,7 @@ export default function ClientesPage() {
       projeto_aprovado: p.projeto_aprovado,
       instalado_em: p.data_instalacao,
       vistoriado_em: p.vistoriado_em,
-      nome_planta: null,
+      nome_planta: p.nome_planta || null,
       satisfacao: null,
       origem: 'promovido_de_obra',
       projeto_id: p.id,
@@ -54,6 +54,15 @@ export default function ClientesPage() {
       observacoes: p.objecoes || null,
       kwp: p.qtd_placas && p.potencia_placa ? (p.qtd_placas * parseFloat(p.potencia_placa || '0')) / 1000 : null,
       data_fechamento: p.data_fechamento || null,
+      logradouro: p.logradouro || null,
+      numero: p.complemento ? null : null,
+      complemento: p.complemento || null,
+      bairro: p.bairro || null,
+      cidade: p.cidade || null,
+      estado: p.estado || null,
+      cep: p.cep || null,
+      data_nascimento: p.data_nascimento || null,
+      email: null,
     }));
 
     setClientes([...fromBase, ...fromProjetos]);
