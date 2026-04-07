@@ -101,7 +101,8 @@ export default function ClienteDadosModal({ cliente, onClose }: { cliente: Clien
     if (c.endereco) return c.endereco;
     const parts = [c.logradouro, c.numero, c.complemento, c.bairro, c.cidade, c.estado].filter(Boolean);
     return parts.length > 0 ? parts.join(', ') : '';
-  })();
+
+  const blocks: { title: string; fields: FieldDef[] }[] = [
     {
       title: 'Identificação',
       fields: [
