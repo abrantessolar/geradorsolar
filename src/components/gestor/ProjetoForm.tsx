@@ -3,13 +3,14 @@ import MoneyInput from '@/components/ui/money-input';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { ChevronLeft, ChevronRight, Plus, X, Save } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, X, Save, Copy, Trash2, Users } from 'lucide-react';
 import { getPotenciaKey, generateMaterialList, hasExistingList } from './materiais/generateMaterialList';
 
 const STATUS_LIST = ['Vendido', 'Equipamento Comprado', 'Entregue', 'Em Instalação', 'Instalado', 'Projeto Submetido', 'Homologado'];
 const CONC_LIST = ['ELEKTRO', 'ENERGISA', 'COPEL', 'OUTRA'];
 const PAGAMENTO_STATUS_LIST = ['Pago', 'Pendente', 'Parcial'];
 const ESTRUTURA_LIST = ['Fibrocimento', 'Fibrometal', 'Cerâmico Madeira', 'Cerâmico Metal', 'Mini Trilho Elevado', 'Solo', 'Laje', 'Calhetão', 'Sem Estrutura'];
+const RELACAO_LIST = ['Cônjuge', 'Sócio', 'Responsável Financeiro', 'Pai/Mãe', 'Filho(a)', 'Outro'];
 
 function maskCpf(v: string) {
   return v.replace(/\D/g, '').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d{1,2})$/, '$1-$2').slice(0, 14);
@@ -28,6 +29,7 @@ function maskTelefone(v: string) {
 
 type PlacaOption = { id: string; marca: string; modelo: string; potencia_wp: number };
 type InversorOption = { id: string; marca: string; modelo: string; potencia_kw: number; tipo: string };
+type PessoaRelacionada = { nome: string; relacao: string; cpf: string };
 
 export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
   projetoId?: string;
@@ -43,6 +45,12 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
   const [showNewInversor, setShowNewInversor] = useState(false);
   const [newPlaca, setNewPlaca] = useState({ marca: '', modelo: '', potencia_wp: '' });
   const [newInversor, setNewInversor] = useState({ marca: '', modelo: '', potencia_kw: '', tipo: 'String' });
+
+  // Pessoas relacionadas
+  const [outrosNomes, setOutrosNomes] = useState<PessoaRelacionada[]>([]);
+
+  // Track if UG was manually edited
+  const [ugManuallyEdited, setUgManuallyEdited] = useState(false);
 
   const [form, setForm] = useState({
     tipo_pessoa: 'PF',
@@ -96,6 +104,14 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
         data_instalacao: p.data_instalacao || '',
         distribuidor: p.distribuidor || '', instalador: p.instalador || '', pagamento_status: p.pagamento_status || 'Pendente',
       });
+      // Load outros_nomes
+      if (p.outros_nomes && Array.isArray(p.outros_nomes)) {
+        setOutrosNomes(p.outros_nomes.map((o: any) => ({ nome: o.nome || '', relacao: o.relacao || '', cpf: o.cpf || '' })));
+      }
+      // If UG already has data, mark as manually edited
+      if (p.unidade_geradora_cep || p.unidade_geradora_endereco) {
+        setUgManuallyEdited(true);
+      }
     });
   }, [projetoId]);
 
@@ -114,6 +130,17 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
         setForm(f => ({ ...f, [`${prefix}_endereco`]: `${data.logradouro || ''}, ${data.bairro || ''}, ${data.localidade || ''}-${data.uf || ''}` }));
       }
     } catch {}
+  };
+
+  // Auto-fill UG from client address when entering step 3
+  const syncUgFromClient = () => {
+    if (ugManuallyEdited) return;
+    const enderecoCompleto = [form.logradouro, form.bairro, form.cidade && form.estado ? `${form.cidade}/${form.estado}` : form.cidade || form.estado].filter(Boolean).join(', ');
+    setForm(f => ({
+      ...f,
+      unidade_geradora_cep: f.unidade_geradora_cep || f.cep,
+      unidade_geradora_endereco: f.unidade_geradora_endereco || enderecoCompleto,
+    }));
   };
 
   const handleSave = async () => {
@@ -178,6 +205,7 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
       distribuidor: form.distribuidor || null,
       instalador: form.instalador || null,
       pagamento_status: form.pagamento_status || 'Pendente',
+      outros_nomes: outrosNomes.length > 0 ? outrosNomes.filter(o => o.nome.trim()) : null,
     };
 
     let error;
@@ -208,7 +236,6 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
           await generateMaterialList(savedId, potKey);
           toast.success(`Lista de materiais gerada (${potKey})!`);
         } else if (projetoId) {
-          // Editing: check if inversor/potência changed - ask to regenerate
           const shouldRegenerate = window.confirm(
             'O inversor/potência foi alterado. Deseja regenerar a lista de materiais?'
           );
@@ -255,8 +282,20 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
     toast.success('Inversor cadastrado!');
   };
 
+  // Pessoas relacionadas helpers
+  const addPessoa = () => setOutrosNomes(prev => [...prev, { nome: '', relacao: '', cpf: '' }]);
+  const removePessoa = (idx: number) => setOutrosNomes(prev => prev.filter((_, i) => i !== idx));
+  const updatePessoa = (idx: number, field: keyof PessoaRelacionada, val: string) => {
+    setOutrosNomes(prev => prev.map((p, i) => i === idx ? { ...p, [field]: val } : p));
+  };
+
   const inputClass = "solar-input";
   const labelClass = "block text-sm font-medium mb-1";
+
+  const goToStep = (target: number) => {
+    if (target === 3) syncUgFromClient();
+    setStep(target);
+  };
 
   return (
     <div className="solar-card p-6 space-y-6">
@@ -267,7 +306,7 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
 
       <div className="flex gap-2">
         {['Dados do Cliente', 'Equipamentos', 'Unidades Consumidoras', 'Comercial'].map((label, i) => (
-          <button key={i} onClick={() => setStep(i + 1)}
+          <button key={i} onClick={() => goToStep(i + 1)}
             className={`flex-1 py-2 px-2 rounded-lg text-xs font-medium transition-colors ${
               step === i + 1 ? 'bg-primary text-primary-foreground' : i + 1 < step ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'
             }`}>
@@ -322,6 +361,44 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
             <select className={inputClass} value={form.concessionaria} onChange={e => set('concessionaria', e.target.value)}>
               {CONC_LIST.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
+          </div>
+
+          {/* Pessoas Relacionadas */}
+          <hr className="border-border" />
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold flex items-center gap-2">
+                <Users className="w-4 h-4" /> Pessoas Relacionadas
+              </h3>
+              <button onClick={addPessoa} className="flex items-center gap-1 text-xs text-primary hover:text-primary/80 font-medium">
+                <Plus className="w-3.5 h-3.5" /> Adicionar
+              </button>
+            </div>
+            {outrosNomes.length === 0 && (
+              <p className="text-xs text-muted-foreground">Nenhuma pessoa relacionada. Adicione cônjuge, sócio ou responsável financeiro.</p>
+            )}
+            {outrosNomes.map((pessoa, idx) => (
+              <div key={idx} className="grid grid-cols-1 md:grid-cols-[1fr_150px_180px_auto] gap-2 items-end bg-muted/30 rounded-lg p-3">
+                <div>
+                  <label className="block text-xs font-medium mb-1">Nome</label>
+                  <input className={inputClass} value={pessoa.nome} onChange={e => updatePessoa(idx, 'nome', e.target.value)} placeholder="Nome completo" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium mb-1">Relação</label>
+                  <select className={inputClass} value={pessoa.relacao} onChange={e => updatePessoa(idx, 'relacao', e.target.value)}>
+                    <option value="">Selecione...</option>
+                    {RELACAO_LIST.map(r => <option key={r} value={r}>{r}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium mb-1">CPF (opcional)</label>
+                  <input className={inputClass} value={pessoa.cpf} onChange={e => updatePessoa(idx, 'cpf', maskCpf(e.target.value))} placeholder="000.000.000-00" />
+                </div>
+                <button onClick={() => removePessoa(idx)} className="p-2 text-destructive hover:text-destructive/80 self-end">
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            ))}
           </div>
         </div>
       )}
@@ -436,10 +513,25 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
       {step === 3 && (
         <div className="space-y-6">
           <div>
-            <h3 className="text-sm font-semibold mb-3">Unidade Geradora</h3>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold">Unidade Geradora</h3>
+              {(form.cep || form.logradouro) && (
+                <button onClick={() => {
+                  const enderecoCompleto = [form.logradouro, form.bairro, form.cidade && form.estado ? `${form.cidade}/${form.estado}` : form.cidade || form.estado].filter(Boolean).join(', ');
+                  setForm(f => ({
+                    ...f,
+                    unidade_geradora_cep: f.cep,
+                    unidade_geradora_endereco: enderecoCompleto,
+                  }));
+                  setUgManuallyEdited(false);
+                }} className="flex items-center gap-1 text-xs text-primary hover:text-primary/80 font-medium">
+                  <Copy className="w-3.5 h-3.5" /> Copiar do endereço do cliente
+                </button>
+              )}
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div><label className={labelClass}>CEP</label><input className={inputClass} value={form.unidade_geradora_cep} onChange={e => set('unidade_geradora_cep', maskCep(e.target.value))} onBlur={() => fetchCep(form.unidade_geradora_cep, 'unidade_geradora')} /></div>
-              <div><label className={labelClass}>Endereço</label><input className={inputClass} value={form.unidade_geradora_endereco} onChange={e => set('unidade_geradora_endereco', e.target.value)} /></div>
+              <div><label className={labelClass}>CEP</label><input className={inputClass} value={form.unidade_geradora_cep} onChange={e => { set('unidade_geradora_cep', maskCep(e.target.value)); setUgManuallyEdited(true); }} onBlur={() => fetchCep(form.unidade_geradora_cep, 'unidade_geradora')} /></div>
+              <div><label className={labelClass}>Endereço</label><input className={inputClass} value={form.unidade_geradora_endereco} onChange={e => { set('unidade_geradora_endereco', e.target.value); setUgManuallyEdited(true); }} /></div>
               <div><label className={labelClass}>Código UC</label><input className={inputClass} value={form.unidade_geradora_codigo_uc} onChange={e => set('unidade_geradora_codigo_uc', e.target.value)} /></div>
               <div><label className={labelClass}>Padrão de Entrada</label><input className={inputClass} value={form.unidade_geradora_padrao} onChange={e => set('unidade_geradora_padrao', e.target.value)} /></div>
             </div>
@@ -499,12 +591,12 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
 
       {/* Navigation */}
       <div className="flex items-center justify-between pt-4 border-t border-border">
-        <button onClick={() => setStep(s => Math.max(1, s - 1))} disabled={step === 1}
+        <button onClick={() => goToStep(Math.max(1, step - 1))} disabled={step === 1}
           className="flex items-center gap-1 px-4 py-2 rounded-lg text-sm font-medium bg-muted text-muted-foreground disabled:opacity-40">
           <ChevronLeft className="w-4 h-4" /> Anterior
         </button>
         {step < 4 ? (
-          <button onClick={() => setStep(s => s + 1)}
+          <button onClick={() => goToStep(step + 1)}
             className="flex items-center gap-1 px-4 py-2 rounded-lg text-sm font-medium bg-primary text-primary-foreground">
             Próximo <ChevronRight className="w-4 h-4" />
           </button>

@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import type { Projeto } from '@/pages/GestorPage';
 import type { ClienteBase } from './ClientesList';
-import { Edit2, FileText, Snowflake, Image as ImageIcon, CheckCircle, ArrowUpDown, ArrowUp, ArrowDown, Trash2, ClipboardList, Package, FileDown, Eye, Search, ArrowUpRight } from 'lucide-react';
+import { Edit2, FileText, Snowflake, Image as ImageIcon, CheckCircle, Trash2, ClipboardList, Package, FileDown, Eye, Search, ArrowUpRight, GripVertical } from 'lucide-react';
 import WhatsAppLink from './WhatsAppLink';
 import { generateFichaInstalacao } from '@/lib/generateFichaInstalacao';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -14,6 +14,7 @@ import ListaMateriaisObraModal from './materiais/ListaMateriaisObraModal';
 import RetirarMaterialModal from './materiais/RetirarMaterialModal';
 import ClienteDadosModal from './ClienteDadosModal';
 import ClienteEditModal from './ClienteEditModal';
+import { useDraggableColumns, type ColumnDef } from '@/hooks/useDraggableColumns';
 
 function Tip({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -71,15 +72,15 @@ export default function ProjetosUnificados({
     if (filter === 'instalados') return [];
     return projetos.filter(p => {
       if (!q) return true;
-      const name = (p.nome_completo || p.razao_social || '').toLowerCase();
-      const cpf = (p.cpf || p.cnpj || '').toLowerCase();
-      const uc = (p.unidade_geradora_codigo_uc || '').toLowerCase();
-      const tel = (p.telefone || '').toLowerCase();
-      const end = (p.endereco_completo || p.logradouro || '').toLowerCase();
-      const mInv = (p.marca_inversor || '').toLowerCase();
-      const mPlc = (p.marca_placa || '').toLowerCase();
-      const dataInst = (p.data_instalacao || '');
-      return name.includes(q) || cpf.includes(q) || uc.includes(q) || tel.includes(q) || end.includes(q) || mInv.includes(q) || mPlc.includes(q) || dataInst.includes(q);
+      const searchFields = [
+        p.nome_completo, p.razao_social, p.cpf, p.cnpj,
+        p.unidade_geradora_codigo_uc, p.telefone,
+        p.endereco_completo, p.logradouro,
+        p.marca_inversor, p.marca_placa, p.data_instalacao,
+      ].map(v => (v || '').toLowerCase());
+      // Search in outros_nomes
+      const outrosNomes = Array.isArray(p.outros_nomes) ? (p.outros_nomes as any[]).map(o => (o.nome || '').toLowerCase()).join(' ') : '';
+      return searchFields.some(f => f.includes(q)) || outrosNomes.includes(q);
     }).sort((a, b) => daysSince(b.data_fechamento) - daysSince(a.data_fechamento));
   }, [projetos, q, filter]);
 
@@ -87,21 +88,25 @@ export default function ProjetosUnificados({
     if (filter === 'aguardando') return [];
     return clientes.filter(c => {
       if (!q) return true;
-      const name = (c.nome_completo || '').toLowerCase();
-      const cpf = (c.cpf || '').toLowerCase();
-      const uc = (c.uc || '').toLowerCase();
-      const tel = (c.telefone || '').toLowerCase();
-      const end = (c.endereco || '').toLowerCase();
-      const mInv = (c.marca_inversor || '').toLowerCase();
-      const mPlc = (c.marca_placa || '').toLowerCase();
-      const dataInst = (c.instalado_em || '');
-      return name.includes(q) || cpf.includes(q) || uc.includes(q) || tel.includes(q) || end.includes(q) || mInv.includes(q) || mPlc.includes(q) || dataInst.includes(q);
+      const searchFields = [
+        c.nome_completo, c.cpf, c.uc, c.telefone,
+        c.endereco, c.marca_inversor, c.marca_placa, c.instalado_em,
+      ].map(v => (v || '').toLowerCase());
+      return searchFields.some(f => f.includes(q));
     }).sort((a, b) => {
       const da = a.instalado_em ? new Date(a.instalado_em).getTime() : 0;
       const db = b.instalado_em ? new Date(b.instalado_em).getTime() : 0;
       return db - da;
     });
   }, [clientes, q, filter]);
+
+  // Draggable columns for aguardando
+  const aguardandoDefaultOrder = ['cliente', 'telefone', 'instalador', 'qtd_placas', 'marca', 'potencia', 'tempo', 'status', 'acoes'];
+  const aguardandoDrag = useDraggableColumns('cols_aguardando', aguardandoDefaultOrder);
+
+  // Draggable columns for instalados
+  const instaladosDefaultOrder = ['cliente', 'telefone', 'data_instalacao', 'qtd_placas', 'kwp', 'marca_inv', 'pot_inv', 'satisfacao', 'acoes'];
+  const instaladosDrag = useDraggableColumns('cols_instalados', instaladosDefaultOrder);
 
   const mapProjetoToDados = (p: Projeto) => ({
     id: p.id,
@@ -141,6 +146,60 @@ export default function ProjetosUnificados({
     satisfacao: null, projeto_id: null,
     data_fechamento: p.data_fechamento || null,
   } as any);
+
+  // Column definitions for aguardando
+  const aguardandoColDefs: Record<string, { label: string; render: (p: Projeto) => React.ReactNode; className?: string }> = {
+    cliente: { label: 'Cliente', render: p => <span className="font-medium max-w-[180px] truncate block">{p.congelado && '❄️ '}{p.nome_completo || p.razao_social || '—'}</span> },
+    telefone: { label: 'Telefone', render: p => <WhatsAppLink phone={p.telefone} />, className: 'text-xs' },
+    instalador: { label: 'Instalador', render: p => <InstaladorSelect projetoId={p.id} currentValue={p.instalador} onDone={onRefresh} /> },
+    qtd_placas: { label: 'Qtd Placas', render: p => <>{p.qtd_placas || '—'}</>, className: 'text-xs' },
+    marca: { label: 'Marca', render: p => <>{p.marca_placa || '—'}</>, className: 'text-xs' },
+    potencia: { label: 'Pot. (Wp)', render: p => <>{p.potencia_placa || '—'}</>, className: 'text-xs' },
+    tempo: { label: 'Tempo', render: p => { const days = daysSince(p.data_fechamento); return <span className={`font-medium ${days > 30 ? 'text-destructive' : ''}`}>{p.data_fechamento ? `${days}d` : '—'}</span>; }, className: 'text-xs' },
+    status: { label: 'Status', render: p => <span className="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200 text-[10px] font-medium">{p.status}</span>, className: 'text-xs' },
+    acoes: { label: 'Ações', render: p => (
+      <div className="flex gap-1 items-center">
+        <TooltipProvider>
+          <Tip label="Ver dados"><button onClick={() => setDadosProjeto(p)} className="text-primary hover:text-primary/80"><Eye className="w-4 h-4" /></button></Tip>
+          <Tip label="Editar"><button onClick={() => onEdit(p.id)} className="text-primary hover:text-primary/80"><Edit2 className="w-4 h-4" /></button></Tip>
+          <Tip label="Documentos"><button onClick={() => onDocumentos(p)} className="text-primary hover:text-primary/80"><FileText className="w-4 h-4" /></button></Tip>
+          <Tip label="Materiais"><button onClick={() => setMateriaisProjeto(p)} className="text-primary hover:text-primary/80"><ClipboardList className="w-4 h-4" /></button></Tip>
+          <Tip label="Ficha"><button onClick={() => generateFichaInstalacao(p)} className="text-primary hover:text-primary/80"><FileDown className="w-4 h-4" /></button></Tip>
+          <Tip label="Retirar material"><button onClick={() => setRetirarProjeto(p)} className="text-primary hover:text-primary/80"><Package className="w-4 h-4" /></button></Tip>
+          <Tip label={p.congelado ? 'Congelada' : 'Congelar'}><button onClick={() => setCongelarId(p.congelado ? null : p.id)} className="text-primary hover:text-primary/80"><Snowflake className="w-4 h-4" /></button></Tip>
+          <Tip label="Layout"><button onClick={() => setLayoutProjeto(p)} className={`${p.layout_url ? 'text-accent-foreground' : 'text-muted-foreground'} hover:text-primary`}><ImageIcon className="w-4 h-4" /></button></Tip>
+          <Tip label="Concluída"><button onClick={() => setConcluidaProjeto(p)} className="text-primary hover:text-primary/80"><CheckCircle className="w-4 h-4" /></button></Tip>
+          <Tip label="Excluir"><button onClick={() => setDeleteProjeto(p)} className="text-destructive hover:text-destructive/80"><Trash2 className="w-4 h-4" /></button></Tip>
+        </TooltipProvider>
+      </div>
+    )},
+  };
+
+  // Column definitions for instalados
+  const instaladosColDefs: Record<string, { label: string; render: (c: ClienteBase) => React.ReactNode; className?: string }> = {
+    cliente: { label: 'Cliente', render: c => <span className="font-medium max-w-[180px] truncate block">{c.nome_completo || '—'}</span> },
+    telefone: { label: 'Telefone', render: c => <WhatsAppLink phone={c.telefone} />, className: 'text-xs' },
+    data_instalacao: { label: 'Data Instalação', render: c => <>{c.instalado_em ? new Date(c.instalado_em).toLocaleDateString('pt-BR') : '—'}</>, className: 'text-xs' },
+    qtd_placas: { label: 'Qtd Placas', render: c => <>{c.qtd_placas || '—'}</>, className: 'text-xs' },
+    kwp: { label: 'kWp', render: c => <span className="font-medium">{c.kwp ? Number(c.kwp).toFixed(2) : calcKwp(c.qtd_placas, c.potencia_placa)}</span>, className: 'text-xs' },
+    marca_inv: { label: 'Marca Inv.', render: c => <>{c.marca_inversor || '—'}</>, className: 'text-xs' },
+    pot_inv: { label: 'Pot. Inv.', render: c => <>{c.potencia_inversor ? `${c.potencia_inversor} kW` : '—'}</>, className: 'text-xs' },
+    satisfacao: { label: 'Satisfação', render: c => <>{c.satisfacao || '—'}</>, className: 'text-xs' },
+    acoes: { label: 'Ações', render: c => (
+      <div className="flex gap-1 items-center">
+        <TooltipProvider>
+          <Tip label="Ver dados"><button onClick={() => setDadosCliente(c)} className="text-primary hover:text-primary/80"><Eye className="w-4 h-4" /></button></Tip>
+          <Tip label="Editar"><button onClick={() => setEditCliente(c)} className="text-primary hover:text-primary/80"><Edit2 className="w-4 h-4" /></button></Tip>
+          {!c.projeto_id && !c.id.startsWith('proj-') && (
+            <Tip label="Promover para obra"><button onClick={() => onPromover(c)} className="text-primary hover:text-primary/80"><ArrowUpRight className="w-4 h-4" /></button></Tip>
+          )}
+          {!c.id.startsWith('proj-') && (
+            <Tip label="Excluir"><button onClick={() => setDeleteCliente(c)} className="text-destructive hover:text-destructive/80"><Trash2 className="w-4 h-4" /></button></Tip>
+          )}
+        </TooltipProvider>
+      </div>
+    )},
+  };
 
   if (loading) return <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" /></div>;
 
@@ -215,56 +274,42 @@ export default function ProjetosUnificados({
               {filteredProjetos.length === 0 && <p className="py-4 text-center text-xs text-muted-foreground">Nenhum projeto aguardando.</p>}
             </div>
 
-            {/* Desktop */}
+            {/* Desktop with draggable columns */}
             <div className="hidden sm:block overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-amber-200 dark:border-amber-800 text-left text-muted-foreground text-xs">
-                    <th className="py-2 px-2">Cliente</th>
-                    <th className="py-2 px-2">Telefone</th>
-                    <th className="py-2 px-2">Instalador</th>
-                    <th className="py-2 px-2">Qtd Placas</th>
-                    <th className="py-2 px-2">Marca</th>
-                    <th className="py-2 px-2">Pot. (Wp)</th>
-                    <th className="py-2 px-2">Tempo</th>
-                    <th className="py-2 px-2">Status</th>
-                    <th className="py-2 px-2">Ações</th>
+                    {aguardandoDrag.order.map((key, idx) => {
+                      const col = aguardandoColDefs[key];
+                      if (!col) return null;
+                      return (
+                        <th key={key} className="py-2 px-2 select-none"
+                          draggable
+                          onDragStart={() => aguardandoDrag.onDragStart(idx)}
+                          onDragOver={e => aguardandoDrag.onDragOver(e, idx)}
+                          onDragEnd={aguardandoDrag.onDragEnd}
+                        >
+                          <span className="inline-flex items-center gap-1 cursor-grab active:cursor-grabbing">
+                            <GripVertical className="w-3 h-3 text-muted-foreground/50" />
+                            {col.label}
+                          </span>
+                        </th>
+                      );
+                    })}
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredProjetos.map(p => {
-                    const days = daysSince(p.data_fechamento);
-                    return (
-                      <tr key={p.id} className={`border-b border-amber-100 dark:border-amber-900/50 hover:bg-amber-50/50 dark:hover:bg-amber-950/30 ${p.congelado ? 'opacity-60' : ''}`}>
-                        <td className="py-2 px-2 font-medium max-w-[180px] truncate">{p.congelado && '❄️ '}{p.nome_completo || p.razao_social || '—'}</td>
-                        <td className="py-2 px-2 text-xs"><WhatsAppLink phone={p.telefone} /></td>
-                        <td className="py-2 px-2"><InstaladorSelect projetoId={p.id} currentValue={p.instalador} onDone={onRefresh} /></td>
-                        <td className="py-2 px-2 text-xs">{p.qtd_placas || '—'}</td>
-                        <td className="py-2 px-2 text-xs">{p.marca_placa || '—'}</td>
-                        <td className="py-2 px-2 text-xs">{p.potencia_placa || '—'}</td>
-                        <td className={`py-2 px-2 text-xs font-medium ${days > 30 ? 'text-destructive' : ''}`}>{p.data_fechamento ? `${days}d` : '—'}</td>
-                        <td className="py-2 px-2 text-xs"><span className="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200 text-[10px] font-medium">{p.status}</span></td>
-                        <td className="py-2 px-2">
-                          <div className="flex gap-1 items-center">
-                            <TooltipProvider>
-                              <Tip label="Ver dados"><button onClick={() => setDadosProjeto(p)} className="text-primary hover:text-primary/80"><Eye className="w-4 h-4" /></button></Tip>
-                              <Tip label="Editar"><button onClick={() => onEdit(p.id)} className="text-primary hover:text-primary/80"><Edit2 className="w-4 h-4" /></button></Tip>
-                              <Tip label="Documentos"><button onClick={() => onDocumentos(p)} className="text-primary hover:text-primary/80"><FileText className="w-4 h-4" /></button></Tip>
-                              <Tip label="Materiais"><button onClick={() => setMateriaisProjeto(p)} className="text-primary hover:text-primary/80"><ClipboardList className="w-4 h-4" /></button></Tip>
-                              <Tip label="Ficha"><button onClick={() => generateFichaInstalacao(p)} className="text-primary hover:text-primary/80"><FileDown className="w-4 h-4" /></button></Tip>
-                              <Tip label="Retirar material"><button onClick={() => setRetirarProjeto(p)} className="text-primary hover:text-primary/80"><Package className="w-4 h-4" /></button></Tip>
-                              <Tip label={p.congelado ? 'Congelada' : 'Congelar'}><button onClick={() => setCongelarId(p.congelado ? null : p.id)} className="text-primary hover:text-primary/80"><Snowflake className="w-4 h-4" /></button></Tip>
-                              <Tip label="Layout"><button onClick={() => setLayoutProjeto(p)} className={`${p.layout_url ? 'text-accent-foreground' : 'text-muted-foreground'} hover:text-primary`}><ImageIcon className="w-4 h-4" /></button></Tip>
-                              <Tip label="Concluída"><button onClick={() => setConcluidaProjeto(p)} className="text-primary hover:text-primary/80"><CheckCircle className="w-4 h-4" /></button></Tip>
-                              <Tip label="Excluir"><button onClick={() => setDeleteProjeto(p)} className="text-destructive hover:text-destructive/80"><Trash2 className="w-4 h-4" /></button></Tip>
-                            </TooltipProvider>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
+                  {filteredProjetos.map(p => (
+                    <tr key={p.id} className={`border-b border-amber-100 dark:border-amber-900/50 hover:bg-amber-50/50 dark:hover:bg-amber-950/30 ${p.congelado ? 'opacity-60' : ''}`}>
+                      {aguardandoDrag.order.map(key => {
+                        const col = aguardandoColDefs[key];
+                        if (!col) return null;
+                        return <td key={key} className={`py-2 px-2 ${col.className || ''}`}>{col.render(p)}</td>;
+                      })}
+                    </tr>
+                  ))}
                   {filteredProjetos.length === 0 && (
-                    <tr><td colSpan={9} className="py-6 text-center text-muted-foreground text-xs">Nenhum projeto aguardando.</td></tr>
+                    <tr><td colSpan={aguardandoDrag.order.length} className="py-6 text-center text-muted-foreground text-xs">Nenhum projeto aguardando.</td></tr>
                   )}
                 </tbody>
               </table>
@@ -313,51 +358,42 @@ export default function ProjetosUnificados({
               {filteredClientes.length === 0 && <p className="py-4 text-center text-xs text-muted-foreground">Nenhum cliente instalado.</p>}
             </div>
 
-            {/* Desktop */}
+            {/* Desktop with draggable columns */}
             <div className="hidden sm:block overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border text-left text-muted-foreground text-xs">
-                    <th className="py-2 px-2">Cliente</th>
-                    <th className="py-2 px-2">Telefone</th>
-                    <th className="py-2 px-2">Data Instalação</th>
-                    <th className="py-2 px-2">Qtd Placas</th>
-                    <th className="py-2 px-2">kWp</th>
-                    <th className="py-2 px-2">Marca Inv.</th>
-                    <th className="py-2 px-2">Pot. Inv.</th>
-                    <th className="py-2 px-2">Satisfação</th>
-                    <th className="py-2 px-2">Ações</th>
+                    {instaladosDrag.order.map((key, idx) => {
+                      const col = instaladosColDefs[key];
+                      if (!col) return null;
+                      return (
+                        <th key={key} className="py-2 px-2 select-none"
+                          draggable
+                          onDragStart={() => instaladosDrag.onDragStart(idx)}
+                          onDragOver={e => instaladosDrag.onDragOver(e, idx)}
+                          onDragEnd={instaladosDrag.onDragEnd}
+                        >
+                          <span className="inline-flex items-center gap-1 cursor-grab active:cursor-grabbing">
+                            <GripVertical className="w-3 h-3 text-muted-foreground/50" />
+                            {col.label}
+                          </span>
+                        </th>
+                      );
+                    })}
                   </tr>
                 </thead>
                 <tbody>
                   {filteredClientes.map(c => (
                     <tr key={c.id} className="border-b border-border/50 hover:bg-muted/30">
-                      <td className="py-2 px-2 font-medium max-w-[180px] truncate">{c.nome_completo || '—'}</td>
-                      <td className="py-2 px-2 text-xs"><WhatsAppLink phone={c.telefone} /></td>
-                      <td className="py-2 px-2 text-xs">{c.instalado_em ? new Date(c.instalado_em).toLocaleDateString('pt-BR') : '—'}</td>
-                      <td className="py-2 px-2 text-xs">{c.qtd_placas || '—'}</td>
-                      <td className="py-2 px-2 text-xs font-medium">{c.kwp ? Number(c.kwp).toFixed(2) : calcKwp(c.qtd_placas, c.potencia_placa)}</td>
-                      <td className="py-2 px-2 text-xs">{c.marca_inversor || '—'}</td>
-                      <td className="py-2 px-2 text-xs">{c.potencia_inversor ? `${c.potencia_inversor} kW` : '—'}</td>
-                      <td className="py-2 px-2 text-xs">{c.satisfacao || '—'}</td>
-                      <td className="py-2 px-2">
-                        <div className="flex gap-1 items-center">
-                          <TooltipProvider>
-                            <Tip label="Ver dados"><button onClick={() => setDadosCliente(c)} className="text-primary hover:text-primary/80"><Eye className="w-4 h-4" /></button></Tip>
-                            <Tip label="Editar"><button onClick={() => setEditCliente(c)} className="text-primary hover:text-primary/80"><Edit2 className="w-4 h-4" /></button></Tip>
-                            {!c.projeto_id && !c.id.startsWith('proj-') && (
-                              <Tip label="Promover para obra"><button onClick={() => onPromover(c)} className="text-primary hover:text-primary/80"><ArrowUpRight className="w-4 h-4" /></button></Tip>
-                            )}
-                            {!c.id.startsWith('proj-') && (
-                              <Tip label="Excluir"><button onClick={() => setDeleteCliente(c)} className="text-destructive hover:text-destructive/80"><Trash2 className="w-4 h-4" /></button></Tip>
-                            )}
-                          </TooltipProvider>
-                        </div>
-                      </td>
+                      {instaladosDrag.order.map(key => {
+                        const col = instaladosColDefs[key];
+                        if (!col) return null;
+                        return <td key={key} className={`py-2 px-2 ${col.className || ''}`}>{col.render(c)}</td>;
+                      })}
                     </tr>
                   ))}
                   {filteredClientes.length === 0 && (
-                    <tr><td colSpan={9} className="py-6 text-center text-muted-foreground text-xs">Nenhum cliente instalado.</td></tr>
+                    <tr><td colSpan={instaladosDrag.order.length} className="py-6 text-center text-muted-foreground text-xs">Nenhum cliente instalado.</td></tr>
                   )}
                 </tbody>
               </table>

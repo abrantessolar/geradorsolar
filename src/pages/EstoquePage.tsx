@@ -53,18 +53,20 @@ type MatItem = {
   quantidade_separada: number;
   separado: boolean;
   estoque_atual: number;
-  qtd_retirar: number; // editable
+  qtd_retirar: number;
 };
 
 type CaboItem = {
   id: string;
   tipo_cabo: string;
   quantidade_metros: number;
-  metros_retirar: number; // editable
+  metros_retirar: number;
   observacao: string | null;
 };
 
 type AllMaterial = { id: string; nome: string; categoria: string };
+
+type ActiveView = 'menu' | 'entrada' | 'retorno' | 'estoque' | 'materiais' | 'retirada';
 
 /* ─── Main Page ─── */
 export default function EstoquePage() {
@@ -79,7 +81,7 @@ export default function EstoquePage() {
   const [loading, setLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState(new Date());
 
-  const [activeAction, setActiveAction] = useState<'entrada' | 'retorno' | 'estoque' | 'materiais' | null>(null);
+  const [activeView, setActiveView] = useState<ActiveView>('menu');
 
   // Entrada em lote
   const [entradaRows, setEntradaRows] = useState<{ id: string; nome: string; categoria: string; estoque_atual: number; entrada: string; preco_unitario: string }[]>([]);
@@ -176,7 +178,7 @@ export default function EstoquePage() {
           nome: m.materiais?.nome || '—', categoria: m.materiais?.categoria || 'Outros',
           quantidade_necessaria: m.quantidade_necessaria, quantidade_separada: m.quantidade_separada,
           separado: m.separado, estoque_atual: estoqueMap[m.material_id] || 0,
-          qtd_retirar: m.quantidade_necessaria, // default to full qty
+          qtd_retirar: m.quantidade_necessaria,
         })),
         cabos: (cbs || []).map((c: any) => ({
           id: c.id, tipo_cabo: c.tipo_cabo, quantidade_metros: c.quantidade_metros,
@@ -186,12 +188,10 @@ export default function EstoquePage() {
     })();
   }, [selectedObra]);
 
-  // Alert for next 4 obras - compute from lista_materiais_obra data
   const next4 = obras.slice(0, 4);
   const faltantesNext4 = next4.flatMap(o => o.materiais_faltantes.map(nome => nome))
     .filter((v, i, a) => a.indexOf(v) === i);
 
-  // Toggle separado
   const toggleSeparado = async (item: MatItem) => {
     const userId = session?.user?.id;
     if (!userId || !selectedObra) return;
@@ -211,7 +211,6 @@ export default function EstoquePage() {
     loadAll();
   };
 
-  // Confirm full retirada
   const confirmRetirada = async () => {
     if (!obraDetails || !selectedObra) return;
     const userId = session?.user?.id;
@@ -231,7 +230,6 @@ export default function EstoquePage() {
         const { data: est } = await supabase.from('estoque').select('quantidade_atual').eq('material_id', item.material_id).maybeSingle();
         if (est) await supabase.from('estoque').update({ quantidade_atual: Math.max(0, (est as any).quantidade_atual - item.qtd_retirar), atualizado_em: new Date().toISOString() }).eq('material_id', item.material_id);
       }
-      // Update cables with actual metros_retirar
       for (const cabo of obraDetails.cabos) {
         if (cabo.metros_retirar !== cabo.quantidade_metros) {
           await supabase.from('cabos_obra').update({ quantidade_metros: cabo.metros_retirar }).eq('id', cabo.id);
@@ -245,23 +243,20 @@ export default function EstoquePage() {
     setSavingRetirada(false);
   };
 
-  // Add extra material to obra list
   const addExtraMaterial = async () => {
     if (!addMaterialId || !selectedObra) return;
     const qtd = parseInt(addMaterialQtd) || 1;
     await supabase.from('lista_materiais_obra').insert({ projeto_id: selectedObra.id, material_id: addMaterialId, quantidade_necessaria: qtd, quantidade_separada: 0, separado: false });
     setAddMaterialId(''); setAddMaterialQtd(''); setShowAddMaterial(false);
-    setSelectedObra({ ...selectedObra }); // trigger reload
+    setSelectedObra({ ...selectedObra });
     toast.success('Material adicionado!');
   };
 
-  // Remove material from obra list (not from estoque)
   const removeMaterialFromList = async (itemId: string) => {
     await supabase.from('lista_materiais_obra').delete().eq('id', itemId);
     setSelectedObra({ ...selectedObra! });
   };
 
-  // Add cabo
   const addCabo = async () => {
     if (!newCabo.tipo_cabo || !selectedObra) return;
     await supabase.from('cabos_obra').insert({ projeto_id: selectedObra.id, tipo_cabo: newCabo.tipo_cabo, quantidade_metros: parseFloat(newCabo.quantidade_metros) || 0 });
@@ -274,7 +269,6 @@ export default function EstoquePage() {
     setSelectedObra({ ...selectedObra! });
   };
 
-  // Update editable qty
   const updateQtdRetirar = (itemId: string, val: number) => {
     if (!obraDetails) return;
     setObraDetails({
@@ -293,14 +287,14 @@ export default function EstoquePage() {
 
   // ─── Entrada em Lote ───
   const openEntrada = async () => {
-    setActiveAction('entrada');
+    setActiveView('entrada');
+    setSelectedObra(null);
     const [{ data: mats }, { data: estoqueSnap }] = await Promise.all([
       supabase.from('materiais').select('id, nome, categoria').eq('ativo', true).order('categoria').order('nome'),
       supabase.from('estoque').select('material_id, quantidade_atual'),
     ]);
     const estoqueMap: Record<string, number> = {};
     (estoqueSnap || []).forEach((e: any) => { estoqueMap[e.material_id] = e.quantidade_atual || 0; });
-    // Also fetch prices
     const { data: matsWithPrice } = await supabase.from('materiais').select('id, preco_unitario').eq('ativo', true);
     const priceMap: Record<string, number | null> = {};
     (matsWithPrice || []).forEach((m: any) => { priceMap[m.id] = m.preco_unitario; });
@@ -314,7 +308,6 @@ export default function EstoquePage() {
     if (entradas.length === 0) { toast.error('Nenhuma quantidade informada'); return; }
     setSavingEntrada(true);
     try {
-      // Update prices for all rows that have a price set (even without entrada)
       const priceUpdates = entradaRows.filter(r => r.preco_unitario !== '');
       for (const row of priceUpdates) {
         const price = parseFloat(row.preco_unitario);
@@ -330,14 +323,15 @@ export default function EstoquePage() {
         else await supabase.from('estoque').insert({ material_id: row.id, quantidade_atual: qtd });
       }
       toast.success(`${entradas.length} entradas registradas!`);
-      setActiveAction(null); setEntradaNota(''); loadAll();
+      setActiveView('menu'); setEntradaNota(''); loadAll();
     } catch (err: any) { toast.error('Erro: ' + err.message); }
     setSavingEntrada(false);
   };
 
   // ─── Retorno ───
   const openRetorno = async () => {
-    setActiveAction('retorno');
+    setActiveView('retorno');
+    setSelectedObra(null);
     const { data: mats } = await supabase.from('materiais').select('id, nome').eq('ativo', true).order('nome');
     setRetornoItems((mats || []).map((m: any) => ({ material_id: m.id, nome: m.nome, quantidade: '' })));
   };
@@ -357,16 +351,25 @@ export default function EstoquePage() {
         else await supabase.from('estoque').insert({ material_id: r.material_id, quantidade_atual: qtd });
       }
       toast.success(`${retornos.length} itens devolvidos ao estoque!`);
-      setActiveAction(null); setRetornoObra(''); loadAll();
+      setActiveView('menu'); setRetornoObra(''); loadAll();
     } catch (err: any) { toast.error('Erro: ' + err.message); }
     setSavingRetorno(false);
   };
 
   const criticalItems = estoque.filter(e => e.quantidade_atual === 0 && e.quantidade_minima && e.quantidade_minima > 0);
 
+  // Enter retirada mode
+  const enterRetirada = () => {
+    setActiveView('retirada');
+    setSelectedObra(null);
+  };
+
   if (loading) {
     return <div className="flex items-center justify-center h-screen bg-muted/30"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
   }
+
+  // Check if we're in retirada (3-column) mode
+  const isRetiradaMode = activeView === 'retirada';
 
   return (
     <div className="h-screen flex flex-col bg-muted/30 overflow-hidden">
@@ -398,36 +401,16 @@ export default function EstoquePage() {
         </div>
       </header>
 
-      {/* 3-column layout */}
-      <div className="flex flex-1 min-h-0 gap-0">
+      {/* Content */}
+      {isRetiradaMode ? (
+        /* ═══ 3-COLUMN LAYOUT — only for Retirada ═══ */
+        <div className="flex flex-1 min-h-0 gap-0">
+          {/* LEFT: Sidebar */}
+          <div className="w-[280px] flex-shrink-0 border-r border-border p-4 flex flex-col gap-3 overflow-y-auto">
+            <button onClick={() => { setActiveView('menu'); setSelectedObra(null); }} className="text-xs text-primary hover:underline mb-1">← Voltar ao menu</button>
+            <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Fila de Obras</h2>
 
-        {/* ─── LEFT: 280px ─── */}
-        <div className="w-[280px] flex-shrink-0 border-r border-border p-4 flex flex-col gap-3 overflow-y-auto">
-          <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Ações Rápidas</h2>
-
-          <button onClick={openEntrada}
-            className="w-full flex items-center gap-3 px-4 rounded-xl bg-primary/10 text-primary hover:bg-primary/20 transition-colors h-[64px] text-left font-medium text-base">
-            <Package className="w-6 h-6 flex-shrink-0" /> 📦 Entrada de Material
-          </button>
-          <button onClick={() => { setActiveAction(null); setSelectedObra(null); }}
-            className="w-full flex items-center gap-3 px-4 rounded-xl bg-accent/50 text-accent-foreground hover:bg-accent transition-colors h-[64px] text-left font-medium text-base">
-            <Send className="w-6 h-6 flex-shrink-0" /> 📤 Retirada para Obra
-          </button>
-          <button onClick={openRetorno}
-            className="w-full flex items-center gap-3 px-4 rounded-xl bg-secondary/50 text-secondary-foreground hover:bg-secondary transition-colors h-[64px] text-left font-medium text-base">
-            <RotateCcw className="w-6 h-6 flex-shrink-0" /> ↩️ Retorno de Material
-          </button>
-          <button onClick={() => setActiveAction('estoque')}
-            className="w-full flex items-center gap-3 px-4 rounded-xl bg-muted text-foreground hover:bg-muted/70 transition-colors h-[64px] text-left font-medium text-base">
-            <BarChart3 className="w-6 h-6 flex-shrink-0" /> 📊 Ver Estoque
-          </button>
-          <button onClick={() => setActiveAction('materiais')}
-            className="w-full flex items-center gap-3 px-4 rounded-xl bg-muted text-foreground hover:bg-muted/70 transition-colors h-[64px] text-left font-medium text-base">
-            <Settings className="w-6 h-6 flex-shrink-0" /> ⚙️ Materiais
-          </button>
-
-          {/* Alert card for next 4 obras */}
-          <div className="mt-2">
+            {/* Alert card for next 4 obras */}
             {faltantesNext4.length > 0 ? (
               <div className="rounded-xl p-3 bg-destructive/10 border border-destructive/20">
                 <p className="text-sm font-semibold text-destructive mb-1">⚠️ Próximas 4 obras:</p>
@@ -442,29 +425,16 @@ export default function EstoquePage() {
               </div>
             )}
           </div>
-        </div>
 
-        {/* ─── CENTER: flex ─── */}
-        <div className="flex-1 min-w-0 flex flex-col overflow-hidden border-r border-border">
-          {activeAction === 'entrada' ? (
-            <EntradaPanel rows={entradaRows} setRows={setEntradaRows} nota={entradaNota} setNota={setEntradaNota} saving={savingEntrada} onConfirm={confirmEntrada} onClose={() => setActiveAction(null)} />
-          ) : activeAction === 'retorno' ? (
-            <RetornoPanel items={retornoItems} setItems={setRetornoItems} obras={obras} obraId={retornoObra} setObraId={setRetornoObra} saving={savingRetorno} onConfirm={confirmRetorno} onClose={() => setActiveAction(null)} />
-          ) : activeAction === 'estoque' ? (
-            <EstoquePanel estoque={estoque} onClose={() => setActiveAction(null)} />
-          ) : activeAction === 'materiais' ? (
-            <div className="flex-1 overflow-y-auto p-4">
-              <button onClick={() => setActiveAction(null)} className="text-xs text-primary hover:underline mb-3">← Voltar</button>
-              <MateriaisModule />
-            </div>
-          ) : (
+          {/* CENTER: Obras list */}
+          <div className="flex-1 min-w-0 flex flex-col overflow-hidden border-r border-border">
             <div className="flex flex-col overflow-hidden p-4">
               <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-                Fila de Obras ({obras.length})
+                📤 Retirada para Obra ({obras.length})
               </h2>
               <div className="flex-1 overflow-y-auto space-y-2 pr-1">
                 {obras.map(obra => (
-                  <button key={obra.id} onClick={() => { setSelectedObra(obra); setActiveAction(null); }}
+                  <button key={obra.id} onClick={() => setSelectedObra(obra)}
                     className={`w-full text-left p-4 rounded-xl border transition-colors h-auto min-h-[64px] ${
                       selectedObra?.id === obra.id ? 'bg-primary/10 border-primary' : 'bg-background border-border hover:border-primary/30'
                     }`}>
@@ -500,187 +470,271 @@ export default function EstoquePage() {
                 {obras.length === 0 && <p className="text-center py-12 text-muted-foreground">Nenhuma obra pendente.</p>}
               </div>
             </div>
-          )}
-        </div>
+          </div>
 
-        {/* ─── RIGHT: 420px ─── */}
-        <div className="w-[420px] flex-shrink-0 flex flex-col overflow-hidden">
-          {selectedObra && !activeAction ? (
-            <div className="flex flex-col h-full">
-              <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                {/* Client info */}
-                <div>
-                  <h2 className="text-lg font-bold">{selectedObra.nome}</h2>
-                  {selectedObra.telefone && (
-                    <a href={`tel:${selectedObra.telefone}`} className="flex items-center gap-1.5 text-sm text-primary hover:underline mt-1">
-                      <Phone className="w-4 h-4" /> {selectedObra.telefone}
-                    </a>
-                  )}
-                  {selectedObra.endereco && (
-                    <p className="flex items-center gap-1.5 text-sm text-muted-foreground mt-1">
-                      <MapPin className="w-4 h-4 flex-shrink-0" /> {selectedObra.endereco}
-                    </p>
-                  )}
-                  {selectedObra.instalador && (
-                    <p className="flex items-center gap-1.5 text-sm text-muted-foreground mt-1">
-                      <Wrench className="w-4 h-4" /> {selectedObra.instalador}
-                    </p>
-                  )}
-                </div>
-
-                {/* Equipment */}
-                <div className="bg-muted/30 rounded-lg p-3 space-y-1 text-sm">
-                  <p className="font-semibold text-xs text-muted-foreground uppercase">Equipamentos</p>
-                  {selectedObra.qtd_placas && <p>☀️ {selectedObra.qtd_placas}× {selectedObra.marca_placa} {selectedObra.potencia_placa}W</p>}
-                  {selectedObra.marca_inversor && <p>⚡ {selectedObra.qtd_inversores || 1}× {selectedObra.marca_inversor} {selectedObra.potencia_inversor}kW</p>}
-                  {selectedObra.sistema && <p className="font-medium text-primary">KWp: {selectedObra.sistema}</p>}
-                </div>
-
-                {/* Material list */}
-                {obraDetails ? (
-                  <>
-                    {obraDetails.materiais.length > 0 ? (
-                      <div className="space-y-1">
-                        <p className="font-semibold text-xs text-muted-foreground uppercase">
-                          Materiais ({obraDetails.materiais.filter(m => m.separado).length}/{obraDetails.materiais.length})
-                        </p>
-                        <div className="border rounded-lg overflow-hidden">
-                          <table className="w-full text-sm">
-                            <thead className="sticky top-0 bg-muted">
-                              <tr className="text-xs text-muted-foreground">
-                                <th className="py-2 px-2 text-left w-8">✓</th>
-                                <th className="py-2 px-2 text-left">Material</th>
-                                <th className="py-2 px-2 text-center w-12">Nec.</th>
-                                <th className="py-2 px-2 text-center w-12">Est.</th>
-                                <th className="py-2 px-2 text-center w-16">Retirar</th>
-                                <th className="py-2 px-2 w-8"></th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {obraDetails.materiais.map(item => {
-                                const insuf = !item.separado && item.estoque_atual < item.qtd_retirar;
-                                return (
-                                  <tr key={item.id} className={`border-t border-border/30 ${item.separado ? 'bg-primary/5' : insuf ? 'bg-destructive/5' : ''}`}>
-                                    <td className="py-2 px-2">
-                                      <button onClick={() => toggleSeparado(item)}
-                                        className={`w-7 h-7 rounded flex items-center justify-center border-2 transition-colors ${
-                                          item.separado ? 'bg-primary border-primary text-primary-foreground' : 'border-muted-foreground'
-                                        }`}>
-                                        {item.separado && <Check className="w-4 h-4" />}
-                                      </button>
-                                    </td>
-                                    <td className={`py-2 px-2 text-sm ${item.separado ? 'line-through text-muted-foreground' : ''}`}>
-                                      <span className="mr-1">{CATEGORIA_ICONS[item.categoria] || '📦'}</span>
-                                      {item.nome}
-                                    </td>
-                                    <td className="py-2 px-2 text-center font-medium">{item.quantidade_necessaria}</td>
-                                    <td className={`py-2 px-2 text-center font-medium ${insuf ? 'text-destructive' : ''}`}>{item.estoque_atual}</td>
-                                    <td className="py-2 px-2 text-center">
-                                      {item.separado ? (
-                                        <span className="text-xs text-primary">✅</span>
-                                      ) : (
-                                        <input type="number" min="0" className="w-14 rounded border border-input bg-background px-1 py-1 text-center text-sm"
-                                          value={item.qtd_retirar} onChange={e => updateQtdRetirar(item.id, parseInt(e.target.value) || 0)} />
-                                      )}
-                                    </td>
-                                    <td className="py-2 px-2">
-                                      {!item.separado && (
-                                        <button onClick={() => removeMaterialFromList(item.id)} className="text-muted-foreground hover:text-destructive">
-                                          <Trash2 className="w-3.5 h-3.5" />
-                                        </button>
-                                      )}
-                                    </td>
-                                  </tr>
-                                );
-                              })}
-                            </tbody>
-                          </table>
-                        </div>
-
-                        {/* Add material */}
-                        {showAddMaterial ? (
-                          <div className="flex gap-1 items-end">
-                            <select className="flex-1 rounded border border-input bg-background px-2 py-1.5 text-sm"
-                              value={addMaterialId} onChange={e => setAddMaterialId(e.target.value)}>
-                              <option value="">Selecionar material...</option>
-                              {allMaterials.filter(m => !obraDetails.materiais.some(om => om.material_id === m.id))
-                                .map(m => <option key={m.id} value={m.id}>{m.nome}</option>)}
-                            </select>
-                            <input type="number" min="1" className="w-14 rounded border border-input bg-background px-2 py-1.5 text-sm text-center"
-                              placeholder="Qtd" value={addMaterialQtd} onChange={e => setAddMaterialQtd(e.target.value)} />
-                            <button onClick={addExtraMaterial} className="px-2 py-1.5 rounded bg-primary text-primary-foreground text-sm"><Check className="w-4 h-4" /></button>
-                            <button onClick={() => setShowAddMaterial(false)} className="px-2 py-1.5 rounded bg-muted text-sm"><X className="w-4 h-4" /></button>
-                          </div>
-                        ) : (
-                          <button onClick={() => setShowAddMaterial(true)} className="text-sm text-primary hover:underline flex items-center gap-1">
-                            <Plus className="w-3.5 h-3.5" /> Adicionar item
-                          </button>
-                        )}
-                      </div>
-                    ) : (
-                      <p className="text-sm text-muted-foreground text-center py-4">Nenhuma lista gerada.</p>
+          {/* RIGHT: Obra details */}
+          <div className="w-[420px] flex-shrink-0 flex flex-col overflow-hidden">
+            {selectedObra ? (
+              <div className="flex flex-col h-full">
+                <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                  <div>
+                    <h2 className="text-lg font-bold">{selectedObra.nome}</h2>
+                    {selectedObra.telefone && (
+                      <a href={`tel:${selectedObra.telefone}`} className="flex items-center gap-1.5 text-sm text-primary hover:underline mt-1">
+                        <Phone className="w-4 h-4" /> {selectedObra.telefone}
+                      </a>
                     )}
+                    {selectedObra.endereco && (
+                      <p className="flex items-center gap-1.5 text-sm text-muted-foreground mt-1">
+                        <MapPin className="w-4 h-4 flex-shrink-0" /> {selectedObra.endereco}
+                      </p>
+                    )}
+                    {selectedObra.instalador && (
+                      <p className="flex items-center gap-1.5 text-sm text-muted-foreground mt-1">
+                        <Wrench className="w-4 h-4" /> {selectedObra.instalador}
+                      </p>
+                    )}
+                  </div>
 
-                    {/* Cabos */}
-                    <div className="space-y-2">
-                      <p className="font-semibold text-xs text-muted-foreground uppercase">Cabos</p>
-                      {obraDetails.cabos.map(c => (
-                        <div key={c.id} className="flex items-center gap-2 text-sm px-3 py-2 bg-muted/30 rounded-lg">
-                          <span className="font-medium flex-1">🔌 {c.tipo_cabo}</span>
-                          <span className="text-xs text-muted-foreground">Padrão: {c.quantidade_metros}m</span>
-                          <input type="number" min="0" className="w-16 rounded border border-input bg-background px-1 py-1 text-center text-sm"
-                            value={c.metros_retirar} onChange={e => updateMetrosRetirar(c.id, parseFloat(e.target.value) || 0)} />
-                          <span className="text-xs text-muted-foreground">m</span>
-                          <button onClick={() => removeCabo(c.id)} className="text-muted-foreground hover:text-destructive"><Trash2 className="w-3.5 h-3.5" /></button>
+                  <div className="bg-muted/30 rounded-lg p-3 space-y-1 text-sm">
+                    <p className="font-semibold text-xs text-muted-foreground uppercase">Equipamentos</p>
+                    {selectedObra.qtd_placas && <p>☀️ {selectedObra.qtd_placas}× {selectedObra.marca_placa} {selectedObra.potencia_placa}W</p>}
+                    {selectedObra.marca_inversor && <p>⚡ {selectedObra.qtd_inversores || 1}× {selectedObra.marca_inversor} {selectedObra.potencia_inversor}kW</p>}
+                    {selectedObra.sistema && <p className="font-medium text-primary">KWp: {selectedObra.sistema}</p>}
+                  </div>
+
+                  {obraDetails ? (
+                    <>
+                      {obraDetails.materiais.length > 0 ? (
+                        <div className="space-y-1">
+                          <p className="font-semibold text-xs text-muted-foreground uppercase">
+                            Materiais ({obraDetails.materiais.filter(m => m.separado).length}/{obraDetails.materiais.length})
+                          </p>
+                          <div className="border rounded-lg overflow-hidden">
+                            <table className="w-full text-sm">
+                              <thead className="sticky top-0 bg-muted">
+                                <tr className="text-xs text-muted-foreground">
+                                  <th className="py-2 px-2 text-left w-8">✓</th>
+                                  <th className="py-2 px-2 text-left">Material</th>
+                                  <th className="py-2 px-2 text-center w-12">Nec.</th>
+                                  <th className="py-2 px-2 text-center w-12">Est.</th>
+                                  <th className="py-2 px-2 text-center w-16">Retirar</th>
+                                  <th className="py-2 px-2 w-8"></th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {obraDetails.materiais.map(item => {
+                                  const insuf = !item.separado && item.estoque_atual < item.qtd_retirar;
+                                  return (
+                                    <tr key={item.id} className={`border-t border-border/30 ${item.separado ? 'bg-primary/5' : insuf ? 'bg-destructive/5' : ''}`}>
+                                      <td className="py-2 px-2">
+                                        <button onClick={() => toggleSeparado(item)}
+                                          className={`w-7 h-7 rounded flex items-center justify-center border-2 transition-colors ${
+                                            item.separado ? 'bg-primary border-primary text-primary-foreground' : 'border-muted-foreground'
+                                          }`}>
+                                          {item.separado && <Check className="w-4 h-4" />}
+                                        </button>
+                                      </td>
+                                      <td className={`py-2 px-2 text-sm ${item.separado ? 'line-through text-muted-foreground' : ''}`}>
+                                        <span className="mr-1">{CATEGORIA_ICONS[item.categoria] || '📦'}</span>
+                                        {item.nome}
+                                      </td>
+                                      <td className="py-2 px-2 text-center font-medium">{item.quantidade_necessaria}</td>
+                                      <td className={`py-2 px-2 text-center font-medium ${insuf ? 'text-destructive' : ''}`}>{item.estoque_atual}</td>
+                                      <td className="py-2 px-2 text-center">
+                                        {item.separado ? (
+                                          <span className="text-xs text-primary">✅</span>
+                                        ) : (
+                                          <input type="number" min="0" className="w-14 rounded border border-input bg-background px-1 py-1 text-center text-sm"
+                                            value={item.qtd_retirar} onChange={e => updateQtdRetirar(item.id, parseInt(e.target.value) || 0)} />
+                                        )}
+                                      </td>
+                                      <td className="py-2 px-2">
+                                        {!item.separado && (
+                                          <button onClick={() => removeMaterialFromList(item.id)} className="text-muted-foreground hover:text-destructive">
+                                            <Trash2 className="w-3.5 h-3.5" />
+                                          </button>
+                                        )}
+                                      </td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
+
+                          {showAddMaterial ? (
+                            <div className="flex gap-1 items-end">
+                              <select className="flex-1 rounded border border-input bg-background px-2 py-1.5 text-sm"
+                                value={addMaterialId} onChange={e => setAddMaterialId(e.target.value)}>
+                                <option value="">Selecionar material...</option>
+                                {allMaterials.filter(m => !obraDetails.materiais.some(om => om.material_id === m.id))
+                                  .map(m => <option key={m.id} value={m.id}>{m.nome}</option>)}
+                              </select>
+                              <input type="number" min="1" className="w-14 rounded border border-input bg-background px-2 py-1.5 text-sm text-center"
+                                placeholder="Qtd" value={addMaterialQtd} onChange={e => setAddMaterialQtd(e.target.value)} />
+                              <button onClick={addExtraMaterial} className="px-2 py-1.5 rounded bg-primary text-primary-foreground text-sm"><Check className="w-4 h-4" /></button>
+                              <button onClick={() => setShowAddMaterial(false)} className="px-2 py-1.5 rounded bg-muted text-sm"><X className="w-4 h-4" /></button>
+                            </div>
+                          ) : (
+                            <button onClick={() => setShowAddMaterial(true)} className="text-sm text-primary hover:underline flex items-center gap-1">
+                              <Plus className="w-3.5 h-3.5" /> Adicionar item
+                            </button>
+                          )}
                         </div>
-                      ))}
-                      <div className="flex gap-2">
-                        <input className="flex-1 rounded-lg border border-input bg-background px-3 py-2 text-sm"
-                          placeholder="Tipo de cabo" value={newCabo.tipo_cabo} onChange={e => setNewCabo(f => ({ ...f, tipo_cabo: e.target.value }))} />
-                        <input className="w-20 rounded-lg border border-input bg-background px-3 py-2 text-sm"
-                          type="number" placeholder="Metros" value={newCabo.quantidade_metros} onChange={e => setNewCabo(f => ({ ...f, quantidade_metros: e.target.value }))} />
-                        <button onClick={addCabo} className="px-3 py-2 rounded-lg bg-primary text-primary-foreground"><Plus className="w-4 h-4" /></button>
-                      </div>
-                    </div>
-                  </>
-                ) : (
-                  <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin" /></div>
-                )}
-              </div>
+                      ) : (
+                        <p className="text-sm text-muted-foreground text-center py-4">Nenhuma lista gerada.</p>
+                      )}
 
-              {/* Fixed footer actions */}
-              <div className="p-4 border-t border-border bg-background flex-shrink-0 space-y-2">
-                {obraDetails && obraDetails.materiais.some(m => !m.separado) && (
-                  <button onClick={confirmRetirada} disabled={savingRetirada}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-primary text-primary-foreground font-medium text-base h-[56px] disabled:opacity-50">
-                    {savingRetirada ? <Loader2 className="w-5 h-5 animate-spin" /> : <Check className="w-5 h-5" />}
-                    ✅ Confirmar Retirada ({obraDetails.materiais.filter(m => !m.separado).length} itens)
+                      <div className="space-y-2">
+                        <p className="font-semibold text-xs text-muted-foreground uppercase">Cabos</p>
+                        {obraDetails.cabos.map(c => (
+                          <div key={c.id} className="flex items-center gap-2 text-sm px-3 py-2 bg-muted/30 rounded-lg">
+                            <span className="font-medium flex-1">🔌 {c.tipo_cabo}</span>
+                            <span className="text-xs text-muted-foreground">Padrão: {c.quantidade_metros}m</span>
+                            <input type="number" min="0" className="w-16 rounded border border-input bg-background px-1 py-1 text-center text-sm"
+                              value={c.metros_retirar} onChange={e => updateMetrosRetirar(c.id, parseFloat(e.target.value) || 0)} />
+                            <span className="text-xs text-muted-foreground">m</span>
+                            <button onClick={() => removeCabo(c.id)} className="text-muted-foreground hover:text-destructive"><Trash2 className="w-3.5 h-3.5" /></button>
+                          </div>
+                        ))}
+                        <div className="flex gap-2">
+                          <input className="flex-1 rounded-lg border border-input bg-background px-3 py-2 text-sm"
+                            placeholder="Tipo de cabo" value={newCabo.tipo_cabo} onChange={e => setNewCabo(f => ({ ...f, tipo_cabo: e.target.value }))} />
+                          <input className="w-20 rounded-lg border border-input bg-background px-3 py-2 text-sm"
+                            type="number" placeholder="Metros" value={newCabo.quantidade_metros} onChange={e => setNewCabo(f => ({ ...f, quantidade_metros: e.target.value }))} />
+                          <button onClick={addCabo} className="px-3 py-2 rounded-lg bg-primary text-primary-foreground"><Plus className="w-4 h-4" /></button>
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin" /></div>
+                  )}
+                </div>
+
+                <div className="p-4 border-t border-border bg-background flex-shrink-0 space-y-2">
+                  {obraDetails && obraDetails.materiais.some(m => !m.separado) && (
+                    <button onClick={confirmRetirada} disabled={savingRetirada}
+                      className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-primary text-primary-foreground font-medium text-base h-[56px] disabled:opacity-50">
+                      {savingRetirada ? <Loader2 className="w-5 h-5 animate-spin" /> : <Check className="w-5 h-5" />}
+                      ✅ Confirmar Retirada ({obraDetails.materiais.filter(m => !m.separado).length} itens)
+                    </button>
+                  )}
+                  <button onClick={async () => {
+                    const { data: fullProjeto } = await supabase.from('projetos').select('*').eq('id', selectedObra.id).maybeSingle();
+                    if (fullProjeto) generateFichaInstalacao(fullProjeto as any);
+                    else toast.error('Não foi possível carregar dados do projeto');
+                  }}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 border-primary text-primary font-medium text-base h-[56px]">
+                    <FileDown className="w-5 h-5" /> 📋 Ficha de Instalação
                   </button>
-                )}
-                <button onClick={async () => {
-                  // Fetch full project data for complete ficha
-                  const { data: fullProjeto } = await supabase.from('projetos')
-                    .select('*')
-                    .eq('id', selectedObra.id)
-                    .maybeSingle();
-                  if (fullProjeto) {
-                    generateFichaInstalacao(fullProjeto as any);
-                  } else {
-                    toast.error('Não foi possível carregar dados do projeto');
-                  }
-                }}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 border-primary text-primary font-medium text-base h-[56px]">
-                  <FileDown className="w-5 h-5" /> 📋 Ficha de Instalação
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center justify-center h-full text-muted-foreground text-base p-8">
+                <p>← Selecione uma obra para ver os detalhes</p>
+              </div>
+            )}
+          </div>
+        </div>
+      ) : (
+        /* ═══ FULL-WIDTH LAYOUT — Menu, Entrada, Retorno, Estoque, Materiais ═══ */
+        <div className="flex-1 min-h-0 overflow-y-auto">
+          {activeView === 'menu' && (
+            <div className="max-w-3xl mx-auto p-6 space-y-4">
+              <h2 className="text-lg font-semibold text-foreground">Ações Rápidas</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <button onClick={openEntrada}
+                  className="flex items-center gap-4 p-5 rounded-xl border border-border bg-background hover:border-primary/40 hover:bg-primary/5 transition-colors text-left">
+                  <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <Package className="w-6 h-6 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-base">📦 Entrada de Material</p>
+                    <p className="text-sm text-muted-foreground">Registrar entrada de materiais no estoque</p>
+                  </div>
+                </button>
+                <button onClick={enterRetirada}
+                  className="flex items-center gap-4 p-5 rounded-xl border border-border bg-background hover:border-primary/40 hover:bg-primary/5 transition-colors text-left">
+                  <div className="w-12 h-12 rounded-xl bg-accent/50 flex items-center justify-center flex-shrink-0">
+                    <Send className="w-6 h-6 text-accent-foreground" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-base">📤 Retirada para Obra</p>
+                    <p className="text-sm text-muted-foreground">Separar materiais para uma obra específica</p>
+                  </div>
+                </button>
+                <button onClick={openRetorno}
+                  className="flex items-center gap-4 p-5 rounded-xl border border-border bg-background hover:border-primary/40 hover:bg-primary/5 transition-colors text-left">
+                  <div className="w-12 h-12 rounded-xl bg-secondary/50 flex items-center justify-center flex-shrink-0">
+                    <RotateCcw className="w-6 h-6 text-secondary-foreground" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-base">↩️ Retorno de Material</p>
+                    <p className="text-sm text-muted-foreground">Devolver materiais ao estoque</p>
+                  </div>
+                </button>
+                <button onClick={() => { setActiveView('estoque'); setSelectedObra(null); }}
+                  className="flex items-center gap-4 p-5 rounded-xl border border-border bg-background hover:border-primary/40 hover:bg-primary/5 transition-colors text-left">
+                  <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center flex-shrink-0">
+                    <BarChart3 className="w-6 h-6 text-foreground" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-base">📊 Ver Estoque</p>
+                    <p className="text-sm text-muted-foreground">Consultar estoque atual de todos os materiais</p>
+                  </div>
+                </button>
+                <button onClick={() => { setActiveView('materiais'); setSelectedObra(null); }}
+                  className="flex items-center gap-4 p-5 rounded-xl border border-border bg-background hover:border-primary/40 hover:bg-primary/5 transition-colors text-left">
+                  <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center flex-shrink-0">
+                    <Settings className="w-6 h-6 text-foreground" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-base">⚙️ Materiais</p>
+                    <p className="text-sm text-muted-foreground">Gerenciar cadastro de materiais e fornecedores</p>
+                  </div>
                 </button>
               </div>
+
+              {/* Alert for next 4 obras */}
+              {faltantesNext4.length > 0 && (
+                <div className="rounded-xl p-4 bg-destructive/10 border border-destructive/20">
+                  <p className="text-sm font-semibold text-destructive mb-2">⚠️ Materiais em falta para as próximas 4 obras:</p>
+                  <ul className="text-sm text-destructive/80 space-y-0.5 columns-2">
+                    {faltantesNext4.slice(0, 12).map((nome, i) => <li key={i}>• {nome}</li>)}
+                    {faltantesNext4.length > 12 && <li>+ {faltantesNext4.length - 12} mais...</li>}
+                  </ul>
+                </div>
+              )}
             </div>
-          ) : !activeAction ? (
-            <div className="flex items-center justify-center h-full text-muted-foreground text-base p-8">
-              <p>← Selecione uma obra para ver os detalhes</p>
+          )}
+
+          {activeView === 'entrada' && (
+            <div className="max-w-4xl mx-auto">
+              <EntradaPanel rows={entradaRows} setRows={setEntradaRows} nota={entradaNota} setNota={setEntradaNota} saving={savingEntrada} onConfirm={confirmEntrada} onClose={() => setActiveView('menu')} />
             </div>
-          ) : null}
+          )}
+
+          {activeView === 'retorno' && (
+            <div className="max-w-3xl mx-auto">
+              <RetornoPanel items={retornoItems} setItems={setRetornoItems} obras={obras} obraId={retornoObra} setObraId={setRetornoObra} saving={savingRetorno} onConfirm={confirmRetorno} onClose={() => setActiveView('menu')} />
+            </div>
+          )}
+
+          {activeView === 'estoque' && (
+            <div className="max-w-4xl mx-auto">
+              <EstoquePanel estoque={estoque} onClose={() => setActiveView('menu')} />
+            </div>
+          )}
+
+          {activeView === 'materiais' && (
+            <div className="max-w-5xl mx-auto p-4">
+              <button onClick={() => setActiveView('menu')} className="text-xs text-primary hover:underline mb-3">← Voltar ao menu</button>
+              <MateriaisModule />
+            </div>
+          )}
         </div>
-      </div>
+      )}
     </div>
   );
 }
