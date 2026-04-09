@@ -425,11 +425,45 @@ export default function ProjetosUnificados({
       {deleteCliente && (
         <DeleteConfirmModal
           nome={deleteCliente.nome_completo || 'Cliente'}
-          id={deleteCliente.id}
-          tabela="clientes_base"
+          id={deleteCliente.id.startsWith('proj-') ? deleteCliente.id.replace('proj-', '') : deleteCliente.id}
+          tabela={deleteCliente.id.startsWith('proj-') ? 'projetos' : 'clientes_base'}
           onClose={() => setDeleteCliente(null)}
           onDeleted={() => { setDeleteCliente(null); onRefresh(); }}
         />
+      )}
+
+      {/* Modal de confirmação para promover */}
+      {promoverCliente && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setPromoverCliente(null)}>
+          <div className="bg-background rounded-xl shadow-xl max-w-md w-full p-6 space-y-4" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-full bg-primary/10">
+                <ArrowUpRight className="w-5 h-5 text-primary" />
+              </div>
+              <h2 className="text-lg font-bold text-foreground">Promover para Obra</h2>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Deseja criar um novo projeto (obra) a partir dos dados de <strong className="text-foreground">{promoverCliente.nome_completo || 'este cliente'}</strong>?
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Os dados do cliente serão copiados para um novo projeto com status "Vendido".
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setPromoverCliente(null)}
+                className="px-4 py-2 rounded-lg text-sm font-medium bg-muted text-muted-foreground hover:bg-muted/70 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => { onPromover(promoverCliente); setPromoverCliente(null); }}
+                className="px-4 py-2 rounded-lg text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+              >
+                Sim, promover
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
