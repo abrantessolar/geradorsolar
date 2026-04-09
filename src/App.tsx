@@ -77,9 +77,9 @@ function AuthRedirect() {
 
   if (session && profile) {
     if (permissions.admin) return <Navigate to="/admin" replace />;
-    if (permissions.gestor_obras || permissions.gestor_clientes) return <Navigate to="/gestor" replace />;
+    if (permissions.gestor_obras || permissions.gestor_clientes) return <Navigate to="/clientes" replace />;
     if (permissions.calculadora) return <Navigate to="/orcamentos" replace />;
-    return <Navigate to="/gestor" replace />;
+    return <Navigate to="/clientes" replace />;
   }
 
   return <LoginPage />;
@@ -109,20 +109,16 @@ const App = () => (
                 <SeoNoIndex /><Layout><AdminPage /></Layout>
               </ProtectedRoute>
             } />
-            <Route path="/gestor" element={
-              <GestorProtectedRoute>
-                <SeoNoIndex /><Layout><GestorPage /></Layout>
-              </GestorProtectedRoute>
-            } />
+            <Route path="/gestor" element={<Navigate to="/clientes" replace />} />
             <Route path="/estoque" element={
               <ProtectedRoute permissionKey="estoque">
                 <SeoNoIndex /><EstoquePage />
               </ProtectedRoute>
             } />
             <Route path="/clientes" element={
-              <ProtectedRoute permissionKey="gestor_clientes">
+              <GestorProtectedRoute>
                 <SeoNoIndex /><Layout><ClientesPage /></Layout>
-              </ProtectedRoute>
+              </GestorProtectedRoute>
             } />
             <Route path="/custos" element={
               <ProtectedRoute permissionKey="gestor_custos">
