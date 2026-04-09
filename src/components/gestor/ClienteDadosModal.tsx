@@ -215,12 +215,47 @@ export default function ClienteDadosModal({ cliente, onClose }: { cliente: Clien
 
         <div className="p-4 space-y-5">
           {blocks.map(b => <Block key={b.title} title={b.title} fields={b.fields} />)}
+          {/* Pessoas Relacionadas */}
+          {Array.isArray(c.outros_nomes) && c.outros_nomes.length > 0 && (
+            <div className="space-y-1">
+              <h3 className="text-sm font-semibold text-primary border-b border-border pb-1 mb-1">Pessoas Relacionadas</h3>
+              {(c.outros_nomes as any[]).map((p: any, i: number) => (
+                <div key={i} className="flex items-center justify-between py-1.5 px-2 hover:bg-muted/30 rounded">
+                  <div className="text-sm">
+                    <span className="font-medium">{p.nome || '—'}</span>
+                    {p.relacao && <span className="text-muted-foreground ml-1">({p.relacao})</span>}
+                    {p.cpf && <span className="text-muted-foreground ml-2">CPF: {p.cpf}</span>}
+                  </div>
+                  <CopyButton text={[p.nome, p.relacao, p.cpf].filter(Boolean).join(' - ')} />
+                </div>
+              ))}
+            </div>
+          )}
+
           {c.observacoes && (
             <div className="space-y-1">
               <h3 className="text-sm font-semibold text-primary border-b border-border pb-1 mb-1">Observações</h3>
               <div className="flex items-start justify-between py-1.5 px-2">
                 <p className="text-sm whitespace-pre-wrap flex-1">{c.observacoes}</p>
                 <CopyButton text={c.observacoes} />
+              </div>
+            </div>
+          )}
+
+          {/* Histórico de Observações */}
+          {Array.isArray(c.observacoes_historico) && c.observacoes_historico.length > 0 && (
+            <div className="space-y-1">
+              <h3 className="text-sm font-semibold text-primary border-b border-border pb-1 mb-1">Histórico de Observações</h3>
+              <div className="space-y-2 px-2">
+                {(c.observacoes_historico as any[]).map((h: any, i: number) => (
+                  <div key={i} className="py-1.5 border-b border-border/30 last:border-0">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-muted-foreground">{h.data ? new Date(h.data).toLocaleDateString('pt-BR') : `#${i + 1}`}</span>
+                      <CopyButton text={h.texto || h.observacao || ''} />
+                    </div>
+                    <p className="text-sm whitespace-pre-wrap mt-0.5">{h.texto || h.observacao || '—'}</p>
+                  </div>
+                ))}
               </div>
             </div>
           )}
