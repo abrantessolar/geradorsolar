@@ -1,0 +1,405 @@
+import React, { useState, useMemo } from 'react';
+import type { Projeto } from '@/pages/GestorPage';
+import type { ClienteBase } from './ClientesList';
+import { Edit2, FileText, Snowflake, Image as ImageIcon, CheckCircle, ArrowUpDown, ArrowUp, ArrowDown, Trash2, ClipboardList, Package, FileDown, Eye, Search, ArrowUpRight } from 'lucide-react';
+import WhatsAppLink from './WhatsAppLink';
+import { generateFichaInstalacao } from '@/lib/generateFichaInstalacao';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import InstaladorSelect from './InstaladorSelect';
+import CongelarModal from './CongelarModal';
+import ObraConcluidaModal from './ObraConcluidaModal';
+import LayoutUploadModal from './LayoutUploadModal';
+import DeleteConfirmModal from './DeleteConfirmModal';
+import ListaMateriaisObraModal from './materiais/ListaMateriaisObraModal';
+import RetirarMaterialModal from './materiais/RetirarMaterialModal';
+import ClienteDadosModal from './ClienteDadosModal';
+import ClienteEditModal from './ClienteEditModal';
+
+function Tip({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <Tooltip delayDuration={300}>
+      <TooltipTrigger asChild>{children}</TooltipTrigger>
+      <TooltipContent side="top"><p>{label}</p></TooltipContent>
+    </Tooltip>
+  );
+}
+
+function daysSince(dateStr?: string | null): number {
+  if (!dateStr) return 0;
+  return Math.floor((Date.now() - new Date(dateStr).getTime()) / (1000 * 60 * 60 * 24));
+}
+
+function calcKwp(qtd?: number | null, potW?: string | null): string {
+  if (!qtd || !potW) return '—';
+  const pot = parseFloat(potW);
+  if (isNaN(pot)) return '—';
+  return ((qtd * pot) / 1000).toFixed(2);
+}
+
+type FilterMode = 'todos' | 'aguardando' | 'instalados';
+
+export default function ProjetosUnificados({
+  projetos, clientes, loading, onEdit, onDocumentos, onPromover, onRefresh,
+}: {
+  projetos: Projeto[];
+  clientes: ClienteBase[];
+  loading: boolean;
+  onEdit: (id: string) => void;
+  onDocumentos: (p: Projeto) => void;
+  onPromover: (c: ClienteBase) => void;
+  onRefresh: () => void;
+}) {
+  const [search, setSearch] = useState('');
+  const [filter, setFilter] = useState<FilterMode>('todos');
+
+  // Modals for obras
+  const [congelarId, setCongelarId] = useState<string | null>(null);
+  const [layoutProjeto, setLayoutProjeto] = useState<Projeto | null>(null);
+  const [concluidaProjeto, setConcluidaProjeto] = useState<Projeto | null>(null);
+  const [deleteProjeto, setDeleteProjeto] = useState<Projeto | null>(null);
+  const [materiaisProjeto, setMateriaisProjeto] = useState<Projeto | null>(null);
+  const [retirarProjeto, setRetirarProjeto] = useState<Projeto | null>(null);
+  const [dadosProjeto, setDadosProjeto] = useState<Projeto | null>(null);
+  // Modals for clientes
+  const [dadosCliente, setDadosCliente] = useState<ClienteBase | null>(null);
+  const [editCliente, setEditCliente] = useState<ClienteBase | null>(null);
+  const [deleteCliente, setDeleteCliente] = useState<ClienteBase | null>(null);
+
+  const q = search.toLowerCase();
+
+  const filteredProjetos = useMemo(() => {
+    if (filter === 'instalados') return [];
+    return projetos.filter(p => {
+      if (!q) return true;
+      const name = (p.nome_completo || p.razao_social || '').toLowerCase();
+      const cpf = (p.cpf || p.cnpj || '').toLowerCase();
+      const uc = (p.unidade_geradora_codigo_uc || '').toLowerCase();
+      const tel = (p.telefone || '').toLowerCase();
+      const end = (p.endereco_completo || p.logradouro || '').toLowerCase();
+      const mInv = (p.marca_inversor || '').toLowerCase();
+      const mPlc = (p.marca_placa || '').toLowerCase();
+      const dataInst = (p.data_instalacao || '');
+      return name.includes(q) || cpf.includes(q) || uc.includes(q) || tel.includes(q) || end.includes(q) || mInv.includes(q) || mPlc.includes(q) || dataInst.includes(q);
+    }).sort((a, b) => daysSince(b.data_fechamento) - daysSince(a.data_fechamento));
+  }, [projetos, q, filter]);
+
+  const filteredClientes = useMemo(() => {
+    if (filter === 'aguardando') return [];
+    return clientes.filter(c => {
+      if (!q) return true;
+      const name = (c.nome_completo || '').toLowerCase();
+      const cpf = (c.cpf || '').toLowerCase();
+      const uc = (c.uc || '').toLowerCase();
+      const tel = (c.telefone || '').toLowerCase();
+      const end = (c.endereco || '').toLowerCase();
+      const mInv = (c.marca_inversor || '').toLowerCase();
+      const mPlc = (c.marca_placa || '').toLowerCase();
+      const dataInst = (c.instalado_em || '');
+      return name.includes(q) || cpf.includes(q) || uc.includes(q) || tel.includes(q) || end.includes(q) || mInv.includes(q) || mPlc.includes(q) || dataInst.includes(q);
+    }).sort((a, b) => {
+      const da = a.instalado_em ? new Date(a.instalado_em).getTime() : 0;
+      const db = b.instalado_em ? new Date(b.instalado_em).getTime() : 0;
+      return db - da;
+    });
+  }, [clientes, q, filter]);
+
+  const mapProjetoToDados = (p: Projeto) => ({
+    id: p.id,
+    criado_em: p.criado_em,
+    nome_completo: p.nome_completo || p.razao_social || null,
+    cpf: p.cpf || null,
+    data_nascimento: p.data_nascimento || null,
+    telefone: p.telefone || null,
+    telefone_2: null, telefone_3: null, email: null,
+    endereco: p.endereco_completo || null,
+    logradouro: p.logradouro || null,
+    complemento: p.complemento || null,
+    numero: null,
+    bairro: p.bairro || null,
+    cidade: p.cidade || null,
+    estado: p.estado || null,
+    cep: p.cep || null,
+    concessionaria: p.concessionaria || null,
+    uc: p.unidade_geradora_codigo_uc || null,
+    nome_planta: p.nome_planta || null,
+    instalado_em: p.data_instalacao || null,
+    vistoriado_em: p.vistoriado_em || null,
+    qtd_placas: p.qtd_placas || null,
+    marca_placa: p.marca_placa || null,
+    potencia_placa: p.potencia_placa || null,
+    marca_inversor: p.marca_inversor || null,
+    potencia_inversor: p.potencia_inversor || null,
+    qtd_inversores: p.qtd_inversores || null,
+    kwp: null,
+    sistema: p.sistema || null,
+    valor: p.preco_venda || null,
+    forma_pagamento: p.forma_pagamento || null,
+    observacoes: p.objecoes || null,
+    origem: 'projeto',
+    dados_paineis: null, dados_inversor: null, tipo_inversor: null,
+    fornecedor: null, projeto_enviado_em: null, projeto_aprovado: null,
+    satisfacao: null, projeto_id: null,
+    data_fechamento: p.data_fechamento || null,
+  } as any);
+
+  if (loading) return <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" /></div>;
+
+  return (
+    <div className="space-y-4">
+      {/* Search + Filters */}
+      <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 items-stretch sm:items-center">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <input
+            className="solar-input pl-9 w-full text-sm"
+            placeholder="Buscar nome, CPF, UC, telefone, endereço, marca..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+          />
+        </div>
+        <div className="flex gap-1.5">
+          {(['todos', 'aguardando', 'instalados'] as FilterMode[]).map(f => (
+            <button
+              key={f}
+              onClick={() => setFilter(f)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                filter === f ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/70'
+              }`}
+            >
+              {f === 'todos' ? 'Todos' : f === 'aguardando' ? 'Aguardando' : 'Instalados'}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* SECTION: Aguardando Instalação */}
+      {filter !== 'instalados' && (
+        <div className="rounded-xl border border-amber-200 bg-[#FFFBEA] dark:bg-amber-950/20 dark:border-amber-800">
+          <div className="px-4 py-3 border-b border-amber-200 dark:border-amber-800">
+            <h2 className="text-sm font-semibold">⏳ Aguardando Instalação ({filteredProjetos.length})</h2>
+          </div>
+          <div className="p-2 sm:p-4">
+            {/* Mobile */}
+            <div className="block sm:hidden space-y-2">
+              {filteredProjetos.map(p => {
+                const days = daysSince(p.data_fechamento);
+                return (
+                  <div key={p.id} className={`border border-border rounded-lg p-3 space-y-2 bg-background ${p.congelado ? 'opacity-60' : ''}`}>
+                    <div className="flex items-start justify-between">
+                      <div className="min-w-0">
+                        <p className="font-medium text-sm truncate">{p.congelado && '❄️ '}{p.nome_completo || p.razao_social || '—'}</p>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <WhatsAppLink phone={p.telefone} />
+                          {p.data_fechamento && <span className={`text-xs font-medium ${days > 30 ? 'text-destructive' : 'text-muted-foreground'}`}>{days}d</span>}
+                        </div>
+                      </div>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200 font-medium">{p.status}</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
+                      <div><span className="text-muted-foreground">Placas:</span> {p.qtd_placas || '—'}x {p.marca_placa || ''} {p.potencia_placa || ''}W</div>
+                      <div><span className="text-muted-foreground">Instalador:</span> {p.instalador || '—'}</div>
+                    </div>
+                    <div className="flex gap-1.5 items-center pt-1 border-t border-border/50 flex-wrap">
+                      <button onClick={() => setDadosProjeto(p)} className="text-primary hover:text-primary/80 p-1"><Eye className="w-4 h-4" /></button>
+                      <button onClick={() => onEdit(p.id)} className="text-primary hover:text-primary/80 p-1"><Edit2 className="w-4 h-4" /></button>
+                      <button onClick={() => onDocumentos(p)} className="text-primary hover:text-primary/80 p-1"><FileText className="w-4 h-4" /></button>
+                      <button onClick={() => setMateriaisProjeto(p)} className="text-primary hover:text-primary/80 p-1"><ClipboardList className="w-4 h-4" /></button>
+                      <button onClick={() => generateFichaInstalacao(p)} className="text-primary hover:text-primary/80 p-1"><FileDown className="w-4 h-4" /></button>
+                      <button onClick={() => setRetirarProjeto(p)} className="text-primary hover:text-primary/80 p-1"><Package className="w-4 h-4" /></button>
+                      <button onClick={() => setConcluidaProjeto(p)} className="text-primary hover:text-primary/80 p-1"><CheckCircle className="w-4 h-4" /></button>
+                      <button onClick={() => setDeleteProjeto(p)} className="text-destructive hover:text-destructive/80 p-1 ml-auto"><Trash2 className="w-4 h-4" /></button>
+                    </div>
+                  </div>
+                );
+              })}
+              {filteredProjetos.length === 0 && <p className="py-4 text-center text-xs text-muted-foreground">Nenhum projeto aguardando.</p>}
+            </div>
+
+            {/* Desktop */}
+            <div className="hidden sm:block overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-amber-200 dark:border-amber-800 text-left text-muted-foreground text-xs">
+                    <th className="py-2 px-2">Cliente</th>
+                    <th className="py-2 px-2">Telefone</th>
+                    <th className="py-2 px-2">Instalador</th>
+                    <th className="py-2 px-2">Qtd Placas</th>
+                    <th className="py-2 px-2">Marca</th>
+                    <th className="py-2 px-2">Pot. (Wp)</th>
+                    <th className="py-2 px-2">Tempo</th>
+                    <th className="py-2 px-2">Status</th>
+                    <th className="py-2 px-2">Ações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredProjetos.map(p => {
+                    const days = daysSince(p.data_fechamento);
+                    return (
+                      <tr key={p.id} className={`border-b border-amber-100 dark:border-amber-900/50 hover:bg-amber-50/50 dark:hover:bg-amber-950/30 ${p.congelado ? 'opacity-60' : ''}`}>
+                        <td className="py-2 px-2 font-medium max-w-[180px] truncate">{p.congelado && '❄️ '}{p.nome_completo || p.razao_social || '—'}</td>
+                        <td className="py-2 px-2 text-xs"><WhatsAppLink phone={p.telefone} /></td>
+                        <td className="py-2 px-2"><InstaladorSelect projetoId={p.id} currentValue={p.instalador} onDone={onRefresh} /></td>
+                        <td className="py-2 px-2 text-xs">{p.qtd_placas || '—'}</td>
+                        <td className="py-2 px-2 text-xs">{p.marca_placa || '—'}</td>
+                        <td className="py-2 px-2 text-xs">{p.potencia_placa || '—'}</td>
+                        <td className={`py-2 px-2 text-xs font-medium ${days > 30 ? 'text-destructive' : ''}`}>{p.data_fechamento ? `${days}d` : '—'}</td>
+                        <td className="py-2 px-2 text-xs"><span className="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200 text-[10px] font-medium">{p.status}</span></td>
+                        <td className="py-2 px-2">
+                          <div className="flex gap-1 items-center">
+                            <TooltipProvider>
+                              <Tip label="Ver dados"><button onClick={() => setDadosProjeto(p)} className="text-primary hover:text-primary/80"><Eye className="w-4 h-4" /></button></Tip>
+                              <Tip label="Editar"><button onClick={() => onEdit(p.id)} className="text-primary hover:text-primary/80"><Edit2 className="w-4 h-4" /></button></Tip>
+                              <Tip label="Documentos"><button onClick={() => onDocumentos(p)} className="text-primary hover:text-primary/80"><FileText className="w-4 h-4" /></button></Tip>
+                              <Tip label="Materiais"><button onClick={() => setMateriaisProjeto(p)} className="text-primary hover:text-primary/80"><ClipboardList className="w-4 h-4" /></button></Tip>
+                              <Tip label="Ficha"><button onClick={() => generateFichaInstalacao(p)} className="text-primary hover:text-primary/80"><FileDown className="w-4 h-4" /></button></Tip>
+                              <Tip label="Retirar material"><button onClick={() => setRetirarProjeto(p)} className="text-primary hover:text-primary/80"><Package className="w-4 h-4" /></button></Tip>
+                              <Tip label={p.congelado ? 'Congelada' : 'Congelar'}><button onClick={() => setCongelarId(p.congelado ? null : p.id)} className="text-primary hover:text-primary/80"><Snowflake className="w-4 h-4" /></button></Tip>
+                              <Tip label="Layout"><button onClick={() => setLayoutProjeto(p)} className={`${p.layout_url ? 'text-accent-foreground' : 'text-muted-foreground'} hover:text-primary`}><ImageIcon className="w-4 h-4" /></button></Tip>
+                              <Tip label="Concluída"><button onClick={() => setConcluidaProjeto(p)} className="text-primary hover:text-primary/80"><CheckCircle className="w-4 h-4" /></button></Tip>
+                              <Tip label="Excluir"><button onClick={() => setDeleteProjeto(p)} className="text-destructive hover:text-destructive/80"><Trash2 className="w-4 h-4" /></button></Tip>
+                            </TooltipProvider>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                  {filteredProjetos.length === 0 && (
+                    <tr><td colSpan={9} className="py-6 text-center text-muted-foreground text-xs">Nenhum projeto aguardando.</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* SECTION: Instalados */}
+      {filter !== 'aguardando' && (
+        <div className="solar-card">
+          <div className="px-4 py-3 border-b border-border">
+            <h2 className="text-sm font-semibold">✅ Instalados ({filteredClientes.length})</h2>
+          </div>
+          <div className="p-2 sm:p-4">
+            {/* Mobile */}
+            <div className="block sm:hidden space-y-2">
+              {filteredClientes.map(c => (
+                <div key={c.id} className="border border-border rounded-lg p-3 space-y-2">
+                  <div className="flex items-start justify-between">
+                    <div className="min-w-0">
+                      <p className="font-medium text-sm truncate">{c.nome_completo || '—'}</p>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <WhatsAppLink phone={c.telefone} />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
+                    <div><span className="text-muted-foreground">Instalação:</span> {c.instalado_em ? new Date(c.instalado_em).toLocaleDateString('pt-BR') : '—'}</div>
+                    <div><span className="text-muted-foreground">KWp:</span> {c.kwp ? Number(c.kwp).toFixed(2) : calcKwp(c.qtd_placas, c.potencia_placa)}</div>
+                    <div><span className="text-muted-foreground">Placas:</span> {c.qtd_placas || '—'}</div>
+                    <div><span className="text-muted-foreground">Inversor:</span> {c.marca_inversor || '—'}</div>
+                  </div>
+                  <div className="flex gap-1.5 items-center pt-1 border-t border-border/50">
+                    <button onClick={() => setDadosCliente(c)} className="text-primary hover:text-primary/80 p-1"><Eye className="w-4 h-4" /></button>
+                    <button onClick={() => setEditCliente(c)} className="text-primary hover:text-primary/80 p-1"><Edit2 className="w-4 h-4" /></button>
+                    {!c.projeto_id && !c.id.startsWith('proj-') && (
+                      <button onClick={() => onPromover(c)} className="text-primary hover:text-primary/80 p-1"><ArrowUpRight className="w-4 h-4" /></button>
+                    )}
+                    {!c.id.startsWith('proj-') && (
+                      <button onClick={() => setDeleteCliente(c)} className="text-destructive hover:text-destructive/80 p-1 ml-auto"><Trash2 className="w-4 h-4" /></button>
+                    )}
+                  </div>
+                </div>
+              ))}
+              {filteredClientes.length === 0 && <p className="py-4 text-center text-xs text-muted-foreground">Nenhum cliente instalado.</p>}
+            </div>
+
+            {/* Desktop */}
+            <div className="hidden sm:block overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border text-left text-muted-foreground text-xs">
+                    <th className="py-2 px-2">Cliente</th>
+                    <th className="py-2 px-2">Telefone</th>
+                    <th className="py-2 px-2">Data Instalação</th>
+                    <th className="py-2 px-2">Qtd Placas</th>
+                    <th className="py-2 px-2">kWp</th>
+                    <th className="py-2 px-2">Marca Inv.</th>
+                    <th className="py-2 px-2">Pot. Inv.</th>
+                    <th className="py-2 px-2">Satisfação</th>
+                    <th className="py-2 px-2">Ações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredClientes.map(c => (
+                    <tr key={c.id} className="border-b border-border/50 hover:bg-muted/30">
+                      <td className="py-2 px-2 font-medium max-w-[180px] truncate">{c.nome_completo || '—'}</td>
+                      <td className="py-2 px-2 text-xs"><WhatsAppLink phone={c.telefone} /></td>
+                      <td className="py-2 px-2 text-xs">{c.instalado_em ? new Date(c.instalado_em).toLocaleDateString('pt-BR') : '—'}</td>
+                      <td className="py-2 px-2 text-xs">{c.qtd_placas || '—'}</td>
+                      <td className="py-2 px-2 text-xs font-medium">{c.kwp ? Number(c.kwp).toFixed(2) : calcKwp(c.qtd_placas, c.potencia_placa)}</td>
+                      <td className="py-2 px-2 text-xs">{c.marca_inversor || '—'}</td>
+                      <td className="py-2 px-2 text-xs">{c.potencia_inversor ? `${c.potencia_inversor} kW` : '—'}</td>
+                      <td className="py-2 px-2 text-xs">{c.satisfacao || '—'}</td>
+                      <td className="py-2 px-2">
+                        <div className="flex gap-1 items-center">
+                          <TooltipProvider>
+                            <Tip label="Ver dados"><button onClick={() => setDadosCliente(c)} className="text-primary hover:text-primary/80"><Eye className="w-4 h-4" /></button></Tip>
+                            <Tip label="Editar"><button onClick={() => setEditCliente(c)} className="text-primary hover:text-primary/80"><Edit2 className="w-4 h-4" /></button></Tip>
+                            {!c.projeto_id && !c.id.startsWith('proj-') && (
+                              <Tip label="Promover para obra"><button onClick={() => onPromover(c)} className="text-primary hover:text-primary/80"><ArrowUpRight className="w-4 h-4" /></button></Tip>
+                            )}
+                            {!c.id.startsWith('proj-') && (
+                              <Tip label="Excluir"><button onClick={() => setDeleteCliente(c)} className="text-destructive hover:text-destructive/80"><Trash2 className="w-4 h-4" /></button></Tip>
+                            )}
+                          </TooltipProvider>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                  {filteredClientes.length === 0 && (
+                    <tr><td colSpan={9} className="py-6 text-center text-muted-foreground text-xs">Nenhum cliente instalado.</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modals - Obras */}
+      {congelarId && <CongelarModal projetoId={congelarId} onClose={() => setCongelarId(null)} onDone={onRefresh} />}
+      {layoutProjeto && <LayoutUploadModal projetoId={layoutProjeto.id} currentUrl={layoutProjeto.layout_url} onClose={() => setLayoutProjeto(null)} onDone={onRefresh} />}
+      {concluidaProjeto && <ObraConcluidaModal projetoId={concluidaProjeto.id} currentInstalador={concluidaProjeto.instalador} onClose={() => setConcluidaProjeto(null)} onDone={onRefresh} />}
+      {deleteProjeto && (
+        <DeleteConfirmModal
+          nome={deleteProjeto.nome_completo || deleteProjeto.razao_social || 'Projeto'}
+          id={deleteProjeto.id}
+          tabela="projetos"
+          onClose={() => setDeleteProjeto(null)}
+          onDeleted={() => { setDeleteProjeto(null); onRefresh(); }}
+        />
+      )}
+      {materiaisProjeto && <ListaMateriaisObraModal projeto={materiaisProjeto} onClose={() => setMateriaisProjeto(null)} />}
+      {retirarProjeto && <RetirarMaterialModal projeto={retirarProjeto} onClose={() => setRetirarProjeto(null)} onDone={onRefresh} />}
+      {dadosProjeto && (
+        <ClienteDadosModal
+          cliente={mapProjetoToDados(dadosProjeto)}
+          onClose={() => setDadosProjeto(null)}
+        />
+      )}
+
+      {/* Modals - Clientes */}
+      {dadosCliente && <ClienteDadosModal cliente={dadosCliente} onClose={() => setDadosCliente(null)} />}
+      {editCliente && <ClienteEditModal cliente={editCliente} onClose={() => setEditCliente(null)} onSaved={() => { onRefresh(); setEditCliente(null); }} />}
+      {deleteCliente && (
+        <DeleteConfirmModal
+          nome={deleteCliente.nome_completo || 'Cliente'}
+          id={deleteCliente.id}
+          tabela="clientes_base"
+          onClose={() => setDeleteCliente(null)}
+          onDeleted={() => { setDeleteCliente(null); onRefresh(); }}
+        />
+      )}
+    </div>
+  );
+}
