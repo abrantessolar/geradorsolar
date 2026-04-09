@@ -65,6 +65,7 @@ export default function ProjetosUnificados({
   const [dadosCliente, setDadosCliente] = useState<ClienteBase | null>(null);
   const [editCliente, setEditCliente] = useState<ClienteBase | null>(null);
   const [deleteCliente, setDeleteCliente] = useState<ClienteBase | null>(null);
+  const [promoverCliente, setPromoverCliente] = useState<ClienteBase | null>(null);
 
   const q = search.toLowerCase();
 
@@ -145,6 +146,8 @@ export default function ProjetosUnificados({
     fornecedor: null, projeto_enviado_em: null, projeto_aprovado: null,
     satisfacao: null, projeto_id: null,
     data_fechamento: p.data_fechamento || null,
+    outros_nomes: p.outros_nomes || [],
+    observacoes_historico: p.observacoes_historico || [],
   } as any);
 
   // Column definitions for aguardando
@@ -190,12 +193,8 @@ export default function ProjetosUnificados({
         <TooltipProvider>
           <Tip label="Ver dados"><button onClick={() => setDadosCliente(c)} className="text-primary hover:text-primary/80"><Eye className="w-4 h-4" /></button></Tip>
           <Tip label="Editar"><button onClick={() => setEditCliente(c)} className="text-primary hover:text-primary/80"><Edit2 className="w-4 h-4" /></button></Tip>
-          {!c.projeto_id && !c.id.startsWith('proj-') && (
-            <Tip label="Promover para obra"><button onClick={() => onPromover(c)} className="text-primary hover:text-primary/80"><ArrowUpRight className="w-4 h-4" /></button></Tip>
-          )}
-          {!c.id.startsWith('proj-') && (
-            <Tip label="Excluir"><button onClick={() => setDeleteCliente(c)} className="text-destructive hover:text-destructive/80"><Trash2 className="w-4 h-4" /></button></Tip>
-          )}
+          <Tip label="Promover para obra"><button onClick={() => setPromoverCliente(c)} className="text-primary hover:text-primary/80"><ArrowUpRight className="w-4 h-4" /></button></Tip>
+          <Tip label="Excluir"><button onClick={() => setDeleteCliente(c)} className="text-destructive hover:text-destructive/80"><Trash2 className="w-4 h-4" /></button></Tip>
         </TooltipProvider>
       </div>
     )},
@@ -343,16 +342,12 @@ export default function ProjetosUnificados({
                     <div><span className="text-muted-foreground">Placas:</span> {c.qtd_placas || '—'}</div>
                     <div><span className="text-muted-foreground">Inversor:</span> {c.marca_inversor || '—'}</div>
                   </div>
-                  <div className="flex gap-1.5 items-center pt-1 border-t border-border/50">
-                    <button onClick={() => setDadosCliente(c)} className="text-primary hover:text-primary/80 p-1"><Eye className="w-4 h-4" /></button>
-                    <button onClick={() => setEditCliente(c)} className="text-primary hover:text-primary/80 p-1"><Edit2 className="w-4 h-4" /></button>
-                    {!c.projeto_id && !c.id.startsWith('proj-') && (
-                      <button onClick={() => onPromover(c)} className="text-primary hover:text-primary/80 p-1"><ArrowUpRight className="w-4 h-4" /></button>
-                    )}
-                    {!c.id.startsWith('proj-') && (
-                      <button onClick={() => setDeleteCliente(c)} className="text-destructive hover:text-destructive/80 p-1 ml-auto"><Trash2 className="w-4 h-4" /></button>
-                    )}
-                  </div>
+                   <div className="flex gap-1.5 items-center pt-1 border-t border-border/50">
+                     <button onClick={() => setDadosCliente(c)} className="text-primary hover:text-primary/80 p-1"><Eye className="w-4 h-4" /></button>
+                     <button onClick={() => setEditCliente(c)} className="text-primary hover:text-primary/80 p-1"><Edit2 className="w-4 h-4" /></button>
+                     <button onClick={() => setPromoverCliente(c)} className="text-primary hover:text-primary/80 p-1"><ArrowUpRight className="w-4 h-4" /></button>
+                     <button onClick={() => setDeleteCliente(c)} className="text-destructive hover:text-destructive/80 p-1 ml-auto"><Trash2 className="w-4 h-4" /></button>
+                   </div>
                 </div>
               ))}
               {filteredClientes.length === 0 && <p className="py-4 text-center text-xs text-muted-foreground">Nenhum cliente instalado.</p>}
