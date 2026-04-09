@@ -65,6 +65,7 @@ export default function ProjetosUnificados({
   const [dadosCliente, setDadosCliente] = useState<ClienteBase | null>(null);
   const [editCliente, setEditCliente] = useState<ClienteBase | null>(null);
   const [deleteCliente, setDeleteCliente] = useState<ClienteBase | null>(null);
+  const [promoverCliente, setPromoverCliente] = useState<ClienteBase | null>(null);
 
   const q = search.toLowerCase();
 
@@ -145,6 +146,8 @@ export default function ProjetosUnificados({
     fornecedor: null, projeto_enviado_em: null, projeto_aprovado: null,
     satisfacao: null, projeto_id: null,
     data_fechamento: p.data_fechamento || null,
+    outros_nomes: p.outros_nomes || [],
+    observacoes_historico: p.observacoes_historico || [],
   } as any);
 
   // Column definitions for aguardando
@@ -190,12 +193,8 @@ export default function ProjetosUnificados({
         <TooltipProvider>
           <Tip label="Ver dados"><button onClick={() => setDadosCliente(c)} className="text-primary hover:text-primary/80"><Eye className="w-4 h-4" /></button></Tip>
           <Tip label="Editar"><button onClick={() => setEditCliente(c)} className="text-primary hover:text-primary/80"><Edit2 className="w-4 h-4" /></button></Tip>
-          {!c.projeto_id && !c.id.startsWith('proj-') && (
-            <Tip label="Promover para obra"><button onClick={() => onPromover(c)} className="text-primary hover:text-primary/80"><ArrowUpRight className="w-4 h-4" /></button></Tip>
-          )}
-          {!c.id.startsWith('proj-') && (
-            <Tip label="Excluir"><button onClick={() => setDeleteCliente(c)} className="text-destructive hover:text-destructive/80"><Trash2 className="w-4 h-4" /></button></Tip>
-          )}
+          <Tip label="Promover para obra"><button onClick={() => setPromoverCliente(c)} className="text-primary hover:text-primary/80"><ArrowUpRight className="w-4 h-4" /></button></Tip>
+          <Tip label="Excluir"><button onClick={() => setDeleteCliente(c)} className="text-destructive hover:text-destructive/80"><Trash2 className="w-4 h-4" /></button></Tip>
         </TooltipProvider>
       </div>
     )},
@@ -343,16 +342,12 @@ export default function ProjetosUnificados({
                     <div><span className="text-muted-foreground">Placas:</span> {c.qtd_placas || '—'}</div>
                     <div><span className="text-muted-foreground">Inversor:</span> {c.marca_inversor || '—'}</div>
                   </div>
-                  <div className="flex gap-1.5 items-center pt-1 border-t border-border/50">
-                    <button onClick={() => setDadosCliente(c)} className="text-primary hover:text-primary/80 p-1"><Eye className="w-4 h-4" /></button>
-                    <button onClick={() => setEditCliente(c)} className="text-primary hover:text-primary/80 p-1"><Edit2 className="w-4 h-4" /></button>
-                    {!c.projeto_id && !c.id.startsWith('proj-') && (
-                      <button onClick={() => onPromover(c)} className="text-primary hover:text-primary/80 p-1"><ArrowUpRight className="w-4 h-4" /></button>
-                    )}
-                    {!c.id.startsWith('proj-') && (
-                      <button onClick={() => setDeleteCliente(c)} className="text-destructive hover:text-destructive/80 p-1 ml-auto"><Trash2 className="w-4 h-4" /></button>
-                    )}
-                  </div>
+                   <div className="flex gap-1.5 items-center pt-1 border-t border-border/50">
+                     <button onClick={() => setDadosCliente(c)} className="text-primary hover:text-primary/80 p-1"><Eye className="w-4 h-4" /></button>
+                     <button onClick={() => setEditCliente(c)} className="text-primary hover:text-primary/80 p-1"><Edit2 className="w-4 h-4" /></button>
+                     <button onClick={() => setPromoverCliente(c)} className="text-primary hover:text-primary/80 p-1"><ArrowUpRight className="w-4 h-4" /></button>
+                     <button onClick={() => setDeleteCliente(c)} className="text-destructive hover:text-destructive/80 p-1 ml-auto"><Trash2 className="w-4 h-4" /></button>
+                   </div>
                 </div>
               ))}
               {filteredClientes.length === 0 && <p className="py-4 text-center text-xs text-muted-foreground">Nenhum cliente instalado.</p>}
@@ -430,11 +425,45 @@ export default function ProjetosUnificados({
       {deleteCliente && (
         <DeleteConfirmModal
           nome={deleteCliente.nome_completo || 'Cliente'}
-          id={deleteCliente.id}
-          tabela="clientes_base"
+          id={deleteCliente.id.startsWith('proj-') ? deleteCliente.id.replace('proj-', '') : deleteCliente.id}
+          tabela={deleteCliente.id.startsWith('proj-') ? 'projetos' : 'clientes_base'}
           onClose={() => setDeleteCliente(null)}
           onDeleted={() => { setDeleteCliente(null); onRefresh(); }}
         />
+      )}
+
+      {/* Modal de confirmação para promover */}
+      {promoverCliente && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setPromoverCliente(null)}>
+          <div className="bg-background rounded-xl shadow-xl max-w-md w-full p-6 space-y-4" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-full bg-primary/10">
+                <ArrowUpRight className="w-5 h-5 text-primary" />
+              </div>
+              <h2 className="text-lg font-bold text-foreground">Promover para Obra</h2>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Deseja criar um novo projeto (obra) a partir dos dados de <strong className="text-foreground">{promoverCliente.nome_completo || 'este cliente'}</strong>?
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Os dados do cliente serão copiados para um novo projeto com status "Vendido".
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setPromoverCliente(null)}
+                className="px-4 py-2 rounded-lg text-sm font-medium bg-muted text-muted-foreground hover:bg-muted/70 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => { onPromover(promoverCliente); setPromoverCliente(null); }}
+                className="px-4 py-2 rounded-lg text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+              >
+                Sim, promover
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

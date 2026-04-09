@@ -103,6 +103,8 @@ export default function ClientesPage() {
       cidade: p.cidade || null,
       estado: p.estado || null,
       cep: p.cep || null,
+      outros_nomes: p.outros_nomes || [],
+      observacoes_historico: p.observacoes_historico || [],
     }));
 
     setClientes([...fromBase, ...fromProjetos]);
