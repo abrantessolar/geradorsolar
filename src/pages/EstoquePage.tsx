@@ -390,8 +390,8 @@ export default function EstoquePage() {
           <button onClick={loadAll} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm bg-muted hover:bg-muted/70 h-[48px]">
             <RefreshCw className="w-4 h-4" /> Atualizar
           </button>
-          <button onClick={() => navigate('/gestor')} className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium bg-primary text-primary-foreground h-[48px]">
-            <ArrowLeft className="w-4 h-4" /> Voltar ao Gestor
+          <button onClick={() => navigate('/clientes')} className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium bg-primary text-primary-foreground h-[48px]">
+            <ArrowLeft className="w-4 h-4" /> Voltar
           </button>
         </div>
       </header>
