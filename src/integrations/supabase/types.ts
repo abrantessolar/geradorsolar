@@ -152,12 +152,15 @@ export type Database = {
           nome_planta: string | null
           numero: string | null
           observacoes: string | null
+          observacoes_historico: Json | null
           origem: string
+          outros_nomes: Json | null
           potencia_inversor: string | null
           potencia_placa: string | null
           projeto_aprovado: string | null
           projeto_enviado_em: string | null
           projeto_id: string | null
+          proposta_id_ref: string | null
           qtd_inversores: number | null
           qtd_placas: number | null
           satisfacao: string | null
@@ -203,12 +206,15 @@ export type Database = {
           nome_planta?: string | null
           numero?: string | null
           observacoes?: string | null
+          observacoes_historico?: Json | null
           origem?: string
+          outros_nomes?: Json | null
           potencia_inversor?: string | null
           potencia_placa?: string | null
           projeto_aprovado?: string | null
           projeto_enviado_em?: string | null
           projeto_id?: string | null
+          proposta_id_ref?: string | null
           qtd_inversores?: number | null
           qtd_placas?: number | null
           satisfacao?: string | null
@@ -254,12 +260,15 @@ export type Database = {
           nome_planta?: string | null
           numero?: string | null
           observacoes?: string | null
+          observacoes_historico?: Json | null
           origem?: string
+          outros_nomes?: Json | null
           potencia_inversor?: string | null
           potencia_placa?: string | null
           projeto_aprovado?: string | null
           projeto_enviado_em?: string | null
           projeto_id?: string | null
+          proposta_id_ref?: string | null
           qtd_inversores?: number | null
           qtd_placas?: number | null
           satisfacao?: string | null
@@ -275,7 +284,15 @@ export type Database = {
           wifi_nome?: string | null
           wifi_senha?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "clientes_base_proposta_id_ref_fkey"
+            columns: ["proposta_id_ref"]
+            isOneToOne: false
+            referencedRelation: "propostas"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       configuracoes: {
         Row: {
@@ -960,6 +977,8 @@ export type Database = {
           nome_planta: string | null
           nome_representante: string | null
           objecoes: string | null
+          observacoes_historico: Json | null
+          outros_nomes: Json | null
           pagamento_status: string | null
           placa_id: string | null
           potencia_inversor: string | null
@@ -967,9 +986,11 @@ export type Database = {
           preco_venda: number | null
           projeto_aprovado: string | null
           projeto_enviado_em: string | null
+          proposta_id: string | null
           qtd_inversores: number | null
           qtd_placas: number | null
           razao_social: string | null
+          satisfacao: number | null
           sheets_synced_at: string | null
           sistema: string | null
           status: string
@@ -1028,6 +1049,8 @@ export type Database = {
           nome_planta?: string | null
           nome_representante?: string | null
           objecoes?: string | null
+          observacoes_historico?: Json | null
+          outros_nomes?: Json | null
           pagamento_status?: string | null
           placa_id?: string | null
           potencia_inversor?: string | null
@@ -1035,9 +1058,11 @@ export type Database = {
           preco_venda?: number | null
           projeto_aprovado?: string | null
           projeto_enviado_em?: string | null
+          proposta_id?: string | null
           qtd_inversores?: number | null
           qtd_placas?: number | null
           razao_social?: string | null
+          satisfacao?: number | null
           sheets_synced_at?: string | null
           sistema?: string | null
           status?: string
@@ -1096,6 +1121,8 @@ export type Database = {
           nome_planta?: string | null
           nome_representante?: string | null
           objecoes?: string | null
+          observacoes_historico?: Json | null
+          outros_nomes?: Json | null
           pagamento_status?: string | null
           placa_id?: string | null
           potencia_inversor?: string | null
@@ -1103,9 +1130,11 @@ export type Database = {
           preco_venda?: number | null
           projeto_aprovado?: string | null
           projeto_enviado_em?: string | null
+          proposta_id?: string | null
           qtd_inversores?: number | null
           qtd_placas?: number | null
           razao_social?: string | null
+          satisfacao?: number | null
           sheets_synced_at?: string | null
           sistema?: string | null
           status?: string
@@ -1141,6 +1170,13 @@ export type Database = {
             columns: ["placa_id"]
             isOneToOne: false
             referencedRelation: "equipamentos_placas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projetos_proposta_id_fkey"
+            columns: ["proposta_id"]
+            isOneToOne: false
+            referencedRelation: "propostas"
             referencedColumns: ["id"]
           },
         ]
