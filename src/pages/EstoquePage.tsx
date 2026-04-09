@@ -10,6 +10,8 @@ import {
 import { CATEGORIA_ICONS } from '@/components/gestor/materiais/types';
 import { generateFichaInstalacao } from '@/lib/generateFichaInstalacao';
 import MoneyInput, { formatBRL } from '@/components/ui/money-input';
+import MateriaisModule from '@/components/gestor/materiais/MateriaisModule';
+import { Settings } from 'lucide-react';
 
 /* ─── Types ─── */
 type ObraCard = {
@@ -77,7 +79,7 @@ export default function EstoquePage() {
   const [loading, setLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState(new Date());
 
-  const [activeAction, setActiveAction] = useState<'entrada' | 'retorno' | 'estoque' | null>(null);
+  const [activeAction, setActiveAction] = useState<'entrada' | 'retorno' | 'estoque' | 'materiais' | null>(null);
 
   // Entrada em lote
   const [entradaRows, setEntradaRows] = useState<{ id: string; nome: string; categoria: string; estoque_atual: number; entrada: string; preco_unitario: string }[]>([]);
@@ -390,8 +392,8 @@ export default function EstoquePage() {
           <button onClick={loadAll} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm bg-muted hover:bg-muted/70 h-[48px]">
             <RefreshCw className="w-4 h-4" /> Atualizar
           </button>
-          <button onClick={() => navigate('/gestor')} className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium bg-primary text-primary-foreground h-[48px]">
-            <ArrowLeft className="w-4 h-4" /> Voltar ao Gestor
+          <button onClick={() => navigate('/clientes')} className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium bg-primary text-primary-foreground h-[48px]">
+            <ArrowLeft className="w-4 h-4" /> Voltar
           </button>
         </div>
       </header>
@@ -418,6 +420,10 @@ export default function EstoquePage() {
           <button onClick={() => setActiveAction('estoque')}
             className="w-full flex items-center gap-3 px-4 rounded-xl bg-muted text-foreground hover:bg-muted/70 transition-colors h-[64px] text-left font-medium text-base">
             <BarChart3 className="w-6 h-6 flex-shrink-0" /> 📊 Ver Estoque
+          </button>
+          <button onClick={() => setActiveAction('materiais')}
+            className="w-full flex items-center gap-3 px-4 rounded-xl bg-muted text-foreground hover:bg-muted/70 transition-colors h-[64px] text-left font-medium text-base">
+            <Settings className="w-6 h-6 flex-shrink-0" /> ⚙️ Materiais
           </button>
 
           {/* Alert card for next 4 obras */}
@@ -446,6 +452,11 @@ export default function EstoquePage() {
             <RetornoPanel items={retornoItems} setItems={setRetornoItems} obras={obras} obraId={retornoObra} setObraId={setRetornoObra} saving={savingRetorno} onConfirm={confirmRetorno} onClose={() => setActiveAction(null)} />
           ) : activeAction === 'estoque' ? (
             <EstoquePanel estoque={estoque} onClose={() => setActiveAction(null)} />
+          ) : activeAction === 'materiais' ? (
+            <div className="flex-1 overflow-y-auto p-4">
+              <button onClick={() => setActiveAction(null)} className="text-xs text-primary hover:underline mb-3">← Voltar</button>
+              <MateriaisModule />
+            </div>
           ) : (
             <div className="flex flex-col overflow-hidden p-4">
               <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
