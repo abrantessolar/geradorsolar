@@ -83,6 +83,10 @@ export type Projeto = {
   wifi_senha?: string;
   nome_planta?: string;
   cabo_usado?: string;
+  outros_nomes?: any[] | null;
+  proposta_id?: string | null;
+  satisfacao?: number | null;
+  observacoes_historico?: any[] | null;
   placa?: { marca: string; modelo: string; potencia_wp: number };
   inversor?: { marca: string; modelo: string; potencia_kw: number; tipo: string };
 };
