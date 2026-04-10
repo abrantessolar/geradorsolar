@@ -259,6 +259,30 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
     setSaving(false);
     if (error) { toast.error('Erro ao salvar: ' + error.message); return; }
     toast.success(projetoId ? 'Projeto atualizado!' : 'Projeto criado!');
+
+    // Save UCs to new table
+    if (savedId) {
+      // Delete existing UCs for this project
+      await supabase.from('unidades_consumidoras' as any).delete().eq('projeto_id', savedId);
+      // Insert all UCs
+      const ucRows = ucs.filter(u => u.codigo_uc || u.tipo === 'geradora').map((u, i) => ({
+        projeto_id: savedId,
+        tipo: u.tipo,
+        codigo_uc: u.codigo_uc || null,
+        cep: u.cep || null,
+        endereco: u.endereco || null,
+        padrao_entrada: u.padrao_entrada || null,
+        concessionaria: u.concessionaria || null,
+        nome_titular: u.nome_titular || null,
+        relacao_titular: u.relacao_titular || null,
+        modo_distribuicao: modoDistribuicao,
+        percentual: modoDistribuicao === 'percentual' && u.percentual ? parseFloat(u.percentual) : null,
+        prioridade: u.prioridade || i + 1,
+      }));
+      if (ucRows.length > 0) {
+        await supabase.from('unidades_consumidoras' as any).insert(ucRows);
+      }
+    }
     
     // Auto-generate materials list
     if (savedId && selectedInversor) {
