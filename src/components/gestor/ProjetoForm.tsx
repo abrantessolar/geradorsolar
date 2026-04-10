@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { ChevronLeft, ChevronRight, Plus, X, Save, Copy, Trash2, Users } from 'lucide-react';
 import { getPotenciaKey, generateMaterialList, hasExistingList } from './materiais/generateMaterialList';
+import UnidadesConsumidorasStep, { createDefaultGeradora, type UCItem, type ModoDistribuicao } from './UnidadesConsumidorasStep';
 
 const STATUS_LIST = ['Vendido', 'Equipamento Comprado', 'Entregue', 'Em Instalação', 'Instalado', 'Projeto Submetido', 'Homologado'];
 const CONC_LIST = ['ELEKTRO', 'ENERGISA', 'COPEL', 'OUTRA'];
