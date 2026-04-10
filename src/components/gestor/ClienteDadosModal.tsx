@@ -224,6 +224,7 @@ export default function ClienteDadosModal({ cliente, onClose }: { cliente: Clien
                   <div className="text-sm">
                     <span className="font-medium">{p.nome || '—'}</span>
                     {p.relacao && <span className="text-muted-foreground ml-1">({p.relacao})</span>}
+                    {p.telefone && <span className="text-muted-foreground ml-2">📞 {p.telefone}</span>}
                     {p.cpf && <span className="text-muted-foreground ml-2">CPF: {p.cpf}</span>}
                   </div>
                   <CopyButton text={[p.nome, p.relacao, p.cpf].filter(Boolean).join(' - ')} />

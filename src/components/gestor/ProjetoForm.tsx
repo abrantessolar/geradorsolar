@@ -29,7 +29,7 @@ function maskTelefone(v: string) {
 
 type PlacaOption = { id: string; marca: string; modelo: string; potencia_wp: number };
 type InversorOption = { id: string; marca: string; modelo: string; potencia_kw: number; tipo: string };
-type PessoaRelacionada = { nome: string; relacao: string; cpf: string };
+type PessoaRelacionada = { nome: string; relacao: string; cpf: string; telefone: string };
 
 export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
   projetoId?: string;
@@ -106,7 +106,7 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
       });
       // Load outros_nomes
       if (p.outros_nomes && Array.isArray(p.outros_nomes)) {
-        setOutrosNomes(p.outros_nomes.map((o: any) => ({ nome: o.nome || '', relacao: o.relacao || '', cpf: o.cpf || '' })));
+        setOutrosNomes(p.outros_nomes.map((o: any) => ({ nome: o.nome || '', relacao: o.relacao || '', cpf: o.cpf || '', telefone: o.telefone || '' })));
       }
       // If UG already has data, mark as manually edited
       if (p.unidade_geradora_cep || p.unidade_geradora_endereco) {
@@ -283,7 +283,7 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
   };
 
   // Pessoas relacionadas helpers
-  const addPessoa = () => setOutrosNomes(prev => [...prev, { nome: '', relacao: '', cpf: '' }]);
+  const addPessoa = () => setOutrosNomes(prev => [...prev, { nome: '', relacao: '', cpf: '', telefone: '' }]);
   const removePessoa = (idx: number) => setOutrosNomes(prev => prev.filter((_, i) => i !== idx));
   const updatePessoa = (idx: number, field: keyof PessoaRelacionada, val: string) => {
     setOutrosNomes(prev => prev.map((p, i) => i === idx ? { ...p, [field]: val } : p));
@@ -378,7 +378,7 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
               <p className="text-xs text-muted-foreground">Nenhuma pessoa relacionada. Adicione cônjuge, sócio ou responsável financeiro.</p>
             )}
             {outrosNomes.map((pessoa, idx) => (
-              <div key={idx} className="grid grid-cols-1 md:grid-cols-[1fr_150px_180px_auto] gap-2 items-end bg-muted/30 rounded-lg p-3">
+              <div key={idx} className="grid grid-cols-1 md:grid-cols-[1fr_150px_160px_160px_auto] gap-2 items-end bg-muted/30 rounded-lg p-3">
                 <div>
                   <label className="block text-xs font-medium mb-1">Nome</label>
                   <input className={inputClass} value={pessoa.nome} onChange={e => updatePessoa(idx, 'nome', e.target.value)} placeholder="Nome completo" />
@@ -389,6 +389,10 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
                     <option value="">Selecione...</option>
                     {RELACAO_LIST.map(r => <option key={r} value={r}>{r}</option>)}
                   </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium mb-1">Telefone</label>
+                  <input className={inputClass} value={pessoa.telefone} onChange={e => updatePessoa(idx, 'telefone', e.target.value)} placeholder="(00) 00000-0000" />
                 </div>
                 <div>
                   <label className="block text-xs font-medium mb-1">CPF (opcional)</label>
