@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { ChevronLeft, ChevronRight, Plus, X, Save, Copy, Trash2, Users } from 'lucide-react';
 import { getPotenciaKey, generateMaterialList, hasExistingList } from './materiais/generateMaterialList';
+import UnidadesConsumidorasStep, { createDefaultGeradora, type UCItem, type ModoDistribuicao } from './UnidadesConsumidorasStep';
 
 const STATUS_LIST = ['Vendido', 'Equipamento Comprado', 'Entregue', 'Em Instalação', 'Instalado', 'Projeto Submetido', 'Homologado'];
 const CONC_LIST = ['ELEKTRO', 'ENERGISA', 'COPEL', 'OUTRA'];
@@ -48,6 +49,10 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
 
   // Pessoas relacionadas
   const [outrosNomes, setOutrosNomes] = useState<PessoaRelacionada[]>([]);
+
+  // Unidades consumidoras
+  const [ucs, setUcs] = useState<UCItem[]>([createDefaultGeradora()]);
+  const [modoDistribuicao, setModoDistribuicao] = useState<ModoDistribuicao>('percentual');
 
   // Track if UG was manually edited
   const [ugManuallyEdited, setUgManuallyEdited] = useState(false);
@@ -104,13 +109,33 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
         data_instalacao: p.data_instalacao || '',
         distribuidor: p.distribuidor || '', instalador: p.instalador || '', pagamento_status: p.pagamento_status || 'Pendente',
       });
-      // Load outros_nomes
       if (p.outros_nomes && Array.isArray(p.outros_nomes)) {
         setOutrosNomes(p.outros_nomes.map((o: any) => ({ nome: o.nome || '', relacao: o.relacao || '', cpf: o.cpf || '', telefone: o.telefone || '' })));
       }
-      // If UG already has data, mark as manually edited
       if (p.unidade_geradora_cep || p.unidade_geradora_endereco) {
         setUgManuallyEdited(true);
+      }
+    });
+
+    // Load UCs from new table
+    supabase.from('unidades_consumidoras' as any).select('*').eq('projeto_id', projetoId).order('prioridade', { ascending: true }).then(({ data: ucsData }) => {
+      if (ucsData && ucsData.length > 0) {
+        const loaded: UCItem[] = (ucsData as any[]).map(u => ({
+          id: u.id,
+          tipo: u.tipo,
+          codigo_uc: u.codigo_uc || '',
+          cep: u.cep || '',
+          endereco: u.endereco || '',
+          padrao_entrada: u.padrao_entrada || '',
+          concessionaria: u.concessionaria || '',
+          nome_titular: u.nome_titular || '',
+          relacao_titular: u.relacao_titular || '',
+          percentual: u.percentual?.toString() || '',
+          prioridade: u.prioridade || 1,
+        }));
+        setUcs(loaded);
+        const firstModo = (ucsData as any[])[0]?.modo_distribuicao;
+        if (firstModo) setModoDistribuicao(firstModo);
       }
     });
   }, [projetoId]);
@@ -141,6 +166,19 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
       unidade_geradora_cep: f.unidade_geradora_cep || f.cep,
       unidade_geradora_endereco: f.unidade_geradora_endereco || enderecoCompleto,
     }));
+    // Also sync UC geradora
+    setUcs(prev => {
+      const gerIdx = prev.findIndex(u => u.tipo === 'geradora');
+      if (gerIdx < 0) return prev;
+      const g = prev[gerIdx];
+      if (g.cep || g.endereco) return prev; // already has data
+      return prev.map((u, i) => i === gerIdx ? {
+        ...u,
+        cep: form.cep || u.cep,
+        endereco: enderecoCompleto || u.endereco,
+        concessionaria: form.concessionaria || u.concessionaria,
+      } : u);
+    });
   };
 
   const handleSave = async () => {
@@ -221,6 +259,30 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
     setSaving(false);
     if (error) { toast.error('Erro ao salvar: ' + error.message); return; }
     toast.success(projetoId ? 'Projeto atualizado!' : 'Projeto criado!');
+
+    // Save UCs to new table
+    if (savedId) {
+      // Delete existing UCs for this project
+      await supabase.from('unidades_consumidoras' as any).delete().eq('projeto_id', savedId);
+      // Insert all UCs
+      const ucRows = ucs.filter(u => u.codigo_uc || u.tipo === 'geradora').map((u, i) => ({
+        projeto_id: savedId,
+        tipo: u.tipo,
+        codigo_uc: u.codigo_uc || null,
+        cep: u.cep || null,
+        endereco: u.endereco || null,
+        padrao_entrada: u.padrao_entrada || null,
+        concessionaria: u.concessionaria || null,
+        nome_titular: u.nome_titular || null,
+        relacao_titular: u.relacao_titular || null,
+        modo_distribuicao: modoDistribuicao,
+        percentual: modoDistribuicao === 'percentual' && u.percentual ? parseFloat(u.percentual) : null,
+        prioridade: u.prioridade || i + 1,
+      }));
+      if (ucRows.length > 0) {
+        await supabase.from('unidades_consumidoras' as any).insert(ucRows);
+      }
+    }
     
     // Auto-generate materials list
     if (savedId && selectedInversor) {
@@ -515,52 +577,15 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
 
       {/* Step 3 - Unidades Consumidoras */}
       {step === 3 && (
-        <div className="space-y-6">
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold">Unidade Geradora</h3>
-              {(form.cep || form.logradouro) && (
-                <button onClick={() => {
-                  const enderecoCompleto = [form.logradouro, form.bairro, form.cidade && form.estado ? `${form.cidade}/${form.estado}` : form.cidade || form.estado].filter(Boolean).join(', ');
-                  setForm(f => ({
-                    ...f,
-                    unidade_geradora_cep: f.cep,
-                    unidade_geradora_endereco: enderecoCompleto,
-                  }));
-                  setUgManuallyEdited(false);
-                }} className="flex items-center gap-1 text-xs text-primary hover:text-primary/80 font-medium">
-                  <Copy className="w-3.5 h-3.5" /> Copiar do endereço do cliente
-                </button>
-              )}
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div><label className={labelClass}>CEP</label><input className={inputClass} value={form.unidade_geradora_cep} onChange={e => { set('unidade_geradora_cep', maskCep(e.target.value)); setUgManuallyEdited(true); }} onBlur={() => fetchCep(form.unidade_geradora_cep, 'unidade_geradora')} /></div>
-              <div><label className={labelClass}>Endereço</label><input className={inputClass} value={form.unidade_geradora_endereco} onChange={e => { set('unidade_geradora_endereco', e.target.value); setUgManuallyEdited(true); }} /></div>
-              <div><label className={labelClass}>Código UC</label><input className={inputClass} value={form.unidade_geradora_codigo_uc} onChange={e => set('unidade_geradora_codigo_uc', e.target.value)} /></div>
-              <div><label className={labelClass}>Padrão de Entrada</label><input className={inputClass} value={form.unidade_geradora_padrao} onChange={e => set('unidade_geradora_padrao', e.target.value)} /></div>
-            </div>
-          </div>
-
-          <div>
-            <h3 className="text-sm font-semibold mb-3">Unidade Beneficiária 1 (opcional)</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div><label className={labelClass}>CEP</label><input className={inputClass} value={form.unidade_beneficiaria1_cep} onChange={e => set('unidade_beneficiaria1_cep', maskCep(e.target.value))} onBlur={() => fetchCep(form.unidade_beneficiaria1_cep, 'unidade_beneficiaria1')} /></div>
-              <div><label className={labelClass}>Endereço</label><input className={inputClass} value={form.unidade_beneficiaria1_endereco} onChange={e => set('unidade_beneficiaria1_endereco', e.target.value)} /></div>
-              <div><label className={labelClass}>Código UC</label><input className={inputClass} value={form.unidade_beneficiaria1_codigo_uc} onChange={e => set('unidade_beneficiaria1_codigo_uc', e.target.value)} /></div>
-              <div><label className={labelClass}>Percentual (%)</label><input className={inputClass} type="number" value={form.unidade_beneficiaria1_percentual} onChange={e => set('unidade_beneficiaria1_percentual', e.target.value)} /></div>
-            </div>
-          </div>
-
-          <div>
-            <h3 className="text-sm font-semibold mb-3">Unidade Beneficiária 2 (opcional)</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div><label className={labelClass}>CEP</label><input className={inputClass} value={form.unidade_beneficiaria2_cep} onChange={e => set('unidade_beneficiaria2_cep', maskCep(e.target.value))} onBlur={() => fetchCep(form.unidade_beneficiaria2_cep, 'unidade_beneficiaria2')} /></div>
-              <div><label className={labelClass}>Endereço</label><input className={inputClass} value={form.unidade_beneficiaria2_endereco} onChange={e => set('unidade_beneficiaria2_endereco', e.target.value)} /></div>
-              <div><label className={labelClass}>Código UC</label><input className={inputClass} value={form.unidade_beneficiaria2_codigo_uc} onChange={e => set('unidade_beneficiaria2_codigo_uc', e.target.value)} /></div>
-              <div><label className={labelClass}>Percentual (%)</label><input className={inputClass} type="number" value={form.unidade_beneficiaria2_percentual} onChange={e => set('unidade_beneficiaria2_percentual', e.target.value)} /></div>
-            </div>
-          </div>
-        </div>
+        <UnidadesConsumidorasStep
+          ucs={ucs}
+          setUcs={setUcs}
+          modo={modoDistribuicao}
+          setModo={setModoDistribuicao}
+          clienteCep={form.cep}
+          clienteEndereco={[form.logradouro, form.bairro, form.cidade && form.estado ? `${form.cidade}/${form.estado}` : form.cidade || form.estado].filter(Boolean).join(', ')}
+          clienteConcessionaria={form.concessionaria}
+        />
       )}
 
       {/* Step 4 - Comercial */}

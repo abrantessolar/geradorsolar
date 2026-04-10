@@ -1252,6 +1252,65 @@ export type Database = {
           },
         ]
       }
+      unidades_consumidoras: {
+        Row: {
+          cep: string | null
+          codigo_uc: string | null
+          concessionaria: string | null
+          criado_em: string
+          endereco: string | null
+          id: string
+          modo_distribuicao: string
+          nome_titular: string | null
+          padrao_entrada: string | null
+          percentual: number | null
+          prioridade: number | null
+          projeto_id: string
+          relacao_titular: string | null
+          tipo: string
+        }
+        Insert: {
+          cep?: string | null
+          codigo_uc?: string | null
+          concessionaria?: string | null
+          criado_em?: string
+          endereco?: string | null
+          id?: string
+          modo_distribuicao?: string
+          nome_titular?: string | null
+          padrao_entrada?: string | null
+          percentual?: number | null
+          prioridade?: number | null
+          projeto_id: string
+          relacao_titular?: string | null
+          tipo?: string
+        }
+        Update: {
+          cep?: string | null
+          codigo_uc?: string | null
+          concessionaria?: string | null
+          criado_em?: string
+          endereco?: string | null
+          id?: string
+          modo_distribuicao?: string
+          nome_titular?: string | null
+          padrao_entrada?: string | null
+          percentual?: number | null
+          prioridade?: number | null
+          projeto_id?: string
+          relacao_titular?: string | null
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "unidades_consumidoras_projeto_id_fkey"
+            columns: ["projeto_id"]
+            isOneToOne: false
+            referencedRelation: "projetos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_permissions: {
         Row: {
           admin: boolean
