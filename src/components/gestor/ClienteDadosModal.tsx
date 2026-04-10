@@ -97,6 +97,16 @@ function Block({ title, fields }: { title: string; fields: FieldDef[] }) {
 export default function ClienteDadosModal({ cliente, onClose }: { cliente: ClienteBase; onClose: () => void }) {
   const c = cliente as any;
 
+  // Load UCs from new table
+  const [ucsData, setUcsData] = useState<any[]>([]);
+  useEffect(() => {
+    const projetoId = c.projeto_id || (c.id?.startsWith?.('proj-') ? c.id.replace('proj-', '') : null) || c.id;
+    if (!projetoId) return;
+    supabase.from('unidades_consumidoras' as any).select('*').eq('projeto_id', projetoId).order('prioridade', { ascending: true }).then(({ data }) => {
+      if (data && data.length > 0) setUcsData(data as any[]);
+    });
+  }, [c]);
+
   // Build full address from parts if endereco is empty
   const enderecoCompleto = (() => {
     if (c.endereco) return c.endereco;
