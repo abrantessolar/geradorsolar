@@ -577,52 +577,15 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
 
       {/* Step 3 - Unidades Consumidoras */}
       {step === 3 && (
-        <div className="space-y-6">
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold">Unidade Geradora</h3>
-              {(form.cep || form.logradouro) && (
-                <button onClick={() => {
-                  const enderecoCompleto = [form.logradouro, form.bairro, form.cidade && form.estado ? `${form.cidade}/${form.estado}` : form.cidade || form.estado].filter(Boolean).join(', ');
-                  setForm(f => ({
-                    ...f,
-                    unidade_geradora_cep: f.cep,
-                    unidade_geradora_endereco: enderecoCompleto,
-                  }));
-                  setUgManuallyEdited(false);
-                }} className="flex items-center gap-1 text-xs text-primary hover:text-primary/80 font-medium">
-                  <Copy className="w-3.5 h-3.5" /> Copiar do endereço do cliente
-                </button>
-              )}
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div><label className={labelClass}>CEP</label><input className={inputClass} value={form.unidade_geradora_cep} onChange={e => { set('unidade_geradora_cep', maskCep(e.target.value)); setUgManuallyEdited(true); }} onBlur={() => fetchCep(form.unidade_geradora_cep, 'unidade_geradora')} /></div>
-              <div><label className={labelClass}>Endereço</label><input className={inputClass} value={form.unidade_geradora_endereco} onChange={e => { set('unidade_geradora_endereco', e.target.value); setUgManuallyEdited(true); }} /></div>
-              <div><label className={labelClass}>Código UC</label><input className={inputClass} value={form.unidade_geradora_codigo_uc} onChange={e => set('unidade_geradora_codigo_uc', e.target.value)} /></div>
-              <div><label className={labelClass}>Padrão de Entrada</label><input className={inputClass} value={form.unidade_geradora_padrao} onChange={e => set('unidade_geradora_padrao', e.target.value)} /></div>
-            </div>
-          </div>
-
-          <div>
-            <h3 className="text-sm font-semibold mb-3">Unidade Beneficiária 1 (opcional)</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div><label className={labelClass}>CEP</label><input className={inputClass} value={form.unidade_beneficiaria1_cep} onChange={e => set('unidade_beneficiaria1_cep', maskCep(e.target.value))} onBlur={() => fetchCep(form.unidade_beneficiaria1_cep, 'unidade_beneficiaria1')} /></div>
-              <div><label className={labelClass}>Endereço</label><input className={inputClass} value={form.unidade_beneficiaria1_endereco} onChange={e => set('unidade_beneficiaria1_endereco', e.target.value)} /></div>
-              <div><label className={labelClass}>Código UC</label><input className={inputClass} value={form.unidade_beneficiaria1_codigo_uc} onChange={e => set('unidade_beneficiaria1_codigo_uc', e.target.value)} /></div>
-              <div><label className={labelClass}>Percentual (%)</label><input className={inputClass} type="number" value={form.unidade_beneficiaria1_percentual} onChange={e => set('unidade_beneficiaria1_percentual', e.target.value)} /></div>
-            </div>
-          </div>
-
-          <div>
-            <h3 className="text-sm font-semibold mb-3">Unidade Beneficiária 2 (opcional)</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div><label className={labelClass}>CEP</label><input className={inputClass} value={form.unidade_beneficiaria2_cep} onChange={e => set('unidade_beneficiaria2_cep', maskCep(e.target.value))} onBlur={() => fetchCep(form.unidade_beneficiaria2_cep, 'unidade_beneficiaria2')} /></div>
-              <div><label className={labelClass}>Endereço</label><input className={inputClass} value={form.unidade_beneficiaria2_endereco} onChange={e => set('unidade_beneficiaria2_endereco', e.target.value)} /></div>
-              <div><label className={labelClass}>Código UC</label><input className={inputClass} value={form.unidade_beneficiaria2_codigo_uc} onChange={e => set('unidade_beneficiaria2_codigo_uc', e.target.value)} /></div>
-              <div><label className={labelClass}>Percentual (%)</label><input className={inputClass} type="number" value={form.unidade_beneficiaria2_percentual} onChange={e => set('unidade_beneficiaria2_percentual', e.target.value)} /></div>
-            </div>
-          </div>
-        </div>
+        <UnidadesConsumidorasStep
+          ucs={ucs}
+          setUcs={setUcs}
+          modo={modoDistribuicao}
+          setModo={setModoDistribuicao}
+          clienteCep={form.cep}
+          clienteEndereco={[form.logradouro, form.bairro, form.cidade && form.estado ? `${form.cidade}/${form.estado}` : form.cidade || form.estado].filter(Boolean).join(', ')}
+          clienteConcessionaria={form.concessionaria}
+        />
       )}
 
       {/* Step 4 - Comercial */}
