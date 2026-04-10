@@ -226,6 +226,52 @@ export default function ClienteDadosModal({ cliente, onClose }: { cliente: Clien
 
         <div className="p-4 space-y-5">
           {blocks.map(b => <Block key={b.title} title={b.title} fields={b.fields} />)}
+
+          {/* Unidades Consumidoras */}
+          {ucsData.length > 0 && (() => {
+            const modo = ucsData[0]?.modo_distribuicao || 'percentual';
+            const geradora = ucsData.find((u: any) => u.tipo === 'geradora');
+            const beneficiarias = ucsData.filter((u: any) => u.tipo === 'beneficiaria');
+            const totalPercent = beneficiarias.reduce((s: number, u: any) => s + (u.percentual || 0), 0);
+            return (
+              <div className="space-y-2">
+                <h3 className="text-sm font-semibold text-primary border-b border-border pb-1 mb-1">Unidades Consumidoras</h3>
+                <div className="text-xs text-muted-foreground mb-2">
+                  Modo: <span className="font-medium text-foreground">{modo === 'percentual' ? 'Por Percentual' : 'Por Prioridade'}</span>
+                </div>
+                <div className="space-y-2">
+                  {geradora && (
+                    <div className="bg-muted/30 rounded-lg p-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium">🏠 UC Geradora — {geradora.codigo_uc || '—'}</span>
+                        {modo === 'prioridade' && <span className="text-xs text-muted-foreground">1ª prioridade</span>}
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {geradora.endereco || '—'}
+                        {geradora.padrao_entrada && ` — ${geradora.padrao_entrada}`}
+                      </p>
+                    </div>
+                  )}
+                  {beneficiarias.map((uc: any, i: number) => (
+                    <div key={uc.id} className="bg-muted/30 rounded-lg p-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium">🏢 UC Beneficiária {i + 1} — {uc.codigo_uc || '—'}</span>
+                        {modo === 'percentual' && <span className="text-sm font-semibold">{uc.percentual || 0}%</span>}
+                        {modo === 'prioridade' && <span className="text-xs text-muted-foreground">{uc.prioridade}ª prioridade</span>}
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">{uc.endereco || '—'}</p>
+                    </div>
+                  ))}
+                </div>
+                {modo === 'percentual' && beneficiarias.length > 0 && (
+                  <div className={`text-xs font-medium mt-1 ${Math.abs(totalPercent - 100) < 0.01 ? 'text-green-600' : 'text-red-600'}`}>
+                    Total distribuído: {totalPercent}% {Math.abs(totalPercent - 100) < 0.01 ? '✅' : '⚠️'}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+
           {/* Pessoas Relacionadas */}
           {Array.isArray(c.outros_nomes) && c.outros_nomes.length > 0 && (
             <div className="space-y-1">
