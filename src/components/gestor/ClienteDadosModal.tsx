@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { X, Copy, ClipboardList } from 'lucide-react';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 import WhatsAppLink, { formatWhatsAppUrl } from './WhatsAppLink';
 import type { ClienteBase } from './ClientesList';
 
