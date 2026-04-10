@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Plus, Save, X, Edit2, Trash2, Upload } from 'lucide-react';
+import { Plus, Save, X, Edit2, Trash2, Upload, RotateCcw } from 'lucide-react';
 import type { Material, Fornecedor, QuantidadePadrao } from './types';
 import { CATEGORIAS, CATEGORIA_ICONS, POTENCIAS } from './types';
 import MoneyInput from '@/components/ui/money-input';
@@ -93,6 +93,14 @@ export default function ProdutosTab() {
     await supabase.from('materiais' as any).update({ ativo: false }).eq('id', id);
     toast.success('Material desativado!');
     load();
+  };
+
+  const handleZerarEstoque = async (materialId: string, nome: string) => {
+    if (!confirm(`Zerar estoque de "${nome}"? Esta ação não pode ser desfeita.`)) return;
+    const { error } = await supabase.from('estoque' as any).update({ quantidade_atual: 0, atualizado_em: new Date().toISOString() }).eq('material_id', materialId);
+    if (error) { toast.error('Erro ao zerar estoque'); return; }
+    toast.success(`Estoque de "${nome}" zerado!`);
+    setEstoqueMap(prev => ({ ...prev, [materialId]: 0 }));
   };
 
   const handleImportPadrao = async () => {
@@ -222,6 +230,7 @@ export default function ProdutosTab() {
                 {m.nome}
               </p>
               <div className="flex gap-2 shrink-0 ml-2">
+                <button onClick={() => handleZerarEstoque(m.id, m.nome)} className="text-amber-600 hover:text-amber-500" title="Zerar estoque"><RotateCcw className="w-4 h-4" /></button>
                 <button onClick={() => handleEdit(m)} className="text-primary hover:text-primary/80"><Edit2 className="w-4 h-4" /></button>
                 <button onClick={() => handleDelete(m.id)} className="text-destructive hover:text-destructive/80"><Trash2 className="w-4 h-4" /></button>
               </div>
@@ -268,6 +277,7 @@ export default function ProdutosTab() {
                 </td>
                 <td className="py-3 px-4">
                   <div className="flex gap-2">
+                    <button onClick={() => handleZerarEstoque(m.id, m.nome)} className="text-amber-600 hover:text-amber-500" title="Zerar estoque"><RotateCcw className="w-4 h-4" /></button>
                     <button onClick={() => handleEdit(m)} className="text-primary hover:text-primary/80"><Edit2 className="w-4 h-4" /></button>
                     <button onClick={() => handleDelete(m.id)} className="text-destructive hover:text-destructive/80"><Trash2 className="w-4 h-4" /></button>
                   </div>

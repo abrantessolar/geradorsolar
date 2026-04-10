@@ -106,7 +106,7 @@ export default function ProjetosUnificados({
   const aguardandoDrag = useDraggableColumns('cols_aguardando', aguardandoDefaultOrder);
 
   // Draggable columns for instalados
-  const instaladosDefaultOrder = ['cliente', 'telefone', 'data_instalacao', 'qtd_placas', 'kwp', 'marca_inv', 'pot_inv', 'satisfacao', 'acoes'];
+  const instaladosDefaultOrder = ['cliente', 'telefone', 'data_instalacao', 'qtd_placas', 'kwp', 'marca_inv', 'pot_inv', 'acoes'];
   const instaladosDrag = useDraggableColumns('cols_instalados', instaladosDefaultOrder);
 
   const mapProjetoToDados = (p: Projeto) => ({
@@ -187,7 +187,7 @@ export default function ProjetosUnificados({
     kwp: { label: 'kWp', render: c => <span className="font-medium">{c.kwp ? Number(c.kwp).toFixed(2) : calcKwp(c.qtd_placas, c.potencia_placa)}</span>, className: 'text-xs' },
     marca_inv: { label: 'Marca Inv.', render: c => <>{c.marca_inversor || '—'}</>, className: 'text-xs' },
     pot_inv: { label: 'Pot. Inv.', render: c => <>{c.potencia_inversor ? `${c.potencia_inversor} kW` : '—'}</>, className: 'text-xs' },
-    satisfacao: { label: 'Satisfação', render: c => <>{c.satisfacao || '—'}</>, className: 'text-xs' },
+    
     acoes: { label: 'Ações', render: c => (
       <div className="flex gap-1 items-center">
         <TooltipProvider>
