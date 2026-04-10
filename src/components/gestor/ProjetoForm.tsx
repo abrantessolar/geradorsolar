@@ -166,6 +166,19 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
       unidade_geradora_cep: f.unidade_geradora_cep || f.cep,
       unidade_geradora_endereco: f.unidade_geradora_endereco || enderecoCompleto,
     }));
+    // Also sync UC geradora
+    setUcs(prev => {
+      const gerIdx = prev.findIndex(u => u.tipo === 'geradora');
+      if (gerIdx < 0) return prev;
+      const g = prev[gerIdx];
+      if (g.cep || g.endereco) return prev; // already has data
+      return prev.map((u, i) => i === gerIdx ? {
+        ...u,
+        cep: form.cep || u.cep,
+        endereco: enderecoCompleto || u.endereco,
+        concessionaria: form.concessionaria || u.concessionaria,
+      } : u);
+    });
   };
 
   const handleSave = async () => {
