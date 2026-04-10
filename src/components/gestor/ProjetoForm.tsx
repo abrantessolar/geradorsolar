@@ -109,13 +109,33 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
         data_instalacao: p.data_instalacao || '',
         distribuidor: p.distribuidor || '', instalador: p.instalador || '', pagamento_status: p.pagamento_status || 'Pendente',
       });
-      // Load outros_nomes
       if (p.outros_nomes && Array.isArray(p.outros_nomes)) {
         setOutrosNomes(p.outros_nomes.map((o: any) => ({ nome: o.nome || '', relacao: o.relacao || '', cpf: o.cpf || '', telefone: o.telefone || '' })));
       }
-      // If UG already has data, mark as manually edited
       if (p.unidade_geradora_cep || p.unidade_geradora_endereco) {
         setUgManuallyEdited(true);
+      }
+    });
+
+    // Load UCs from new table
+    supabase.from('unidades_consumidoras' as any).select('*').eq('projeto_id', projetoId).order('prioridade', { ascending: true }).then(({ data: ucsData }) => {
+      if (ucsData && ucsData.length > 0) {
+        const loaded: UCItem[] = (ucsData as any[]).map(u => ({
+          id: u.id,
+          tipo: u.tipo,
+          codigo_uc: u.codigo_uc || '',
+          cep: u.cep || '',
+          endereco: u.endereco || '',
+          padrao_entrada: u.padrao_entrada || '',
+          concessionaria: u.concessionaria || '',
+          nome_titular: u.nome_titular || '',
+          relacao_titular: u.relacao_titular || '',
+          percentual: u.percentual?.toString() || '',
+          prioridade: u.prioridade || 1,
+        }));
+        setUcs(loaded);
+        const firstModo = (ucsData as any[])[0]?.modo_distribuicao;
+        if (firstModo) setModoDistribuicao(firstModo);
       }
     });
   }, [projetoId]);
