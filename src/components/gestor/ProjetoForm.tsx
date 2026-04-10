@@ -50,6 +50,10 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
   // Pessoas relacionadas
   const [outrosNomes, setOutrosNomes] = useState<PessoaRelacionada[]>([]);
 
+  // Unidades consumidoras
+  const [ucs, setUcs] = useState<UCItem[]>([createDefaultGeradora()]);
+  const [modoDistribuicao, setModoDistribuicao] = useState<ModoDistribuicao>('percentual');
+
   // Track if UG was manually edited
   const [ugManuallyEdited, setUgManuallyEdited] = useState(false);
 
