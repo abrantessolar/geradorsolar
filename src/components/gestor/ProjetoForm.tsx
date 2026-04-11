@@ -61,7 +61,7 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
     tipo_pessoa: 'PF',
     nome_completo: '', cpf: '', data_nascimento: '',
     razao_social: '', cnpj: '', nome_representante: '', cpf_representante: '',
-    telefone: '',
+    telefone: '', email: '',
     logradouro: '', complemento: '', cep: '', bairro: '', cidade: '', estado: '',
     concessionaria: 'ELEKTRO',
     placa_id: '', qtd_placas: '',
@@ -92,7 +92,7 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
         tipo_pessoa: p.tipo_pessoa || 'PF',
         nome_completo: p.nome_completo || '', cpf: p.cpf || '', data_nascimento: p.data_nascimento || '',
         razao_social: p.razao_social || '', cnpj: p.cnpj || '', nome_representante: p.nome_representante || '', cpf_representante: p.cpf_representante || '',
-        telefone: p.telefone || '',
+        telefone: p.telefone || '', email: p.email || '',
         logradouro: p.logradouro || p.endereco_completo || '', complemento: p.complemento || '', cep: p.cep || '', bairro: p.bairro || '', cidade: p.cidade || '', estado: p.estado || '',
         concessionaria: p.concessionaria || 'ELEKTRO',
         placa_id: p.placa_id || '', qtd_placas: p.qtd_placas?.toString() || '',
@@ -201,6 +201,7 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
       nome_representante: form.nome_representante || null,
       cpf_representante: form.cpf_representante || null,
       telefone: form.telefone || null,
+      email: form.email || null,
       logradouro: form.logradouro || null,
       complemento: form.complemento || null,
       endereco_completo: [form.logradouro, form.bairro, form.cidade && form.estado ? `${form.cidade}/${form.estado}` : form.cidade || form.estado, form.cep ? `CEP: ${form.cep}` : ''].filter(Boolean).join(', ') || null,
@@ -397,6 +398,7 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
               <div><label className={labelClass}>CPF *</label><input className={inputClass} value={form.cpf} onChange={e => set('cpf', maskCpf(e.target.value))} placeholder="000.000.000-00" /></div>
               <div><label className={labelClass}>Data de Nascimento</label><input className={inputClass} type="date" value={form.data_nascimento} onChange={e => set('data_nascimento', e.target.value)} /></div>
               <div><label className={labelClass}>Telefone</label><input className={inputClass} value={form.telefone} onChange={e => set('telefone', maskTelefone(e.target.value))} placeholder="(67) 99999-9999" /></div>
+              <div><label className={labelClass}>Email</label><input className={inputClass} type="email" value={form.email} onChange={e => set('email', e.target.value)} placeholder="cliente@email.com" /></div>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -405,6 +407,7 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
               <div><label className={labelClass}>Nome do Representante Legal</label><input className={inputClass} value={form.nome_representante} onChange={e => set('nome_representante', e.target.value)} /></div>
               <div><label className={labelClass}>CPF do Representante</label><input className={inputClass} value={form.cpf_representante} onChange={e => set('cpf_representante', maskCpf(e.target.value))} placeholder="000.000.000-00" /></div>
               <div><label className={labelClass}>Telefone</label><input className={inputClass} value={form.telefone} onChange={e => set('telefone', maskTelefone(e.target.value))} placeholder="(67) 99999-9999" /></div>
+              <div><label className={labelClass}>Email</label><input className={inputClass} type="email" value={form.email} onChange={e => set('email', e.target.value)} placeholder="empresa@email.com" /></div>
             </div>
           )}
 

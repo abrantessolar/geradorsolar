@@ -959,6 +959,7 @@ export type Database = {
           data_instalacao: string | null
           data_nascimento: string | null
           distribuidor: string | null
+          email: string | null
           endereco_completo: string | null
           estado: string | null
           estrutura: string | null
@@ -1031,6 +1032,7 @@ export type Database = {
           data_instalacao?: string | null
           data_nascimento?: string | null
           distribuidor?: string | null
+          email?: string | null
           endereco_completo?: string | null
           estado?: string | null
           estrutura?: string | null
@@ -1103,6 +1105,7 @@ export type Database = {
           data_instalacao?: string | null
           data_nascimento?: string | null
           distribuidor?: string | null
+          email?: string | null
           endereco_completo?: string | null
           estado?: string | null
           estrutura?: string | null
