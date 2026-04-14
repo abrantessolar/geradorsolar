@@ -721,25 +721,6 @@ export default function ProposalPage() {
                 <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 text-secondary" /> Retorno Financeiro
               </h2>
 
-              {/* Savings cards removed */}
-
-                {/* Without solar cards */}
-                {[5, 10, 15].map(years => (
-                  <div key={`no-${years}`} className="solar-card p-5 space-y-2 bg-red-50 dark:bg-red-950/20" style={{ borderLeft: '4px solid #E84855' }}>
-                    <div className="flex items-center gap-2">
-                      <AlertTriangle className="w-5 h-5 text-red-500" />
-                      <span className="text-sm font-semibold text-red-600 dark:text-red-400">Sem solar em {years} anos</span>
-                    </div>
-                    <p className="text-2xl font-bold text-red-600 dark:text-red-400">
-                      {formatCurrency(calcWithoutSolar(years))}
-                    </p>
-                    <p className="text-xs text-red-500/80">
-                      Sem energia solar, você pagaria de conta de luz em {years} anos
-                    </p>
-                  </div>
-                ))}
-              </div>
-
               {/* Cash flow toggle button */}
               <div className="text-center no-print">
                 <button
