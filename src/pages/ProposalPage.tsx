@@ -726,21 +726,6 @@ export default function ProposalPage() {
 
               {/* Savings cards */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-                {[5, 10, 15].map(years => (
-                  <div key={years} className="solar-card p-5 space-y-2" style={{ borderLeft: '4px solid #4A5A2A' }}>
-                    <div className="flex items-center gap-2">
-                      <Calendar className="w-5 h-5" style={{ color: '#4A5A2A' }} />
-                      <span className="text-sm font-semibold text-muted-foreground">Retorno em {years} anos</span>
-                    </div>
-                    <p className="text-2xl font-bold" style={{ color: '#4A5A2A' }}>
-                      {formatCurrency(calcSavings(years))}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      Você economiza nos próximos {years} anos
-                    </p>
-                  </div>
-                ))}
-
                 {/* Without solar cards */}
                 {[5, 10, 15].map(years => (
                   <div key={`no-${years}`} className="solar-card p-5 space-y-2 bg-red-50 dark:bg-red-950/20" style={{ borderLeft: '4px solid #E84855' }}>
