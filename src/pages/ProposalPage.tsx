@@ -720,6 +720,43 @@ export default function ProposalPage() {
               <h2 className="text-xl sm:text-2xl font-bold text-primary text-center flex items-center justify-center gap-2">
                 <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 text-secondary" /> Retorno Financeiro
               </h2>
+              <p className="text-center text-sm text-muted-foreground">
+                Sistema dimensionado com {settings.surplusFactor ?? 20}% de reserva para crescimento futuro do consumo
+              </p>
+
+              {/* Savings cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+                {[5, 10, 15].map(years => (
+                  <div key={years} className="solar-card p-5 space-y-2" style={{ borderLeft: '4px solid #4A5A2A' }}>
+                    <div className="flex items-center gap-2">
+                      <Calendar className="w-5 h-5" style={{ color: '#4A5A2A' }} />
+                      <span className="text-sm font-semibold text-muted-foreground">Retorno em {years} anos</span>
+                    </div>
+                    <p className="text-2xl font-bold" style={{ color: '#4A5A2A' }}>
+                      {formatCurrency(calcSavings(years))}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Você economiza nos próximos {years} anos
+                    </p>
+                  </div>
+                ))}
+
+                {/* Without solar cards */}
+                {[5, 10, 15].map(years => (
+                  <div key={`no-${years}`} className="solar-card p-5 space-y-2 bg-red-50 dark:bg-red-950/20" style={{ borderLeft: '4px solid #E84855' }}>
+                    <div className="flex items-center gap-2">
+                      <AlertTriangle className="w-5 h-5 text-red-500" />
+                      <span className="text-sm font-semibold text-red-600 dark:text-red-400">Sem solar em {years} anos</span>
+                    </div>
+                    <p className="text-2xl font-bold text-red-600 dark:text-red-400">
+                      {formatCurrency(calcWithoutSolar(years))}
+                    </p>
+                    <p className="text-xs text-red-500/80">
+                      Sem energia solar, você pagaria de conta de luz em {years} anos
+                    </p>
+                  </div>
+                ))}
+              </div>
 
               {/* Cash flow toggle button */}
               <div className="text-center no-print">
