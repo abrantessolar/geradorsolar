@@ -371,7 +371,7 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
         <Page>
           {/* Imagem de capa com overlay */}
           <img
-            src={bgCapa}
+            src={FACADE_BG}
             alt=""
             crossOrigin="anonymous"
             style={{
