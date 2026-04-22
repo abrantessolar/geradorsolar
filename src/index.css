@@ -2,6 +2,14 @@
 @tailwind components;
 @tailwind utilities;
 
+/* PDF capture mode: hide interactive UI and force-expand collapsed sections */
+body.pdf-capturing .no-print {
+  display: none !important;
+}
+body.pdf-capturing .pdf-force-show {
+  display: block !important;
+}
+
 @layer base {
   :root {
     --background: 0 0% 96%;

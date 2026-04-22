@@ -12,8 +12,8 @@ import {
 import { MONTH_LABELS, MONTH_KEYS, SEASONAL_FACTORS, INSTALLMENT_OPTIONS, UC_COLORS, LINE_NAMES, LINE_SUBS } from '@/data/types';
 import type { PriceTableEntry, PriceTableLineDetails } from '@/data/types';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, LineChart, Line, ReferenceLine } from 'recharts';
-import { Download, Share2, Edit, ArrowLeft, Sun, Zap, TrendingUp, Shield, X, Cpu, Check, MessageCircle, Calendar, AlertTriangle, ChevronDown, ChevronUp, BarChart3, Eye, EyeOff } from 'lucide-react';
-import { generateProposalPDF } from '@/lib/generatePDF';
+import { Download, Share2, Edit, ArrowLeft, Sun, Zap, TrendingUp, Shield, X, Cpu, Check, MessageCircle, Calendar, AlertTriangle, ChevronDown, ChevronUp, BarChart3, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
+import { generatePDFFromPage } from '@/lib/generatePDFFromPage';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import Diferenciais from '@/components/Diferenciais';
@@ -24,6 +24,14 @@ import PDFCanvasViewer from '@/components/PDFCanvasViewer';
 
 const LINES = ['excellence', 'premium'] as const;
 const PERIOD_OPTIONS = [5, 10, 15, 20, 25];
+
+// Foto da fachada da empresa (mesma usada no hero da landing)
+const FACADE_BG = 'https://static.wixstatic.com/media/c2ae0d_0fc9044d218948a585d2170345d4ce87~mv2.jpg';
+
+// Ciclo de vida da proposta
+const VALIDITY_DAYS = 10; // após este prazo, mostra "fora de validade"
+const EXPIRY_DAYS = 30;   // após este prazo, link expira completamente
+const DEFAULT_WHATSAPP = '5567996448995';
 
 export default function ProposalPage() {
   const { id } = useParams();
@@ -36,6 +44,7 @@ export default function ProposalPage() {
   const [pdfBlob, setPdfBlob] = useState<Blob | null>(null);
   const [showPdfViewer, setShowPdfViewer] = useState(false);
   const [showCostPanel, setShowCostPanel] = useState(false);
+  const proposalContentRef = useRef<HTMLDivElement>(null);
   const settings = getSettings();
   const socialProofs = getSocialProofs().filter(s => s.active);
 
@@ -285,36 +294,46 @@ export default function ProposalPage() {
     setShowShareMenu(false);
   };
 
-  const getPdfDoc = async () => {
-    const doc = await generateProposalPDF(proposal, settings, lineCards, chartData, cashflowData);
-    return doc;
+  const getFileName = () => {
+    const numero = proposal?.numero_proposta || 'TLS-0000';
+    const clientName = (proposal?.clientData?.name || 'Cliente').replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_');
+    return `Proposta_${numero}_${clientName}.pdf`;
   };
 
-  const getFileName = () => {
-    const numero = proposal.numero_proposta || 'TLS-0000';
-    const clientName = (proposal.clientData.name || 'Cliente').replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_');
-    return `Proposta_${numero}_${clientName}.pdf`;
+  const buildPdf = async () => {
+    if (!proposalContentRef.current) throw new Error('Conteúdo não carregado');
+    // Garante que o fluxo de caixa esteja expandido para entrar no PDF
+    const wasCashflowOpen = showCashflow;
+    if (!wasCashflowOpen) setShowCashflow(true);
+    // Aguarda render do estado expandido
+    await new Promise((r) => setTimeout(r, 400));
+    try {
+      const doc = await generatePDFFromPage(proposalContentRef.current);
+      return doc;
+    } finally {
+      if (!wasCashflowOpen) setShowCashflow(false);
+    }
   };
 
   const handleDownloadPDF = async () => {
     try {
       toast.loading('Gerando PDF...');
-      const doc = await getPdfDoc();
+      const doc = await buildPdf();
       doc.save(getFileName());
       toast.dismiss();
       toast.success('PDF gerado com sucesso!');
-      // Track download
       addHistoricoDB(id || '', 'pdf_baixado', session?.user?.id || null, {});
     } catch (err) {
       toast.dismiss();
       toast.error('Erro ao gerar PDF');
+      console.error(err);
     }
   };
 
   const handlePreviewPDF = async () => {
     try {
       toast.loading('Gerando visualização...');
-      const doc = await getPdfDoc();
+      const doc = await buildPdf();
       const arrayBuffer = doc.output('arraybuffer');
       const blob = new Blob([arrayBuffer], { type: 'application/pdf' });
       setPdfBlob(blob);
@@ -323,6 +342,7 @@ export default function ProposalPage() {
     } catch (err) {
       toast.dismiss();
       toast.error('Erro ao gerar visualização');
+      console.error(err);
     }
   };
 
@@ -362,6 +382,55 @@ export default function ProposalPage() {
   const savingsEnd = cashflowData.length > 0
     ? (cashflowData[cashflowData.length - 1]?.semSolar || 0) - (cashflowData[cashflowData.length - 1]?.comSolar || 0)
     : 0;
+
+  // ===== Validade / Expiração =====
+  const createdAt = proposal.criado_em ? new Date(proposal.criado_em) : new Date();
+  const today = new Date();
+  const daysSinceCreated = Math.floor((today.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24));
+  const validUntil = new Date(createdAt.getTime() + VALIDITY_DAYS * 24 * 60 * 60 * 1000);
+  const expiresAt = new Date(createdAt.getTime() + EXPIRY_DAYS * 24 * 60 * 60 * 1000);
+  const fmtDate = (d: Date) => d.toLocaleDateString('pt-BR');
+  const isExpired = daysSinceCreated > EXPIRY_DAYS && !isAuthenticated;
+  const isOutOfValidity = daysSinceCreated > VALIDITY_DAYS && !isExpired;
+
+  // WhatsApp do consultor
+  const sellerPhone = (proposal.sellerPhone || '').replace(/\D/g, '') || DEFAULT_WHATSAPP;
+  const sellerWhatsNumber = sellerPhone.startsWith('55') ? sellerPhone : `55${sellerPhone}`;
+  const sellerName = proposal.clientData?.seller || 'consultor';
+  const propostaNum = proposal.numero_proposta || '';
+  const whatsappMessage = encodeURIComponent(
+    `Olá ${sellerName}, tenho dúvidas sobre a proposta ${propostaNum}.`,
+  );
+  const whatsappUrl = `https://wa.me/${sellerWhatsNumber}?text=${whatsappMessage}`;
+
+  // ===== Tela de proposta expirada =====
+  if (isExpired) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background px-4">
+        <div className="max-w-md w-full text-center space-y-6 solar-card p-8">
+          <img src={logoTls} alt="Três Lagoas Solar" className="h-24 mx-auto" />
+          <div className="space-y-2">
+            <AlertTriangle className="w-12 h-12 text-destructive mx-auto" />
+            <h1 className="text-2xl font-bold text-primary">Orçamento expirado</h1>
+            <p className="text-muted-foreground">
+              Este orçamento expirou em <span className="font-semibold">{fmtDate(expiresAt)}</span>.
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Para receber uma proposta atualizada com os valores e condições atuais, fale com seu consultor.
+            </p>
+          </div>
+          <a
+            href={whatsappUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center justify-center gap-2 w-full py-3 px-6 rounded-lg bg-green-600 hover:bg-green-700 text-white font-semibold transition-colors"
+          >
+            <MessageCircle className="w-5 h-5" /> Falar no WhatsApp
+          </a>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={`min-h-screen bg-background ${isPrinting ? 'print-mode' : ''}`}>
@@ -404,7 +473,7 @@ export default function ProposalPage() {
         </div>
       )}
 
-      {/* PUBLIC: Floating download button only */}
+      {/* PUBLIC: Floating download button */}
       {!isAuthenticated && (
         <button
           onClick={handleDownloadPDF}
@@ -414,32 +483,64 @@ export default function ProposalPage() {
         </button>
       )}
 
+      {/* WhatsApp floating button - visible to everyone */}
+      <a
+        href={whatsappUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="no-print fixed bottom-6 left-6 z-50 inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold py-3 px-4 rounded-full shadow-lg transition-all hover:scale-105"
+        title={`Falar com ${sellerName} no WhatsApp`}
+      >
+        <MessageCircle className="w-5 h-5" />
+        <span className="hidden sm:inline">Tire suas dúvidas</span>
+      </a>
+
       {/* Click outside to close share menu */}
       {showShareMenu && <div className="fixed inset-0 z-40" onClick={() => setShowShareMenu(false)} />}
 
-      <div className={`max-w-5xl mx-auto py-4 sm:py-8 px-2 sm:px-4 space-y-8 sm:space-y-12 print-container ${isAuthenticated ? 'pt-16' : ''}`}>
-        {/* COVER */}
-        <section className="text-center space-y-6 py-16 relative overflow-hidden print-page print-cover">
-          <div className="absolute inset-0 opacity-5 no-print">
-            {Array.from({ length: 20 }).map((_, i) => (
-              <span key={i} className="absolute text-6xl font-bold text-primary select-none"
-                style={{ left: `${(i % 5) * 22}%`, top: `${Math.floor(i / 5) * 28}%` }}>+</span>
-            ))}
-          </div>
-          <div className="relative z-10">
-            <img src={logoTls} alt="Três Lagoas Solar" className="h-72 mx-auto mb-6 print-logo" />
-            <p className="text-sm uppercase tracking-widest text-muted-foreground mb-2">{settings.company.name}</p>
+      <div ref={proposalContentRef} className={`max-w-5xl mx-auto py-4 sm:py-8 px-2 sm:px-4 space-y-8 sm:space-y-12 print-container ${isAuthenticated ? 'pt-16' : ''}`}>
+        {/* COVER with facade background */}
+        <section
+          data-pdf-section="cover"
+          className="relative overflow-hidden text-center space-y-6 print-page print-cover rounded-2xl"
+          style={{
+            backgroundImage: `linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.78)), url(${FACADE_BG})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            minHeight: '520px',
+            padding: '64px 24px',
+          }}
+        >
+          <div className="relative z-10 text-white">
+            <img src={logoTls} alt="Três Lagoas Solar" className="h-48 sm:h-56 mx-auto mb-6 print-logo drop-shadow-2xl" />
+            <p className="text-xs uppercase tracking-widest text-white/80 mb-2">{settings.company.name}</p>
             {proposal.numero_proposta && (
-              <p className="text-sm font-mono font-bold text-secondary mb-2">{proposal.numero_proposta}</p>
+              <p className="text-sm font-mono font-bold text-secondary mb-3">{proposal.numero_proposta}</p>
             )}
-            <h1 className="text-4xl md:text-5xl font-bold text-primary text-balance print-title" style={{ lineHeight: '1.1' }}>
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white text-balance print-title drop-shadow-lg" style={{ lineHeight: '1.1' }}>
               Meu Projeto de<br />Energia Solar Fotovoltaica
             </h1>
+
+            {/* Validity badge */}
+            <div className="mt-6 flex justify-center">
+              {isOutOfValidity ? (
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-destructive/90 text-destructive-foreground text-sm font-semibold shadow-lg">
+                  <AlertTriangle className="w-4 h-4" />
+                  Orçamento fora de validade desde {fmtDate(validUntil)}
+                </div>
+              ) : (
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-green-600/90 text-white text-sm font-semibold shadow-lg">
+                  <CheckCircle2 className="w-4 h-4" />
+                  Válida até {fmtDate(validUntil)}
+                </div>
+              )}
+            </div>
+
             <div className="mt-8 space-y-1">
-              <p className="text-xl font-semibold">{proposal.clientData.name}</p>
-              <p className="text-muted-foreground">{proposal.clientData.city} — {proposal.clientData.state || 'MS'}</p>
-              <p className="text-muted-foreground">{formatNumber(lineCards[0]?.dimensioning.avgMonthlyKwh || 0, 0)} kWh/mês</p>
-              <p className="text-sm text-muted-foreground mt-4">
+              <p className="text-xl font-semibold text-white">{proposal.clientData.name}</p>
+              <p className="text-white/80">{proposal.clientData.city} — {proposal.clientData.state || 'MS'}</p>
+              <p className="text-white/80">{formatNumber(lineCards[0]?.dimensioning.avgMonthlyKwh || 0, 0)} kWh/mês</p>
+              <p className="text-sm text-white/70 mt-4">
                 Representante: {proposal.clientData.seller}<br />
                 {proposal.sellerEmail ? <>{proposal.sellerEmail}<br /></> : null}
                 {proposal.sellerPhone}
@@ -447,6 +548,17 @@ export default function ProposalPage() {
             </div>
           </div>
         </section>
+
+        {/* Out-of-validity banner (also visible below cover for emphasis) */}
+        {isOutOfValidity && (
+          <div data-pdf-section="validity-warning" className="solar-card p-4 border-l-4 border-destructive bg-destructive/5 flex items-center gap-3">
+            <AlertTriangle className="w-6 h-6 text-destructive flex-shrink-0" />
+            <div className="text-sm">
+              <p className="font-semibold text-destructive">Esta proposta está fora do prazo de validade.</p>
+              <p className="text-muted-foreground">Os valores podem ter sido atualizados. <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" className="text-primary underline font-medium">Fale com {sellerName}</a> para receber uma nova proposta.</p>
+            </div>
+          </div>
+        )}
 
         {/* PANEL ADJUSTMENT - only for authenticated */}
         {isAuthenticated && (
@@ -500,7 +612,7 @@ export default function ProposalPage() {
         )}
 
         {/* SELECTED LINE CARD */}
-        <section className="space-y-4 print-page">
+        <section data-pdf-section="system" className="space-y-4 print-page">
           <h2 className="text-2xl font-bold text-primary text-center flex items-center justify-center gap-2">
             <Zap className="w-6 h-6 text-secondary" /> Seu Sistema Solar
           </h2>
@@ -600,7 +712,7 @@ export default function ProposalPage() {
 
 
         {/* CHART */}
-        <section className="solar-card p-4 sm:p-8 space-y-6 print-page print-chart-section">
+        <section data-pdf-section="chart" className="solar-card p-4 sm:p-8 space-y-6 print-page print-chart-section">
           <div className="text-center space-y-1">
             <h2 className="text-xl sm:text-2xl font-bold text-primary flex items-center justify-center gap-2">
               <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 text-secondary" /> Geração vs Consumo — 12 Meses
@@ -662,7 +774,7 @@ export default function ProposalPage() {
 
         {/* EQUIPMENT */}
         {proposal.equipment && proposal.equipment.length > 0 && (
-          <section className="solar-card p-8 space-y-4 print-page">
+          <section data-pdf-section="equipment" className="solar-card p-8 space-y-4 print-page">
             <h2 className="text-2xl font-bold text-primary flex items-center gap-2">
               <Cpu className="w-6 h-6 text-secondary" /> Equipamentos Adicionais
             </h2>
@@ -715,7 +827,7 @@ export default function ProposalPage() {
           };
 
           return (
-            <section className="space-y-6 print-page">
+            <section data-pdf-section="financial" className="space-y-6 print-page">
               <h2 className="text-xl sm:text-2xl font-bold text-primary text-center flex items-center justify-center gap-2">
                 <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 text-secondary" /> Retorno Financeiro
               </h2>
@@ -848,23 +960,44 @@ export default function ProposalPage() {
         })()}
 
         {/* DIFERENCIAIS */}
-        <Diferenciais compact />
+        <div data-pdf-section="differentials">
+          <Diferenciais compact />
+        </div>
 
         {/* PORTFÓLIO DE OBRAS */}
-        <ProposalPortfolio />
+        <div data-pdf-section="portfolio">
+          <ProposalPortfolio />
+        </div>
+
+        {/* CONSULTANT WHATSAPP CTA */}
+        <div data-pdf-section="consultant" className="solar-card p-6 text-center space-y-3 bg-primary/5">
+          <h3 className="text-lg font-bold text-primary">Ainda tem dúvidas?</h3>
+          <p className="text-sm text-muted-foreground">
+            Fale diretamente com <span className="font-semibold text-foreground">{sellerName}</span>, seu consultor solar.
+          </p>
+          <a
+            href={whatsappUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
+          >
+            <MessageCircle className="w-5 h-5" />
+            Falar com {sellerName} no WhatsApp
+          </a>
+        </div>
 
         {/* CONTACT FOOTER */}
-        <ProposalFooter />
-
-        {/* PRINT FOOTER */}
-        <div className="hidden print-only-block text-center py-8 border-t border-border mt-8">
-          <p className="text-sm font-semibold">{settings.company.name}</p>
-          <p className="text-xs text-muted-foreground">
-            {settings.company.phone} • {settings.company.email} • {settings.company.site}
-          </p>
-          <p className="text-xs text-muted-foreground mt-2">
-            Proposta válida por {settings.proposalValidity || 15} dias • Gerado em {new Date().toLocaleDateString('pt-BR')}
-          </p>
+        <div data-pdf-section="footer">
+          <ProposalFooter />
+          <div className="text-center text-xs text-muted-foreground mt-4">
+            {isOutOfValidity ? (
+              <span className="text-destructive font-semibold">
+                Proposta fora de validade desde {fmtDate(validUntil)} • Gerada em {fmtDate(createdAt)}
+              </span>
+            ) : (
+              <>Proposta válida até {fmtDate(validUntil)} • Gerada em {fmtDate(createdAt)}</>
+            )}
+          </div>
         </div>
       </div>
 
