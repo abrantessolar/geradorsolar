@@ -303,72 +303,77 @@ export default function ProposalPage() {
     return `Proposta_${numero}_${clientName}.pdf`;
   };
 
-  const buildPdf = async () => {
-    if (!proposalContentRef.current) throw new Error('Conteúdo não carregado');
-    // Garante que o fluxo de caixa esteja expandido para entrar no PDF
-    const wasCashflowOpen = showCashflow;
-    if (!wasCashflowOpen) setShowCashflow(true);
-    // Aguarda render do estado expandido
-    await new Promise((r) => setTimeout(r, 400));
-    try {
-      const doc = await generatePDFFromPage(proposalContentRef.current);
-      return doc;
-    } finally {
-      if (!wasCashflowOpen) setShowCashflow(false);
-    }
+  const buildTemplateData = (): PropostaTemplateData | null => {
+    if (!selectedCard) return null;
+    const getInst = (n: number) => {
+      const v = selectedCard.installments[n];
+      if (!v) return 0;
+      return typeof v === 'number' ? v : (v as any).perMonth || 0;
+    };
+    const inverterPower = selectedCard.inverterModel || (selectedCard.inverter ? `${selectedCard.inverter.power} kW` : '');
+    const panelPower = selectedCard.panelPowerLabel || (selectedCard.panel ? `${selectedCard.panel.power} Wp` : '');
+    const qtdInversores = selectedCard.line === 'premium' ? selectedCard.microCount : 1;
+
+    return {
+      cliente_nome: proposal.clientData?.name || 'Cliente',
+      responsavel_nome: proposal.clientData?.seller || '',
+      geracao_mensal: selectedCard.dimensioning.monthlyGeneration,
+      consumo_mensal: selectedCard.dimensioning.avgMonthlyKwh,
+      excedente_kwh: selectedCard.dimensioning.surplus,
+      qtd_inversores: qtdInversores,
+      marca_inversor: selectedCard.inverterBrand || selectedCard.inverter?.brand || '',
+      potencia_inversor: inverterPower,
+      num_placas: selectedCard.panelCount,
+      marca_placa: selectedCard.panelBrand || selectedCard.panel?.brand || '',
+      potencia_placa: panelPower,
+      preco_vista: selectedCard.totalPrice,
+      parcela_24x: getInst(24),
+      parcela_36x: getInst(36),
+      parcela_48x: getInst(48),
+      parcela_60x: getInst(60),
+      parcela_72x: getInst(72),
+      numero_proposta: proposal.numero_proposta || 'TLS-0000',
+    };
+  };
+
+  const buildPdfBlob = async (): Promise<Blob> => {
+    const data = buildTemplateData();
+    if (!data) throw new Error('Dados da proposta não carregados');
+    if (!templateContainerRef.current) throw new Error('Template não renderizado');
+    // Pequena espera para garantir que o template offscreen foi renderizado
+    await new Promise((r) => setTimeout(r, 50));
+    return await gerarPropostaPDF(templateContainerRef.current, data);
   };
 
   const handleDownloadPDF = async () => {
+    const data = buildTemplateData();
+    if (!data) {
+      toast.error('Dados da proposta não carregados');
+      return;
+    }
+    const toastId = toast.loading('Gerando PDF...');
     try {
-      toast.loading('Gerando PDF...');
-      const doc = await buildPdf();
-      doc.save(getFileName());
-      toast.dismiss();
+      const blob = await buildPdfBlob();
+      downloadPropostaPDF(blob, data.numero_proposta, data.cliente_nome);
+      toast.dismiss(toastId);
       toast.success('PDF gerado com sucesso!');
       addHistoricoDB(id || '', 'pdf_baixado', session?.user?.id || null, {});
     } catch (err) {
-      toast.dismiss();
+      toast.dismiss(toastId);
       toast.error('Erro ao gerar PDF');
       console.error(err);
     }
   };
 
   const handleDownloadDOCX = async () => {
-    if (!selectedCard) {
+    const data = buildTemplateData();
+    if (!data) {
       toast.error('Dados da proposta não carregados');
       return;
     }
     const toastId = toast.loading('Gerando documento...');
     try {
-      const getInst = (n: number) => {
-        const v = selectedCard.installments[n];
-        if (!v) return 0;
-        return typeof v === 'number' ? v : (v as any).perMonth || 0;
-      };
-      const inverterPower = selectedCard.inverterModel || (selectedCard.inverter ? `${selectedCard.inverter.power} kW` : '');
-      const panelPower = selectedCard.panelPowerLabel || (selectedCard.panel ? `${selectedCard.panel.power} Wp` : '');
-      const qtdInversores = selectedCard.line === 'premium' ? selectedCard.microCount : 1;
-
-      await gerarPropostaDOCX({
-        cliente_nome: proposal.clientData?.name || 'Cliente',
-        responsavel_nome: proposal.clientData?.seller || '',
-        geracao_mensal: selectedCard.dimensioning.monthlyGeneration,
-        consumo_mensal: selectedCard.dimensioning.avgMonthlyKwh,
-        excedente_kwh: selectedCard.dimensioning.surplus,
-        qtd_inversores: qtdInversores,
-        marca_inversor: selectedCard.inverterBrand || selectedCard.inverter?.brand || '',
-        potencia_inversor: inverterPower,
-        num_placas: selectedCard.panelCount,
-        marca_placa: selectedCard.panelBrand || selectedCard.panel?.brand || '',
-        potencia_placa: panelPower,
-        preco_vista: selectedCard.totalPrice,
-        parcela_24x: getInst(24),
-        parcela_36x: getInst(36),
-        parcela_48x: getInst(48),
-        parcela_60x: getInst(60),
-        parcela_72x: getInst(72),
-        numero_proposta: proposal.numero_proposta || 'TLS-0000',
-      });
+      await gerarPropostaDOCX(data);
       toast.dismiss(toastId);
       toast.success('DOCX gerado com sucesso!');
       addHistoricoDB(id || '', 'docx_baixado', session?.user?.id || null, {});
@@ -380,16 +385,14 @@ export default function ProposalPage() {
   };
 
   const handlePreviewPDF = async () => {
+    const toastId = toast.loading('Gerando visualização...');
     try {
-      toast.loading('Gerando visualização...');
-      const doc = await buildPdf();
-      const arrayBuffer = doc.output('arraybuffer');
-      const blob = new Blob([arrayBuffer], { type: 'application/pdf' });
+      const blob = await buildPdfBlob();
       setPdfBlob(blob);
       setShowPdfViewer(true);
-      toast.dismiss();
+      toast.dismiss(toastId);
     } catch (err) {
-      toast.dismiss();
+      toast.dismiss(toastId);
       toast.error('Erro ao gerar visualização');
       console.error(err);
     }
