@@ -484,8 +484,26 @@ export default function ProposalPage() {
     );
   }
 
+  const templateData = buildTemplateData();
+
   return (
     <div className={`min-h-screen bg-background ${isPrinting ? 'print-mode' : ''}`}>
+      {/* Template offscreen (usado apenas para gerar PDF idêntico ao .docx) */}
+      {templateData && (
+        <div
+          aria-hidden="true"
+          style={{
+            position: 'fixed',
+            left: '-99999px',
+            top: 0,
+            width: '1241px',
+            pointerEvents: 'none',
+            opacity: 0,
+          }}
+        >
+          <PropostaTemplatePages ref={templateContainerRef} data={templateData} />
+        </div>
+      )}
       {/* AUTHENTICATED: Compact collapsible header */}
       {isAuthenticated && (
         <div className={`no-print fixed top-0 left-0 right-0 z-50 transition-transform duration-300 ${headerVisible ? 'translate-y-0' : '-translate-y-full'}`}>
