@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import { CustoObra, calcCustoTotal, calcLucroBruto, calcMargem, margemBgColor, fmt } from './types';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import MoneyInput from '@/components/ui/money-input';
+import { Sparkles } from 'lucide-react';
 
 type Props = {
   open: boolean;
@@ -26,12 +27,15 @@ export default function CustoModal({ open, onClose, projetoId, nomeCliente, qtdP
   const [existingId, setExistingId] = useState<string | null>(null);
   const [materiaisDetalhe, setMateriaisDetalhe] = useState<{ nome: string; qtd: number; preco: number }[]>([]);
   const [showMateriais, setShowMateriais] = useState(false);
+  const [autoFilled, setAutoFilled] = useState<{ kit?: number; ca?: number; tronco?: number; linha?: string }>({});
 
   const [form, setForm] = useState({
     custo_kit: 0,
     custo_instalacao: qtdPlacas * 100,
     custo_trt: 69,
     custo_materiais: 0,
+    custo_material_ca: 0,
+    custo_cabo_tronco: 0,
     custo_frete: 0,
     custo_homologacao: 0,
     custo_comissao: 0,
@@ -43,10 +47,73 @@ export default function CustoModal({ open, onClose, projetoId, nomeCliente, qtdP
   useEffect(() => {
     if (!open) return;
     loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, projetoId]);
 
   const loadData = async () => {
     setLoading(true);
+
+    // Carregar configurações para tabela CA + cabo tronco + instalação
+    const { data: cfgRows } = await supabase
+      .from('configuracoes' as any)
+      .select('chave, valor')
+      .in('chave', ['admin_settings', 'price_table']);
+
+    let caTable: { maxKw: number; cost: number }[] = [];
+    let installPrice = 100;
+    let trunkPrice = 300;
+    let priceTable: any[] = [];
+    for (const row of (cfgRows || []) as any[]) {
+      if (row.chave === 'admin_settings') {
+        caTable = row.valor?.caMaterialTable || [];
+        installPrice = row.valor?.installationPricePerPanel ?? 100;
+        trunkPrice = row.valor?.trunkCablePrice ?? 300;
+      }
+      if (row.chave === 'price_table') {
+        priceTable = row.valor || [];
+      }
+    }
+
+    // Buscar projeto + proposta vinculada para descobrir linha
+    const { data: proj } = await supabase
+      .from('projetos' as any)
+      .select('id, qtd_placas, qtd_inversores, potencia_inversor, marca_inversor, proposta_id, propostas:proposta_id(linha, dados_completos)')
+      .eq('id', projetoId)
+      .maybeSingle();
+
+    const propostaLinha = (proj as any)?.propostas?.linha as string | undefined;
+    const dadosCompletos = (proj as any)?.propostas?.dados_completos as any;
+    const linha = propostaLinha || dadosCompletos?.selectedLine;
+    const isPremium = linha === 'premium';
+
+    // Custo do KIT a partir da price_table (linha + qtd_placas)
+    let custoKitAuto = 0;
+    if (linha && priceTable.length > 0) {
+      const entry = priceTable.find((e: any) => e.panels === qtdPlacas);
+      if (entry && typeof entry[linha] === 'number') {
+        custoKitAuto = entry[linha];
+      }
+    }
+
+    // Material CA a partir da potência REAL do inversor
+    let custoCaAuto = 0;
+    const potRaw = parseFloat(String((proj as any)?.potencia_inversor || '0').replace(',', '.'));
+    const potKw = potRaw > 100 ? potRaw / 1000 : potRaw;
+    const totalKwInv = isPremium
+      ? potKw * ((proj as any)?.qtd_inversores || Math.ceil(qtdPlacas / 4))
+      : potKw || 5;
+    const caEntry = caTable.find(e => totalKwInv <= e.maxKw);
+    custoCaAuto = caEntry?.cost || caTable[caTable.length - 1]?.cost || 0;
+
+    // Cabo tronco (apenas micro/Premium)
+    let custoTroncoAuto = 0;
+    if (isPremium) {
+      const microCount = (proj as any)?.qtd_inversores || Math.ceil(qtdPlacas / 4);
+      custoTroncoAuto = Math.max(0, microCount - 1) * trunkPrice;
+    }
+
+    setAutoFilled({ kit: custoKitAuto, ca: custoCaAuto, tronco: custoTroncoAuto, linha });
+
     // Load existing cost record
     const { data: custo } = await supabase
       .from('custos_obra' as any)
@@ -92,10 +159,12 @@ export default function CustoModal({ open, onClose, projetoId, nomeCliente, qtdP
       const c = custo as any;
       setExistingId(c.id);
       setForm({
-        custo_kit: c.custo_kit || 0,
-        custo_instalacao: c.custo_instalacao || qtdPlacas * 100,
-        custo_trt: c.custo_trt || 69,
+        custo_kit: c.custo_kit || custoKitAuto,
+        custo_instalacao: c.custo_instalacao || qtdPlacas * installPrice,
+        custo_trt: c.custo_trt ?? 69,
         custo_materiais: custoMateriais,
+        custo_material_ca: c.custo_material_ca ?? custoCaAuto,
+        custo_cabo_tronco: c.custo_cabo_tronco ?? custoTroncoAuto,
         custo_frete: c.custo_frete || 0,
         custo_homologacao: c.custo_homologacao || 0,
         custo_comissao: c.custo_comissao || 0,
@@ -106,10 +175,12 @@ export default function CustoModal({ open, onClose, projetoId, nomeCliente, qtdP
     } else {
       setExistingId(null);
       setForm({
-        custo_kit: 0,
-        custo_instalacao: qtdPlacas * 100,
+        custo_kit: custoKitAuto,
+        custo_instalacao: qtdPlacas * installPrice,
         custo_trt: 69,
         custo_materiais: custoMateriais,
+        custo_material_ca: custoCaAuto,
+        custo_cabo_tronco: custoTroncoAuto,
         custo_frete: 0,
         custo_homologacao: 0,
         custo_comissao: 0,
@@ -134,6 +205,8 @@ export default function CustoModal({ open, onClose, projetoId, nomeCliente, qtdP
       custo_instalacao: form.custo_instalacao,
       custo_trt: form.custo_trt,
       custo_materiais: form.custo_materiais,
+      custo_material_ca: form.custo_material_ca || 0,
+      custo_cabo_tronco: form.custo_cabo_tronco || 0,
       custo_frete: form.custo_frete || null,
       custo_homologacao: form.custo_homologacao || null,
       custo_comissao: form.custo_comissao || null,
@@ -173,6 +246,16 @@ export default function CustoModal({ open, onClose, projetoId, nomeCliente, qtdP
             <div className="py-8 text-center text-muted-foreground">Carregando...</div>
           ) : (
             <div className="space-y-4">
+              {autoFilled.linha && (autoFilled.kit || autoFilled.ca || autoFilled.tronco) ? (
+                <div className="flex items-start gap-2 text-xs bg-primary/5 border border-primary/20 rounded-md p-2">
+                  <Sparkles className="w-3.5 h-3.5 text-primary mt-0.5 shrink-0" />
+                  <div>
+                    Valores pré-preenchidos a partir da Tabela de Preços (linha <strong>{autoFilled.linha}</strong>).
+                    Edite se necessário.
+                  </div>
+                </div>
+              ) : null}
+
               {/* Kit */}
               <div className="space-y-2 border rounded-lg p-3">
                 <h4 className="font-semibold text-sm">💼 Kit (Placas + Inversor)</h4>
@@ -210,9 +293,24 @@ export default function CustoModal({ open, onClose, projetoId, nomeCliente, qtdP
                 </div>
               </div>
 
-              {/* Materiais */}
+              {/* Material CA + Cabo Tronco */}
               <div className="space-y-2 border rounded-lg p-3">
-                <h4 className="font-semibold text-sm">📦 Materiais</h4>
+                <h4 className="font-semibold text-sm">⚡ Material Elétrico</h4>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <Label className="text-xs">Material CA (R$)</Label>
+                    <MoneyInput className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={form.custo_material_ca} onChange={v => setField('custo_material_ca', v)} />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Cabo Tronco (R$)</Label>
+                    <MoneyInput className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={form.custo_cabo_tronco} onChange={v => setField('custo_cabo_tronco', v)} />
+                  </div>
+                </div>
+              </div>
+
+              {/* Materiais retirados */}
+              <div className="space-y-2 border rounded-lg p-3">
+                <h4 className="font-semibold text-sm">📦 Materiais (Estoque)</h4>
                 <div className="flex items-center justify-between">
                   <span className="text-sm">Total materiais retirados: <strong>{fmt(form.custo_materiais)}</strong></span>
                   {materiaisDetalhe.length > 0 && (
