@@ -376,6 +376,8 @@ export default function ProposalPage() {
       console.error(err);
     }
   };
+
+  const handlePreviewPDF = async () => {
     try {
       toast.loading('Gerando visualização...');
       const doc = await buildPdf();
