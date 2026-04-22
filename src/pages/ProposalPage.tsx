@@ -494,7 +494,10 @@ export default function ProposalPage() {
                   <Eye className="w-3.5 h-3.5" /> PDF
                 </button>
                 <button onClick={handleDownloadPDF} className="solar-btn-primary text-xs py-1 px-2.5 flex items-center gap-1">
-                  <Download className="w-3.5 h-3.5" /> Baixar
+                  <Download className="w-3.5 h-3.5" /> PDF
+                </button>
+                <button onClick={handleDownloadDOCX} className="solar-btn-outline text-xs py-1 px-2.5 flex items-center gap-1" title="Baixar proposta em Word (.docx)">
+                  <Download className="w-3.5 h-3.5" /> DOCX
                 </button>
                 <div className="relative">
                   <button onClick={() => setShowShareMenu(!showShareMenu)}
