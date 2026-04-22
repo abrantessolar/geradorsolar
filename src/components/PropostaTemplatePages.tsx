@@ -3,8 +3,10 @@
  * na proposta online (cards, badges, gradientes sutis, paleta TLS).
  */
 import { forwardRef } from 'react';
-import bgCapa from '@/assets/proposta-template/image3.jpg';
 import logoTls from '@/assets/logo.png';
+
+// Foto da fachada da empresa (mesma usada no hero da landing/proposta online)
+const FACADE_BG = 'https://static.wixstatic.com/media/c2ae0d_0fc9044d218948a585d2170345d4ce87~mv2.jpg';
 import { formatCurrency, formatNumber } from '@/data/calculations';
 import {
   Calendar, Shield, FileText, Building2, CreditCard, Zap, BadgeCheck, Plane,
@@ -27,6 +29,8 @@ export interface PropostaTemplateData {
   cliente_nome: string;
   cliente_cidade?: string;
   responsavel_nome: string;
+  responsavel_telefone?: string;
+  responsavel_email?: string;
   geracao_mensal: number;
   consumo_mensal: number;
   excedente_kwh: number;
@@ -266,7 +270,7 @@ function InverterIcon({ size = 80 }: { size?: number }) {
 // ====== Gráfico de barras Geração x Consumo (SVG inline puro) ======
 function GeracaoConsumoChart({ data }: { data: MonthlyRow[] }) {
   const W = 1100;
-  const H = 280;
+  const H = 520;
   const PAD_L = 50;
   const PAD_R = 20;
   const PAD_T = 20;
