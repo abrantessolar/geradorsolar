@@ -787,26 +787,26 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
                   <div
                     style={{
                       display: 'grid',
-                      gridTemplateColumns: `repeat(${Math.min(data.cartao_parcelas.length, 6)}, 1fr)`,
-                      gap: 10,
+                      gridTemplateColumns: 'repeat(6, 1fr)',
+                      gap: 8,
                     }}
                   >
-                    {data.cartao_parcelas.slice(0, 6).map((c) => (
+                    {data.cartao_parcelas.slice(0, 18).map((c) => (
                       <div
                         key={c.meses}
                         style={{
                           background: LIGHT,
                           border: `2px solid ${YELLOW}`,
-                          borderRadius: 10,
-                          padding: '12px 8px',
+                          borderRadius: 8,
+                          padding: '8px 6px',
                           textAlign: 'center',
                         }}
                       >
-                        <div style={{ fontSize: 20, fontWeight: 700, color: GRAY, lineHeight: 1 }}>
+                        <div style={{ fontSize: 16, fontWeight: 700, color: GRAY, lineHeight: 1 }}>
                           {c.meses}x
                         </div>
-                        <div style={{ fontSize: 10, color: GRAY, marginTop: 2 }}>de</div>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: OLIVE_DARK, marginTop: 2 }}>
+                        <div style={{ fontSize: 9, color: GRAY, marginTop: 1 }}>de</div>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: OLIVE_DARK, marginTop: 2 }}>
                           R$ {fmtMoney(c.valor)}
                         </div>
                       </div>
