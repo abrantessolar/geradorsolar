@@ -3,7 +3,7 @@
  * na proposta online (cards, badges, gradientes sutis, paleta TLS).
  */
 import { forwardRef } from 'react';
-import logoTls from '@/assets/logo.png';
+import logoTls from '@/assets/logo-tls-pdf.png';
 
 // Foto da fachada da empresa (mesma usada no hero da landing/proposta online)
 const FACADE_BG = 'https://static.wixstatic.com/media/c2ae0d_0fc9044d218948a585d2170345d4ce87~mv2.jpg';
@@ -419,7 +419,7 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
               src={logoTls}
               alt="Três Lagoas Solar"
               crossOrigin="anonymous"
-              style={{ height: 90, objectFit: 'contain', filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.4))' }}
+              style={{ height: 225, objectFit: 'contain', filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.4))' }}
             />
             <div
               style={{
