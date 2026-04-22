@@ -44,6 +44,7 @@ export default function ProposalPage() {
   const [pdfBlob, setPdfBlob] = useState<Blob | null>(null);
   const [showPdfViewer, setShowPdfViewer] = useState(false);
   const [showCostPanel, setShowCostPanel] = useState(false);
+  const proposalContentRef = useRef<HTMLDivElement>(null);
   const settings = getSettings();
   const socialProofs = getSocialProofs().filter(s => s.active);
 
@@ -293,36 +294,46 @@ export default function ProposalPage() {
     setShowShareMenu(false);
   };
 
-  const getPdfDoc = async () => {
-    const doc = await generateProposalPDF(proposal, settings, lineCards, chartData, cashflowData);
-    return doc;
+  const getFileName = () => {
+    const numero = proposal?.numero_proposta || 'TLS-0000';
+    const clientName = (proposal?.clientData?.name || 'Cliente').replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_');
+    return `Proposta_${numero}_${clientName}.pdf`;
   };
 
-  const getFileName = () => {
-    const numero = proposal.numero_proposta || 'TLS-0000';
-    const clientName = (proposal.clientData.name || 'Cliente').replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_');
-    return `Proposta_${numero}_${clientName}.pdf`;
+  const buildPdf = async () => {
+    if (!proposalContentRef.current) throw new Error('Conteúdo não carregado');
+    // Garante que o fluxo de caixa esteja expandido para entrar no PDF
+    const wasCashflowOpen = showCashflow;
+    if (!wasCashflowOpen) setShowCashflow(true);
+    // Aguarda render do estado expandido
+    await new Promise((r) => setTimeout(r, 400));
+    try {
+      const doc = await generatePDFFromPage(proposalContentRef.current);
+      return doc;
+    } finally {
+      if (!wasCashflowOpen) setShowCashflow(false);
+    }
   };
 
   const handleDownloadPDF = async () => {
     try {
       toast.loading('Gerando PDF...');
-      const doc = await getPdfDoc();
+      const doc = await buildPdf();
       doc.save(getFileName());
       toast.dismiss();
       toast.success('PDF gerado com sucesso!');
-      // Track download
       addHistoricoDB(id || '', 'pdf_baixado', session?.user?.id || null, {});
     } catch (err) {
       toast.dismiss();
       toast.error('Erro ao gerar PDF');
+      console.error(err);
     }
   };
 
   const handlePreviewPDF = async () => {
     try {
       toast.loading('Gerando visualização...');
-      const doc = await getPdfDoc();
+      const doc = await buildPdf();
       const arrayBuffer = doc.output('arraybuffer');
       const blob = new Blob([arrayBuffer], { type: 'application/pdf' });
       setPdfBlob(blob);
@@ -331,6 +342,7 @@ export default function ProposalPage() {
     } catch (err) {
       toast.dismiss();
       toast.error('Erro ao gerar visualização');
+      console.error(err);
     }
   };
 
