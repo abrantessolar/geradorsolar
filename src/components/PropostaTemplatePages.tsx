@@ -474,10 +474,23 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
                 {data.cliente_cidade && (
                   <div style={{ fontSize: 16, color: GRAY, marginTop: 4 }}>{data.cliente_cidade}</div>
                 )}
-                <div style={{ marginTop: 22, fontSize: 15, color: DARK, lineHeight: 1.55 }}>
-                  Esta proposta foi preparada com base nas suas informações de consumo. Ela
-                  apresenta o sistema dimensionado, a geração estimada e as condições de
-                  investimento — pensados para reduzir significativamente sua conta de luz.
+                <div style={{ marginTop: 22 }}>
+                  <div style={{ fontSize: 12, letterSpacing: 1.2, textTransform: 'uppercase', color: GRAY }}>
+                    Seu Consultor
+                  </div>
+                  <div style={{ fontSize: 22, fontWeight: 700, color: DARK, marginTop: 4, lineHeight: 1.2 }}>
+                    {data.responsavel_nome || '—'}
+                  </div>
+                  {data.responsavel_telefone && (
+                    <div style={{ fontSize: 16, color: OLIVE_DARK, marginTop: 4, fontWeight: 600 }}>
+                      📱 {data.responsavel_telefone}
+                    </div>
+                  )}
+                  {data.responsavel_email && (
+                    <div style={{ fontSize: 14, color: GRAY, marginTop: 2 }}>
+                      {data.responsavel_email}
+                    </div>
+                  )}
                 </div>
               </div>
               <div
