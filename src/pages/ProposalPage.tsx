@@ -14,6 +14,7 @@ import type { PriceTableEntry, PriceTableLineDetails } from '@/data/types';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, LineChart, Line, ReferenceLine } from 'recharts';
 import { Download, Share2, Edit, ArrowLeft, Sun, Zap, TrendingUp, Shield, X, Cpu, Check, MessageCircle, Calendar, AlertTriangle, ChevronDown, ChevronUp, BarChart3, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
 import { generatePDFFromPage } from '@/lib/generatePDFFromPage';
+import { gerarPropostaDOCX } from '@/lib/generatePropostaDOCX';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import Diferenciais from '@/components/Diferenciais';
@@ -330,6 +331,52 @@ export default function ProposalPage() {
     }
   };
 
+  const handleDownloadDOCX = async () => {
+    if (!selectedCard) {
+      toast.error('Dados da proposta não carregados');
+      return;
+    }
+    const toastId = toast.loading('Gerando documento...');
+    try {
+      const getInst = (n: number) => {
+        const v = selectedCard.installments[n];
+        if (!v) return 0;
+        return typeof v === 'number' ? v : (v as any).perMonth || 0;
+      };
+      const inverterPower = selectedCard.inverterModel || (selectedCard.inverter ? `${selectedCard.inverter.power} kW` : '');
+      const panelPower = selectedCard.panelPowerLabel || (selectedCard.panel ? `${selectedCard.panel.power} Wp` : '');
+      const qtdInversores = selectedCard.line === 'premium' ? selectedCard.microCount : 1;
+
+      await gerarPropostaDOCX({
+        cliente_nome: proposal.clientData?.name || 'Cliente',
+        responsavel_nome: proposal.clientData?.seller || '',
+        geracao_mensal: selectedCard.dimensioning.monthlyGeneration,
+        consumo_mensal: selectedCard.dimensioning.avgMonthlyKwh,
+        excedente_kwh: selectedCard.dimensioning.surplus,
+        qtd_inversores: qtdInversores,
+        marca_inversor: selectedCard.inverterBrand || selectedCard.inverter?.brand || '',
+        potencia_inversor: inverterPower,
+        num_placas: selectedCard.panelCount,
+        marca_placa: selectedCard.panelBrand || selectedCard.panel?.brand || '',
+        potencia_placa: panelPower,
+        preco_vista: selectedCard.totalPrice,
+        parcela_24x: getInst(24),
+        parcela_36x: getInst(36),
+        parcela_48x: getInst(48),
+        parcela_60x: getInst(60),
+        parcela_72x: getInst(72),
+        numero_proposta: proposal.numero_proposta || 'TLS-0000',
+      });
+      toast.dismiss(toastId);
+      toast.success('DOCX gerado com sucesso!');
+      addHistoricoDB(id || '', 'docx_baixado', session?.user?.id || null, {});
+    } catch (err) {
+      toast.dismiss(toastId);
+      toast.error('Erro ao gerar DOCX');
+      console.error(err);
+    }
+  };
+
   const handlePreviewPDF = async () => {
     try {
       toast.loading('Gerando visualização...');
@@ -447,7 +494,10 @@ export default function ProposalPage() {
                   <Eye className="w-3.5 h-3.5" /> PDF
                 </button>
                 <button onClick={handleDownloadPDF} className="solar-btn-primary text-xs py-1 px-2.5 flex items-center gap-1">
-                  <Download className="w-3.5 h-3.5" /> Baixar
+                  <Download className="w-3.5 h-3.5" /> PDF
+                </button>
+                <button onClick={handleDownloadDOCX} className="solar-btn-outline text-xs py-1 px-2.5 flex items-center gap-1" title="Baixar proposta em Word (.docx)">
+                  <Download className="w-3.5 h-3.5" /> DOCX
                 </button>
                 <div className="relative">
                   <button onClick={() => setShowShareMenu(!showShareMenu)}
