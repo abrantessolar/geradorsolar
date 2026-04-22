@@ -13,8 +13,9 @@ import { MONTH_LABELS, MONTH_KEYS, SEASONAL_FACTORS, INSTALLMENT_OPTIONS, UC_COL
 import type { PriceTableEntry, PriceTableLineDetails } from '@/data/types';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, LineChart, Line, ReferenceLine } from 'recharts';
 import { Download, Share2, Edit, ArrowLeft, Sun, Zap, TrendingUp, Shield, X, Cpu, Check, MessageCircle, Calendar, AlertTriangle, ChevronDown, ChevronUp, BarChart3, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
-import { generatePDFFromPage } from '@/lib/generatePDFFromPage';
+import { gerarPropostaPDF, downloadPropostaPDF } from '@/lib/generatePropostaPDF';
 import { gerarPropostaDOCX } from '@/lib/generatePropostaDOCX';
+import { PropostaTemplatePages, type PropostaTemplateData } from '@/components/PropostaTemplatePages';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import Diferenciais from '@/components/Diferenciais';
@@ -46,6 +47,7 @@ export default function ProposalPage() {
   const [showPdfViewer, setShowPdfViewer] = useState(false);
   const [showCostPanel, setShowCostPanel] = useState(false);
   const proposalContentRef = useRef<HTMLDivElement>(null);
+  const templateContainerRef = useRef<HTMLDivElement>(null);
   const settings = getSettings();
   const socialProofs = getSocialProofs().filter(s => s.active);
 
