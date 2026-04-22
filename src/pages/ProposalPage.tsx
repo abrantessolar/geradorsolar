@@ -19,6 +19,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import Diferenciais from '@/components/Diferenciais';
 import ProposalPortfolio from '@/components/ProposalPortfolio';
 import ProposalFooter from '@/components/ProposalFooter';
+import PDFCanvasViewer from '@/components/PDFCanvasViewer';
 
 
 const LINES = ['excellence', 'premium'] as const;
@@ -32,7 +33,7 @@ export default function ProposalPage() {
   const [proposal, setProposal] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [isPrinting, setIsPrinting] = useState(false);
-  const [pdfBlobUrl, setPdfBlobUrl] = useState<string | null>(null);
+  const [pdfBlob, setPdfBlob] = useState<Blob | null>(null);
   const [showPdfViewer, setShowPdfViewer] = useState(false);
   const [showCostPanel, setShowCostPanel] = useState(false);
   const settings = getSettings();
@@ -316,9 +317,7 @@ export default function ProposalPage() {
       const doc = await getPdfDoc();
       const arrayBuffer = doc.output('arraybuffer');
       const blob = new Blob([arrayBuffer], { type: 'application/pdf' });
-      const url = URL.createObjectURL(blob);
-      if (pdfBlobUrl) URL.revokeObjectURL(pdfBlobUrl);
-      setPdfBlobUrl(url);
+      setPdfBlob(blob);
       setShowPdfViewer(true);
       toast.dismiss();
     } catch (err) {

@@ -67,7 +67,7 @@ export default function PDFCanvasViewer({ blob, onClose, onDownload }: PDFCanvas
         container.appendChild(canvas);
         const ctx = canvas.getContext('2d');
         if (ctx) {
-          await page.render({ canvasContext: ctx, viewport, canvas }).promise;
+          await page.render({ canvasContext: ctx, viewport }).promise;
         }
         page.cleanup();
       }
