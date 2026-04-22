@@ -504,7 +504,7 @@ export default function ProposalPage() {
           data-pdf-section="cover"
           className="relative overflow-hidden text-center space-y-6 print-page print-cover rounded-2xl"
           style={{
-            backgroundImage: `linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.78)), url(${FACADE_BG})`,
+            backgroundImage: `linear-gradient(rgba(0,0,0,0.30), rgba(0,0,0,0.50)), url(${FACADE_BG})`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
             minHeight: '520px',
