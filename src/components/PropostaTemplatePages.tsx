@@ -306,24 +306,32 @@ function GeracaoConsumoChart({ data }: { data: MonthlyRow[] }) {
         const xBase = PAD_L + i * groupW + 4;
         const hG = (d.geracao / niceMax) * innerH;
         const hC = (d.consumo / niceMax) * innerH;
+        const yG = PAD_T + innerH - hG;
+        const yC = PAD_T + innerH - hC;
         return (
           <g key={i}>
-            <rect
-              x={xBase}
-              y={PAD_T + innerH - hG}
-              width={barW}
-              height={hG}
+            <rect x={xBase} y={yG} width={barW} height={hG} fill={OLIVE_DARK} rx="2" />
+            <text
+              x={xBase + barW / 2}
+              y={yG - 4}
+              fontSize="10"
+              fontWeight="700"
+              textAnchor="middle"
               fill={OLIVE_DARK}
-              rx="2"
-            />
-            <rect
-              x={xBase + barW + 2}
-              y={PAD_T + innerH - hC}
-              width={barW}
-              height={hC}
-              fill={YELLOW}
-              rx="2"
-            />
+            >
+              {Math.round(d.geracao)}
+            </text>
+            <rect x={xBase + barW + 2} y={yC} width={barW} height={hC} fill={YELLOW} rx="2" />
+            <text
+              x={xBase + barW + 2 + barW / 2}
+              y={yC - 4}
+              fontSize="10"
+              fontWeight="700"
+              textAnchor="middle"
+              fill={DARK}
+            >
+              {Math.round(d.consumo)}
+            </text>
             <text
               x={xBase + barW + 1}
               y={H - PAD_B + 16}
