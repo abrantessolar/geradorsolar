@@ -7,6 +7,8 @@ export type CustoObra = {
   custo_instalacao: number;
   custo_trt: number;
   custo_materiais: number;
+  custo_material_ca: number | null;
+  custo_cabo_tronco: number | null;
   custo_frete: number | null;
   custo_homologacao: number | null;
   custo_comissao: number | null;
@@ -37,6 +39,8 @@ export function calcCustoTotal(c: Partial<CustoObra>): number {
     (c.custo_instalacao || 0) +
     (c.custo_trt || 0) +
     (c.custo_materiais || 0) +
+    (c.custo_material_ca || 0) +
+    (c.custo_cabo_tronco || 0) +
     (c.custo_frete || 0) +
     (c.custo_homologacao || 0) +
     (c.custo_comissao || 0) +
