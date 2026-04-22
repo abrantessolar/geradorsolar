@@ -316,12 +316,14 @@ export type Database = {
         Row: {
           atualizado_em: string
           criado_em: string
+          custo_cabo_tronco: number | null
           custo_comissao: number | null
           custo_frete: number | null
           custo_homologacao: number | null
           custo_instalacao: number | null
           custo_kit: number | null
           custo_materiais: number | null
+          custo_material_ca: number | null
           custo_outros: number | null
           custo_trt: number | null
           descricao_outros: string | null
@@ -333,12 +335,14 @@ export type Database = {
         Insert: {
           atualizado_em?: string
           criado_em?: string
+          custo_cabo_tronco?: number | null
           custo_comissao?: number | null
           custo_frete?: number | null
           custo_homologacao?: number | null
           custo_instalacao?: number | null
           custo_kit?: number | null
           custo_materiais?: number | null
+          custo_material_ca?: number | null
           custo_outros?: number | null
           custo_trt?: number | null
           descricao_outros?: string | null
@@ -350,12 +354,14 @@ export type Database = {
         Update: {
           atualizado_em?: string
           criado_em?: string
+          custo_cabo_tronco?: number | null
           custo_comissao?: number | null
           custo_frete?: number | null
           custo_homologacao?: number | null
           custo_instalacao?: number | null
           custo_kit?: number | null
           custo_materiais?: number | null
+          custo_material_ca?: number | null
           custo_outros?: number | null
           custo_trt?: number | null
           descricao_outros?: string | null
