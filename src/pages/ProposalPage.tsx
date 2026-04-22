@@ -331,7 +331,51 @@ export default function ProposalPage() {
     }
   };
 
-  const handlePreviewPDF = async () => {
+  const handleDownloadDOCX = async () => {
+    if (!selectedCard) {
+      toast.error('Dados da proposta não carregados');
+      return;
+    }
+    const toastId = toast.loading('Gerando documento...');
+    try {
+      const getInst = (n: number) => {
+        const v = selectedCard.installments[n];
+        if (!v) return 0;
+        return typeof v === 'number' ? v : (v as any).perMonth || 0;
+      };
+      const inverterPower = selectedCard.inverterModel || (selectedCard.inverter ? `${selectedCard.inverter.power} kW` : '');
+      const panelPower = selectedCard.panelPowerLabel || (selectedCard.panel ? `${selectedCard.panel.power} Wp` : '');
+      const qtdInversores = selectedCard.line === 'premium' ? selectedCard.microCount : 1;
+
+      await gerarPropostaDOCX({
+        cliente_nome: proposal.clientData?.name || 'Cliente',
+        responsavel_nome: proposal.clientData?.seller || '',
+        geracao_mensal: selectedCard.dimensioning.monthlyGeneration,
+        consumo_mensal: selectedCard.dimensioning.avgMonthlyKwh,
+        excedente_kwh: selectedCard.dimensioning.surplus,
+        qtd_inversores: qtdInversores,
+        marca_inversor: selectedCard.inverterBrand || selectedCard.inverter?.brand || '',
+        potencia_inversor: inverterPower,
+        num_placas: selectedCard.panelCount,
+        marca_placa: selectedCard.panelBrand || selectedCard.panel?.brand || '',
+        potencia_placa: panelPower,
+        preco_vista: selectedCard.totalPrice,
+        parcela_24x: getInst(24),
+        parcela_36x: getInst(36),
+        parcela_48x: getInst(48),
+        parcela_60x: getInst(60),
+        parcela_72x: getInst(72),
+        numero_proposta: proposal.numero_proposta || 'TLS-0000',
+      });
+      toast.dismiss(toastId);
+      toast.success('DOCX gerado com sucesso!');
+      addHistoricoDB(id || '', 'docx_baixado', session?.user?.id || null, {});
+    } catch (err) {
+      toast.dismiss(toastId);
+      toast.error('Erro ao gerar DOCX');
+      console.error(err);
+    }
+  };
     try {
       toast.loading('Gerando visualização...');
       const doc = await buildPdf();
