@@ -13,7 +13,7 @@ import { MONTH_LABELS, MONTH_KEYS, SEASONAL_FACTORS, INSTALLMENT_OPTIONS, UC_COL
 import type { PriceTableEntry, PriceTableLineDetails } from '@/data/types';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, LineChart, Line, ReferenceLine } from 'recharts';
 import { Download, Share2, Edit, ArrowLeft, Sun, Zap, TrendingUp, Shield, X, Cpu, Check, MessageCircle, Calendar, AlertTriangle, ChevronDown, ChevronUp, BarChart3, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
-import { gerarPropostaPDF, downloadPropostaPDF } from '@/lib/generatePropostaPDF';
+import { gerarPropostaPDF, downloadPropostaPDF, fetchPortfolioPhotosOptimized } from '@/lib/generatePropostaPDF';
 import { gerarPropostaDOCX } from '@/lib/generatePropostaDOCX';
 import { PropostaTemplatePages, type PropostaTemplateData } from '@/components/PropostaTemplatePages';
 import { toast } from 'sonner';
@@ -44,6 +44,7 @@ export default function ProposalPage() {
   const [loading, setLoading] = useState(true);
   const [isPrinting, setIsPrinting] = useState(false);
   const [pdfBlob, setPdfBlob] = useState<Blob | null>(null);
+  const [pdfPortfolioPhotos, setPdfPortfolioPhotos] = useState<string[]>([]);
   const [showPdfViewer, setShowPdfViewer] = useState(false);
   const [showCostPanel, setShowCostPanel] = useState(false);
   const proposalContentRef = useRef<HTMLDivElement>(null);
