@@ -440,7 +440,7 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
           <div
             style={{
               position: 'absolute',
-              top: 230,
+              top: 520,
               left: 80,
               right: 80,
               color: '#fff',
@@ -462,13 +462,13 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
           <div
             style={{
               position: 'absolute',
-              top: 700,
+              top: 1230,
               left: 80,
               right: 80,
               background: '#fff',
               borderRadius: 14,
               boxShadow: '0 10px 40px rgba(0,0,0,0.18)',
-              padding: '36px 40px',
+              padding: '32px 40px',
               border: `1px solid ${BORDER}`,
             }}
           >
