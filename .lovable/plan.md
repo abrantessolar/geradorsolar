@@ -1,67 +1,42 @@
 
 
-# PDF da proposta a partir do template DOCX (Opção A)
+# PDF da proposta — HTML estilizado (4 páginas)
 
-## Objetivo
-Substituir o PDF "print da tela" por um PDF gerado a partir do **mesmo template `.docx`** já usado no botão DOCX, garantindo layout idêntico ao Word e tamanho final ≤ 2 MB.
+## Estrutura
+1. **Capa** — `image3.jpg` com overlay verde + "Proposta Comercial" + cliente + nº TLS-XXXX + data
+2. **Dados + Investimento** — Equipamentos, Especificações, Investimento (à vista + 5 parcelas), Economia mensal, Payback, Geração×Consumo
+3. **Fluxo de caixa + Diferenciais** — Tabela 5/10/15/20/25 anos + 8 cards de diferenciais
+4. **Portfólio** — Grade 4×4 (até 16 fotos da tabela `fotos_portfolio`, fallback para `FALLBACK_PHOTOS`)
 
-## Fluxo
-```text
-Cliente clica "Baixar PDF"
-   ↓
-Front-end monta as variáveis da proposta (mesmo objeto do DOCX)
-   ↓
-Edge function `proposta-pdf` recebe o JSON
-   ↓
-   1. Baixa template do Storage (templates/proposta_template.docx)
-   2. Faz find & replace no XML (mesma lógica de generatePropostaDOCX.ts)
-   3. Converte DOCX → PDF via LibreOffice headless
-   4. Comprime/otimiza o PDF (Ghostscript /ebook) até ficar ≤ 2 MB
-   ↓
-Retorna o PDF (base64 ou stream) → download no browser
-```
+Cabeçalho (logo + nº proposta) e rodapé (CNPJ + contato + site) em todas as páginas internas (2, 3, 4).
 
-## 1. Edge function `supabase/functions/proposta-pdf/index.ts` (nova)
-- Recebe `POST` com o mesmo payload do DOCX (`PropostaDocxData`)
-- Reaproveita a lógica de `normalizePlaceholders` + `replaceAll` (porta para Deno)
-- Usa **LibreOffice headless** (`soffice --headless --convert-to pdf`) para converter
-- Pipeline de compressão (em ordem, para até passar de 2 MB):
-  1. LibreOffice já exporta com `ReduceImageResolution=true, MaxImageResolution=150`
-  2. Se > 2 MB → reprocessa com Ghostscript `-dPDFSETTINGS=/ebook` (150 dpi)
-  3. Se ainda > 2 MB → `/screen` (72 dpi)
-- Retorna `application/pdf` com `Content-Disposition: attachment`
-- Validação de input com Zod, CORS habilitado, sem auth obrigatória (proposta é pública)
+## Estilo
+- Fonte Arial, cores TLS (verde `#4A5A2A`, amarelo `#E8B84B`)
+- Replicar visual da proposta online: cards com sombra leve, badges, gradientes sutis
+- Sem posicionamento absoluto — layout fluido com flex/grid
 
-## 2. Front-end `src/lib/generatePropostaPDF.ts` (novo)
-- Função `gerarPropostaPDF(data: PropostaDocxData)` que:
-  - Chama a edge function via `supabase.functions.invoke('proposta-pdf', { body: data })`
-  - Recebe o blob, dispara `saveAs(blob, 'Proposta_TLS-XXXX_Cliente.pdf')`
-  - Loading toast: "Gerando PDF..." → sucesso/erro
-
-## 3. `src/pages/ProposalPage.tsx`
-- `handleDownloadPDF` e `handleVisualizarPDF` passam a chamar `gerarPropostaPDF` em vez de `generatePDFFromPage`
-- "Visualizar PDF" abre o blob em nova aba (`URL.createObjectURL`)
-- Mantém botão DOCX como está
-- **Remove** `generatePDFFromPage.ts` e o fluxo de marcadores `data-pdf-section` (não serão mais usados)
-
-## 4. Garantia ≤ 2 MB
-- Template hoje é leve (sem fotos embutidas) → PDF base deve sair em ~200–400 KB
-- Pipeline de compressão Ghostscript serve como rede de segurança caso futuras versões do template incluam imagens grandes
-- Logs da edge function registram o tamanho final para monitoramento
+## Cálculos (validar mecanismo do fluxo de caixa)
+Reusar exatamente as fórmulas já presentes em `ProposalPage.tsx` / `calculations.ts`:
+- Geração mensal (kWh) = `kWp × irradiância × 30 × 0.80`
+- Economia mensal = `geração × tarifa`
+- Payback = `investimento / economia_anual`
+- Fluxo 5–25 anos com inflação tarifária e degradação do painel — copiar a função usada no card expansível
+- Parcelas: multiplicadores fixos (24x 1.4496, 36x 1.6008, 48x 1.7600, 60x 1.9264, 72x 2.0800)
 
 ## Arquivos
-- **Novo**: `supabase/functions/proposta-pdf/index.ts`
-- **Novo**: `src/lib/generatePropostaPDF.ts`
-- **Editado**: `src/pages/ProposalPage.tsx` (troca da fonte do PDF, remove imports antigos)
-- **Removido**: `src/lib/generatePDFFromPage.ts`
-- **Editado**: `supabase/config.toml` (registra função sem JWT)
+- **Reescrever** `src/components/PropostaTemplatePages.tsx` → layout fluido inspirado na proposta online
+- **Editar** `src/lib/generatePropostaPDF.ts` → `scale: 1.5`, JPEG q70, otimizar fotos do portfólio (max 800px lado, q60) para alvo ~600 KB–1 MB
+- **Editar** `src/pages/ProposalPage.tsx` → passar dados completos (fluxo de caixa + portfólio + diferenciais) para o componente
+- **Manter** `src/assets/proposta-template/image3.jpg` (capa); descartar uso de image1/2/4 com posicionamento absoluto
+- Buscar fotos do portfólio via `supabase.from('fotos_portfolio')` no momento da geração
 
-## Detalhes técnicos
-- LibreOffice e Ghostscript já estão disponíveis no runtime das edge functions Supabase via container customizado padrão; caso indisponível, fallback para serviço externo (CloudConvert) — checaremos no primeiro deploy e ajustamos se necessário
-- Sem mudanças no banco de dados
-- Sem novas dependências no front-end (usa `supabase.functions.invoke` + `file-saver` já instalado)
+## Garantia ≤ 2 MB (foco em leveza)
+- `html2canvas` scale 1.5 (em vez de 2)
+- JPEG qualidade 0.70
+- Fotos do portfólio pré-redimensionadas para 400×400 px, qualidade 0.55, antes de entrar no DOM
+- Estimativa: 4 páginas × ~150 KB + 16 thumbs × ~25 KB ≈ 1 MB
 
 ## Fora do escopo
-- Editar o conteúdo/layout do template `.docx` (continua sendo o arquivo já no Storage)
-- Cache do PDF no Storage (gerado on-demand a cada clique)
+- Mudar o template DOCX (continua intacto)
+- Cache do PDF no Storage
 
