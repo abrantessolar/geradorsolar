@@ -372,6 +372,9 @@ export default function ProposalPage() {
       parcela_48x: getInst(48),
       parcela_60x: getInst(60),
       parcela_72x: getInst(72),
+      cartao_parcelas: Object.entries(selectedCard.cardInstallments || {})
+        .map(([n, v]: [string, any]) => ({ meses: Number(n), valor: v.perMonth }))
+        .sort((a, b) => a.meses - b.meses),
       numero_proposta: proposal.numero_proposta || 'TLS-0000',
       economia_mensal: economiaMensal,
       payback_anos: paybackAnos,

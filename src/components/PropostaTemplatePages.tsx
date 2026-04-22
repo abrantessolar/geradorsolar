@@ -47,6 +47,7 @@ export interface PropostaTemplateData {
   parcela_48x: number;
   parcela_60x: number;
   parcela_72x: number;
+  cartao_parcelas: { meses: number; valor: number }[];
   numero_proposta: string;
   economia_mensal: number;
   payback_anos: number;
