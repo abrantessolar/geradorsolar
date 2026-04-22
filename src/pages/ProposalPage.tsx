@@ -612,7 +612,7 @@ export default function ProposalPage() {
         )}
 
         {/* SELECTED LINE CARD */}
-        <section className="space-y-4 print-page">
+        <section data-pdf-section="system" className="space-y-4 print-page">
           <h2 className="text-2xl font-bold text-primary text-center flex items-center justify-center gap-2">
             <Zap className="w-6 h-6 text-secondary" /> Seu Sistema Solar
           </h2>
@@ -712,7 +712,7 @@ export default function ProposalPage() {
 
 
         {/* CHART */}
-        <section className="solar-card p-4 sm:p-8 space-y-6 print-page print-chart-section">
+        <section data-pdf-section="chart" className="solar-card p-4 sm:p-8 space-y-6 print-page print-chart-section">
           <div className="text-center space-y-1">
             <h2 className="text-xl sm:text-2xl font-bold text-primary flex items-center justify-center gap-2">
               <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 text-secondary" /> Geração vs Consumo — 12 Meses
@@ -774,7 +774,7 @@ export default function ProposalPage() {
 
         {/* EQUIPMENT */}
         {proposal.equipment && proposal.equipment.length > 0 && (
-          <section className="solar-card p-8 space-y-4 print-page">
+          <section data-pdf-section="equipment" className="solar-card p-8 space-y-4 print-page">
             <h2 className="text-2xl font-bold text-primary flex items-center gap-2">
               <Cpu className="w-6 h-6 text-secondary" /> Equipamentos Adicionais
             </h2>
@@ -827,7 +827,7 @@ export default function ProposalPage() {
           };
 
           return (
-            <section className="space-y-6 print-page">
+            <section data-pdf-section="financial" className="space-y-6 print-page">
               <h2 className="text-xl sm:text-2xl font-bold text-primary text-center flex items-center justify-center gap-2">
                 <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 text-secondary" /> Retorno Financeiro
               </h2>
