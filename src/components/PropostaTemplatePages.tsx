@@ -1,15 +1,6 @@
 /**
  * Renderiza as 4 páginas da proposta em layout HTML estilizado, inspirado
  * na proposta online (cards, badges, gradientes sutis, paleta TLS).
- *
- * Estrutura:
- *   1. Capa — image3.jpg + overlay verde + título + cliente + nº + data
- *   2. Dados + Investimento — Equipamentos, Especificações, Geração×Consumo,
- *      Investimento (à vista + 5 parcelas)
- *   3. Fluxo de caixa (5/10/15/20/25 anos) + 8 cards de diferenciais
- *   4. Portfólio — grade 4×4 (até 16 fotos)
- *
- * Páginas internas (2, 3, 4) têm cabeçalho (logo + nº) e rodapé (CNPJ/contato).
  */
 import { forwardRef } from 'react';
 import bgCapa from '@/assets/proposta-template/image3.jpg';
@@ -24,6 +15,12 @@ export interface CashflowRow {
   semSolar: number;
   comSolar: number;
   economia: number;
+}
+
+export interface MonthlyRow {
+  mes: string;
+  geracao: number;
+  consumo: number;
 }
 
 export interface PropostaTemplateData {
@@ -49,8 +46,10 @@ export interface PropostaTemplateData {
   numero_proposta: string;
   economia_mensal: number;
   payback_anos: number;
+  tarifa_kwh: number;
+  dados_mensais: MonthlyRow[];
   fluxo_caixa: CashflowRow[];
-  fotos_portfolio: string[]; // até 16 URLs já otimizadas
+  fotos_portfolio: string[];
 }
 
 // A4 a 150 dpi
@@ -71,12 +70,7 @@ const today = () => new Date().toLocaleDateString('pt-BR', {
   day: '2-digit', month: 'long', year: 'numeric',
 });
 
-interface PageProps {
-  children?: React.ReactNode;
-  noChrome?: boolean;
-}
-
-function Page({ children, noChrome }: PageProps) {
+function Page({ children }: { children?: React.ReactNode }) {
   return (
     <div
       style={{
@@ -169,23 +163,6 @@ function Badge({ children }: { children: React.ReactNode }) {
   );
 }
 
-function Card({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
-  return (
-    <div
-      style={{
-        background: '#fff',
-        border: `1px solid ${BORDER}`,
-        borderRadius: 10,
-        padding: 18,
-        boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
-        ...style,
-      }}
-    >
-      {children}
-    </div>
-  );
-}
-
 function MetricCard({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
   return (
     <div
@@ -214,6 +191,152 @@ function MetricCard({ label, value, accent }: { label: string; value: string; ac
   );
 }
 
+// ====== ÍCONES SVG inline (evitam dependência de fonte de ícones no html2canvas) ======
+function PanelIcon({ size = 80 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+      {/* sol */}
+      <circle cx="78" cy="20" r="8" fill={YELLOW} />
+      <g stroke={YELLOW} strokeWidth="2" strokeLinecap="round">
+        <line x1="78" y1="6" x2="78" y2="2" />
+        <line x1="78" y1="38" x2="78" y2="34" />
+        <line x1="92" y1="20" x2="96" y2="20" />
+        <line x1="60" y1="20" x2="64" y2="20" />
+        <line x1="88" y1="10" x2="91" y2="7" />
+        <line x1="65" y1="33" x2="68" y2="30" />
+        <line x1="88" y1="30" x2="91" y2="33" />
+        <line x1="65" y1="7" x2="68" y2="10" />
+      </g>
+      {/* painel inclinado */}
+      <g transform="translate(8,38) skewX(-18)">
+        <rect x="0" y="0" width="72" height="46" fill={OLIVE_DARK} rx="2" />
+        {/* células */}
+        <g stroke="#7a8a4a" strokeWidth="1" fill="#3a4720">
+          <rect x="4" y="4" width="14" height="12" />
+          <rect x="22" y="4" width="14" height="12" />
+          <rect x="40" y="4" width="14" height="12" />
+          <rect x="58" y="4" width="10" height="12" />
+          <rect x="4" y="20" width="14" height="12" />
+          <rect x="22" y="20" width="14" height="12" />
+          <rect x="40" y="20" width="14" height="12" />
+          <rect x="58" y="20" width="10" height="12" />
+        </g>
+      </g>
+      {/* base */}
+      <line x1="14" y1="92" x2="78" y2="92" stroke={DARK} strokeWidth="2" />
+      <line x1="30" y1="84" x2="30" y2="92" stroke={DARK} strokeWidth="2" />
+      <line x1="62" y1="84" x2="62" y2="92" stroke={DARK} strokeWidth="2" />
+    </svg>
+  );
+}
+
+function InverterIcon({ size = 80 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+      {/* gabinete */}
+      <rect x="20" y="14" width="60" height="76" rx="6" fill={OLIVE_DARK} />
+      <rect x="24" y="18" width="52" height="68" rx="4" fill="#fff" />
+      {/* display */}
+      <rect x="30" y="24" width="40" height="14" rx="2" fill="#1a1a1a" />
+      <rect x="33" y="28" width="22" height="2" fill={YELLOW} />
+      <rect x="33" y="32" width="16" height="2" fill={YELLOW} />
+      {/* leds */}
+      <circle cx="34" cy="48" r="2.5" fill="#22c55e" />
+      <circle cx="42" cy="48" r="2.5" fill={YELLOW} />
+      <circle cx="50" cy="48" r="2.5" fill="#cccccc" />
+      {/* grade ventilação */}
+      <g stroke={GRAY} strokeWidth="1.2">
+        <line x1="30" y1="58" x2="70" y2="58" />
+        <line x1="30" y1="63" x2="70" y2="63" />
+        <line x1="30" y1="68" x2="70" y2="68" />
+        <line x1="30" y1="73" x2="70" y2="73" />
+        <line x1="30" y1="78" x2="70" y2="78" />
+      </g>
+      {/* raio */}
+      <path
+        d="M58 24 L52 36 L57 36 L52 46 L62 32 L57 32 Z"
+        fill={YELLOW}
+        stroke={OLIVE_DARK}
+        strokeWidth="0.6"
+      />
+    </svg>
+  );
+}
+
+// ====== Gráfico de barras Geração x Consumo (SVG inline puro) ======
+function GeracaoConsumoChart({ data }: { data: MonthlyRow[] }) {
+  const W = 1100;
+  const H = 280;
+  const PAD_L = 50;
+  const PAD_R = 20;
+  const PAD_T = 20;
+  const PAD_B = 40;
+  const innerW = W - PAD_L - PAD_R;
+  const innerH = H - PAD_T - PAD_B;
+  const max = Math.max(...data.flatMap((d) => [d.geracao, d.consumo]), 1);
+  // arredonda max para múltiplo de 100
+  const niceMax = Math.ceil(max / 100) * 100;
+  const groupW = innerW / data.length;
+  const barW = (groupW - 8) / 2;
+
+  const yTicks = 5;
+  const ticks = Array.from({ length: yTicks + 1 }, (_, i) => Math.round((niceMax / yTicks) * i));
+
+  return (
+    <svg width={W} height={H} xmlns="http://www.w3.org/2000/svg" style={{ display: 'block' }}>
+      {/* grid horizontal */}
+      {ticks.map((t, i) => {
+        const y = PAD_T + innerH - (t / niceMax) * innerH;
+        return (
+          <g key={i}>
+            <line x1={PAD_L} y1={y} x2={W - PAD_R} y2={y} stroke={BORDER} strokeWidth="1" />
+            <text x={PAD_L - 6} y={y + 4} fontSize="11" textAnchor="end" fill={GRAY}>
+              {t}
+            </text>
+          </g>
+        );
+      })}
+      {/* barras */}
+      {data.map((d, i) => {
+        const xBase = PAD_L + i * groupW + 4;
+        const hG = (d.geracao / niceMax) * innerH;
+        const hC = (d.consumo / niceMax) * innerH;
+        return (
+          <g key={i}>
+            <rect
+              x={xBase}
+              y={PAD_T + innerH - hG}
+              width={barW}
+              height={hG}
+              fill={OLIVE_DARK}
+              rx="2"
+            />
+            <rect
+              x={xBase + barW + 2}
+              y={PAD_T + innerH - hC}
+              width={barW}
+              height={hC}
+              fill={YELLOW}
+              rx="2"
+            />
+            <text
+              x={xBase + barW + 1}
+              y={H - PAD_B + 16}
+              fontSize="11"
+              textAnchor="middle"
+              fill={DARK}
+            >
+              {d.mes}
+            </text>
+          </g>
+        );
+      })}
+      {/* eixo x */}
+      <line x1={PAD_L} y1={PAD_T + innerH} x2={W - PAD_R} y2={PAD_T + innerH} stroke={DARK} strokeWidth="1" />
+    </svg>
+  );
+}
+
 const DIFF_ICONS = [
   { Icon: Calendar, title: 'Acompanhamento por 3 anos', text: 'Monitoramos sua usina no pós-venda para mais segurança e tranquilidade.' },
   { Icon: Shield, title: '3 anos de garantia da instalação', text: 'Garantia do nosso serviço, com montagem segura e acabamento profissional.' },
@@ -235,14 +358,14 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
       { label: '72x', value: data.parcela_72x },
     ];
 
-    // Garantir 16 slots de fotos (preenche com vazios para não quebrar grid)
     const fotos = data.fotos_portfolio.slice(0, 16);
     while (fotos.length < 16) fotos.push('');
 
     return (
       <div ref={ref} style={{ width: `${PAGE_W}px`, background: '#fff' }}>
-        {/* ============ PÁGINA 1 — CAPA ============ */}
+        {/* ============ PÁGINA 1 — CAPA (estilo hero da proposta online) ============ */}
         <Page>
+          {/* Imagem de capa com overlay */}
           <img
             src={bgCapa}
             alt=""
@@ -251,27 +374,31 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
               position: 'absolute',
               inset: 0,
               width: '100%',
-              height: '100%',
+              height: '60%',
               objectFit: 'cover',
             }}
           />
-          {/* overlay verde gradiente */}
           <div
             style={{
               position: 'absolute',
-              inset: 0,
-              background: `linear-gradient(135deg, rgba(74,90,42,0.85) 0%, rgba(74,90,42,0.55) 60%, rgba(0,0,0,0.55) 100%)`,
+              top: 0,
+              left: 0,
+              right: 0,
+              height: '60%',
+              background: `linear-gradient(180deg, rgba(74,90,42,0.78) 0%, rgba(74,90,42,0.55) 50%, rgba(255,255,255,1) 100%)`,
             }}
           />
-          {/* Conteúdo */}
+
+          {/* Logo + número */}
           <div
             style={{
               position: 'absolute',
-              inset: 0,
+              top: 60,
+              left: 80,
+              right: 80,
               display: 'flex',
-              flexDirection: 'column',
+              alignItems: 'center',
               justifyContent: 'space-between',
-              padding: '80px 80px',
               color: '#fff',
             }}
           >
@@ -279,101 +406,143 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
               src={logoTls}
               alt="Três Lagoas Solar"
               crossOrigin="anonymous"
-              style={{ height: 110, objectFit: 'contain', alignSelf: 'flex-start', filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.4))' }}
+              style={{ height: 90, objectFit: 'contain', filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.4))' }}
             />
+            <div
+              style={{
+                background: YELLOW,
+                color: DARK,
+                fontWeight: 700,
+                fontSize: 14,
+                padding: '8px 18px',
+                borderRadius: 999,
+                letterSpacing: 1,
+              }}
+            >
+              {data.numero_proposta}
+            </div>
+          </div>
 
-            <div>
-              <div
-                style={{
-                  display: 'inline-block',
-                  background: YELLOW,
-                  color: DARK,
-                  fontWeight: 700,
-                  fontSize: 14,
-                  padding: '6px 16px',
-                  borderRadius: 999,
-                  letterSpacing: 1,
-                  textTransform: 'uppercase',
-                  marginBottom: 24,
-                }}
-              >
-                {data.numero_proposta}
-              </div>
-              <h1
-                style={{
-                  fontSize: 72,
-                  fontWeight: 700,
-                  margin: 0,
-                  lineHeight: 1.05,
-                  letterSpacing: -1,
-                  textShadow: '0 2px 12px rgba(0,0,0,0.4)',
-                }}
-              >
-                Proposta<br />Comercial
-              </h1>
-              <div style={{ fontSize: 22, marginTop: 18, opacity: 0.95 }}>
-                Sistema de Energia Solar Fotovoltaica
-              </div>
+          {/* Título no hero */}
+          <div
+            style={{
+              position: 'absolute',
+              top: 230,
+              left: 80,
+              right: 80,
+              color: '#fff',
+              textShadow: '0 2px 12px rgba(0,0,0,0.4)',
+            }}
+          >
+            <div style={{ fontSize: 16, letterSpacing: 2, textTransform: 'uppercase', opacity: 0.92 }}>
+              Proposta Comercial Personalizada
+            </div>
+            <h1 style={{ fontSize: 64, fontWeight: 700, margin: '14px 0 0', lineHeight: 1.05, letterSpacing: -1 }}>
+              Sua usina solar
+            </h1>
+            <div style={{ fontSize: 28, marginTop: 6, opacity: 0.95, fontWeight: 300 }}>
+              começa por aqui, <strong style={{ color: YELLOW, fontWeight: 700 }}>{(data.cliente_nome || '').split(' ')[0]}</strong>
+            </div>
+          </div>
 
-              <div
-                style={{
-                  marginTop: 50,
-                  paddingTop: 28,
-                  borderTop: '2px solid rgba(255,255,255,0.4)',
-                  maxWidth: 700,
-                }}
-              >
-                <div style={{ fontSize: 13, letterSpacing: 1, textTransform: 'uppercase', opacity: 0.8 }}>
+          {/* Card branco grande com resumo (como no hero da proposta online) */}
+          <div
+            style={{
+              position: 'absolute',
+              top: 700,
+              left: 80,
+              right: 80,
+              background: '#fff',
+              borderRadius: 14,
+              boxShadow: '0 10px 40px rgba(0,0,0,0.18)',
+              padding: '36px 40px',
+              border: `1px solid ${BORDER}`,
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 30 }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 12, letterSpacing: 1.2, textTransform: 'uppercase', color: GRAY }}>
                   Cliente
                 </div>
-                <div style={{ fontSize: 38, fontWeight: 700, marginTop: 6, lineHeight: 1.1 }}>
+                <div style={{ fontSize: 34, fontWeight: 700, color: OLIVE_DARK, marginTop: 4, lineHeight: 1.1 }}>
                   {data.cliente_nome}
                 </div>
                 {data.cliente_cidade && (
-                  <div style={{ fontSize: 18, opacity: 0.9, marginTop: 6 }}>{data.cliente_cidade}</div>
+                  <div style={{ fontSize: 16, color: GRAY, marginTop: 4 }}>{data.cliente_cidade}</div>
                 )}
+                <div style={{ marginTop: 22, fontSize: 15, color: DARK, lineHeight: 1.55 }}>
+                  Esta proposta foi preparada com base nas suas informações de consumo. Ela
+                  apresenta o sistema dimensionado, a geração estimada e as condições de
+                  investimento — pensados para reduzir significativamente sua conta de luz.
+                </div>
+              </div>
+              <div
+                style={{
+                  width: 280,
+                  background: LIGHT,
+                  borderLeft: `4px solid ${YELLOW}`,
+                  padding: 18,
+                  borderRadius: 8,
+                }}
+              >
+                <div style={{ fontSize: 11, color: GRAY, textTransform: 'uppercase', letterSpacing: 0.6 }}>
+                  Sistema dimensionado
+                </div>
+                <div style={{ fontSize: 32, fontWeight: 700, color: OLIVE_DARK, marginTop: 4, lineHeight: 1 }}>
+                  {formatNumber(data.potencia_kwp, 2)} kWp
+                </div>
+                <div style={{ fontSize: 13, color: DARK, marginTop: 14 }}>
+                  <strong>{data.num_placas}</strong> placas solares
+                </div>
+                <div style={{ fontSize: 13, color: DARK, marginTop: 4 }}>
+                  Geração: <strong>{fmtKwh(data.geracao_mensal)}/mês</strong>
+                </div>
+                <div style={{ fontSize: 13, color: OLIVE_DARK, marginTop: 10, fontWeight: 700 }}>
+                  Economia: R$ {fmtMoney(data.economia_mensal)}/mês
+                </div>
               </div>
             </div>
+          </div>
 
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'flex-end',
-                fontSize: 14,
-                opacity: 0.9,
-              }}
-            >
-              <div>
-                <div style={{ opacity: 0.75, fontSize: 12, textTransform: 'uppercase', letterSpacing: 1 }}>
-                  Emitida em
-                </div>
-                <div style={{ fontSize: 18, fontWeight: 600, marginTop: 4 }}>{today()}</div>
-              </div>
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ opacity: 0.75, fontSize: 12, textTransform: 'uppercase', letterSpacing: 1 }}>
-                  Consultor
-                </div>
-                <div style={{ fontSize: 18, fontWeight: 600, marginTop: 4 }}>
-                  {data.responsavel_nome || '—'}
-                </div>
+          {/* Rodapé da capa */}
+          <div
+            style={{
+              position: 'absolute',
+              bottom: 60,
+              left: 80,
+              right: 80,
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'flex-end',
+              color: DARK,
+              fontSize: 13,
+            }}
+          >
+            <div>
+              <div style={{ color: GRAY, fontSize: 11, textTransform: 'uppercase', letterSpacing: 1 }}>Emitida em</div>
+              <div style={{ fontSize: 16, fontWeight: 700, marginTop: 2, color: OLIVE_DARK }}>{today()}</div>
+            </div>
+            <div style={{ textAlign: 'center', color: GRAY, fontSize: 11 }}>
+              www.treslagoassolar.com.br
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ color: GRAY, fontSize: 11, textTransform: 'uppercase', letterSpacing: 1 }}>Consultor</div>
+              <div style={{ fontSize: 16, fontWeight: 700, marginTop: 2, color: OLIVE_DARK }}>
+                {data.responsavel_nome || '—'}
               </div>
             </div>
           </div>
         </Page>
 
-        {/* ============ PÁGINA 2 — DADOS + INVESTIMENTO ============ */}
+        {/* ============ PÁGINA 2 — DADOS + GRÁFICO + INVESTIMENTO ============ */}
         <Page>
           <Header numero={data.numero_proposta} />
-          <div style={{ padding: '32px 50px 100px', display: 'flex', flexDirection: 'column', gap: 22 }}>
+          <div style={{ padding: '28px 50px 100px', display: 'flex', flexDirection: 'column', gap: 18 }}>
             <div>
               <Badge>Especificações do Projeto</Badge>
-              <h1 style={{ fontSize: 34, color: OLIVE_DARK, margin: '10px 0 0', fontWeight: 700, letterSpacing: -0.5 }}>
+              <h1 style={{ fontSize: 32, color: OLIVE_DARK, margin: '10px 0 0', fontWeight: 700, letterSpacing: -0.5 }}>
                 Seu sistema solar
               </h1>
-              <div style={{ fontSize: 15, color: GRAY, marginTop: 4 }}>
-                Cliente: <strong style={{ color: DARK }}>{data.cliente_nome}</strong>
-              </div>
             </div>
 
             {/* Métricas principais */}
@@ -384,57 +553,100 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
               <MetricCard label="Excedente" value={fmtKwh(Math.max(0, data.excedente_kwh))} />
             </div>
 
-            {/* Equipamentos */}
+            {/* Equipamentos — em destaque com ícones */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-              <Card>
-                <div style={{ fontSize: 11, color: GRAY, textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 6 }}>
-                  Inversor
+              <div
+                style={{
+                  background: '#fff',
+                  border: `2px solid ${OLIVE_DARK}`,
+                  borderRadius: 12,
+                  padding: 20,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 18,
+                  boxShadow: '0 2px 6px rgba(0,0,0,0.06)',
+                }}
+              >
+                <div style={{ flexShrink: 0 }}>
+                  <InverterIcon size={88} />
                 </div>
-                <div style={{ fontSize: 20, fontWeight: 700, color: OLIVE_DARK }}>
-                  {data.qtd_inversores}× {data.marca_inversor}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 12, color: GRAY, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 4 }}>
+                    Inversor
+                  </div>
+                  <div style={{ fontSize: 26, fontWeight: 700, color: OLIVE_DARK, lineHeight: 1.1 }}>
+                    {data.qtd_inversores}× {data.marca_inversor}
+                  </div>
+                  <div style={{ fontSize: 16, color: DARK, marginTop: 6 }}>
+                    Potência: <strong>{data.potencia_inversor}</strong>
+                  </div>
                 </div>
-                <div style={{ fontSize: 14, color: DARK, marginTop: 4 }}>
-                  Potência: <strong>{data.potencia_inversor}</strong>
+              </div>
+              <div
+                style={{
+                  background: '#fff',
+                  border: `2px solid ${OLIVE_DARK}`,
+                  borderRadius: 12,
+                  padding: 20,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 18,
+                  boxShadow: '0 2px 6px rgba(0,0,0,0.06)',
+                }}
+              >
+                <div style={{ flexShrink: 0 }}>
+                  <PanelIcon size={88} />
                 </div>
-              </Card>
-              <Card>
-                <div style={{ fontSize: 11, color: GRAY, textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 6 }}>
-                  Placas Solares
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 12, color: GRAY, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 4 }}>
+                    Placas Solares
+                  </div>
+                  <div style={{ fontSize: 26, fontWeight: 700, color: OLIVE_DARK, lineHeight: 1.1 }}>
+                    {data.num_placas}× {data.marca_placa}
+                  </div>
+                  <div style={{ fontSize: 16, color: DARK, marginTop: 6 }}>
+                    Potência: <strong>{data.potencia_placa}</strong>
+                  </div>
                 </div>
-                <div style={{ fontSize: 20, fontWeight: 700, color: OLIVE_DARK }}>
-                  {data.num_placas}× {data.marca_placa}
-                </div>
-                <div style={{ fontSize: 14, color: DARK, marginTop: 4 }}>
-                  Potência: <strong>{data.potencia_placa}</strong>
-                </div>
-              </Card>
+              </div>
             </div>
 
-            {/* Escopo */}
+            {/* Gráfico Geração x Consumo */}
             <div
               style={{
-                background: LIGHT,
-                borderLeft: `4px solid ${YELLOW}`,
-                padding: '14px 18px',
-                fontSize: 13,
-                color: DARK,
-                lineHeight: 1.6,
-                borderRadius: 6,
+                background: '#fff',
+                border: `1px solid ${BORDER}`,
+                borderRadius: 10,
+                padding: 16,
+                boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
               }}
             >
-              <strong>Escopo:</strong> Sistema solar + Material de instalação + Análise 3D com drone +
-              Homologação na concessionária + <strong>3 anos de garantia</strong> de instalação e
-              acompanhamento pós-venda.
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                <div>
+                  <div style={{ fontSize: 16, fontWeight: 700, color: OLIVE_DARK }}>
+                    Geração × Consumo — 12 meses
+                  </div>
+                  <div style={{ fontSize: 12, color: GRAY, marginTop: 2 }}>
+                    Estimativa mensal com base na irradiância da sua cidade
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: 14, fontSize: 12 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <div style={{ width: 14, height: 14, background: OLIVE_DARK, borderRadius: 2 }} />
+                    Geração
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <div style={{ width: 14, height: 14, background: YELLOW, borderRadius: 2 }} />
+                    Consumo
+                  </div>
+                </div>
+              </div>
+              <GeracaoConsumoChart data={data.dados_mensais} />
             </div>
 
             {/* Investimento */}
             <div>
               <Badge>Investimento</Badge>
-              <h2 style={{ fontSize: 26, color: OLIVE_DARK, margin: '10px 0 14px', fontWeight: 700 }}>
-                Sistema completo de energia solar
-              </h2>
-
-              {/* À vista */}
               <div
                 style={{
                   background: `linear-gradient(135deg, ${OLIVE_DARK} 0%, ${OLIVE} 100%)`,
@@ -445,6 +657,7 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
                   alignItems: 'center',
                   justifyContent: 'space-between',
                   boxShadow: '0 4px 12px rgba(74,90,42,0.25)',
+                  marginTop: 10,
                 }}
               >
                 <div>
@@ -460,7 +673,6 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
                 </div>
               </div>
 
-              {/* Parcelas */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 10, marginTop: 12 }}>
                 {parcelas.map((p) => (
                   <div
@@ -469,7 +681,7 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
                       background: '#fff',
                       border: `2px solid ${OLIVE_DARK}`,
                       borderRadius: 10,
-                      padding: '14px 8px',
+                      padding: '12px 8px',
                       textAlign: 'center',
                     }}
                   >
@@ -487,27 +699,25 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
 
             {/* Economia + Payback */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-              <Card style={{ background: LIGHT }}>
+              <div style={{ background: LIGHT, border: `1px solid ${BORDER}`, borderRadius: 10, padding: 16 }}>
                 <div style={{ fontSize: 11, color: GRAY, textTransform: 'uppercase', letterSpacing: 0.6 }}>
                   Economia mensal estimada
                 </div>
                 <div style={{ fontSize: 28, fontWeight: 700, color: OLIVE_DARK, marginTop: 4 }}>
                   R$ {fmtMoney(data.economia_mensal)}
                 </div>
-              </Card>
-              <Card style={{ background: LIGHT }}>
+                <div style={{ fontSize: 11, color: GRAY, marginTop: 4 }}>
+                  Baseada na geração mensal × tarifa atual
+                </div>
+              </div>
+              <div style={{ background: LIGHT, border: `1px solid ${BORDER}`, borderRadius: 10, padding: 16 }}>
                 <div style={{ fontSize: 11, color: GRAY, textTransform: 'uppercase', letterSpacing: 0.6 }}>
                   Retorno do investimento
                 </div>
                 <div style={{ fontSize: 28, fontWeight: 700, color: OLIVE_DARK, marginTop: 4 }}>
                   {formatNumber(data.payback_anos, 1)} anos
                 </div>
-              </Card>
-            </div>
-
-            <div style={{ fontSize: 11, color: GRAY, fontStyle: 'italic', textAlign: 'center', marginTop: 4 }}>
-              Proposta válida por 10 dias a partir da data de emissão. Valores sujeitos a alteração
-              conforme variação cambial e disponibilidade de equipamentos.
+              </div>
             </div>
           </div>
           <Footer />
@@ -527,15 +737,7 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
               </div>
             </div>
 
-            {/* Tabela */}
-            <div
-              style={{
-                border: `1px solid ${BORDER}`,
-                borderRadius: 10,
-                overflow: 'hidden',
-                fontSize: 14,
-              }}
-            >
+            <div style={{ border: `1px solid ${BORDER}`, borderRadius: 10, overflow: 'hidden', fontSize: 14 }}>
               <div
                 style={{
                   display: 'grid',
@@ -564,12 +766,8 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
                   <div style={{ padding: '12px 16px', fontWeight: 700, color: OLIVE_DARK }}>
                     {row.year} anos
                   </div>
-                  <div style={{ padding: '12px 16px', color: '#a13a3a' }}>
-                    R$ {fmtMoney(row.semSolar)}
-                  </div>
-                  <div style={{ padding: '12px 16px' }}>
-                    R$ {fmtMoney(row.comSolar)}
-                  </div>
+                  <div style={{ padding: '12px 16px', color: '#a13a3a' }}>R$ {fmtMoney(row.semSolar)}</div>
+                  <div style={{ padding: '12px 16px' }}>R$ {fmtMoney(row.comSolar)}</div>
                   <div style={{ padding: '12px 16px', fontWeight: 700, color: OLIVE_DARK }}>
                     R$ {fmtMoney(row.economia)}
                   </div>
@@ -631,17 +829,11 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
                 Alguns dos nossos projetos
               </h1>
               <div style={{ fontSize: 13, color: GRAY, marginTop: 4 }}>
-                Mais de uma década entregando energia limpa em Três Lagoas e região
+                Quase uma década entregando energia limpa em Três Lagoas e região
               </div>
             </div>
 
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(4, 1fr)',
-                gap: 10,
-              }}
-            >
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
               {fotos.map((url, i) => (
                 <div
                   key={i}

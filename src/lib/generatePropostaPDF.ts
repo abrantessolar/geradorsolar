@@ -89,18 +89,20 @@ async function optimizeImage(url: string, maxSide = 400, quality = 0.55): Promis
     const img = new Image();
     img.crossOrigin = 'anonymous';
     img.onload = () => {
-      const ratio = Math.min(1, maxSide / Math.max(img.width, img.height));
-      const w = Math.round(img.width * ratio);
-      const h = Math.round(img.height * ratio);
+      // Crop quadrado central para evitar imagens esticadas/comprimidas (cover behavior)
+      const side = Math.min(img.width, img.height);
+      const sx = (img.width - side) / 2;
+      const sy = (img.height - side) / 2;
+      const out = Math.min(maxSide, side);
       const canvas = document.createElement('canvas');
-      canvas.width = w;
-      canvas.height = h;
+      canvas.width = out;
+      canvas.height = out;
       const ctx = canvas.getContext('2d');
       if (!ctx) {
         resolve(url);
         return;
       }
-      ctx.drawImage(img, 0, 0, w, h);
+      ctx.drawImage(img, sx, sy, side, side, 0, 0, out, out);
       try {
         resolve(canvas.toDataURL('image/jpeg', quality));
       } catch {
