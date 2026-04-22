@@ -12,8 +12,8 @@ import {
 import { MONTH_LABELS, MONTH_KEYS, SEASONAL_FACTORS, INSTALLMENT_OPTIONS, UC_COLORS, LINE_NAMES, LINE_SUBS } from '@/data/types';
 import type { PriceTableEntry, PriceTableLineDetails } from '@/data/types';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, LineChart, Line, ReferenceLine } from 'recharts';
-import { Download, Share2, Edit, ArrowLeft, Sun, Zap, TrendingUp, Shield, X, Cpu, Check, MessageCircle, Calendar, AlertTriangle, ChevronDown, ChevronUp, BarChart3, Eye, EyeOff } from 'lucide-react';
-import { generateProposalPDF } from '@/lib/generatePDF';
+import { Download, Share2, Edit, ArrowLeft, Sun, Zap, TrendingUp, Shield, X, Cpu, Check, MessageCircle, Calendar, AlertTriangle, ChevronDown, ChevronUp, BarChart3, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
+import { generatePDFFromPage } from '@/lib/generatePDFFromPage';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import Diferenciais from '@/components/Diferenciais';
@@ -24,6 +24,14 @@ import PDFCanvasViewer from '@/components/PDFCanvasViewer';
 
 const LINES = ['excellence', 'premium'] as const;
 const PERIOD_OPTIONS = [5, 10, 15, 20, 25];
+
+// Foto da fachada da empresa (mesma usada no hero da landing)
+const FACADE_BG = 'https://static.wixstatic.com/media/c2ae0d_0fc9044d218948a585d2170345d4ce87~mv2.jpg';
+
+// Ciclo de vida da proposta
+const VALIDITY_DAYS = 10; // após este prazo, mostra "fora de validade"
+const EXPIRY_DAYS = 30;   // após este prazo, link expira completamente
+const DEFAULT_WHATSAPP = '5567996448995';
 
 export default function ProposalPage() {
   const { id } = useParams();
