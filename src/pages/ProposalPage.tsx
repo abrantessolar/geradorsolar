@@ -337,9 +337,18 @@ export default function ProposalPage() {
       };
     });
 
-    // Economia mensal estimada (média) e payback em anos
-    const economiaMensal = monthlyBill - minFee;
+    // Economia mensal estimada — baseada na geração (mudança do padrão de consumo)
+    const tarifa = proposal.clientData.kwhPrice || 0;
+    const economiaMensal = selectedCard.dimensioning.monthlyGeneration * tarifa;
     const paybackAnos = economiaMensal > 0 ? selectedCard.totalPrice / (economiaMensal * 12) : 0;
+
+    // Dados mensais (12 meses) — geração x consumo
+    const dadosMensais = MONTH_KEYS.map((k, i) => {
+      const irrMonth = monthlyIrr ? monthlyIrr[i] : irradiation * SEASONAL_FACTORS[k];
+      const gen = selectedCard.dimensioning.powerKwp * irrMonth * 30 * (1 - settings.systemLoss / 100);
+      const cons = selectedCard.dimensioning.avgMonthlyKwh * SEASONAL_FACTORS[k];
+      return { mes: MONTH_LABELS[i], geracao: Math.round(gen), consumo: Math.round(cons) };
+    });
 
     return {
       cliente_nome: proposal.clientData?.name || 'Cliente',
@@ -364,6 +373,8 @@ export default function ProposalPage() {
       numero_proposta: proposal.numero_proposta || 'TLS-0000',
       economia_mensal: economiaMensal,
       payback_anos: paybackAnos,
+      tarifa_kwh: tarifa,
+      dados_mensais: dadosMensais,
       fluxo_caixa: fluxo,
       fotos_portfolio: pdfPortfolioPhotos,
     };
