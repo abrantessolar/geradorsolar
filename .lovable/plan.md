@@ -1,65 +1,35 @@
 
-# Visualizar e editar o gerador de PDF da proposta
+# Corrigir bloqueio do visualizador de PDF no preview
 
 ## Problema
-Hoje o PDF da proposta é gerado programaticamente (via `html2pdf.js` / `jsPDF` em `src/lib/generatePDF.ts`), mas não existe uma forma de **pré-visualizar** o resultado dentro do app antes de baixar — então fica difícil iterar no layout junto.
+O modal atual usa `<object>` + `<iframe>` com `Blob URL`, que depende do plugin de PDF nativo do navegador. Dentro do iframe sandboxed do preview do Lovable, esse plugin é bloqueado — resultado: tela em branco/bloqueio.
 
-## Objetivo
-Criar uma tela de pré-visualização do PDF da proposta, embutida no app, para que possamos ajustar o layout visualmente em tempo real.
+## Solução
+Trocar a renderização nativa por **PDF.js** (renderiza cada página em `<canvas>`), que funciona em qualquer contexto, inclusive dentro do iframe do preview.
 
-## O que vamos fazer
+## Mudanças
 
-### 1. Botão "Visualizar PDF" na proposta
-Na página `/proposta/:id` (`src/pages/ProposalPage.tsx`), adicionar ao lado do botão "Baixar PDF" um botão **"Visualizar PDF"** que abre um modal em tela cheia com o PDF renderizado dentro de um `<iframe>`.
+### 1. Adicionar dependência
+- `pdfjs-dist` (mantenedor oficial do PDF.js)
 
-### 2. Modal de pré-visualização
-Novo componente `src/components/PDFPreviewModal.tsx`:
-- Gera o PDF em memória (sem disparar download)
-- Cria uma `Blob URL` e mostra dentro de um `<iframe>` ocupando ~90% da tela
-- Botões no topo: **Baixar**, **Recarregar** (regenera após mudanças), **Fechar**
-- Indicador de loading enquanto gera
+### 2. Novo componente `src/components/PDFCanvasViewer.tsx`
+- Recebe um `Blob` (ou `ArrayBuffer`) do PDF
+- Usa `pdfjsLib.getDocument()` para abrir
+- Renderiza cada página em um `<canvas>` empilhado verticalmente, scroll vertical
+- Toolbar simples: **Zoom +/−**, **Página atual / total**, **Baixar**, **Fechar**
+- Loading state enquanto renderiza
+- Worker do pdfjs configurado via import dinâmico do Vite
 
-### 3. Refatorar `generatePDF.ts` para suportar preview
-Atualmente o `generatePDF` força o download. Vamos:
-- Adicionar parâmetro `mode: 'download' | 'blob'`
-- Quando `'blob'`, retorna o `Blob` em vez de salvar
-- O modal usa `'blob'`, o botão antigo continua usando `'download'`
-
-### 4. Modo "edição assistida"
-Para facilitar nossa colaboração, no modo preview vamos:
-- Mostrar **réguas de página** (A4: 210×297mm) no iframe wrapper
-- Listar no painel lateral as **seções renderizadas** (Capa, Resumo, Equipamentos, Fluxo de caixa, Portfolio, Diferenciais, Rodapé) com toggles para ligar/desligar cada uma — assim você me diz exatamente o que quer mudar em cada bloco
-
-### 5. Acesso rápido em outros lugares
-Adicionar o mesmo botão "Visualizar PDF" também em:
-- `ProjetosUnificados` / `ProjetosList` — ação na linha do projeto
-- Lista de propostas no painel admin
-
-## Diagrama do fluxo
-
-```text
-[Proposta /proposta/:id]
-   │
-   ├── Botão "Baixar PDF"     → generatePDF(mode:'download')  → arquivo .pdf
-   │
-   └── Botão "Visualizar PDF" → generatePDF(mode:'blob')
-                                   │
-                                   ▼
-                          [PDFPreviewModal]
-                          ┌──────────────────────────┐
-                          │ Toolbar: Baixar | Recarregar | Fechar
-                          ├──────────────┬───────────┤
-                          │   <iframe>   │  Seções   │
-                          │   PDF blob   │  toggles  │
-                          └──────────────┴───────────┘
-```
+### 3. Atualizar `src/pages/ProposalPage.tsx`
+- Remover `<object>`/`<iframe>` (linhas 905-907)
+- Substituir pelo novo `<PDFCanvasViewer blob={pdfBlob} onClose={...} onDownload={...} />`
+- Guardar o `Blob` em estado em vez de só a URL
 
 ## Detalhes técnicos
-- Arquivos novos: `src/components/PDFPreviewModal.tsx`
-- Arquivos editados: `src/lib/generatePDF.ts`, `src/pages/ProposalPage.tsx`, `src/components/gestor/ProjetosUnificados.tsx`
-- `iframe` recebe `URL.createObjectURL(blob)` e revoga ao fechar
-- Sem novas dependências — `html2pdf.js`/`jsPDF` já estão no projeto
-- Sem mudanças no banco de dados
+- `pdfjs-dist` worker: `import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url'` e `GlobalWorkerOptions.workerSrc = pdfjsWorker`
+- Renderização em DPR 2x para nitidez em telas Retina
+- Não muda nada em `generatePDF.ts` nem no fluxo de download — só a visualização
 
-## Fora do escopo (nesta etapa)
-- Edição WYSIWYG do PDF (arrastar elementos). O foco aqui é **ver e iterar via chat** — você visualiza, me diz o que mudar, eu ajusto o código e você recarrega.
+## Fora do escopo
+- Edição inline do PDF
+- Mudanças visuais no conteúdo da proposta
