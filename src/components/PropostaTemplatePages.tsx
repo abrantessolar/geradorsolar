@@ -841,9 +841,8 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
               <div style={{ fontSize: 12, color: GRAY, marginBottom: 10 }}>
                 Comparação entre continuar pagando a conta atual de luz × investir em energia solar
               </div>
-            </div>
 
-            <div style={{ border: `1px solid ${BORDER}`, borderRadius: 10, overflow: 'hidden', fontSize: 14 }}>
+              <div style={{ border: `1px solid ${BORDER}`, borderRadius: 10, overflow: 'hidden', fontSize: 13 }}>
               <div
                 style={{
                   display: 'grid',
@@ -879,6 +878,7 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
                   </div>
                 </div>
               ))}
+              </div>
             </div>
           </div>
           <Footer />
