@@ -3,8 +3,10 @@
  * na proposta online (cards, badges, gradientes sutis, paleta TLS).
  */
 import { forwardRef } from 'react';
-import bgCapa from '@/assets/proposta-template/image3.jpg';
 import logoTls from '@/assets/logo.png';
+
+// Foto da fachada da empresa (mesma usada no hero da landing/proposta online)
+const FACADE_BG = 'https://static.wixstatic.com/media/c2ae0d_0fc9044d218948a585d2170345d4ce87~mv2.jpg';
 import { formatCurrency, formatNumber } from '@/data/calculations';
 import {
   Calendar, Shield, FileText, Building2, CreditCard, Zap, BadgeCheck, Plane,
@@ -27,6 +29,8 @@ export interface PropostaTemplateData {
   cliente_nome: string;
   cliente_cidade?: string;
   responsavel_nome: string;
+  responsavel_telefone?: string;
+  responsavel_email?: string;
   geracao_mensal: number;
   consumo_mensal: number;
   excedente_kwh: number;
@@ -266,7 +270,7 @@ function InverterIcon({ size = 80 }: { size?: number }) {
 // ====== Gráfico de barras Geração x Consumo (SVG inline puro) ======
 function GeracaoConsumoChart({ data }: { data: MonthlyRow[] }) {
   const W = 1100;
-  const H = 280;
+  const H = 520;
   const PAD_L = 50;
   const PAD_R = 20;
   const PAD_T = 20;
@@ -367,7 +371,7 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
         <Page>
           {/* Imagem de capa com overlay */}
           <img
-            src={bgCapa}
+            src={FACADE_BG}
             alt=""
             crossOrigin="anonymous"
             style={{
@@ -470,10 +474,23 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
                 {data.cliente_cidade && (
                   <div style={{ fontSize: 16, color: GRAY, marginTop: 4 }}>{data.cliente_cidade}</div>
                 )}
-                <div style={{ marginTop: 22, fontSize: 15, color: DARK, lineHeight: 1.55 }}>
-                  Esta proposta foi preparada com base nas suas informações de consumo. Ela
-                  apresenta o sistema dimensionado, a geração estimada e as condições de
-                  investimento — pensados para reduzir significativamente sua conta de luz.
+                <div style={{ marginTop: 22 }}>
+                  <div style={{ fontSize: 12, letterSpacing: 1.2, textTransform: 'uppercase', color: GRAY }}>
+                    Seu Consultor
+                  </div>
+                  <div style={{ fontSize: 22, fontWeight: 700, color: DARK, marginTop: 4, lineHeight: 1.2 }}>
+                    {data.responsavel_nome || '—'}
+                  </div>
+                  {data.responsavel_telefone && (
+                    <div style={{ fontSize: 16, color: OLIVE_DARK, marginTop: 4, fontWeight: 600 }}>
+                      📱 {data.responsavel_telefone}
+                    </div>
+                  )}
+                  {data.responsavel_email && (
+                    <div style={{ fontSize: 14, color: GRAY, marginTop: 2 }}>
+                      {data.responsavel_email}
+                    </div>
+                  )}
                 </div>
               </div>
               <div
@@ -723,94 +740,95 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
           <Footer />
         </Page>
 
-        {/* ============ PÁGINA 3 — FLUXO DE CAIXA + DIFERENCIAIS ============ */}
+        {/* ============ PÁGINA 3 — DIFERENCIAIS + FLUXO DE CAIXA ============ */}
         <Page>
           <Header numero={data.numero_proposta} />
           <div style={{ padding: '32px 50px 100px', display: 'flex', flexDirection: 'column', gap: 22 }}>
             <div>
-              <Badge>Projeção Financeira</Badge>
+              <Badge>Nossos Diferenciais</Badge>
               <h1 style={{ fontSize: 30, color: OLIVE_DARK, margin: '10px 0 0', fontWeight: 700, letterSpacing: -0.5 }}>
-                Fluxo de caixa acumulado
+                Por que escolher a Três Lagoas Solar
               </h1>
-              <div style={{ fontSize: 13, color: GRAY, marginTop: 4 }}>
-                Comparação entre continuar pagando a conta atual de luz × investir em energia solar
-              </div>
             </div>
 
-            <div style={{ border: `1px solid ${BORDER}`, borderRadius: 10, overflow: 'hidden', fontSize: 14 }}>
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: '1fr 1.4fr 1.4fr 1.2fr',
-                  background: OLIVE_DARK,
-                  color: '#fff',
-                  fontWeight: 700,
-                  fontSize: 13,
-                }}
-              >
-                <div style={{ padding: '12px 16px' }}>Período</div>
-                <div style={{ padding: '12px 16px' }}>Sem energia solar</div>
-                <div style={{ padding: '12px 16px' }}>Com energia solar</div>
-                <div style={{ padding: '12px 16px' }}>Economia acumulada</div>
-              </div>
-              {data.fluxo_caixa.map((row, i) => (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+              {DIFF_ICONS.map(({ Icon, title, text }, i) => (
                 <div
-                  key={row.year}
+                  key={i}
                   style={{
-                    display: 'grid',
-                    gridTemplateColumns: '1fr 1.4fr 1.4fr 1.2fr',
-                    background: i % 2 === 0 ? '#fff' : LIGHT,
-                    borderTop: i === 0 ? 'none' : `1px solid ${BORDER}`,
+                    background: '#fff',
+                    border: `1px solid ${BORDER}`,
+                    borderRadius: 10,
+                    padding: 14,
+                    textAlign: 'center',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
                   }}
                 >
-                  <div style={{ padding: '12px 16px', fontWeight: 700, color: OLIVE_DARK }}>
-                    {row.year} anos
+                  <div
+                    style={{
+                      width: 44,
+                      height: 44,
+                      borderRadius: 999,
+                      background: YELLOW,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      margin: '0 auto 8px',
+                    }}
+                  >
+                    <Icon size={22} color={OLIVE_DARK} strokeWidth={2.2} />
                   </div>
-                  <div style={{ padding: '12px 16px', color: '#a13a3a' }}>R$ {fmtMoney(row.semSolar)}</div>
-                  <div style={{ padding: '12px 16px' }}>R$ {fmtMoney(row.comSolar)}</div>
-                  <div style={{ padding: '12px 16px', fontWeight: 700, color: OLIVE_DARK }}>
-                    R$ {fmtMoney(row.economia)}
+                  <div style={{ fontSize: 12, fontWeight: 700, color: OLIVE_DARK, marginBottom: 4, lineHeight: 1.2 }}>
+                    {title}
                   </div>
+                  <div style={{ fontSize: 10.5, color: GRAY, lineHeight: 1.4 }}>{text}</div>
                 </div>
               ))}
             </div>
 
             <div>
-              <Badge>Nossos Diferenciais</Badge>
-              <h2 style={{ fontSize: 24, color: OLIVE_DARK, margin: '10px 0 14px', fontWeight: 700 }}>
-                Por que escolher a Três Lagoas Solar
+              <Badge>Projeção Financeira</Badge>
+              <h2 style={{ fontSize: 24, color: OLIVE_DARK, margin: '10px 0 4px', fontWeight: 700 }}>
+                Fluxo de caixa acumulado
               </h2>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
-                {DIFF_ICONS.map(({ Icon, title, text }, i) => (
+              <div style={{ fontSize: 13, color: GRAY, marginBottom: 12 }}>
+                Comparação entre continuar pagando a conta atual de luz × investir em energia solar
+              </div>
+
+              <div style={{ border: `1px solid ${BORDER}`, borderRadius: 10, overflow: 'hidden', fontSize: 14 }}>
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 1.4fr 1.4fr 1.2fr',
+                    background: OLIVE_DARK,
+                    color: '#fff',
+                    fontWeight: 700,
+                    fontSize: 13,
+                  }}
+                >
+                  <div style={{ padding: '12px 16px' }}>Período</div>
+                  <div style={{ padding: '12px 16px' }}>Sem energia solar</div>
+                  <div style={{ padding: '12px 16px' }}>Com energia solar</div>
+                  <div style={{ padding: '12px 16px' }}>Economia acumulada</div>
+                </div>
+                {data.fluxo_caixa.map((row, i) => (
                   <div
-                    key={i}
+                    key={row.year}
                     style={{
-                      background: '#fff',
-                      border: `1px solid ${BORDER}`,
-                      borderRadius: 10,
-                      padding: 14,
-                      textAlign: 'center',
-                      boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+                      display: 'grid',
+                      gridTemplateColumns: '1fr 1.4fr 1.4fr 1.2fr',
+                      background: i % 2 === 0 ? '#fff' : LIGHT,
+                      borderTop: i === 0 ? 'none' : `1px solid ${BORDER}`,
                     }}
                   >
-                    <div
-                      style={{
-                        width: 44,
-                        height: 44,
-                        borderRadius: 999,
-                        background: YELLOW,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        margin: '0 auto 8px',
-                      }}
-                    >
-                      <Icon size={22} color={OLIVE_DARK} strokeWidth={2.2} />
+                    <div style={{ padding: '12px 16px', fontWeight: 700, color: OLIVE_DARK }}>
+                      {row.year} anos
                     </div>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: OLIVE_DARK, marginBottom: 4, lineHeight: 1.2 }}>
-                      {title}
+                    <div style={{ padding: '12px 16px', color: '#a13a3a' }}>R$ {fmtMoney(row.semSolar)}</div>
+                    <div style={{ padding: '12px 16px' }}>R$ {fmtMoney(row.comSolar)}</div>
+                    <div style={{ padding: '12px 16px', fontWeight: 700, color: OLIVE_DARK }}>
+                      R$ {fmtMoney(row.economia)}
                     </div>
-                    <div style={{ fontSize: 10.5, color: GRAY, lineHeight: 1.4 }}>{text}</div>
                   </div>
                 ))}
               </div>
@@ -818,6 +836,7 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
           </div>
           <Footer />
         </Page>
+
 
         {/* ============ PÁGINA 4 — PORTFÓLIO ============ */}
         <Page>

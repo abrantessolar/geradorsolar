@@ -354,6 +354,8 @@ export default function ProposalPage() {
       cliente_nome: proposal.clientData?.name || 'Cliente',
       cliente_cidade: [proposal.clientData?.city, proposal.clientData?.state].filter(Boolean).join(' — '),
       responsavel_nome: proposal.clientData?.seller || '',
+      responsavel_telefone: proposal.sellerPhone || '',
+      responsavel_email: proposal.sellerEmail || '',
       geracao_mensal: selectedCard.dimensioning.monthlyGeneration,
       consumo_mensal: selectedCard.dimensioning.avgMonthlyKwh,
       excedente_kwh: selectedCard.dimensioning.surplus,
