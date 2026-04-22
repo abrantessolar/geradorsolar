@@ -387,7 +387,7 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
               position: 'absolute',
               inset: 0,
               width: '100%',
-              height: '60%',
+              height: '78%',
               objectFit: 'cover',
             }}
           />
@@ -397,8 +397,8 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
               top: 0,
               left: 0,
               right: 0,
-              height: '60%',
-              background: `linear-gradient(180deg, rgba(74,90,42,0.78) 0%, rgba(74,90,42,0.55) 50%, rgba(255,255,255,1) 100%)`,
+              height: '78%',
+              background: `linear-gradient(180deg, rgba(74,90,42,0.72) 0%, rgba(74,90,42,0.55) 55%, rgba(74,90,42,0.85) 88%, rgba(255,255,255,1) 100%)`,
             }}
           />
 
