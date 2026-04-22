@@ -383,6 +383,55 @@ export default function ProposalPage() {
     ? (cashflowData[cashflowData.length - 1]?.semSolar || 0) - (cashflowData[cashflowData.length - 1]?.comSolar || 0)
     : 0;
 
+  // ===== Validade / Expiração =====
+  const createdAt = proposal.criado_em ? new Date(proposal.criado_em) : new Date();
+  const today = new Date();
+  const daysSinceCreated = Math.floor((today.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24));
+  const validUntil = new Date(createdAt.getTime() + VALIDITY_DAYS * 24 * 60 * 60 * 1000);
+  const expiresAt = new Date(createdAt.getTime() + EXPIRY_DAYS * 24 * 60 * 60 * 1000);
+  const fmtDate = (d: Date) => d.toLocaleDateString('pt-BR');
+  const isExpired = daysSinceCreated > EXPIRY_DAYS && !isAuthenticated;
+  const isOutOfValidity = daysSinceCreated > VALIDITY_DAYS && !isExpired;
+
+  // WhatsApp do consultor
+  const sellerPhone = (proposal.sellerPhone || '').replace(/\D/g, '') || DEFAULT_WHATSAPP;
+  const sellerWhatsNumber = sellerPhone.startsWith('55') ? sellerPhone : `55${sellerPhone}`;
+  const sellerName = proposal.clientData?.seller || 'consultor';
+  const propostaNum = proposal.numero_proposta || '';
+  const whatsappMessage = encodeURIComponent(
+    `Olá ${sellerName}, tenho dúvidas sobre a proposta ${propostaNum}.`,
+  );
+  const whatsappUrl = `https://wa.me/${sellerWhatsNumber}?text=${whatsappMessage}`;
+
+  // ===== Tela de proposta expirada =====
+  if (isExpired) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background px-4">
+        <div className="max-w-md w-full text-center space-y-6 solar-card p-8">
+          <img src={logoTls} alt="Três Lagoas Solar" className="h-24 mx-auto" />
+          <div className="space-y-2">
+            <AlertTriangle className="w-12 h-12 text-destructive mx-auto" />
+            <h1 className="text-2xl font-bold text-primary">Orçamento expirado</h1>
+            <p className="text-muted-foreground">
+              Este orçamento expirou em <span className="font-semibold">{fmtDate(expiresAt)}</span>.
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Para receber uma proposta atualizada com os valores e condições atuais, fale com seu consultor.
+            </p>
+          </div>
+          <a
+            href={whatsappUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center justify-center gap-2 w-full py-3 px-6 rounded-lg bg-green-600 hover:bg-green-700 text-white font-semibold transition-colors"
+          >
+            <MessageCircle className="w-5 h-5" /> Falar no WhatsApp
+          </a>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={`min-h-screen bg-background ${isPrinting ? 'print-mode' : ''}`}>
       {/* AUTHENTICATED: Compact collapsible header */}
@@ -424,7 +473,7 @@ export default function ProposalPage() {
         </div>
       )}
 
-      {/* PUBLIC: Floating download button only */}
+      {/* PUBLIC: Floating download button */}
       {!isAuthenticated && (
         <button
           onClick={handleDownloadPDF}
@@ -433,6 +482,18 @@ export default function ProposalPage() {
           <Download className="w-3.5 h-3.5" /> Baixar PDF
         </button>
       )}
+
+      {/* WhatsApp floating button - visible to everyone */}
+      <a
+        href={whatsappUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="no-print fixed bottom-6 left-6 z-50 inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold py-3 px-4 rounded-full shadow-lg transition-all hover:scale-105"
+        title={`Falar com ${sellerName} no WhatsApp`}
+      >
+        <MessageCircle className="w-5 h-5" />
+        <span className="hidden sm:inline">Tire suas dúvidas</span>
+      </a>
 
       {/* Click outside to close share menu */}
       {showShareMenu && <div className="fixed inset-0 z-40" onClick={() => setShowShareMenu(false)} />}
