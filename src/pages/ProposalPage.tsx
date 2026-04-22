@@ -19,6 +19,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import Diferenciais from '@/components/Diferenciais';
 import ProposalPortfolio from '@/components/ProposalPortfolio';
 import ProposalFooter from '@/components/ProposalFooter';
+import PDFCanvasViewer from '@/components/PDFCanvasViewer';
 
 
 const LINES = ['excellence', 'premium'] as const;
@@ -32,7 +33,7 @@ export default function ProposalPage() {
   const [proposal, setProposal] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [isPrinting, setIsPrinting] = useState(false);
-  const [pdfBlobUrl, setPdfBlobUrl] = useState<string | null>(null);
+  const [pdfBlob, setPdfBlob] = useState<Blob | null>(null);
   const [showPdfViewer, setShowPdfViewer] = useState(false);
   const [showCostPanel, setShowCostPanel] = useState(false);
   const settings = getSettings();
@@ -316,9 +317,7 @@ export default function ProposalPage() {
       const doc = await getPdfDoc();
       const arrayBuffer = doc.output('arraybuffer');
       const blob = new Blob([arrayBuffer], { type: 'application/pdf' });
-      const url = URL.createObjectURL(blob);
-      if (pdfBlobUrl) URL.revokeObjectURL(pdfBlobUrl);
-      setPdfBlobUrl(url);
+      setPdfBlob(blob);
       setShowPdfViewer(true);
       toast.dismiss();
     } catch (err) {
@@ -887,26 +886,12 @@ export default function ProposalPage() {
       )}
 
       {/* PDF Viewer Modal */}
-      {showPdfViewer && pdfBlobUrl && (
-        <div className="fixed inset-0 bg-black/80 z-[100] flex flex-col items-center justify-center">
-          <div className="w-full max-w-4xl h-[90vh] flex flex-col">
-            <div className="flex items-center justify-between p-3 bg-card rounded-t-xl">
-              <span className="text-sm font-medium text-foreground">Visualização do PDF</span>
-              <div className="flex gap-2">
-                <button onClick={handleDownloadPDF} className="solar-btn-primary text-xs py-1.5 px-3 flex items-center gap-1">
-                  <Download className="w-3.5 h-3.5" /> Baixar
-                </button>
-                <button onClick={() => { setShowPdfViewer(false); if (pdfBlobUrl) URL.revokeObjectURL(pdfBlobUrl); setPdfBlobUrl(null); }}
-                  className="p-1.5 rounded-lg hover:bg-muted transition-colors">
-                  <X className="w-5 h-5 text-muted-foreground" />
-                </button>
-              </div>
-            </div>
-            <object data={`${pdfBlobUrl}#toolbar=1&navpanes=1&scrollbar=1`} type="application/pdf" className="flex-1 w-full rounded-b-xl bg-white">
-              <iframe src={`${pdfBlobUrl}#toolbar=1&navpanes=1&scrollbar=1`} className="w-full h-full rounded-b-xl bg-white" title="PDF Preview" />
-            </object>
-          </div>
-        </div>
+      {showPdfViewer && pdfBlob && (
+        <PDFCanvasViewer
+          blob={pdfBlob}
+          onDownload={handleDownloadPDF}
+          onClose={() => { setShowPdfViewer(false); setPdfBlob(null); }}
+        />
       )}
     </div>
   );
