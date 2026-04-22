@@ -387,7 +387,7 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
               position: 'absolute',
               inset: 0,
               width: '100%',
-              height: '60%',
+              height: '78%',
               objectFit: 'cover',
             }}
           />
@@ -397,8 +397,8 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
               top: 0,
               left: 0,
               right: 0,
-              height: '60%',
-              background: `linear-gradient(180deg, rgba(74,90,42,0.78) 0%, rgba(74,90,42,0.55) 50%, rgba(255,255,255,1) 100%)`,
+              height: '78%',
+              background: `linear-gradient(180deg, rgba(74,90,42,0.72) 0%, rgba(74,90,42,0.55) 55%, rgba(74,90,42,0.85) 88%, rgba(255,255,255,1) 100%)`,
             }}
           />
 
@@ -440,7 +440,7 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
           <div
             style={{
               position: 'absolute',
-              top: 230,
+              top: 520,
               left: 80,
               right: 80,
               color: '#fff',
@@ -462,13 +462,13 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
           <div
             style={{
               position: 'absolute',
-              top: 700,
+              top: 1230,
               left: 80,
               right: 80,
               background: '#fff',
               borderRadius: 14,
               boxShadow: '0 10px 40px rgba(0,0,0,0.18)',
-              padding: '36px 40px',
+              padding: '32px 40px',
               border: `1px solid ${BORDER}`,
             }}
           >
