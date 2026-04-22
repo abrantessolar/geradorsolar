@@ -315,12 +315,40 @@ export default function ProposalPage() {
     const panelPower = selectedCard.panelPowerLabel || (selectedCard.panel ? `${selectedCard.panel.power} Wp` : '');
     const qtdInversores = selectedCard.line === 'premium' ? selectedCard.microCount : 1;
 
+    // Fluxo de caixa: 5/10/15/20/25 anos — reusa cashflowData (financiamento padrão)
+    const monthlyBill = selectedCard.dimensioning.avgMonthlyKwh * proposal.clientData.kwhPrice;
+    const minFee = Math.max(80, monthlyBill * 0.15);
+    const periodos = [5, 10, 15, 20, 25];
+    const fluxo = periodos.map((years) => {
+      let accWithout = 0;
+      let accWith = 0;
+      for (let y = 0; y < years; y++) {
+        const yearlyBill = monthlyBill * 12 * Math.pow(1.10, y);
+        accWithout += yearlyBill;
+        // Modo à vista: investimento no ano 0 + tarifa mínima
+        const yearlyWith = y === 0 ? selectedCard.totalPrice + minFee * 12 : minFee * 12;
+        accWith += yearlyWith;
+      }
+      return {
+        year: years,
+        semSolar: Math.round(accWithout),
+        comSolar: Math.round(accWith),
+        economia: Math.round(accWithout - accWith),
+      };
+    });
+
+    // Economia mensal estimada (média) e payback em anos
+    const economiaMensal = monthlyBill - minFee;
+    const paybackAnos = economiaMensal > 0 ? selectedCard.totalPrice / (economiaMensal * 12) : 0;
+
     return {
       cliente_nome: proposal.clientData?.name || 'Cliente',
+      cliente_cidade: [proposal.clientData?.city, proposal.clientData?.state].filter(Boolean).join(' — '),
       responsavel_nome: proposal.clientData?.seller || '',
       geracao_mensal: selectedCard.dimensioning.monthlyGeneration,
       consumo_mensal: selectedCard.dimensioning.avgMonthlyKwh,
       excedente_kwh: selectedCard.dimensioning.surplus,
+      potencia_kwp: selectedCard.dimensioning.powerKwp,
       qtd_inversores: qtdInversores,
       marca_inversor: selectedCard.inverterBrand || selectedCard.inverter?.brand || '',
       potencia_inversor: inverterPower,
@@ -334,15 +362,27 @@ export default function ProposalPage() {
       parcela_60x: getInst(60),
       parcela_72x: getInst(72),
       numero_proposta: proposal.numero_proposta || 'TLS-0000',
+      economia_mensal: economiaMensal,
+      payback_anos: paybackAnos,
+      fluxo_caixa: fluxo,
+      fotos_portfolio: pdfPortfolioPhotos,
     };
   };
 
   const buildPdfBlob = async (): Promise<Blob> => {
+    // Carrega/otimiza fotos sob demanda (cacheia em estado)
+    let photos = pdfPortfolioPhotos;
+    if (photos.length === 0) {
+      photos = await fetchPortfolioPhotosOptimized();
+      setPdfPortfolioPhotos(photos);
+    }
     const data = buildTemplateData();
     if (!data) throw new Error('Dados da proposta não carregados');
+    // Garante que o template tenha as fotos (caso buildTemplateData rodou antes do setState refletir)
+    data.fotos_portfolio = photos;
     if (!templateContainerRef.current) throw new Error('Template não renderizado');
-    // Pequena espera para garantir que o template offscreen foi renderizado
-    await new Promise((r) => setTimeout(r, 50));
+    // Aguarda render do template offscreen com as fotos atualizadas
+    await new Promise((r) => setTimeout(r, 200));
     return await gerarPropostaPDF(templateContainerRef.current, data);
   };
 
