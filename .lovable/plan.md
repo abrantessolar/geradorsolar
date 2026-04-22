@@ -1,70 +1,65 @@
 
-# Auditoria dos módulos de precificação e equipamentos
+# Visualizar e editar o gerador de PDF da proposta
+
+## Problema
+Hoje o PDF da proposta é gerado programaticamente (via `html2pdf.js` / `jsPDF` em `src/lib/generatePDF.ts`), mas não existe uma forma de **pré-visualizar** o resultado dentro do app antes de baixar — então fica difícil iterar no layout junto.
 
 ## Objetivo
-Validar se os fluxos de precificação (calculadora, kits personalizados, custos de obra) estão consistentes entre si e se os equipamentos (placas, inversores, kits) estão sendo puxados das fontes corretas no banco de dados.
+Criar uma tela de pré-visualização do PDF da proposta, embutida no app, para que possamos ajustar o layout visualmente em tempo real.
 
-## Escopo da auditoria
+## O que vamos fazer
 
-### 1. Fontes de equipamentos
-Verificar que cada tela consome a tabela correta:
-- **Calculadora pública e autenticada** → `equipamentos_kits` (custo base por linha Plus/Prime Micro)
-- **Kit personalizado** (`CustomKitForm`) → entrada manual + cálculo de Material CA via `calculations.ts`
-- **Cadastro de obra** (`ProjetoForm`) → `equipamentos_placas` e `equipamentos_inversores`
-- **Lista de materiais da obra** → `materiais_quantidades_padrao` cruzado com `materiais`
-- **Dashboard de equipamentos instalados** → `projetos` + `clientes_base` (com parser)
+### 1. Botão "Visualizar PDF" na proposta
+Na página `/proposta/:id` (`src/pages/ProposalPage.tsx`), adicionar ao lado do botão "Baixar PDF" um botão **"Visualizar PDF"** que abre um modal em tela cheia com o PDF renderizado dentro de um `<iframe>`.
 
-### 2. Consistência da fórmula de preço
-Conferir em todos os pontos onde há cálculo de venda:
-- Fórmula padrão: `Preço = Custo Total / (1 - Margem%)`
-- Composição do custo: Equipamento + Instalação (R$/placa) + Homologação (R$69) + Material CA (faixa pela potência real do inversor) + Cabo Tronco (Prime Micro)
-- Validar que a margem sai de `getSettings()` (configurações) e não está duplicada/hardcoded
-- Conferir se kit personalizado e kit padrão usam exatamente as mesmas constantes
+### 2. Modal de pré-visualização
+Novo componente `src/components/PDFPreviewModal.tsx`:
+- Gera o PDF em memória (sem disparar download)
+- Cria uma `Blob URL` e mostra dentro de um `<iframe>` ocupando ~90% da tela
+- Botões no topo: **Baixar**, **Recarregar** (regenera após mudanças), **Fechar**
+- Indicador de loading enquanto gera
 
-### 3. Material CA por faixa de potência
-- Verificar a tabela de faixas em `getCaMaterialCost()` (`src/data/calculations.ts`)
-- Confirmar que usa a potência **real do inversor** do kit, não a estimada pelo kWp
-- Para Prime Micro: validar `calcMicroInverterCount` × potência unitária do micro
+### 3. Refatorar `generatePDF.ts` para suportar preview
+Atualmente o `generatePDF` força o download. Vamos:
+- Adicionar parâmetro `mode: 'download' | 'blob'`
+- Quando `'blob'`, retorna o `Blob` em vez de salvar
+- O modal usa `'blob'`, o botão antigo continua usando `'download'`
 
-### 4. Custos de obra (`custos_obra`)
-- Comparar `custo_kit`, `custo_instalacao`, `custo_trt`, `custo_materiais` com a precificação da proposta original
-- Validar se há divergência entre o preço de venda salvo na proposta e o `preco_venda` em `custos_obra`
+### 4. Modo "edição assistida"
+Para facilitar nossa colaboração, no modo preview vamos:
+- Mostrar **réguas de página** (A4: 210×297mm) no iframe wrapper
+- Listar no painel lateral as **seções renderizadas** (Capa, Resumo, Equipamentos, Fluxo de caixa, Portfolio, Diferenciais, Rodapé) com toggles para ligar/desligar cada uma — assim você me diz exatamente o que quer mudar em cada bloco
 
-### 5. Parser de equipamentos
-- Revisar `equipmentParser.ts` contra amostras reais do banco (`projetos.dados_paineis`, `dados_inversor`)
-- Confirmar normalização de marcas (ASTRONERGY, FOXESS, HOYMILES, GROWATT, DEYE)
-- Validar detecção de Micro vs String (palavras-chave + potência < 3kW)
+### 5. Acesso rápido em outros lugares
+Adicionar o mesmo botão "Visualizar PDF" também em:
+- `ProjetosUnificados` / `ProjetosList` — ação na linha do projeto
+- Lista de propostas no painel admin
 
-## Entregável
+## Diagrama do fluxo
 
-Relatório em chat (sem alterações de código nesta etapa) contendo:
+```text
+[Proposta /proposta/:id]
+   │
+   ├── Botão "Baixar PDF"     → generatePDF(mode:'download')  → arquivo .pdf
+   │
+   └── Botão "Visualizar PDF" → generatePDF(mode:'blob')
+                                   │
+                                   ▼
+                          [PDFPreviewModal]
+                          ┌──────────────────────────┐
+                          │ Toolbar: Baixar | Recarregar | Fechar
+                          ├──────────────┬───────────┤
+                          │   <iframe>   │  Seções   │
+                          │   PDF blob   │  toggles  │
+                          └──────────────┴───────────┘
+```
 
-1. **Mapa de fontes** — tabela mostrando cada tela × tabela do banco usada
-2. **Divergências encontradas** — lista priorizada (crítica / média / baixa) com:
-   - Arquivo e linha
-   - Comportamento atual vs esperado
-   - Impacto na precificação
-3. **Amostras reais do banco** — consultas em `equipamentos_kits`, `custos_obra` e `projetos` para confirmar valores em produção
-4. **Recomendações de correção** — pequenos patches sugeridos, agrupados por módulo
+## Detalhes técnicos
+- Arquivos novos: `src/components/PDFPreviewModal.tsx`
+- Arquivos editados: `src/lib/generatePDF.ts`, `src/pages/ProposalPage.tsx`, `src/components/gestor/ProjetosUnificados.tsx`
+- `iframe` recebe `URL.createObjectURL(blob)` e revoga ao fechar
+- Sem novas dependências — `html2pdf.js`/`jsPDF` já estão no projeto
+- Sem mudanças no banco de dados
 
-## Detalhes técnicos da investigação
-
-Arquivos a inspecionar:
-- `src/data/calculations.ts` — fórmulas centrais
-- `src/data/store.ts` / `supabaseStore.ts` — settings e fetchers
-- `src/components/CustomKitForm.tsx` — kit personalizado
-- `src/pages/CalculatorPage.tsx` — calculadora autenticada
-- `src/components/PublicSimulator.tsx` — simulador público
-- `src/components/admin/EquipmentTab.tsx` — cadastro de kits
-- `src/components/gestor/custos/CustosDashboard.tsx` + `CustoModal.tsx`
-- `src/components/gestor/EquipmentDashboard.tsx`
-- `src/components/gestor/materiais/generateMaterialList.ts`
-- `src/components/gestor/equipmentParser.ts`
-
-Consultas SQL de apoio:
-- `SELECT linha, tipo, marca, potencia, preco_custo FROM equipamentos_kits WHERE ativo ORDER BY linha, potencia`
-- `SELECT projeto_id, custo_kit, custo_instalacao, custo_materiais, preco_venda FROM custos_obra LIMIT 20`
-- `SELECT id, dados_paineis, dados_inversor, marca_placa, marca_inversor FROM projetos WHERE dados_paineis IS NOT NULL LIMIT 30`
-
-## Sem mudanças de código
-Esta etapa é **somente leitura/análise**. Após a entrega do relatório, decidiremos juntos quais correções aplicar.
+## Fora do escopo (nesta etapa)
+- Edição WYSIWYG do PDF (arrastar elementos). O foco aqui é **ver e iterar via chat** — você visualiza, me diz o que mudar, eu ajusto o código e você recarrega.
