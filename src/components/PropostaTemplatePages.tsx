@@ -306,24 +306,32 @@ function GeracaoConsumoChart({ data }: { data: MonthlyRow[] }) {
         const xBase = PAD_L + i * groupW + 4;
         const hG = (d.geracao / niceMax) * innerH;
         const hC = (d.consumo / niceMax) * innerH;
+        const yG = PAD_T + innerH - hG;
+        const yC = PAD_T + innerH - hC;
         return (
           <g key={i}>
-            <rect
-              x={xBase}
-              y={PAD_T + innerH - hG}
-              width={barW}
-              height={hG}
+            <rect x={xBase} y={yG} width={barW} height={hG} fill={OLIVE_DARK} rx="2" />
+            <text
+              x={xBase + barW / 2}
+              y={yG - 4}
+              fontSize="10"
+              fontWeight="700"
+              textAnchor="middle"
               fill={OLIVE_DARK}
-              rx="2"
-            />
-            <rect
-              x={xBase + barW + 2}
-              y={PAD_T + innerH - hC}
-              width={barW}
-              height={hC}
-              fill={YELLOW}
-              rx="2"
-            />
+            >
+              {Math.round(d.geracao)}
+            </text>
+            <rect x={xBase + barW + 2} y={yC} width={barW} height={hC} fill={YELLOW} rx="2" />
+            <text
+              x={xBase + barW + 2 + barW / 2}
+              y={yC - 4}
+              fontSize="10"
+              fontWeight="700"
+              textAnchor="middle"
+              fill={DARK}
+            >
+              {Math.round(d.consumo)}
+            </text>
             <text
               x={xBase + barW + 1}
               y={H - PAD_B + 16}
@@ -665,63 +673,39 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
             {/* Diferenciais */}
             <div>
               <Badge>Nossos Diferenciais</Badge>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginTop: 10 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginTop: 12 }}>
                 {DIFF_ICONS.map(({ Icon, title, text }, i) => (
                   <div
                     key={i}
                     style={{
                       background: '#fff',
                       border: `1px solid ${BORDER}`,
-                      borderRadius: 10,
-                      padding: 12,
+                      borderRadius: 12,
+                      padding: 18,
                       textAlign: 'center',
-                      boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+                      boxShadow: '0 2px 6px rgba(0,0,0,0.06)',
                     }}
                   >
                     <div
                       style={{
-                        width: 38,
-                        height: 38,
+                        width: 56,
+                        height: 56,
                         borderRadius: 999,
                         background: YELLOW,
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        margin: '0 auto 6px',
+                        margin: '0 auto 10px',
                       }}
                     >
-                      <Icon size={20} color={OLIVE_DARK} strokeWidth={2.2} />
+                      <Icon size={30} color={OLIVE_DARK} strokeWidth={2.2} />
                     </div>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: OLIVE_DARK, marginBottom: 3, lineHeight: 1.2 }}>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: OLIVE_DARK, marginBottom: 6, lineHeight: 1.25 }}>
                       {title}
                     </div>
-                    <div style={{ fontSize: 9.5, color: GRAY, lineHeight: 1.35 }}>{text}</div>
+                    <div style={{ fontSize: 12, color: GRAY, lineHeight: 1.45 }}>{text}</div>
                   </div>
                 ))}
-              </div>
-            </div>
-
-
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-              <div style={{ background: LIGHT, border: `1px solid ${BORDER}`, borderRadius: 10, padding: 16 }}>
-                <div style={{ fontSize: 11, color: GRAY, textTransform: 'uppercase', letterSpacing: 0.6 }}>
-                  Economia mensal estimada
-                </div>
-                <div style={{ fontSize: 28, fontWeight: 700, color: OLIVE_DARK, marginTop: 4 }}>
-                  R$ {fmtMoney(data.economia_mensal)}
-                </div>
-                <div style={{ fontSize: 11, color: GRAY, marginTop: 4 }}>
-                  Baseada na geração mensal × tarifa atual
-                </div>
-              </div>
-              <div style={{ background: LIGHT, border: `1px solid ${BORDER}`, borderRadius: 10, padding: 16 }}>
-                <div style={{ fontSize: 11, color: GRAY, textTransform: 'uppercase', letterSpacing: 0.6 }}>
-                  Retorno do investimento
-                </div>
-                <div style={{ fontSize: 28, fontWeight: 700, color: OLIVE_DARK, marginTop: 4 }}>
-                  {formatNumber(data.payback_anos, 1)} anos
-                </div>
               </div>
             </div>
           </div>
@@ -732,6 +716,32 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
         <Page>
           <Header numero={data.numero_proposta} />
           <div style={{ padding: '28px 50px 100px', display: 'flex', flexDirection: 'column', gap: 18 }}>
+            {/* Economia + Payback */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+              <div style={{ background: LIGHT, border: `1px solid ${BORDER}`, borderRadius: 12, padding: 18 }}>
+                <div style={{ fontSize: 12, color: GRAY, textTransform: 'uppercase', letterSpacing: 0.6 }}>
+                  Economia mensal estimada
+                </div>
+                <div style={{ fontSize: 30, fontWeight: 700, color: OLIVE_DARK, marginTop: 6 }}>
+                  R$ {fmtMoney(data.economia_mensal)}
+                </div>
+                <div style={{ fontSize: 11, color: GRAY, marginTop: 4 }}>
+                  Baseada na geração mensal × tarifa atual
+                </div>
+              </div>
+              <div style={{ background: LIGHT, border: `1px solid ${BORDER}`, borderRadius: 12, padding: 18 }}>
+                <div style={{ fontSize: 12, color: GRAY, textTransform: 'uppercase', letterSpacing: 0.6 }}>
+                  Retorno do investimento
+                </div>
+                <div style={{ fontSize: 30, fontWeight: 700, color: OLIVE_DARK, marginTop: 6 }}>
+                  {formatNumber(data.payback_anos, 1)} anos
+                </div>
+                <div style={{ fontSize: 11, color: GRAY, marginTop: 4 }}>
+                  Payback estimado do sistema
+                </div>
+              </div>
+            </div>
+
             {/* Investimento */}
             <div>
               <Badge>Investimento</Badge>
@@ -803,26 +813,26 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
                   <div
                     style={{
                       display: 'grid',
-                      gridTemplateColumns: `repeat(${Math.min(data.cartao_parcelas.length, 6)}, 1fr)`,
-                      gap: 10,
+                      gridTemplateColumns: 'repeat(6, 1fr)',
+                      gap: 8,
                     }}
                   >
-                    {data.cartao_parcelas.slice(0, 6).map((c) => (
+                    {data.cartao_parcelas.slice(0, 18).map((c) => (
                       <div
                         key={c.meses}
                         style={{
                           background: LIGHT,
                           border: `2px solid ${YELLOW}`,
-                          borderRadius: 10,
-                          padding: '12px 8px',
+                          borderRadius: 8,
+                          padding: '8px 6px',
                           textAlign: 'center',
                         }}
                       >
-                        <div style={{ fontSize: 20, fontWeight: 700, color: GRAY, lineHeight: 1 }}>
+                        <div style={{ fontSize: 16, fontWeight: 700, color: GRAY, lineHeight: 1 }}>
                           {c.meses}x
                         </div>
-                        <div style={{ fontSize: 10, color: GRAY, marginTop: 2 }}>de</div>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: OLIVE_DARK, marginTop: 2 }}>
+                        <div style={{ fontSize: 9, color: GRAY, marginTop: 1 }}>de</div>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: OLIVE_DARK, marginTop: 2 }}>
                           R$ {fmtMoney(c.valor)}
                         </div>
                       </div>
