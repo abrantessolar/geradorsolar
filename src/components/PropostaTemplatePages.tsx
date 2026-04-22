@@ -47,6 +47,7 @@ export interface PropostaTemplateData {
   parcela_48x: number;
   parcela_60x: number;
   parcela_72x: number;
+  cartao_parcelas: { meses: number; valor: number }[];
   numero_proposta: string;
   economia_mensal: number;
   payback_anos: number;
@@ -700,60 +701,8 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
               </div>
             </div>
 
-            {/* Investimento */}
-            <div>
-              <Badge>Investimento</Badge>
-              <div
-                style={{
-                  background: `linear-gradient(135deg, ${OLIVE_DARK} 0%, ${OLIVE} 100%)`,
-                  color: '#fff',
-                  padding: '18px 26px',
-                  borderRadius: 10,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  boxShadow: '0 4px 12px rgba(74,90,42,0.25)',
-                  marginTop: 10,
-                }}
-              >
-                <div>
-                  <div style={{ fontSize: 13, letterSpacing: 1, textTransform: 'uppercase', opacity: 0.85 }}>
-                    À vista
-                  </div>
-                  <div style={{ fontSize: 32, fontWeight: 700, marginTop: 2 }}>
-                    R$ {fmtMoney(data.preco_vista)}
-                  </div>
-                </div>
-                <div style={{ textAlign: 'right', fontSize: 12, opacity: 0.85, lineHeight: 1.4 }}>
-                  Pix, transferência<br />ou boleto
-                </div>
-              </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 10, marginTop: 12 }}>
-                {parcelas.map((p) => (
-                  <div
-                    key={p.label}
-                    style={{
-                      background: '#fff',
-                      border: `2px solid ${OLIVE_DARK}`,
-                      borderRadius: 10,
-                      padding: '12px 8px',
-                      textAlign: 'center',
-                    }}
-                  >
-                    <div style={{ fontSize: 22, fontWeight: 700, color: GRAY, lineHeight: 1 }}>
-                      {p.label}
-                    </div>
-                    <div style={{ fontSize: 10, color: GRAY, marginTop: 2 }}>de</div>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: OLIVE_DARK, marginTop: 2 }}>
-                      R$ {fmtMoney(p.value)}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
 
-            {/* Economia + Payback */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               <div style={{ background: LIGHT, border: `1px solid ${BORDER}`, borderRadius: 10, padding: 16 }}>
                 <div style={{ fontSize: 11, color: GRAY, textTransform: 'uppercase', letterSpacing: 0.6 }}>
@@ -779,21 +728,121 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
           <Footer />
         </Page>
 
-        {/* ============ PÁGINA 3 — FLUXO DE CAIXA ============ */}
+        {/* ============ PÁGINA 3 — INVESTIMENTO + FLUXO DE CAIXA ============ */}
         <Page>
           <Header numero={data.numero_proposta} />
-          <div style={{ padding: '32px 50px 100px', display: 'flex', flexDirection: 'column', gap: 22 }}>
+          <div style={{ padding: '28px 50px 100px', display: 'flex', flexDirection: 'column', gap: 18 }}>
+            {/* Investimento */}
             <div>
-              <Badge>Projeção Financeira</Badge>
-              <h1 style={{ fontSize: 30, color: OLIVE_DARK, margin: '10px 0 4px', fontWeight: 700, letterSpacing: -0.5 }}>
-                Fluxo de caixa acumulado
+              <Badge>Investimento</Badge>
+              <h1 style={{ fontSize: 28, color: OLIVE_DARK, margin: '10px 0 12px', fontWeight: 700, letterSpacing: -0.5 }}>
+                Condições de pagamento
               </h1>
-              <div style={{ fontSize: 13, color: GRAY }}>
-                Comparação entre continuar pagando a conta atual de luz × investir em energia solar
+
+              {/* À vista */}
+              <div
+                style={{
+                  background: `linear-gradient(135deg, ${OLIVE_DARK} 0%, ${OLIVE} 100%)`,
+                  color: '#fff',
+                  padding: '18px 26px',
+                  borderRadius: 10,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  boxShadow: '0 4px 12px rgba(74,90,42,0.25)',
+                }}
+              >
+                <div>
+                  <div style={{ fontSize: 13, letterSpacing: 1, textTransform: 'uppercase', opacity: 0.85 }}>
+                    À vista
+                  </div>
+                  <div style={{ fontSize: 30, fontWeight: 700, marginTop: 2 }}>
+                    R$ {fmtMoney(data.preco_vista)}
+                  </div>
+                </div>
+                <div style={{ textAlign: 'right', fontSize: 12, opacity: 0.85, lineHeight: 1.4 }}>
+                  Pix, transferência<br />ou boleto
+                </div>
               </div>
+
+              {/* Financiamento */}
+              <div style={{ marginTop: 16 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: OLIVE_DARK, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 8 }}>
+                  Financiamento
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 10 }}>
+                  {parcelas.map((p) => (
+                    <div
+                      key={p.label}
+                      style={{
+                        background: '#fff',
+                        border: `2px solid ${OLIVE_DARK}`,
+                        borderRadius: 10,
+                        padding: '12px 8px',
+                        textAlign: 'center',
+                      }}
+                    >
+                      <div style={{ fontSize: 20, fontWeight: 700, color: GRAY, lineHeight: 1 }}>
+                        {p.label}
+                      </div>
+                      <div style={{ fontSize: 10, color: GRAY, marginTop: 2 }}>de</div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: OLIVE_DARK, marginTop: 2 }}>
+                        R$ {fmtMoney(p.value)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Cartão de crédito */}
+              {data.cartao_parcelas && data.cartao_parcelas.length > 0 && (
+                <div style={{ marginTop: 16 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: OLIVE_DARK, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 8 }}>
+                    Cartão de crédito
+                  </div>
+                  <div
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: `repeat(${Math.min(data.cartao_parcelas.length, 6)}, 1fr)`,
+                      gap: 10,
+                    }}
+                  >
+                    {data.cartao_parcelas.slice(0, 6).map((c) => (
+                      <div
+                        key={c.meses}
+                        style={{
+                          background: LIGHT,
+                          border: `2px solid ${YELLOW}`,
+                          borderRadius: 10,
+                          padding: '12px 8px',
+                          textAlign: 'center',
+                        }}
+                      >
+                        <div style={{ fontSize: 20, fontWeight: 700, color: GRAY, lineHeight: 1 }}>
+                          {c.meses}x
+                        </div>
+                        <div style={{ fontSize: 10, color: GRAY, marginTop: 2 }}>de</div>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: OLIVE_DARK, marginTop: 2 }}>
+                          R$ {fmtMoney(c.valor)}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
-            <div style={{ border: `1px solid ${BORDER}`, borderRadius: 10, overflow: 'hidden', fontSize: 14 }}>
+            {/* Fluxo de caixa */}
+            <div>
+              <Badge>Projeção Financeira</Badge>
+              <h2 style={{ fontSize: 22, color: OLIVE_DARK, margin: '10px 0 4px', fontWeight: 700 }}>
+                Fluxo de caixa acumulado
+              </h2>
+              <div style={{ fontSize: 12, color: GRAY, marginBottom: 10 }}>
+                Comparação entre continuar pagando a conta atual de luz × investir em energia solar
+              </div>
+
+              <div style={{ border: `1px solid ${BORDER}`, borderRadius: 10, overflow: 'hidden', fontSize: 13 }}>
               <div
                 style={{
                   display: 'grid',
@@ -829,6 +878,7 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
                   </div>
                 </div>
               ))}
+              </div>
             </div>
           </div>
           <Footer />
