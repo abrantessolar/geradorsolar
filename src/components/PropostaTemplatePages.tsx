@@ -740,7 +740,103 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
           <Footer />
         </Page>
 
-        {/* ============ PÁGINA 3 — FLUXO DE CAIXA + DIFERENCIAIS ============ */}
+        {/* ============ PÁGINA 3 — DIFERENCIAIS + FLUXO DE CAIXA ============ */}
+        <Page>
+          <Header numero={data.numero_proposta} />
+          <div style={{ padding: '32px 50px 100px', display: 'flex', flexDirection: 'column', gap: 22 }}>
+            <div>
+              <Badge>Nossos Diferenciais</Badge>
+              <h1 style={{ fontSize: 30, color: OLIVE_DARK, margin: '10px 0 0', fontWeight: 700, letterSpacing: -0.5 }}>
+                Por que escolher a Três Lagoas Solar
+              </h1>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+              {DIFF_ICONS.map(({ Icon, title, text }, i) => (
+                <div
+                  key={i}
+                  style={{
+                    background: '#fff',
+                    border: `1px solid ${BORDER}`,
+                    borderRadius: 10,
+                    padding: 14,
+                    textAlign: 'center',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 44,
+                      height: 44,
+                      borderRadius: 999,
+                      background: YELLOW,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      margin: '0 auto 8px',
+                    }}
+                  >
+                    <Icon size={22} color={OLIVE_DARK} strokeWidth={2.2} />
+                  </div>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: OLIVE_DARK, marginBottom: 4, lineHeight: 1.2 }}>
+                    {title}
+                  </div>
+                  <div style={{ fontSize: 10.5, color: GRAY, lineHeight: 1.4 }}>{text}</div>
+                </div>
+              ))}
+            </div>
+
+            <div>
+              <Badge>Projeção Financeira</Badge>
+              <h2 style={{ fontSize: 24, color: OLIVE_DARK, margin: '10px 0 4px', fontWeight: 700 }}>
+                Fluxo de caixa acumulado
+              </h2>
+              <div style={{ fontSize: 13, color: GRAY, marginBottom: 12 }}>
+                Comparação entre continuar pagando a conta atual de luz × investir em energia solar
+              </div>
+
+              <div style={{ border: `1px solid ${BORDER}`, borderRadius: 10, overflow: 'hidden', fontSize: 14 }}>
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 1.4fr 1.4fr 1.2fr',
+                    background: OLIVE_DARK,
+                    color: '#fff',
+                    fontWeight: 700,
+                    fontSize: 13,
+                  }}
+                >
+                  <div style={{ padding: '12px 16px' }}>Período</div>
+                  <div style={{ padding: '12px 16px' }}>Sem energia solar</div>
+                  <div style={{ padding: '12px 16px' }}>Com energia solar</div>
+                  <div style={{ padding: '12px 16px' }}>Economia acumulada</div>
+                </div>
+                {data.fluxo_caixa.map((row, i) => (
+                  <div
+                    key={row.year}
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: '1fr 1.4fr 1.4fr 1.2fr',
+                      background: i % 2 === 0 ? '#fff' : LIGHT,
+                      borderTop: i === 0 ? 'none' : `1px solid ${BORDER}`,
+                    }}
+                  >
+                    <div style={{ padding: '12px 16px', fontWeight: 700, color: OLIVE_DARK }}>
+                      {row.year} anos
+                    </div>
+                    <div style={{ padding: '12px 16px', color: '#a13a3a' }}>R$ {fmtMoney(row.semSolar)}</div>
+                    <div style={{ padding: '12px 16px' }}>R$ {fmtMoney(row.comSolar)}</div>
+                    <div style={{ padding: '12px 16px', fontWeight: 700, color: OLIVE_DARK }}>
+                      R$ {fmtMoney(row.economia)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+          <Footer />
+        </Page>
+
         <Page>
           <Header numero={data.numero_proposta} />
           <div style={{ padding: '32px 50px 100px', display: 'flex', flexDirection: 'column', gap: 22 }}>
