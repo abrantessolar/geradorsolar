@@ -1,12 +1,13 @@
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { saveAs } from 'file-saver';
+import { supabase } from '@/integrations/supabase/client';
 import type { PropostaTemplateData } from '@/components/PropostaTemplatePages';
+import { FALLBACK_PHOTOS } from '@/components/ProposalPortfolio';
 
 /**
- * Captura as 4 páginas renderizadas (offscreen) do componente
- * <PropostaTemplatePages /> e gera um PDF A4 idêntico ao layout do template
- * .docx, garantindo arquivo final ≤ 2 MB.
+ * Gera PDF A4 (4 páginas) a partir do componente <PropostaTemplatePages />.
+ * Foco em leveza: scale 1.5, JPEG q70 → alvo ~600 KB-1 MB.
  */
 export async function gerarPropostaPDF(
   pagesContainer: HTMLElement,
@@ -21,13 +22,11 @@ export async function gerarPropostaPDF(
     format: 'a4',
     compress: true,
   });
-  const pageWmm = pdf.internal.pageSize.getWidth(); // 210
-  const pageHmm = pdf.internal.pageSize.getHeight(); // 297
+  const pageWmm = pdf.internal.pageSize.getWidth();
+  const pageHmm = pdf.internal.pageSize.getHeight();
 
-  // Espera 1 frame para garantir que as imagens decodificaram
-  await new Promise((r) => setTimeout(r, 100));
-
-  // Pré-carrega imagens dentro do container
+  // Espera fontes/imagens
+  await new Promise((r) => setTimeout(r, 150));
   const imgs = pagesContainer.querySelectorAll('img');
   await Promise.all(
     Array.from(imgs).map((img) =>
@@ -43,7 +42,7 @@ export async function gerarPropostaPDF(
   for (let i = 0; i < pageEls.length; i++) {
     const el = pageEls[i];
     const canvas = await html2canvas(el, {
-      scale: 2, // boa qualidade
+      scale: 1.5,
       useCORS: true,
       allowTaint: false,
       backgroundColor: '#ffffff',
@@ -51,14 +50,11 @@ export async function gerarPropostaPDF(
       windowWidth: el.offsetWidth,
       windowHeight: el.offsetHeight,
     });
-
-    // JPEG com qualidade balanceada para manter PDF ≤ 2 MB
-    const imgData = canvas.toDataURL('image/jpeg', 0.78);
+    const imgData = canvas.toDataURL('image/jpeg', 0.7);
     if (i > 0) pdf.addPage();
     pdf.addImage(imgData, 'JPEG', 0, 0, pageWmm, pageHmm, undefined, 'FAST');
   }
 
-  // Metadados úteis
   pdf.setProperties({
     title: `Proposta ${data.numero_proposta} - ${data.cliente_nome}`,
     subject: 'Proposta Comercial Energia Solar',
@@ -82,4 +78,60 @@ export function sanitizeFilename(name: string): string {
 export function downloadPropostaPDF(blob: Blob, numero: string, cliente: string): void {
   const filename = `Proposta_${numero || 'TLS-0000'}_${sanitizeFilename(cliente || 'Cliente')}.pdf`;
   saveAs(blob, filename);
+}
+
+/**
+ * Carrega URL → canvas redimensionado → dataURL JPEG (leve).
+ * Usado para otimizar fotos do portfólio antes de renderizar no template.
+ */
+async function optimizeImage(url: string, maxSide = 400, quality = 0.55): Promise<string> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      const ratio = Math.min(1, maxSide / Math.max(img.width, img.height));
+      const w = Math.round(img.width * ratio);
+      const h = Math.round(img.height * ratio);
+      const canvas = document.createElement('canvas');
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        resolve(url);
+        return;
+      }
+      ctx.drawImage(img, 0, 0, w, h);
+      try {
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      } catch {
+        resolve(url); // CORS falhou → mantém URL original
+      }
+    };
+    img.onerror = () => resolve('');
+    img.src = url;
+  });
+}
+
+/**
+ * Busca até 16 fotos do portfólio (Supabase ou fallback) e retorna
+ * thumbnails 400×400 q55 em data-URL.
+ */
+export async function fetchPortfolioPhotosOptimized(): Promise<string[]> {
+  let urls: string[] = [];
+  try {
+    const { data } = await supabase
+      .from('fotos_portfolio')
+      .select('url')
+      .eq('ativo', true)
+      .order('ordem', { ascending: true })
+      .limit(16);
+    if (data && data.length > 0) urls = data.map((d) => d.url);
+  } catch {
+    // ignore
+  }
+  if (urls.length === 0) urls = [...FALLBACK_PHOTOS];
+  urls = urls.slice(0, 16);
+
+  const optimized = await Promise.all(urls.map((u) => optimizeImage(u, 400, 0.55)));
+  return optimized.filter(Boolean);
 }
