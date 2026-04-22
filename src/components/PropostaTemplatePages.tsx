@@ -716,6 +716,32 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
         <Page>
           <Header numero={data.numero_proposta} />
           <div style={{ padding: '28px 50px 100px', display: 'flex', flexDirection: 'column', gap: 18 }}>
+            {/* Economia + Payback */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+              <div style={{ background: LIGHT, border: `1px solid ${BORDER}`, borderRadius: 12, padding: 18 }}>
+                <div style={{ fontSize: 12, color: GRAY, textTransform: 'uppercase', letterSpacing: 0.6 }}>
+                  Economia mensal estimada
+                </div>
+                <div style={{ fontSize: 30, fontWeight: 700, color: OLIVE_DARK, marginTop: 6 }}>
+                  R$ {fmtMoney(data.economia_mensal)}
+                </div>
+                <div style={{ fontSize: 11, color: GRAY, marginTop: 4 }}>
+                  Baseada na geração mensal × tarifa atual
+                </div>
+              </div>
+              <div style={{ background: LIGHT, border: `1px solid ${BORDER}`, borderRadius: 12, padding: 18 }}>
+                <div style={{ fontSize: 12, color: GRAY, textTransform: 'uppercase', letterSpacing: 0.6 }}>
+                  Retorno do investimento
+                </div>
+                <div style={{ fontSize: 30, fontWeight: 700, color: OLIVE_DARK, marginTop: 6 }}>
+                  {formatNumber(data.payback_anos, 1)} anos
+                </div>
+                <div style={{ fontSize: 11, color: GRAY, marginTop: 4 }}>
+                  Payback estimado do sistema
+                </div>
+              </div>
+            </div>
+
             {/* Investimento */}
             <div>
               <Badge>Investimento</Badge>
