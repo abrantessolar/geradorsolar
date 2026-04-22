@@ -701,60 +701,8 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
               </div>
             </div>
 
-            {/* Investimento */}
-            <div>
-              <Badge>Investimento</Badge>
-              <div
-                style={{
-                  background: `linear-gradient(135deg, ${OLIVE_DARK} 0%, ${OLIVE} 100%)`,
-                  color: '#fff',
-                  padding: '18px 26px',
-                  borderRadius: 10,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  boxShadow: '0 4px 12px rgba(74,90,42,0.25)',
-                  marginTop: 10,
-                }}
-              >
-                <div>
-                  <div style={{ fontSize: 13, letterSpacing: 1, textTransform: 'uppercase', opacity: 0.85 }}>
-                    À vista
-                  </div>
-                  <div style={{ fontSize: 32, fontWeight: 700, marginTop: 2 }}>
-                    R$ {fmtMoney(data.preco_vista)}
-                  </div>
-                </div>
-                <div style={{ textAlign: 'right', fontSize: 12, opacity: 0.85, lineHeight: 1.4 }}>
-                  Pix, transferência<br />ou boleto
-                </div>
-              </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 10, marginTop: 12 }}>
-                {parcelas.map((p) => (
-                  <div
-                    key={p.label}
-                    style={{
-                      background: '#fff',
-                      border: `2px solid ${OLIVE_DARK}`,
-                      borderRadius: 10,
-                      padding: '12px 8px',
-                      textAlign: 'center',
-                    }}
-                  >
-                    <div style={{ fontSize: 22, fontWeight: 700, color: GRAY, lineHeight: 1 }}>
-                      {p.label}
-                    </div>
-                    <div style={{ fontSize: 10, color: GRAY, marginTop: 2 }}>de</div>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: OLIVE_DARK, marginTop: 2 }}>
-                      R$ {fmtMoney(p.value)}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
 
-            {/* Economia + Payback */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               <div style={{ background: LIGHT, border: `1px solid ${BORDER}`, borderRadius: 10, padding: 16 }}>
                 <div style={{ fontSize: 11, color: GRAY, textTransform: 'uppercase', letterSpacing: 0.6 }}>
