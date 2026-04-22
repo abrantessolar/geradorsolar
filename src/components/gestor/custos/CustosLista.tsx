@@ -176,7 +176,7 @@ export default function CustosLista({ onExport }: Props) {
               const custoTotal = c ? calcCustoTotal(c) : 0;
               const lucro = venda > 0 && c ? venda - custoTotal : 0;
               const margem = venda > 0 && c ? (lucro / venda) * 100 : null;
-              const extras = (c?.custo_frete || 0) + (c?.custo_homologacao || 0) + (c?.custo_comissao || 0) + (c?.custo_outros || 0);
+              const extras = (c?.custo_frete || 0) + (c?.custo_homologacao || 0) + (c?.custo_comissao || 0) + (c?.custo_outros || 0) + ((c as any)?.custo_material_ca || 0) + ((c as any)?.custo_cabo_tronco || 0);
 
               return (
                 <tr key={p.id} className="border-t hover:bg-muted/50">

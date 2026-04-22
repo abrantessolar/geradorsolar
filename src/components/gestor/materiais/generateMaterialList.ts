@@ -10,7 +10,7 @@ export function getPotenciaKey(opts: {
   marca_inversor?: string | null;
   qtd_inversores?: number | null;
 }): string | null {
-  const potRaw = parseFloat(opts.potencia_inversor || '0');
+  const potRaw = parseFloat(String(opts.potencia_inversor || '0').replace(',', '.'));
   if (!potRaw) return null;
 
   const potKw = potRaw > 100 ? potRaw / 1000 : potRaw;

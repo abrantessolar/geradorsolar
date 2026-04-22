@@ -50,7 +50,7 @@ function detectTipoInversor(c: ClienteBase): 'micro' | 'string' {
 
   // DEYE with low power
   if (marca.includes('DEYE')) {
-    const pot = parseFloat(c.potencia_inversor || '0');
+    const pot = parseFloat((c.potencia_inversor || '0').replace(',', '.'));
     if (pot > 0 && pot < 3) return 'micro';
   }
 
@@ -89,7 +89,7 @@ function deduplicateClientes(clientes: ClienteBase[]): ClienteBase[] {
 }
 
 function getKwp(c: ClienteBase): number {
-  return c.kwp || (c.qtd_placas && c.potencia_placa ? (c.qtd_placas * parseFloat(c.potencia_placa || '0')) / 1000 : 0);
+  return c.kwp || (c.qtd_placas && c.potencia_placa ? (c.qtd_placas * parseFloat((c.potencia_placa || '0').replace(',', '.'))) / 1000 : 0);
 }
 
 type Props = { clientes: ClienteBase[] };
