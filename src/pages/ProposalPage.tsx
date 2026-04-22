@@ -960,23 +960,44 @@ export default function ProposalPage() {
         })()}
 
         {/* DIFERENCIAIS */}
-        <Diferenciais compact />
+        <div data-pdf-section="differentials">
+          <Diferenciais compact />
+        </div>
 
         {/* PORTFÓLIO DE OBRAS */}
-        <ProposalPortfolio />
+        <div data-pdf-section="portfolio">
+          <ProposalPortfolio />
+        </div>
+
+        {/* CONSULTANT WHATSAPP CTA */}
+        <div data-pdf-section="consultant" className="solar-card p-6 text-center space-y-3 bg-primary/5">
+          <h3 className="text-lg font-bold text-primary">Ainda tem dúvidas?</h3>
+          <p className="text-sm text-muted-foreground">
+            Fale diretamente com <span className="font-semibold text-foreground">{sellerName}</span>, seu consultor solar.
+          </p>
+          <a
+            href={whatsappUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
+          >
+            <MessageCircle className="w-5 h-5" />
+            Falar com {sellerName} no WhatsApp
+          </a>
+        </div>
 
         {/* CONTACT FOOTER */}
-        <ProposalFooter />
-
-        {/* PRINT FOOTER */}
-        <div className="hidden print-only-block text-center py-8 border-t border-border mt-8">
-          <p className="text-sm font-semibold">{settings.company.name}</p>
-          <p className="text-xs text-muted-foreground">
-            {settings.company.phone} • {settings.company.email} • {settings.company.site}
-          </p>
-          <p className="text-xs text-muted-foreground mt-2">
-            Proposta válida por {settings.proposalValidity || 15} dias • Gerado em {new Date().toLocaleDateString('pt-BR')}
-          </p>
+        <div data-pdf-section="footer">
+          <ProposalFooter />
+          <div className="text-center text-xs text-muted-foreground mt-4">
+            {isOutOfValidity ? (
+              <span className="text-destructive font-semibold">
+                Proposta fora de validade desde {fmtDate(validUntil)} • Gerada em {fmtDate(createdAt)}
+              </span>
+            ) : (
+              <>Proposta válida até {fmtDate(validUntil)} • Gerada em {fmtDate(createdAt)}</>
+            )}
+          </div>
         </div>
       </div>
 
