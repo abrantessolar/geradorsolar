@@ -740,24 +740,26 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
                 style={{
                   background: `linear-gradient(135deg, ${OLIVE_DARK} 0%, ${OLIVE} 100%)`,
                   color: '#fff',
-                  padding: '18px 26px',
+                  padding: '24px 26px',
                   borderRadius: 10,
                   display: 'flex',
+                  fleXDirection: 'column',
                   alignItems: 'center',
-                  justifyContent: 'space-between',
+                  justifyContent: 'center',
+                  textAlign: 'center',
                   boxShadow: '0 4px 12px rgba(74,90,42,0.25)',
                 }}
               >
-                <div>
-                  <div style={{ fontSize: 13, letterSpacing: 1, textTransform: 'uppercase', opacity: 0.85 }}>
+                <div style={{ width: '100%', textAlign: 'center' }}>
+                  <div style={{ fontSize: 18, letterSpacing: 1, textTransform: 'uppercase', opacity: 0.9, fontWeight: 600 }}>
                     À vista
                   </div>
-                  <div style={{ fontSize: 30, fontWeight: 700, marginTop: 2 }}>
+                  <div style={{ fontSize: 40, fontWeight: 700, marginTop: 4 }}>
                     R$ {fmtMoney(data.preco_vista)}
                   </div>
-                </div>
-                <div style={{ textAlign: 'right', fontSize: 12, opacity: 0.85, lineHeight: 1.4 }}>
-                  Pix, transferência<br />ou boleto
+                  <div style={{ fontSize: 13, opacity: 0.85, marginTop: 4 }}>
+                    Pix, transferência ou boleto
+                  </div>
                 </div>
               </div>
 
