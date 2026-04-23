@@ -51,7 +51,7 @@ export default function CalculatorPage() {
       const { data } = await supabase
         .from('user_profiles')
         .select('user_id, nome, email, telefone, role, ativo')
-        .in('role', ['vendedor', 'orcamentista'])
+        .in('role', ['vendedor', 'orcamentista', 'admin', 'gestor'])
         .eq('ativo', true)
         .order('nome');
       const sellers = data || [];
