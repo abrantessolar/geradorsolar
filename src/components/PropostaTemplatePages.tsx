@@ -698,10 +698,10 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
                     >
                       <Icon size={30} color={OLIVE_DARK} strokeWidth={2.2} />
                     </div>
-                    <div style={{ fontSize: 15, fontWeight: 700, color: OLIVE_DARK, marginBottom: 6, lineHeight: 1.25 }}>
+                    <div style={{ fontSize: 16, fontWeight: 700, color: OLIVE_DARK, marginBottom: 6, lineHeight: 1.25 }}>
                       {title}
                     </div>
-                    <div style={{ fontSize: 13, color: GRAY, lineHeight: 1.45 }}>{text}</div>
+                    <div style={{ fontSize: 14, color: GRAY, lineHeight: 1.45 }}>{text}</div>
                   </div>
                 ))}
               </div>
