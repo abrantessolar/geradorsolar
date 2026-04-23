@@ -387,8 +387,9 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
               position: 'absolute',
               inset: 0,
               width: '100%',
-              height: '78%',
+              height: '62%',
               objectFit: 'cover',
+              objectPosition: 'center',
             }}
           />
           <div
@@ -398,7 +399,7 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
               left: 0,
               right: 0,
               height: '78%',
-              background: `linear-gradient(180deg, rgba(74,90,42,0.72) 0%, rgba(74,90,42,0.55) 55%, rgba(74,90,42,0.85) 88%, rgba(255,255,255,1) 100%)`,
+              background: `linear-gradient(180deg, rgba(74,90,42,0.78) 0%, rgba(74,90,42,0.55) 45%, rgba(74,90,42,0.88) 78%, rgba(255,255,255,1) 100%)`,
             }}
           />
 
@@ -522,9 +523,6 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
                 </div>
                 <div style={{ fontSize: 13, color: DARK, marginTop: 4 }}>
                   Geração: <strong>{fmtKwh(data.geracao_mensal)}/mês</strong>
-                </div>
-                <div style={{ fontSize: 13, color: OLIVE_DARK, marginTop: 10, fontWeight: 700 }}>
-                  Economia: R$ {fmtMoney(data.economia_mensal)}/mês
                 </div>
               </div>
             </div>
@@ -700,10 +698,10 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
                     >
                       <Icon size={30} color={OLIVE_DARK} strokeWidth={2.2} />
                     </div>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: OLIVE_DARK, marginBottom: 6, lineHeight: 1.25 }}>
+                    <div style={{ fontSize: 15, fontWeight: 700, color: OLIVE_DARK, marginBottom: 6, lineHeight: 1.25 }}>
                       {title}
                     </div>
-                    <div style={{ fontSize: 12, color: GRAY, lineHeight: 1.45 }}>{text}</div>
+                    <div style={{ fontSize: 13, color: GRAY, lineHeight: 1.45 }}>{text}</div>
                   </div>
                 ))}
               </div>
@@ -716,29 +714,16 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
         <Page>
           <Header numero={data.numero_proposta} />
           <div style={{ padding: '28px 50px 100px', display: 'flex', flexDirection: 'column', gap: 18 }}>
-            {/* Economia + Payback */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-              <div style={{ background: LIGHT, border: `1px solid ${BORDER}`, borderRadius: 12, padding: 18 }}>
-                <div style={{ fontSize: 12, color: GRAY, textTransform: 'uppercase', letterSpacing: 0.6 }}>
-                  Economia mensal estimada
-                </div>
-                <div style={{ fontSize: 30, fontWeight: 700, color: OLIVE_DARK, marginTop: 6 }}>
-                  R$ {fmtMoney(data.economia_mensal)}
-                </div>
-                <div style={{ fontSize: 11, color: GRAY, marginTop: 4 }}>
-                  Baseada na geração mensal × tarifa atual
-                </div>
+            {/* Retorno do investimento */}
+            <div style={{ background: LIGHT, border: `1px solid ${BORDER}`, borderRadius: 12, padding: 20 }}>
+              <div style={{ fontSize: 14, color: GRAY, textTransform: 'uppercase', letterSpacing: 0.6 }}>
+                Retorno do investimento
               </div>
-              <div style={{ background: LIGHT, border: `1px solid ${BORDER}`, borderRadius: 12, padding: 18 }}>
-                <div style={{ fontSize: 12, color: GRAY, textTransform: 'uppercase', letterSpacing: 0.6 }}>
-                  Retorno do investimento
-                </div>
-                <div style={{ fontSize: 30, fontWeight: 700, color: OLIVE_DARK, marginTop: 6 }}>
-                  {formatNumber(data.payback_anos, 1)} anos
-                </div>
-                <div style={{ fontSize: 11, color: GRAY, marginTop: 4 }}>
-                  Payback estimado do sistema
-                </div>
+              <div style={{ fontSize: 34, fontWeight: 700, color: OLIVE_DARK, marginTop: 6 }}>
+                {formatNumber(data.payback_anos, 1)} anos
+              </div>
+              <div style={{ fontSize: 13, color: GRAY, marginTop: 4 }}>
+                Payback estimado do sistema
               </div>
             </div>
 
@@ -792,11 +777,11 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
                         textAlign: 'center',
                       }}
                     >
-                      <div style={{ fontSize: 20, fontWeight: 700, color: GRAY, lineHeight: 1 }}>
+                      <div style={{ fontSize: 22, fontWeight: 700, color: GRAY, lineHeight: 1 }}>
                         {p.label}
                       </div>
-                      <div style={{ fontSize: 10, color: GRAY, marginTop: 2 }}>de</div>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: OLIVE_DARK, marginTop: 2 }}>
+                      <div style={{ fontSize: 11, color: GRAY, marginTop: 2 }}>de</div>
+                      <div style={{ fontSize: 15, fontWeight: 700, color: OLIVE_DARK, marginTop: 2 }}>
                         R$ {fmtMoney(p.value)}
                       </div>
                     </div>
@@ -828,11 +813,11 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
                           textAlign: 'center',
                         }}
                       >
-                        <div style={{ fontSize: 16, fontWeight: 700, color: GRAY, lineHeight: 1 }}>
+                        <div style={{ fontSize: 17, fontWeight: 700, color: GRAY, lineHeight: 1 }}>
                           {c.meses}x
                         </div>
-                        <div style={{ fontSize: 9, color: GRAY, marginTop: 1 }}>de</div>
-                        <div style={{ fontSize: 11, fontWeight: 700, color: OLIVE_DARK, marginTop: 2 }}>
+                        <div style={{ fontSize: 10, color: GRAY, marginTop: 1 }}>de</div>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: OLIVE_DARK, marginTop: 2 }}>
                           R$ {fmtMoney(c.valor)}
                         </div>
                       </div>
