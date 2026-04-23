@@ -184,7 +184,7 @@ export async function generateFichaInstalacao(projeto: ProjetoData) {
 
   <!-- Rodapé -->
   <div style="margin-top:20px;padding-top:8px;border-top:2px solid #3D6B1F;text-align:center;font-size:11px;color:#666">
-    (67) 9 9644-8995 | contato@treslagoassolar.com.br | www.treslagoassolar.com.br
+    (67) 99644-8995 | contato@treslagoassolar.com.br | www.treslagoassolar.com.br
   </div>
 </div>`;
 

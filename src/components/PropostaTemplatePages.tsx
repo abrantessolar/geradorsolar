@@ -295,7 +295,7 @@ function GeracaoConsumoChart({ data }: { data: MonthlyRow[] }) {
         return (
           <g key={i}>
             <line x1={PAD_L} y1={y} x2={W - PAD_R} y2={y} stroke={BORDER} strokeWidth="1" />
-            <text x={PAD_L - 6} y={y + 4} fontSize="11" textAnchor="end" fill={GRAY}>
+            <text x={PAD_L - 6} y={y + 5} fontSize="14" textAnchor="end" fill={GRAY}>
               {t}
             </text>
           </g>
@@ -313,8 +313,8 @@ function GeracaoConsumoChart({ data }: { data: MonthlyRow[] }) {
             <rect x={xBase} y={yG} width={barW} height={hG} fill={OLIVE_DARK} rx="2" />
             <text
               x={xBase + barW / 2}
-              y={yG - 4}
-              fontSize="10"
+              y={yG - 5}
+              fontSize="13"
               fontWeight="700"
               textAnchor="middle"
               fill={OLIVE_DARK}
@@ -324,8 +324,8 @@ function GeracaoConsumoChart({ data }: { data: MonthlyRow[] }) {
             <rect x={xBase + barW + 2} y={yC} width={barW} height={hC} fill={YELLOW} rx="2" />
             <text
               x={xBase + barW + 2 + barW / 2}
-              y={yC - 4}
-              fontSize="10"
+              y={yC - 5}
+              fontSize="13"
               fontWeight="700"
               textAnchor="middle"
               fill={DARK}
@@ -334,8 +334,9 @@ function GeracaoConsumoChart({ data }: { data: MonthlyRow[] }) {
             </text>
             <text
               x={xBase + barW + 1}
-              y={H - PAD_B + 16}
-              fontSize="11"
+              y={H - PAD_B + 20}
+              fontSize="14"
+              fontWeight="600"
               textAnchor="middle"
               fill={DARK}
             >
@@ -762,8 +763,13 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
 
               {/* Financiamento */}
               <div style={{ marginTop: 16 }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: OLIVE_DARK, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 8 }}>
-                  Financiamento
+                <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: OLIVE_DARK, textTransform: 'uppercase', letterSpacing: 0.8 }}>
+                    Financiamento
+                  </div>
+                  <div style={{ fontSize: 11, color: GRAY, fontStyle: 'italic' }}>
+                    *valores aproximados
+                  </div>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 10 }}>
                   {parcelas.map((p) => (

@@ -10,7 +10,7 @@ export default function ProposalFooter() {
         </span>
         <span className="inline-flex items-center gap-1.5">
           <Phone className="w-3.5 h-3.5 text-primary" />
-          (67) 9 9644-8995
+          (67) 99644-8995
         </span>
         <span className="inline-flex items-center gap-1.5">
           <Mail className="w-3.5 h-3.5 text-primary" />
