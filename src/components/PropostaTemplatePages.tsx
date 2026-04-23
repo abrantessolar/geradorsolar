@@ -777,11 +777,11 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
                         textAlign: 'center',
                       }}
                     >
-                      <div style={{ fontSize: 22, fontWeight: 700, color: GRAY, lineHeight: 1 }}>
+                      <div style={{ fontSize: 24, fontWeight: 700, color: GRAY, lineHeight: 1 }}>
                         {p.label}
                       </div>
-                      <div style={{ fontSize: 11, color: GRAY, marginTop: 2 }}>de</div>
-                      <div style={{ fontSize: 15, fontWeight: 700, color: OLIVE_DARK, marginTop: 2 }}>
+                      <div style={{ fontSize: 12, color: GRAY, marginTop: 2 }}>de</div>
+                      <div style={{ fontSize: 17, fontWeight: 700, color: OLIVE_DARK, marginTop: 2 }}>
                         R$ {fmtMoney(p.value)}
                       </div>
                     </div>
@@ -813,11 +813,11 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
                           textAlign: 'center',
                         }}
                       >
-                        <div style={{ fontSize: 17, fontWeight: 700, color: GRAY, lineHeight: 1 }}>
+                        <div style={{ fontSize: 19, fontWeight: 700, color: GRAY, lineHeight: 1 }}>
                           {c.meses}x
                         </div>
-                        <div style={{ fontSize: 10, color: GRAY, marginTop: 1 }}>de</div>
-                        <div style={{ fontSize: 12, fontWeight: 700, color: OLIVE_DARK, marginTop: 2 }}>
+                        <div style={{ fontSize: 11, color: GRAY, marginTop: 1 }}>de</div>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: OLIVE_DARK, marginTop: 2 }}>
                           R$ {fmtMoney(c.valor)}
                         </div>
                       </div>
