@@ -743,7 +743,7 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
                   padding: '24px 26px',
                   borderRadius: 10,
                   display: 'flex',
-                  fleXDirection: 'column',
+                  flexDirection: 'column',
                   alignItems: 'center',
                   justifyContent: 'center',
                   textAlign: 'center',
