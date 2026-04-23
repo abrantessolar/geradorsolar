@@ -411,7 +411,7 @@ export default function LandingPage() {
               <h3 className="font-bold text-lg mb-4">Contato</h3>
               <div className="space-y-3 text-sm text-background/70">
                 <a href="tel:+5567996448995" className="flex items-center gap-2 hover:text-secondary transition-colors">
-                  <Phone className="w-4 h-4" /> (67) 9 9644-8995
+                  <Phone className="w-4 h-4" /> (67) 99644-8995
                 </a>
                 <a href="mailto:contato@treslagoassolar.com.br" className="flex items-center gap-2 hover:text-secondary transition-colors">
                   <Mail className="w-4 h-4" /> contato@treslagoassolar.com.br
