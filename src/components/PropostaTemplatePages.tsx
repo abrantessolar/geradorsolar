@@ -622,13 +622,13 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
                   <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 4, background: YELLOW, borderRadius: '12px 0 0 12px' }} />
                   <div style={{ flexShrink: 0, paddingLeft: 8 }}>{eq.Icon}</div>
                   <div>
-                    <div style={{ fontSize: 10, color: GRAY_LIGHT, textTransform: 'uppercase', letterSpacing: 1.5, fontFamily: 'Arial, sans-serif', fontWeight: 600, marginBottom: 4 }}>
+                  <div style={{ fontSize: 12, color: GRAY, textTransform: 'uppercase', letterSpacing: 1.5, fontFamily: 'Arial, sans-serif', fontWeight: 600, marginBottom: 5 }}>
                       {eq.tipo}
                     </div>
-                    <div style={{ fontSize: 26, fontWeight: 700, color: OLIVE_DARK, lineHeight: 1.1, fontFamily: 'Georgia, serif' }}>
+                    <div style={{ fontSize: 28, fontWeight: 700, color: OLIVE_DARK, lineHeight: 1.1, fontFamily: 'Georgia, serif' }}>
                       {eq.modelo}
                     </div>
-                    <div style={{ fontSize: 14, color: GRAY, marginTop: 6, fontFamily: 'Arial, sans-serif' }}>
+                    <div style={{ fontSize: 16, color: GRAY, marginTop: 7, fontFamily: 'Arial, sans-serif' }}>
                       {eq.detalhe}
                     </div>
                   </div>
