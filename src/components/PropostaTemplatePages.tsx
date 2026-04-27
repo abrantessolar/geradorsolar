@@ -546,12 +546,7 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
             </div>
 
             {/* Nossa empresa — linha 1x4 */}
-            <div style={{ marginTop: 4 }}>
-              <SectionLabel>Nossa Empresa</SectionLabel>
-              <div style={{ fontSize: 13, color: GRAY, fontFamily: 'Arial, sans-serif', marginBottom: 8 }}>
-                Estrutura própria em Três Lagoas para receber, atender e cuidar de você
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
                 {EMPRESA_FOTOS.map((url, i) => (
                   <div
                     key={i}
@@ -573,7 +568,6 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
                     />
                   </div>
                 ))}
-              </div>
             </div>
           </div>
           <Footer />
