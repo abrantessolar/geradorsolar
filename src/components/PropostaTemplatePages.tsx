@@ -922,9 +922,14 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
                 <div style={{ fontSize: 24, fontWeight: 700, color: YELLOW, fontFamily: 'Arial, sans-serif' }}>
                   {data.responsavel_telefone || '(67) 99644-8995'}
                 </div>
-                <div style={{ fontSize: 13, opacity: 0.7, marginTop: 4, fontFamily: 'Arial, sans-serif' }}>
+                <div style={{ fontSize: 13, opacity: 0.85, marginTop: 4, fontFamily: 'Arial, sans-serif' }}>
                   {data.responsavel_nome || 'Três Lagoas Solar'}
                 </div>
+                {data.responsavel_email && (
+                  <div style={{ fontSize: 12, opacity: 0.8, marginTop: 2, fontFamily: 'Arial, sans-serif' }}>
+                    {data.responsavel_email}
+                  </div>
+                )}
               </div>
             </div>
           </div>
