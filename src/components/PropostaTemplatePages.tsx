@@ -856,7 +856,7 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
                 Alguns dos nossos projetos
               </h1>
               <div style={{ fontSize: 13, color: GRAY, fontFamily: 'Arial, sans-serif' }}>
-                Quase uma década entregando energia limpa em Três Lagoas e região
+                Projetos entregues com excelência técnica, como você merece
               </div>
             </div>
 
