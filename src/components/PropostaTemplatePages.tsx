@@ -647,11 +647,11 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
                 <div>
                   <SectionLabel>Geração × Consumo — 12 meses</SectionLabel>
-                  <div style={{ fontSize: 12, color: GRAY, marginTop: -4, fontFamily: 'Arial, sans-serif' }}>
+                  <div style={{ fontSize: 14, color: GRAY, marginTop: -2, fontFamily: 'Arial, sans-serif' }}>
                     Estimativa mensal com base na irradiância da sua cidade
                   </div>
                 </div>
-                <div style={{ display: 'flex', gap: 18, fontSize: 12, fontFamily: 'Arial, sans-serif', paddingTop: 4 }}>
+                <div style={{ display: 'flex', gap: 18, fontSize: 14, fontFamily: 'Arial, sans-serif', paddingTop: 4 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
                     <div style={{ width: 14, height: 14, background: OLIVE_DARK, borderRadius: 3 }} />
                     <span style={{ color: GRAY }}>Geração</span>
