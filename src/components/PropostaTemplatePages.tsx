@@ -17,6 +17,7 @@ import emp2 from '@/assets/proposta-template/empresa/emp2.jpg';
 import emp3 from '@/assets/proposta-template/empresa/emp3.jpg';
 import emp4 from '@/assets/proposta-template/empresa/emp4.jpg';
 import inversorImg from '@/assets/proposta-template/inversor.png';
+import moduloImg from '@/assets/proposta-template/modulo.png';
 const EMPRESA_FOTOS = [emp1, emp2, emp3, emp4];
 import { formatCurrency, formatNumber } from '@/data/calculations';
 import {
@@ -125,7 +126,7 @@ function Header({ numero }: { numero: string }) {
         justifyContent: 'space-between',
         background: OLIVE_DARK,
         color: WHITE,
-        height: 110,
+        height: 170,
         boxSizing: 'border-box',
         position: 'relative',
         overflow: 'hidden',
@@ -141,7 +142,7 @@ function Header({ numero }: { numero: string }) {
           src={logoTls}
           alt="Três Lagoas Solar"
           crossOrigin="anonymous"
-          style={{ height: 82, objectFit: 'contain' }}
+          style={{ height: 144, objectFit: 'contain' }}
         />
         <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
           <div style={{ width: 1, height: 32, background: 'rgba(255,255,255,0.25)' }} />
@@ -233,19 +234,19 @@ function MetricCard({ label, value, sub, accent }: { label: string; value: strin
         }} />
       )}
       <div style={{
-        fontSize: 12,
-        letterSpacing: 1.5,
+        fontSize: 14,
+        letterSpacing: 1.2,
         textTransform: 'uppercase',
-        color: accent ? 'rgba(255,255,255,0.85)' : GRAY,
-        marginBottom: 6,
+        color: accent ? 'rgba(255,255,255,0.9)' : GRAY,
+        marginBottom: 7,
         fontFamily: 'Arial, sans-serif',
         fontWeight: 600,
       }}>
         {label}
       </div>
-      <div style={{ fontSize: 27, fontWeight: 700, lineHeight: 1, fontFamily: 'Arial, sans-serif' }}>{value}</div>
+      <div style={{ fontSize: 30, fontWeight: 700, lineHeight: 1, fontFamily: 'Arial, sans-serif' }}>{value}</div>
       {sub && (
-        <div style={{ fontSize: 13, marginTop: 6, color: accent ? 'rgba(255,255,255,0.7)' : GRAY, fontFamily: 'Arial, sans-serif' }}>
+        <div style={{ fontSize: 15, marginTop: 7, color: accent ? 'rgba(255,255,255,0.75)' : GRAY, fontFamily: 'Arial, sans-serif' }}>
           {sub}
         </div>
       )}
@@ -258,41 +259,12 @@ function MetricCard({ label, value, sub, accent }: { label: string; value: strin
 // ────────────────────────────────────────────────────────────
 function PanelIcon({ size = 80 }: { size?: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="80" cy="20" r="9" fill={YELLOW} />
-      <g stroke={YELLOW} strokeWidth="2" strokeLinecap="round">
-        <line x1="80" y1="5"  x2="80" y2="1" />
-        <line x1="80" y1="39" x2="80" y2="35" />
-        <line x1="95" y1="20" x2="99" y2="20" />
-        <line x1="61" y1="20" x2="65" y2="20" />
-        <line x1="91" y1="9"  x2="94" y2="6" />
-        <line x1="66" y1="34" x2="69" y2="31" />
-        <line x1="91" y1="31" x2="94" y2="34" />
-        <line x1="66" y1="6"  x2="69" y2="9" />
-      </g>
-      <g transform="translate(6,38) skewX(-16)">
-        <rect x="0" y="0" width="74" height="48" fill={OLIVE_DARK} rx="3" />
-        <g stroke="#6a7a3a" strokeWidth="1" fill="#3d501f">
-          <rect x="4"  y="4"  width="15" height="13" rx="1" />
-          <rect x="23" y="4"  width="15" height="13" rx="1" />
-          <rect x="42" y="4"  width="15" height="13" rx="1" />
-          <rect x="60" y="4"  width="10" height="13" rx="1" />
-          <rect x="4"  y="21" width="15" height="13" rx="1" />
-          <rect x="23" y="21" width="15" height="13" rx="1" />
-          <rect x="42" y="21" width="15" height="13" rx="1" />
-          <rect x="60" y="21" width="10" height="13" rx="1" />
-          <rect x="4"  y="32" width="66" height="12" rx="1" />
-        </g>
-        <line x1="2" y1="17" x2="72" y2="17" stroke="#6a7a3a" strokeWidth="0.8" />
-        <line x1="2" y1="34" x2="72" y2="34" stroke="#6a7a3a" strokeWidth="0.8" />
-        <line x1="19" y1="2" x2="19" y2="46" stroke="#6a7a3a" strokeWidth="0.8" />
-        <line x1="38" y1="2" x2="38" y2="46" stroke="#6a7a3a" strokeWidth="0.8" />
-        <line x1="57" y1="2" x2="57" y2="46" stroke="#6a7a3a" strokeWidth="0.8" />
-      </g>
-      <line x1="12" y1="94" x2="82" y2="94" stroke={DARK} strokeWidth="2.5" strokeLinecap="round" />
-      <line x1="28" y1="86" x2="28" y2="94" stroke={DARK} strokeWidth="2" />
-      <line x1="66" y1="86" x2="66" y2="94" stroke={DARK} strokeWidth="2" />
-    </svg>
+    <img
+      src={moduloImg}
+      alt="Módulo Fotovoltaico"
+      crossOrigin="anonymous"
+      style={{ width: size, height: size, objectFit: 'contain', display: 'block' }}
+    />
   );
 }
 
@@ -574,7 +546,7 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
             {/* título */}
             <div>
               <SectionLabel>Especificações do Projeto</SectionLabel>
-              <h1 style={{ fontSize: 38, color: OLIVE_DARK, margin: 0, fontWeight: 700, letterSpacing: -0.5, fontFamily: 'Georgia, serif' }}>
+              <h1 style={{ fontSize: 42, color: OLIVE_DARK, margin: 0, fontWeight: 700, letterSpacing: -0.5, fontFamily: 'Georgia, serif' }}>
                 Seu sistema solar
               </h1>
             </div>
@@ -622,13 +594,13 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
                   <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 4, background: YELLOW, borderRadius: '12px 0 0 12px' }} />
                   <div style={{ flexShrink: 0, paddingLeft: 8 }}>{eq.Icon}</div>
                   <div>
-                  <div style={{ fontSize: 12, color: GRAY, textTransform: 'uppercase', letterSpacing: 1.5, fontFamily: 'Arial, sans-serif', fontWeight: 600, marginBottom: 5 }}>
+                  <div style={{ fontSize: 14, color: GRAY, textTransform: 'uppercase', letterSpacing: 1.3, fontFamily: 'Arial, sans-serif', fontWeight: 600, marginBottom: 6 }}>
                       {eq.tipo}
                     </div>
-                    <div style={{ fontSize: 28, fontWeight: 700, color: OLIVE_DARK, lineHeight: 1.1, fontFamily: 'Georgia, serif' }}>
+                    <div style={{ fontSize: 31, fontWeight: 700, color: OLIVE_DARK, lineHeight: 1.1, fontFamily: 'Georgia, serif' }}>
                       {eq.modelo}
                     </div>
-                    <div style={{ fontSize: 16, color: GRAY, marginTop: 7, fontFamily: 'Arial, sans-serif' }}>
+                    <div style={{ fontSize: 18, color: GRAY, marginTop: 8, fontFamily: 'Arial, sans-serif' }}>
                       {eq.detalhe}
                     </div>
                   </div>
@@ -647,11 +619,11 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
                 <div>
                   <SectionLabel>Geração × Consumo — 12 meses</SectionLabel>
-                  <div style={{ fontSize: 14, color: GRAY, marginTop: -2, fontFamily: 'Arial, sans-serif' }}>
+                  <div style={{ fontSize: 16, color: GRAY, marginTop: -2, fontFamily: 'Arial, sans-serif' }}>
                     Estimativa mensal com base na irradiância da sua cidade
                   </div>
                 </div>
-                <div style={{ display: 'flex', gap: 18, fontSize: 14, fontFamily: 'Arial, sans-serif', paddingTop: 4 }}>
+                <div style={{ display: 'flex', gap: 18, fontSize: 16, fontFamily: 'Arial, sans-serif', paddingTop: 4 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
                     <div style={{ width: 14, height: 14, background: OLIVE_DARK, borderRadius: 3 }} />
                     <span style={{ color: GRAY }}>Geração</span>
@@ -690,10 +662,10 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
                     }}>
                       <Icon size={27} color={OLIVE_DARK} strokeWidth={2.2} />
                     </div>
-                    <div style={{ fontSize: 15, fontWeight: 700, color: OLIVE_DARK, marginBottom: 6, lineHeight: 1.3, fontFamily: 'Arial, sans-serif' }}>
+                    <div style={{ fontSize: 16, fontWeight: 700, color: OLIVE_DARK, marginBottom: 6, lineHeight: 1.3, fontFamily: 'Arial, sans-serif' }}>
                       {title}
                     </div>
-                    <div style={{ fontSize: 13, color: GRAY, lineHeight: 1.5, fontFamily: 'Arial, sans-serif' }}>{text}</div>
+                    <div style={{ fontSize: 14, color: GRAY, lineHeight: 1.5, fontFamily: 'Arial, sans-serif' }}>{text}</div>
                   </div>
                 ))}
               </div>
