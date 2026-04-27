@@ -546,7 +546,7 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
             {/* título */}
             <div>
               <SectionLabel>Especificações do Projeto</SectionLabel>
-              <h1 style={{ fontSize: 38, color: OLIVE_DARK, margin: 0, fontWeight: 700, letterSpacing: -0.5, fontFamily: 'Georgia, serif' }}>
+              <h1 style={{ fontSize: 42, color: OLIVE_DARK, margin: 0, fontWeight: 700, letterSpacing: -0.5, fontFamily: 'Georgia, serif' }}>
                 Seu sistema solar
               </h1>
             </div>
@@ -594,13 +594,13 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
                   <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 4, background: YELLOW, borderRadius: '12px 0 0 12px' }} />
                   <div style={{ flexShrink: 0, paddingLeft: 8 }}>{eq.Icon}</div>
                   <div>
-                  <div style={{ fontSize: 12, color: GRAY, textTransform: 'uppercase', letterSpacing: 1.5, fontFamily: 'Arial, sans-serif', fontWeight: 600, marginBottom: 5 }}>
+                  <div style={{ fontSize: 14, color: GRAY, textTransform: 'uppercase', letterSpacing: 1.3, fontFamily: 'Arial, sans-serif', fontWeight: 600, marginBottom: 6 }}>
                       {eq.tipo}
                     </div>
-                    <div style={{ fontSize: 28, fontWeight: 700, color: OLIVE_DARK, lineHeight: 1.1, fontFamily: 'Georgia, serif' }}>
+                    <div style={{ fontSize: 31, fontWeight: 700, color: OLIVE_DARK, lineHeight: 1.1, fontFamily: 'Georgia, serif' }}>
                       {eq.modelo}
                     </div>
-                    <div style={{ fontSize: 16, color: GRAY, marginTop: 7, fontFamily: 'Arial, sans-serif' }}>
+                    <div style={{ fontSize: 18, color: GRAY, marginTop: 8, fontFamily: 'Arial, sans-serif' }}>
                       {eq.detalhe}
                     </div>
                   </div>
@@ -619,11 +619,11 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
                 <div>
                   <SectionLabel>Geração × Consumo — 12 meses</SectionLabel>
-                  <div style={{ fontSize: 14, color: GRAY, marginTop: -2, fontFamily: 'Arial, sans-serif' }}>
+                  <div style={{ fontSize: 16, color: GRAY, marginTop: -2, fontFamily: 'Arial, sans-serif' }}>
                     Estimativa mensal com base na irradiância da sua cidade
                   </div>
                 </div>
-                <div style={{ display: 'flex', gap: 18, fontSize: 14, fontFamily: 'Arial, sans-serif', paddingTop: 4 }}>
+                <div style={{ display: 'flex', gap: 18, fontSize: 16, fontFamily: 'Arial, sans-serif', paddingTop: 4 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
                     <div style={{ width: 14, height: 14, background: OLIVE_DARK, borderRadius: 3 }} />
                     <span style={{ color: GRAY }}>Geração</span>
@@ -662,10 +662,10 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
                     }}>
                       <Icon size={27} color={OLIVE_DARK} strokeWidth={2.2} />
                     </div>
-                    <div style={{ fontSize: 15, fontWeight: 700, color: OLIVE_DARK, marginBottom: 6, lineHeight: 1.3, fontFamily: 'Arial, sans-serif' }}>
+                    <div style={{ fontSize: 16, fontWeight: 700, color: OLIVE_DARK, marginBottom: 6, lineHeight: 1.3, fontFamily: 'Arial, sans-serif' }}>
                       {title}
                     </div>
-                    <div style={{ fontSize: 13, color: GRAY, lineHeight: 1.5, fontFamily: 'Arial, sans-serif' }}>{text}</div>
+                    <div style={{ fontSize: 14, color: GRAY, lineHeight: 1.5, fontFamily: 'Arial, sans-serif' }}>{text}</div>
                   </div>
                 ))}
               </div>
