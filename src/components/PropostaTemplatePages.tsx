@@ -568,7 +568,6 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
                     />
                   </div>
                 ))}
-              </div>
             </div>
           </div>
           <Footer />
