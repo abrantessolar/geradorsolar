@@ -71,8 +71,8 @@ const OLIVE_DARK = '#4A5A2A';
 const OLIVE_MID  = '#6b7c34';
 const YELLOW     = '#E8B84B';
 const YELLOW_LIGHT = '#FDF3D8';
-const GRAY       = '#7a7a7a';
-const GRAY_LIGHT = '#a8a8a8';
+const GRAY       = '#4a4a4a';
+const GRAY_LIGHT = '#6a6a6a';
 const DARK       = '#1e1e1e';
 const LIGHT      = '#f7f7f3';
 const LIGHT2     = '#f0f0ea';
@@ -486,7 +486,101 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
 
 
         {/* ══════════════════════════════════════════════════════
-            PÁGINA 2 — ESPECIFICAÇÕES + GRÁFICO + DIFERENCIAIS
+            PÁGINA 2 — PORTFÓLIO
+        ══════════════════════════════════════════════════════ */}
+        <Page>
+          <Header numero={data.numero_proposta} />
+          <div style={{ padding: '32px 52px 100px', display: 'flex', flexDirection: 'column', gap: 20 }}>
+
+            <div>
+              <SectionLabel>Nossos Projetos</SectionLabel>
+              <h1 style={{ fontSize: 32, color: OLIVE_DARK, margin: '4px 0 4px', fontWeight: 700, letterSpacing: -0.5, fontFamily: 'Georgia, serif' }}>
+                Alguns dos nossos projetos
+              </h1>
+              <div style={{ fontSize: 13, color: GRAY, fontFamily: 'Arial, sans-serif' }}>
+                Projetos entregues com excelência técnica, como você merece
+              </div>
+            </div>
+
+            {/* grid de fotos */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+              {fotos.map((url, i) => (
+                <div
+                  key={i}
+                  style={{
+                    aspectRatio: '1 / 1',
+                    width: '100%',
+                    background: LIGHT2,
+                    borderRadius: 10,
+                    overflow: 'hidden',
+                    border: `1.5px solid ${BORDER}`,
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.07)',
+                    position: 'relative',
+                  }}
+                >
+                  {url && (
+                    <img
+                      src={url}
+                      alt={`Projeto ${i + 1}`}
+                      crossOrigin="anonymous"
+                      style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                    />
+                  )}
+                  {/* numeração discreta */}
+                  {!url && (
+                    <div style={{
+                      position: 'absolute', inset: 0, display: 'flex',
+                      alignItems: 'center', justifyContent: 'center',
+                      color: BORDER, fontSize: 32, fontWeight: 700, fontFamily: 'Arial, sans-serif',
+                    }}>
+                      {i + 1}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* CTA final */}
+            <div style={{
+              background: `linear-gradient(135deg, ${OLIVE_DARK} 0%, ${OLIVE_MID} 100%)`,
+              borderRadius: 14,
+              padding: '28px 40px',
+              color: WHITE,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              boxShadow: '0 6px 22px rgba(74,90,42,0.25)',
+              marginTop: 4,
+            }}>
+              <div>
+                <div style={{ fontSize: 22, fontWeight: 700, fontFamily: 'Georgia, serif', lineHeight: 1.2 }}>
+                  Pronto para começar?
+                </div>
+                <div style={{ fontSize: 14, opacity: 0.8, marginTop: 5, fontFamily: 'Arial, sans-serif' }}>
+                  Entre em contato e dê o próximo passo rumo à independência energética.
+                </div>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ fontSize: 24, fontWeight: 700, color: YELLOW, fontFamily: 'Arial, sans-serif' }}>
+                  {data.responsavel_telefone || '(67) 99644-8995'}
+                </div>
+                <div style={{ fontSize: 13, opacity: 0.85, marginTop: 4, fontFamily: 'Arial, sans-serif' }}>
+                  {data.responsavel_nome || 'Três Lagoas Solar'}
+                </div>
+                {data.responsavel_email && (
+                  <div style={{ fontSize: 12, opacity: 0.8, marginTop: 2, fontFamily: 'Arial, sans-serif' }}>
+                    {data.responsavel_email}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+          <Footer />
+        </Page>
+
+
+        {/* ══════════════════════════════════════════════════════
+            PÁGINA 3 — ESPECIFICAÇÕES + GRÁFICO + DIFERENCIAIS
         ══════════════════════════════════════════════════════ */}
         <Page>
           <Header numero={data.numero_proposta} />
@@ -625,7 +719,7 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
 
 
         {/* ══════════════════════════════════════════════════════
-            PÁGINA 3 — INVESTIMENTO + FLUXO DE CAIXA
+            PÁGINA 4 — INVESTIMENTO + FLUXO DE CAIXA
         ══════════════════════════════════════════════════════ */}
         <Page>
           <Header numero={data.numero_proposta} />
@@ -651,7 +745,7 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
                 <div style={{ fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', opacity: 0.75, fontFamily: 'Arial, sans-serif', fontWeight: 600 }}>
                   Retorno do Investimento
                 </div>
-                <div style={{ fontSize: 52, fontWeight: 700, marginTop: 4, lineHeight: 1, fontFamily: 'Arial, sans-serif', transform: 'translateY(-30px)' }}>
+                <div style={{ fontSize: 52, fontWeight: 700, marginTop: 4, lineHeight: 1, fontFamily: 'Arial, sans-serif', transform: 'translateY(-22px)' }}>
                   {formatNumber(data.payback_anos, 1)} <span style={{ fontSize: 26, fontWeight: 400 }}>anos</span>
                 </div>
                 <div style={{ fontSize: 13, opacity: 0.75, marginTop: 6, fontFamily: 'Arial, sans-serif' }}>
@@ -836,95 +930,6 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
                     </div>
                   </div>
                 ))}
-              </div>
-            </div>
-          </div>
-          <Footer />
-        </Page>
-
-
-        {/* ══════════════════════════════════════════════════════
-            PÁGINA 4 — PORTFÓLIO
-        ══════════════════════════════════════════════════════ */}
-        <Page>
-          <Header numero={data.numero_proposta} />
-          <div style={{ padding: '32px 52px 100px', display: 'flex', flexDirection: 'column', gap: 20 }}>
-
-            <div>
-              <SectionLabel>Nossos Projetos</SectionLabel>
-              <h1 style={{ fontSize: 32, color: OLIVE_DARK, margin: '4px 0 4px', fontWeight: 700, letterSpacing: -0.5, fontFamily: 'Georgia, serif' }}>
-                Alguns dos nossos projetos
-              </h1>
-              <div style={{ fontSize: 13, color: GRAY, fontFamily: 'Arial, sans-serif' }}>
-                Quase uma década entregando energia limpa em Três Lagoas e região
-              </div>
-            </div>
-
-            {/* grid de fotos */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
-              {fotos.map((url, i) => (
-                <div
-                  key={i}
-                  style={{
-                    aspectRatio: '1 / 1',
-                    width: '100%',
-                    background: LIGHT2,
-                    borderRadius: 10,
-                    overflow: 'hidden',
-                    border: `1.5px solid ${BORDER}`,
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.07)',
-                    position: 'relative',
-                  }}
-                >
-                  {url && (
-                    <img
-                      src={url}
-                      alt={`Projeto ${i + 1}`}
-                      crossOrigin="anonymous"
-                      style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-                    />
-                  )}
-                  {/* numeração discreta */}
-                  {!url && (
-                    <div style={{
-                      position: 'absolute', inset: 0, display: 'flex',
-                      alignItems: 'center', justifyContent: 'center',
-                      color: BORDER, fontSize: 32, fontWeight: 700, fontFamily: 'Arial, sans-serif',
-                    }}>
-                      {i + 1}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-
-            {/* CTA final */}
-            <div style={{
-              background: `linear-gradient(135deg, ${OLIVE_DARK} 0%, ${OLIVE_MID} 100%)`,
-              borderRadius: 14,
-              padding: '28px 40px',
-              color: WHITE,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              boxShadow: '0 6px 22px rgba(74,90,42,0.25)',
-              marginTop: 4,
-            }}>
-              <div>
-                <div style={{ fontSize: 22, fontWeight: 700, fontFamily: 'Georgia, serif', lineHeight: 1.2 }}>
-                  Pronto para começar?
-                </div>
-                <div style={{ fontSize: 14, opacity: 0.8, marginTop: 5, fontFamily: 'Arial, sans-serif' }}>
-                  Entre em contato e dê o próximo passo rumo à independência energética.
-                </div>
-              </div>
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: 24, fontWeight: 700, color: YELLOW, fontFamily: 'Arial, sans-serif' }}>
-                  {data.responsavel_telefone || '(67) 99644-8995'}
-                </div>
-                <div style={{ fontSize: 13, opacity: 0.7, marginTop: 4, fontFamily: 'Arial, sans-serif' }}>
-                  {data.responsavel_nome || 'Três Lagoas Solar'}
-                </div>
               </div>
             </div>
           </div>
