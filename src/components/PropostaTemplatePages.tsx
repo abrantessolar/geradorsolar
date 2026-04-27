@@ -11,7 +11,7 @@
 import { forwardRef } from 'react';
 import logoTls from '@/assets/logo-tls-pdf.png';
 
-const FACADE_BG = 'https://static.wixstatic.com/media/c2ae0d_0fc9044d218948a585d2170345d4ce87~mv2.jpg';
+import capaBg from '@/assets/proposta-template/capa-bg.png';
 import { formatCurrency, formatNumber } from '@/data/calculations';
 import {
   Calendar, Shield, FileText, Building2, CreditCard, Zap, BadgeCheck, Plane,
@@ -420,210 +420,62 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
       <div ref={ref} style={{ width: `${PAGE_W}px`, background: WHITE }}>
 
         {/* ══════════════════════════════════════════════════════
-            PÁGINA 1 — CAPA
+            PÁGINA 1 — CAPA (novo template com background ilustrado)
         ══════════════════════════════════════════════════════ */}
         <Page>
-          {/* foto de fundo */}
+          {/* fundo ilustrado da capa (logo + título + rodapé já incluídos na arte) */}
           <img
-            src={FACADE_BG}
+            src={capaBg}
             alt=""
             crossOrigin="anonymous"
             style={{
               position: 'absolute',
               inset: 0,
               width: '100%',
-              height: '65%',
+              height: '100%',
               objectFit: 'cover',
-              objectPosition: 'center 30%',
             }}
           />
 
-          {/* overlay gradiente */}
+          {/* Nome do cliente + geração — sobreposto na faixa verde inferior */}
           <div style={{
             position: 'absolute',
-            top: 0, left: 0, right: 0,
-            height: '80%',
-            background: `linear-gradient(180deg,
-              rgba(30,30,20,0.72) 0%,
-              rgba(74,90,42,0.58) 35%,
-              rgba(74,90,42,0.82) 68%,
-              rgba(255,255,255,1) 100%)`,
-          }} />
-
-          {/* faixa amarela topo */}
-          <div style={{
-            position: 'absolute', top: 0, left: 0, right: 0,
-            height: 6, background: YELLOW,
-          }} />
-
-          {/* logo + número */}
-          <div style={{
-            position: 'absolute', top: 52, left: 80, right: 80,
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          }}>
-            <img
-              src={logoTls}
-              alt="Três Lagoas Solar"
-              crossOrigin="anonymous"
-              style={{ height: 210, objectFit: 'contain', filter: 'drop-shadow(0 3px 12px rgba(0,0,0,0.5))' }}
-            />
-            {/* badge número */}
-            <div style={{
-              background: YELLOW,
-              color: DARK,
-              fontWeight: 700,
-              fontSize: 15,
-              padding: '10px 22px',
-              borderRadius: 999,
-              letterSpacing: 1.2,
-              fontFamily: 'Arial, sans-serif',
-              boxShadow: '0 4px 14px rgba(0,0,0,0.25)',
-            }}>
-              {data.numero_proposta}
-            </div>
-          </div>
-
-          {/* título hero */}
-          <div style={{
-            position: 'absolute',
-            top: 520,
-            left: 80, right: 80,
+            top: `${Math.round(PAGE_H * 0.76)}px`,      // 76%
+            left: `${Math.round(PAGE_W * 0.285)}px`,    // 28.5%
+            right: `${Math.round(PAGE_W * 0.03)}px`,    // 3%
             color: WHITE,
+            lineHeight: 1.15,
+            fontFamily: 'Arial, sans-serif',
           }}>
             <div style={{
-              fontSize: 13, letterSpacing: 3.5, textTransform: 'uppercase',
-              opacity: 0.85, fontFamily: 'Arial, sans-serif', fontWeight: 600,
-              marginBottom: 16,
+              fontWeight: 700,
+              letterSpacing: '-0.01em',
+              fontSize: 40,
             }}>
-              Proposta Comercial Personalizada
+              {data.cliente_nome}
             </div>
-            {/* linha decorativa */}
-            <div style={{ width: 60, height: 3, background: YELLOW, marginBottom: 18, borderRadius: 2 }} />
-            <h1 style={{
-              fontSize: 72, fontWeight: 700, margin: 0, lineHeight: 0.98,
-              letterSpacing: -1.5, fontFamily: 'Georgia, serif',
-              textShadow: '0 3px 18px rgba(0,0,0,0.35)',
+            <div style={{
+              fontWeight: 400,
+              fontSize: 22,
+              marginTop: 8,
+              opacity: 0.92,
             }}>
-              Sua usina solar
-            </h1>
-            <div style={{ fontSize: 30, marginTop: 14, fontWeight: 300, fontFamily: 'Georgia, serif' }}>
-              começa por aqui,{' '}
-              <strong style={{ color: YELLOW, fontWeight: 700 }}>
-                {(data.cliente_nome || '').split(' ')[0]}
-              </strong>
+              {fmtKwh(data.geracao_mensal)} por mês
             </div>
           </div>
 
-          {/* card branco de resumo */}
+          {/* Representante — sobre o ícone "Representante:" da arte */}
           <div style={{
             position: 'absolute',
-            top: 1185,
-            left: 80, right: 80,
-            background: WHITE,
-            borderRadius: 16,
-            boxShadow: '0 12px 50px rgba(0,0,0,0.16)',
-            padding: '34px 44px',
-            border: `1px solid ${BORDER}`,
+            top: `${Math.round(PAGE_H * 0.896)}px`,    // 89.6%
+            left: `${Math.round(PAGE_W * 0.337)}px`,   // 33.7%
+            color: OLIVE_DARK,
+            fontWeight: 700,
+            fontSize: 24,
+            letterSpacing: '-0.01em',
+            fontFamily: 'Arial, sans-serif',
           }}>
-            {/* linha amarela topo do card */}
-            <div style={{
-              position: 'absolute', top: 0, left: 0, right: 0,
-              height: 4, background: YELLOW, borderRadius: '16px 16px 0 0',
-            }} />
-
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 32 }}>
-              {/* coluna cliente + consultor */}
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', color: GRAY_LIGHT, fontFamily: 'Arial, sans-serif', fontWeight: 600 }}>
-                  Cliente
-                </div>
-                <div style={{ fontSize: 36, fontWeight: 700, color: OLIVE_DARK, marginTop: 5, lineHeight: 1.05, fontFamily: 'Georgia, serif' }}>
-                  {data.cliente_nome}
-                </div>
-                {data.cliente_cidade && (
-                  <div style={{ fontSize: 15, color: GRAY, marginTop: 3, fontFamily: 'Arial, sans-serif' }}>
-                    📍 {data.cliente_cidade}
-                  </div>
-                )}
-
-                <div style={{ marginTop: 24, paddingTop: 20, borderTop: `1px solid ${BORDER}` }}>
-                  <div style={{ fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', color: GRAY_LIGHT, fontFamily: 'Arial, sans-serif', fontWeight: 600 }}>
-                    Seu Consultor
-                  </div>
-                  <div style={{ fontSize: 22, fontWeight: 700, color: DARK, marginTop: 5, lineHeight: 1.2, fontFamily: 'Georgia, serif' }}>
-                    {data.responsavel_nome || '—'}
-                  </div>
-                  {data.responsavel_telefone && (
-                    <div style={{ fontSize: 15, color: OLIVE_DARK, marginTop: 5, fontWeight: 600, fontFamily: 'Arial, sans-serif' }}>
-                      📱 {data.responsavel_telefone}
-                    </div>
-                  )}
-                  {data.responsavel_email && (
-                    <div style={{ fontSize: 13, color: GRAY, marginTop: 2, fontFamily: 'Arial, sans-serif' }}>
-                      {data.responsavel_email}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* divisor vertical */}
-              <div style={{ width: 1, background: BORDER, alignSelf: 'stretch' }} />
-
-              {/* coluna do sistema */}
-              <div style={{ width: 290 }}>
-                <div style={{ fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', color: GRAY_LIGHT, fontFamily: 'Arial, sans-serif', fontWeight: 600, marginBottom: 14 }}>
-                  Sistema Dimensionado
-                </div>
-
-                {/* kWp destaque */}
-                <div style={{
-                  background: OLIVE_DARK,
-                  borderRadius: 10,
-                  padding: '16px 20px',
-                  color: WHITE,
-                  marginBottom: 12,
-                }}>
-                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.65)', letterSpacing: 1.5, textTransform: 'uppercase', fontFamily: 'Arial, sans-serif' }}>
-                    Potência instalada
-                  </div>
-                  <div style={{ fontSize: 38, fontWeight: 700, marginTop: 2, lineHeight: 1, fontFamily: 'Arial, sans-serif' }}>
-                    {formatNumber(data.potencia_kwp, 2)} <span style={{ fontSize: 20 }}>kWp</span>
-                  </div>
-                </div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: `1px solid ${BORDER}` }}>
-                    <span style={{ fontSize: 12, color: GRAY, fontFamily: 'Arial, sans-serif' }}>Placas solares</span>
-                    <span style={{ fontSize: 13, fontWeight: 700, color: DARK, fontFamily: 'Arial, sans-serif' }}>{data.num_placas} unidades</span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: `1px solid ${BORDER}` }}>
-                    <span style={{ fontSize: 12, color: GRAY, fontFamily: 'Arial, sans-serif' }}>Geração estimada</span>
-                    <span style={{ fontSize: 13, fontWeight: 700, color: DARK, fontFamily: 'Arial, sans-serif' }}>{fmtKwh(data.geracao_mensal)}/mês</span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0' }}>
-                    <span style={{ fontSize: 12, color: GRAY, fontFamily: 'Arial, sans-serif' }}>Economia mensal</span>
-                    <span style={{ fontSize: 13, fontWeight: 700, color: OLIVE_DARK, fontFamily: 'Arial, sans-serif' }}>R$ {fmtMoney(data.economia_mensal)}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* rodapé da capa */}
-          <div style={{
-            position: 'absolute', bottom: 36, left: 80, right: 80,
-            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-            fontSize: 12, color: GRAY, fontFamily: 'Arial, sans-serif',
-          }}>
-            <div>
-              <div style={{ fontSize: 9, letterSpacing: 1.5, textTransform: 'uppercase', color: GRAY_LIGHT, marginBottom: 2 }}>Emitida em</div>
-              <div style={{ fontWeight: 700, color: OLIVE_DARK, fontSize: 13 }}>{today()}</div>
-            </div>
-            <div style={{ color: GRAY_LIGHT }}>www.treslagoassolar.com.br</div>
-            <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: 9, letterSpacing: 1.5, textTransform: 'uppercase', color: GRAY_LIGHT, marginBottom: 2 }}>Consultor</div>
-              <div style={{ fontWeight: 700, color: OLIVE_DARK, fontSize: 13 }}>{data.responsavel_nome || '—'}</div>
-            </div>
+            {data.responsavel_nome || '—'}
           </div>
         </Page>
 
