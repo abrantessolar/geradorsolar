@@ -719,7 +719,7 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
 
 
         {/* ══════════════════════════════════════════════════════
-            PÁGINA 3 — INVESTIMENTO + FLUXO DE CAIXA
+            PÁGINA 4 — INVESTIMENTO + FLUXO DE CAIXA
         ══════════════════════════════════════════════════════ */}
         <Page>
           <Header numero={data.numero_proposta} />
