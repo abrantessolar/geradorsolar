@@ -126,10 +126,10 @@ function Header({ numero }: { numero: string }) {
         justifyContent: 'space-between',
         background: OLIVE_DARK,
         color: WHITE,
-        height: 170,
+        height: 110,
         boxSizing: 'border-box',
         position: 'relative',
-        overflow: 'hidden',
+        overflow: 'visible',
       }}
     >
       {/* faixa decorativa lateral esquerda */}
@@ -137,12 +137,12 @@ function Header({ numero }: { numero: string }) {
         position: 'absolute', left: 0, top: 0, bottom: 0, width: 6,
         background: YELLOW,
       }} />
-      <div style={{ paddingLeft: 56, paddingRight: 44, display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+      <div style={{ paddingLeft: 56, paddingRight: 44, display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', height: '100%' }}>
         <img
           src={logoTls}
           alt="Três Lagoas Solar"
           crossOrigin="anonymous"
-          style={{ height: 144, objectFit: 'contain' }}
+          style={{ height: 200, objectFit: 'contain', position: 'relative', zIndex: 2 }}
         />
         <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
           <div style={{ width: 1, height: 32, background: 'rgba(255,255,255,0.25)' }} />
@@ -313,7 +313,7 @@ function GeracaoConsumoChart({ data }: { data: MonthlyRow[] }) {
           <g key={i}>
             <line x1={PAD_L} y1={y} x2={W - PAD_R} y2={y}
               stroke={i === 0 ? DARK : BORDER} strokeWidth={i === 0 ? '1.5' : '1'} />
-            <text x={PAD_L - 8} y={y + 5} fontSize="13" textAnchor="end"
+            <text x={PAD_L - 8} y={y + 5} fontSize="16" textAnchor="end"
               fill={GRAY_LIGHT} fontFamily="Arial, sans-serif">
               {t}
             </text>
@@ -331,18 +331,18 @@ function GeracaoConsumoChart({ data }: { data: MonthlyRow[] }) {
           <g key={i}>
             {/* barra geração com topo arredondado simulado */}
             <rect x={xBase} y={yG} width={barW} height={hG} fill={OLIVE_DARK} rx="3" />
-            <text x={xBase + barW / 2} y={yG - 7} fontSize="12" fontWeight="700"
+            <text x={xBase + barW / 2} y={yG - 7} fontSize="15" fontWeight="700"
               textAnchor="middle" fill={OLIVE_DARK} fontFamily="Arial, sans-serif">
               {Math.round(d.geracao)}
             </text>
             {/* barra consumo */}
             <rect x={xBase + barW + 4} y={yC} width={barW} height={hC} fill={YELLOW} rx="3" />
-            <text x={xBase + barW + 4 + barW / 2} y={yC - 7} fontSize="12" fontWeight="700"
+            <text x={xBase + barW + 4 + barW / 2} y={yC - 7} fontSize="15" fontWeight="700"
               textAnchor="middle" fill={OLIVE_MID} fontFamily="Arial, sans-serif">
               {Math.round(d.consumo)}
             </text>
             {/* label mês */}
-            <text x={xBase + barW + 2} y={H - PAD_B + 22} fontSize="12" fontWeight="600"
+            <text x={xBase + barW + 2} y={H - PAD_B + 24} fontSize="15" fontWeight="600"
               textAnchor="middle" fill={DARK} fontFamily="Arial, sans-serif">
               {d.mes}
             </text>
