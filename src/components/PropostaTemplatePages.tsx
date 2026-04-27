@@ -126,7 +126,7 @@ function Header({ numero }: { numero: string }) {
         justifyContent: 'space-between',
         background: OLIVE_DARK,
         color: WHITE,
-        height: 170,
+        height: 110,
         boxSizing: 'border-box',
         position: 'relative',
         overflow: 'hidden',
@@ -142,7 +142,7 @@ function Header({ numero }: { numero: string }) {
           src={logoTls}
           alt="Três Lagoas Solar"
           crossOrigin="anonymous"
-          style={{ height: 144, objectFit: 'contain' }}
+          style={{ height: 220, objectFit: 'contain', position: 'relative', zIndex: 2 }}
         />
         <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
           <div style={{ width: 1, height: 32, background: 'rgba(255,255,255,0.25)' }} />
