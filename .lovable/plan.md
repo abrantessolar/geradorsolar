@@ -1,42 +1,62 @@
+## Ajustes na Proposta em PDF
 
+Todas as alterações em `src/components/PropostaTemplatePages.tsx`.
 
-# PDF da proposta — HTML estilizado (4 páginas)
+### 1. Payback — descer 2mm
+- Linha 654: trocar `transform: 'translateY(-30px)'` por `transform: 'translateY(-22px)'` (~2mm a menos de offset para cima → o "1,8" desce 2mm).
 
-## Estrutura
-1. **Capa** — `image3.jpg` com overlay verde + "Proposta Comercial" + cliente + nº TLS-XXXX + data
-2. **Dados + Investimento** — Equipamentos, Especificações, Investimento (à vista + 5 parcelas), Economia mensal, Payback, Geração×Consumo
-3. **Fluxo de caixa + Diferenciais** — Tabela 5/10/15/20/25 anos + 8 cards de diferenciais
-4. **Portfólio** — Grade 4×4 (até 16 fotos da tabela `fotos_portfolio`, fallback para `FALLBACK_PHOTOS`)
+### 2. Subtítulo da seção "Nossos Projetos" (última página)
+- Linha 859: substituir
+  - de: `Quase uma década entregando energia limpa em Três Lagoas e região`
+  - para: `Projetos entregues com excelência técnica, como você merece`
 
-Cabeçalho (logo + nº proposta) e rodapé (CNPJ + contato + site) em todas as páginas internas (2, 3, 4).
+### 3. Telefone do representante na CTA final (última página)
+- Bloco linhas 921–928: a CTA atualmente já mostra `data.responsavel_telefone || '(67) 99644-8995'` mas o `data.responsavel_email` não aparece em lugar nenhum nesta página. Verificar o caso reportado: garantir que **quando `responsavel_telefone` está vazio**, ele caia no fallback `(67) 99644-8995` (já está). Acrescentar abaixo do nome do representante uma linha com o e-mail dele:
+```tsx
+{data.responsavel_email && (
+  <div style={{ fontSize: 12, opacity: 0.85, marginTop: 2, fontFamily: 'Arial, sans-serif' }}>
+    {data.responsavel_email}
+  </div>
+)}
+```
 
-## Estilo
-- Fonte Arial, cores TLS (verde `#4A5A2A`, amarelo `#E8B84B`)
-- Replicar visual da proposta online: cards com sombra leve, badges, gradientes sutis
-- Sem posicionamento absoluto — layout fluido com flex/grid
+### 4. Reordenação das páginas (1-2-3-4 → 1-4-2-3)
+Hoje o JSX renderiza nesta ordem:
+- P1 (425–485): Capa
+- P2 (491–624): Especificações + Gráfico + Diferenciais
+- P3 (630–843): Investimento + Fluxo de Caixa
+- P4 (849–932): Portfólio + CTA
 
-## Cálculos (validar mecanismo do fluxo de caixa)
-Reusar exatamente as fórmulas já presentes em `ProposalPage.tsx` / `calculations.ts`:
-- Geração mensal (kWh) = `kWp × irradiância × 30 × 0.80`
-- Economia mensal = `geração × tarifa`
-- Payback = `investimento / economia_anual`
-- Fluxo 5–25 anos com inflação tarifária e degradação do painel — copiar a função usada no card expansível
-- Parcelas: multiplicadores fixos (24x 1.4496, 36x 1.6008, 48x 1.7600, 60x 1.9264, 72x 2.0800)
+Nova ordem desejada:
+- 1ª: Capa (atual P1)
+- 2ª: Portfólio + CTA (atual P4)
+- 3ª: Especificações + Gráfico + Diferenciais (atual P2)
+- 4ª: Investimento + Fluxo de Caixa (atual P3)
 
-## Arquivos
-- **Reescrever** `src/components/PropostaTemplatePages.tsx` → layout fluido inspirado na proposta online
-- **Editar** `src/lib/generatePropostaPDF.ts` → `scale: 1.5`, JPEG q70, otimizar fotos do portfólio (max 800px lado, q60) para alvo ~600 KB–1 MB
-- **Editar** `src/pages/ProposalPage.tsx` → passar dados completos (fluxo de caixa + portfólio + diferenciais) para o componente
-- **Manter** `src/assets/proposta-template/image3.jpg` (capa); descartar uso de image1/2/4 com posicionamento absoluto
-- Buscar fotos do portfólio via `supabase.from('fotos_portfolio')` no momento da geração
+Implementação: **mover o bloco JSX da P4 (linhas 847–932) para logo após o fechamento da P1 (linha 485)**, mantendo os comentários de cabeçalho atualizados:
+- `PÁGINA 2 — PORTFÓLIO`
+- `PÁGINA 3 — ESPECIFICAÇÕES + GRÁFICO + DIFERENCIAIS`
+- `PÁGINA 4 — INVESTIMENTO + FLUXO DE CAIXA`
 
-## Garantia ≤ 2 MB (foco em leveza)
-- `html2canvas` scale 1.5 (em vez de 2)
-- JPEG qualidade 0.70
-- Fotos do portfólio pré-redimensionadas para 400×400 px, qualidade 0.55, antes de entrar no DOM
-- Estimativa: 4 páginas × ~150 KB + 16 thumbs × ~25 KB ≈ 1 MB
+Como `generatePropostaPDF.ts` itera sobre `pagesContainer.children` na ordem do DOM, basta a reordenação do JSX — nada mais precisa mudar.
 
-## Fora do escopo
-- Mudar o template DOCX (continua intacto)
-- Cache do PDF no Storage
+### 5. Auditoria de contraste (legibilidade quando impresso)
+A paleta atual usa dois cinzas para textos pequenos:
+- `GRAY = '#7a7a7a'` — usado em legendas, descrições de diferenciais (12–14px)
+- `GRAY_LIGHT = '#a8a8a8'` — usado em rótulos uppercase, "*valores aproximados", "de" (10–11px)
 
+Esses tons ficam fracos em impressão, especialmente em fontes ≤12px. Proposta:
+- `GRAY` → `#4a4a4a` (cinza escuro, ainda não preto)
+- `GRAY_LIGHT` → `#6a6a6a` (cinza médio para rótulos secundários)
+
+Aplicar substituindo apenas as duas constantes nas linhas 74–75. Como todos os usos passam pelas constantes, o ajuste se propaga automaticamente para:
+- Rótulos uppercase ("ESPECIFICAÇÕES TÉCNICAS", etc.)
+- Legendas dos eixos do gráfico mensal
+- "Geração" / "Consumo" da legenda do gráfico
+- Textos dos cards de diferenciais
+- "*valores aproximados" e linhas "de" das parcelas
+- Subtítulo da seção de portfólio
+- Subtexto da CTA final (mantém-se com `opacity` sobre branco — não afetado)
+
+### Resumo dos arquivos alterados
+- `src/components/PropostaTemplatePages.tsx` (todas as mudanças acima)
