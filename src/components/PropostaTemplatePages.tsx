@@ -545,38 +545,34 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
               ))}
             </div>
 
-            {/* CTA final */}
-            <div style={{
-              background: `linear-gradient(135deg, ${OLIVE_DARK} 0%, ${OLIVE_MID} 100%)`,
-              borderRadius: 14,
-              padding: '28px 40px',
-              color: WHITE,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              boxShadow: '0 6px 22px rgba(74,90,42,0.25)',
-              marginTop: 4,
-            }}>
-              <div>
-                <div style={{ fontSize: 22, fontWeight: 700, fontFamily: 'Georgia, serif', lineHeight: 1.2 }}>
-                  Pronto para começar?
-                </div>
-                <div style={{ fontSize: 14, opacity: 0.8, marginTop: 5, fontFamily: 'Arial, sans-serif' }}>
-                  Entre em contato e dê o próximo passo rumo à independência energética.
-                </div>
+            {/* Nossa empresa — linha 1x4 */}
+            <div style={{ marginTop: 4 }}>
+              <SectionLabel>Nossa Empresa</SectionLabel>
+              <div style={{ fontSize: 13, color: GRAY, fontFamily: 'Arial, sans-serif', marginBottom: 8 }}>
+                Estrutura própria em Três Lagoas para receber, atender e cuidar de você
               </div>
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: 24, fontWeight: 700, color: YELLOW, fontFamily: 'Arial, sans-serif' }}>
-                  {data.responsavel_telefone || '(67) 99644-8995'}
-                </div>
-                <div style={{ fontSize: 13, opacity: 0.85, marginTop: 4, fontFamily: 'Arial, sans-serif' }}>
-                  {data.responsavel_nome || 'Três Lagoas Solar'}
-                </div>
-                {data.responsavel_email && (
-                  <div style={{ fontSize: 12, opacity: 0.8, marginTop: 2, fontFamily: 'Arial, sans-serif' }}>
-                    {data.responsavel_email}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+                {EMPRESA_FOTOS.map((url, i) => (
+                  <div
+                    key={i}
+                    style={{
+                      aspectRatio: '1 / 1',
+                      width: '100%',
+                      background: LIGHT2,
+                      borderRadius: 10,
+                      overflow: 'hidden',
+                      border: `1.5px solid ${BORDER}`,
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.07)',
+                    }}
+                  >
+                    <img
+                      src={url}
+                      alt={`Empresa ${i + 1}`}
+                      crossOrigin="anonymous"
+                      style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                    />
                   </div>
-                )}
+                ))}
               </div>
             </div>
           </div>
