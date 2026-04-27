@@ -129,7 +129,7 @@ function Header({ numero }: { numero: string }) {
         height: 110,
         boxSizing: 'border-box',
         position: 'relative',
-        overflow: 'hidden',
+        overflow: 'visible',
       }}
     >
       {/* faixa decorativa lateral esquerda */}
@@ -137,12 +137,12 @@ function Header({ numero }: { numero: string }) {
         position: 'absolute', left: 0, top: 0, bottom: 0, width: 6,
         background: YELLOW,
       }} />
-      <div style={{ paddingLeft: 56, paddingRight: 44, display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+      <div style={{ paddingLeft: 56, paddingRight: 44, display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', height: '100%' }}>
         <img
           src={logoTls}
           alt="Três Lagoas Solar"
           crossOrigin="anonymous"
-          style={{ height: 220, objectFit: 'contain', position: 'relative', zIndex: 2 }}
+          style={{ height: 200, objectFit: 'contain', position: 'relative', zIndex: 2 }}
         />
         <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
           <div style={{ width: 1, height: 32, background: 'rgba(255,255,255,0.25)' }} />
