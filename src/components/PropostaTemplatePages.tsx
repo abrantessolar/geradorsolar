@@ -651,7 +651,7 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
                 <div style={{ fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', opacity: 0.75, fontFamily: 'Arial, sans-serif', fontWeight: 600 }}>
                   Retorno do Investimento
                 </div>
-                <div style={{ fontSize: 52, fontWeight: 700, marginTop: 4, lineHeight: 1, fontFamily: 'Arial, sans-serif', transform: 'translateY(-30px)' }}>
+                <div style={{ fontSize: 52, fontWeight: 700, marginTop: 4, lineHeight: 1, fontFamily: 'Arial, sans-serif', transform: 'translateY(-22px)' }}>
                   {formatNumber(data.payback_anos, 1)} <span style={{ fontSize: 26, fontWeight: 400 }}>anos</span>
                 </div>
                 <div style={{ fontSize: 13, opacity: 0.75, marginTop: 6, fontFamily: 'Arial, sans-serif' }}>
