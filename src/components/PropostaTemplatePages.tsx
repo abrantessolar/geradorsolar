@@ -12,6 +12,11 @@ import { forwardRef } from 'react';
 import logoTls from '@/assets/logo-tls-pdf.png';
 
 import capaBg from '@/assets/proposta-template/capa-bg.png';
+import emp1 from '@/assets/proposta-template/empresa/emp1.jpg';
+import emp2 from '@/assets/proposta-template/empresa/emp2.jpg';
+import emp3 from '@/assets/proposta-template/empresa/emp3.jpg';
+import emp4 from '@/assets/proposta-template/empresa/emp4.jpg';
+const EMPRESA_FOTOS = [emp1, emp2, emp3, emp4];
 import { formatCurrency, formatNumber } from '@/data/calculations';
 import {
   Calendar, Shield, FileText, Building2, CreditCard, Zap, BadgeCheck, Plane,
