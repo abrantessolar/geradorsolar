@@ -174,7 +174,7 @@ function Footer() {
         letterSpacing: 0.3,
       }}
     >
-      <span style={{ color: YELLOW, fontWeight: 700 }}>(67) 9 9895-5576</span>
+      <span style={{ color: YELLOW, fontWeight: 700 }}>(67) 99644-8995</span>
       {' '}·{' '}
       contato@treslagoassolar.com.br
       {' '}·{' '}
@@ -470,12 +470,17 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
             top: `${Math.round(PAGE_H * 0.896)}px`,    // 89.6%
             left: `${Math.round(PAGE_W * 0.337)}px`,   // 33.7%
             color: OLIVE_DARK,
-            fontWeight: 700,
-            fontSize: 24,
-            letterSpacing: '-0.01em',
             fontFamily: 'Arial, sans-serif',
+            lineHeight: 1.1,
           }}>
-            {data.responsavel_nome || '—'}
+            <div style={{ fontWeight: 700, fontSize: 24, letterSpacing: '-0.01em' }}>
+              {data.responsavel_nome || '—'}
+            </div>
+            {data.responsavel_telefone && (
+              <div style={{ fontWeight: 600, fontSize: 16, marginTop: 4, opacity: 0.85 }}>
+                {data.responsavel_telefone}
+              </div>
+            )}
           </div>
         </Page>
 
@@ -646,7 +651,7 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
                 <div style={{ fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', opacity: 0.75, fontFamily: 'Arial, sans-serif', fontWeight: 600 }}>
                   Retorno do Investimento
                 </div>
-                <div style={{ fontSize: 52, fontWeight: 700, marginTop: 4, lineHeight: 1, fontFamily: 'Arial, sans-serif' }}>
+                <div style={{ fontSize: 52, fontWeight: 700, marginTop: 4, lineHeight: 1, fontFamily: 'Arial, sans-serif', transform: 'translateY(-30px)' }}>
                   {formatNumber(data.payback_anos, 1)} <span style={{ fontSize: 26, fontWeight: 400 }}>anos</span>
                 </div>
                 <div style={{ fontSize: 13, opacity: 0.75, marginTop: 6, fontFamily: 'Arial, sans-serif' }}>
@@ -915,7 +920,7 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
               </div>
               <div style={{ textAlign: 'right' }}>
                 <div style={{ fontSize: 24, fontWeight: 700, color: YELLOW, fontFamily: 'Arial, sans-serif' }}>
-                  {data.responsavel_telefone || '(67) 9 9895-5576'}
+                  {data.responsavel_telefone || '(67) 99644-8995'}
                 </div>
                 <div style={{ fontSize: 13, opacity: 0.7, marginTop: 4, fontFamily: 'Arial, sans-serif' }}>
                   {data.responsavel_nome || 'Três Lagoas Solar'}
