@@ -233,19 +233,19 @@ function MetricCard({ label, value, sub, accent }: { label: string; value: strin
         }} />
       )}
       <div style={{
-        fontSize: 10,
+        fontSize: 12,
         letterSpacing: 1.5,
         textTransform: 'uppercase',
-        color: accent ? 'rgba(255,255,255,0.75)' : GRAY_LIGHT,
+        color: accent ? 'rgba(255,255,255,0.85)' : GRAY,
         marginBottom: 6,
         fontFamily: 'Arial, sans-serif',
         fontWeight: 600,
       }}>
         {label}
       </div>
-      <div style={{ fontSize: 24, fontWeight: 700, lineHeight: 1, fontFamily: 'Arial, sans-serif' }}>{value}</div>
+      <div style={{ fontSize: 27, fontWeight: 700, lineHeight: 1, fontFamily: 'Arial, sans-serif' }}>{value}</div>
       {sub && (
-        <div style={{ fontSize: 11, marginTop: 5, color: accent ? 'rgba(255,255,255,0.6)' : GRAY_LIGHT, fontFamily: 'Arial, sans-serif' }}>
+        <div style={{ fontSize: 13, marginTop: 6, color: accent ? 'rgba(255,255,255,0.7)' : GRAY, fontFamily: 'Arial, sans-serif' }}>
           {sub}
         </div>
       )}
