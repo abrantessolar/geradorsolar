@@ -574,7 +574,7 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
             {/* título */}
             <div>
               <SectionLabel>Especificações do Projeto</SectionLabel>
-              <h1 style={{ fontSize: 34, color: OLIVE_DARK, margin: 0, fontWeight: 700, letterSpacing: -0.5, fontFamily: 'Georgia, serif' }}>
+              <h1 style={{ fontSize: 38, color: OLIVE_DARK, margin: 0, fontWeight: 700, letterSpacing: -0.5, fontFamily: 'Georgia, serif' }}>
                 Seu sistema solar
               </h1>
             </div>
