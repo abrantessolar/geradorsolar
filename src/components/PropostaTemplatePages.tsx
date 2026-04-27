@@ -298,23 +298,12 @@ function PanelIcon({ size = 80 }: { size?: number }) {
 
 function InverterIcon({ size = 80 }: { size?: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-      <rect x="18" y="12" width="64" height="78" rx="7" fill={OLIVE_DARK} />
-      <rect x="22" y="16" width="56" height="70" rx="5" fill={WHITE} />
-      <rect x="28" y="22" width="44" height="16" rx="3" fill="#111111" />
-      <rect x="32" y="26" width="24" height="2.5" fill={YELLOW} rx="1" />
-      <rect x="32" y="31" width="17" height="2.5" fill={YELLOW} rx="1" />
-      <circle cx="32" cy="48" r="3" fill="#22c55e" />
-      <circle cx="42" cy="48" r="3" fill={YELLOW} />
-      <circle cx="52" cy="48" r="3" fill="#cccccc" />
-      <g stroke="#d0d0d0" strokeWidth="1.4" strokeLinecap="round">
-        <line x1="28" y1="58" x2="72" y2="58" />
-        <line x1="28" y1="64" x2="72" y2="64" />
-        <line x1="28" y1="70" x2="72" y2="70" />
-        <line x1="28" y1="76" x2="72" y2="76" />
-      </g>
-      <path d="M60 22 L53 36 L59 36 L54 48 L65 32 L59 32 Z" fill={YELLOW} stroke={OLIVE_DARK} strokeWidth="0.5" />
-    </svg>
+    <img
+      src={inversorImg}
+      alt="Inversor"
+      crossOrigin="anonymous"
+      style={{ width: size, height: size, objectFit: 'contain', display: 'block' }}
+    />
   );
 }
 
