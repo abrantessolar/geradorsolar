@@ -10,12 +10,7 @@ function fmt(val: string | number | null | undefined): string {
   return String(val);
 }
 
-function fmtDate(val: string | null | undefined): string {
-  if (!val) return '';
-  const d = new Date(val);
-  if (isNaN(d.getTime())) return '';
-  return d.toLocaleDateString('pt-BR');
-}
+import { fmtDateBR as fmtDate } from '@/lib/dateUtils';
 
 function fmtMoney(val: number | null | undefined): string {
   if (val === null || val === undefined) return '';

@@ -13,6 +13,7 @@ import DeleteConfirmModal from './DeleteConfirmModal';
 import ListaMateriaisObraModal from './materiais/ListaMateriaisObraModal';
 import RetirarMaterialModal from './materiais/RetirarMaterialModal';
 import ClienteDadosModal from './ClienteDadosModal';
+import { fmtDateBR } from '@/lib/dateUtils';
 import ClienteEditModal from './ClienteEditModal';
 import { useDraggableColumns, type ColumnDef } from '@/hooks/useDraggableColumns';
 
@@ -182,7 +183,7 @@ export default function ProjetosUnificados({
   const instaladosColDefs: Record<string, { label: string; render: (c: ClienteBase) => React.ReactNode; className?: string }> = {
     cliente: { label: 'Cliente', render: c => <span className="font-medium max-w-[180px] truncate block">{c.nome_completo || '—'}</span> },
     telefone: { label: 'Telefone', render: c => <WhatsAppLink phone={c.telefone} />, className: 'text-xs' },
-    data_instalacao: { label: 'Data Instalação', render: c => <>{c.instalado_em ? new Date(c.instalado_em).toLocaleDateString('pt-BR') : '—'}</>, className: 'text-xs' },
+    data_instalacao: { label: 'Data Instalação', render: c => <>{c.instalado_em ? fmtDateBR(c.instalado_em) : '—'}</>, className: 'text-xs' },
     qtd_placas: { label: 'Qtd Placas', render: c => <>{c.qtd_placas || '—'}</>, className: 'text-xs' },
     kwp: { label: 'kWp', render: c => <span className="font-medium">{c.kwp ? Number(c.kwp).toFixed(2) : calcKwp(c.qtd_placas, c.potencia_placa)}</span>, className: 'text-xs' },
     marca_inv: { label: 'Marca Inv.', render: c => <>{c.marca_inversor || '—'}</>, className: 'text-xs' },
@@ -337,7 +338,7 @@ export default function ProjetosUnificados({
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
-                    <div><span className="text-muted-foreground">Instalação:</span> {c.instalado_em ? new Date(c.instalado_em).toLocaleDateString('pt-BR') : '—'}</div>
+                    <div><span className="text-muted-foreground">Instalação:</span> {c.instalado_em ? fmtDateBR(c.instalado_em) : '—'}</div>
                     <div><span className="text-muted-foreground">KWp:</span> {c.kwp ? Number(c.kwp).toFixed(2) : calcKwp(c.qtd_placas, c.potencia_placa)}</div>
                     <div><span className="text-muted-foreground">Placas:</span> {c.qtd_placas || '—'}</div>
                     <div><span className="text-muted-foreground">Inversor:</span> {c.marca_inversor || '—'}</div>
