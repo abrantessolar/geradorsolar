@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import {
-  BarChart3, ClipboardList, Plus, RefreshCw, Wrench, Package, Cpu,
+  BarChart3, ClipboardList, Plus, RefreshCw, Wrench, Package, Cpu, Cake,
 } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import GestorDashboard from '@/components/gestor/GestorDashboard';
@@ -16,6 +16,8 @@ import { type ClienteBase } from '@/components/gestor/ClientesList';
 
 import MateriaisModule from '@/components/gestor/materiais/MateriaisModule';
 import EquipmentDashboard from '@/components/gestor/EquipmentDashboard';
+import BirthdayReminder from '@/components/gestor/BirthdayReminder';
+import AniversariantesTab from '@/components/gestor/AniversariantesTab';
 
 
 export type Projeto = {
@@ -107,7 +109,7 @@ export default function GestorPage() {
     return 'obras';
   };
   
-  const [mainTab, setMainTab] = useState<'obras' | 'materiais' | 'equipamentos'>(getInitialTab());
+  const [mainTab, setMainTab] = useState<'obras' | 'materiais' | 'equipamentos' | 'aniversariantes'>(getInitialTab());
   const [obrasSubTab, setObrasSubTab] = useState<ObrasSubTab>('dashboard');
   
   const [projetos, setProjetos] = useState<Projeto[]>([]);
@@ -286,6 +288,9 @@ export default function GestorPage() {
               <Cpu className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Equipamentos
             </TabsTrigger>
           )}
+          <TabsTrigger value="aniversariantes" className="flex items-center gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-3 sm:px-6 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm whitespace-nowrap">
+            <Cake className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Aniversariantes
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="obras" className="space-y-3 sm:space-y-4">
@@ -320,7 +325,13 @@ export default function GestorPage() {
           <EquipmentDashboard clientes={clientes} />
         </TabsContent>
 
+        <TabsContent value="aniversariantes" className="space-y-4">
+          <AniversariantesTab />
+        </TabsContent>
+
       </Tabs>
+
+      <BirthdayReminder />
 
       {docProjeto && (
         <DocumentosModal projeto={docProjeto} onClose={() => setDocProjeto(null)} />
