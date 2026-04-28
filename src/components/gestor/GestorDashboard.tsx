@@ -5,6 +5,7 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianG
 import WhatsAppLink from './WhatsAppLink';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { fmtDateBR } from '@/lib/dateUtils';
 
 function daysSince(dateStr?: string): number {
   if (!dateStr) return 0;
@@ -151,7 +152,7 @@ export default function GestorDashboard({ projetos, loading, onRefresh }: { proj
                   <tr key={p.id} className="border-b border-border/30">
                     <td className="py-1.5 px-2 font-medium">{p.nome_completo || p.razao_social}</td>
                     <td className="py-1.5 px-2 text-muted-foreground">{p.motivo_congelamento || '—'}</td>
-                    <td className="py-1.5 px-2 text-center">{p.congelado_ate ? new Date(p.congelado_ate).toLocaleDateString('pt-BR') : '—'}</td>
+                    <td className="py-1.5 px-2 text-center">{p.congelado_ate ? fmtDateBR(p.congelado_ate) : '—'}</td>
                     <td className="py-1.5 px-2 text-center">
                       <button onClick={() => handleDescongelar(p.id)} className="text-xs text-blue-600 hover:underline">Descongelar</button>
                     </td>
