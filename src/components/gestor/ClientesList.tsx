@@ -9,6 +9,7 @@ import ClienteEditModal from './ClienteEditModal';
 import ClienteDadosModal from './ClienteDadosModal';
 
 import { useDraggableColumns } from '@/hooks/useDraggableColumns';
+import { fmtDateBR } from '@/lib/dateUtils';
 
 export type ClienteBase = {
   id: string;
@@ -239,7 +240,7 @@ export default function ClientesList({
                   <div><span className="text-muted-foreground">KWp:</span> {c.kwp ? Number(c.kwp).toFixed(2) : calcKwp(c.qtd_placas, c.potencia_placa)}</div>
                   <div><span className="text-muted-foreground">Inversor:</span> {c.marca_inversor || '—'}</div>
                   <div><span className="text-muted-foreground">UC:</span> {c.uc || '—'}</div>
-                  {c.instalado_em && <div><span className="text-muted-foreground">Instalação:</span> {new Date(c.instalado_em).toLocaleDateString('pt-BR')}</div>}
+                  {c.instalado_em && <div><span className="text-muted-foreground">Instalação:</span> {fmtDateBR(c.instalado_em)}</div>}
                   {c.valor && <div><span className="text-muted-foreground">Valor:</span> R$ {Number(c.valor).toLocaleString('pt-BR')}</div>}
                 </div>
                 <div className="flex gap-1.5 items-center pt-1 border-t border-border/50">
