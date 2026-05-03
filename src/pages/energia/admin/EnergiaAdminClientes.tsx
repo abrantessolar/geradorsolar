@@ -10,6 +10,7 @@ export default function EnergiaAdminClientes() {
   const [search, setSearch] = useState("");
   const [adding, setAdding] = useState<any>(null);
   const [pontosModal, setPontosModal] = useState<any>(null);
+  const [savingPontos, setSavingPontos] = useState(false);
   const [detalhe, setDetalhe] = useState<any>(null);
 
   const load = async () => {
@@ -47,11 +48,19 @@ export default function EnergiaAdminClientes() {
   };
 
   const addPontos = async () => {
-    const placas = Number(pontosModal._placas || 0);
-    const pontos = placas; // 1 placa = 1 ponto
-    const motivo = pontosModal._motivo || `Lançamento manual: ${placas} placas`;
-    await evCall("admin_add_pontos", { indicador_id: pontosModal.id, pontos, motivo }, evGetAdminToken());
-    setPontosModal(null); load();
+    if (savingPontos) return;
+    setSavingPontos(true);
+    try {
+      const placas = Number(pontosModal._placas || 0);
+      const pontos = placas;
+      const motivo = pontosModal._motivo || `Lançamento manual: ${placas} placas`;
+      await evCall("admin_add_pontos", { indicador_id: pontosModal.id, pontos, motivo }, evGetAdminToken());
+      setPontosModal(null); load();
+    } catch (e: any) {
+      alert(e.message);
+    } finally {
+      setSavingPontos(false);
+    }
   };
 
   const verDetalhe = async (i: any) => {
@@ -122,7 +131,7 @@ export default function EnergiaAdminClientes() {
         <input type="number" className="w-full h-10 border rounded px-3" placeholder="Número de placas do projeto" value={pontosModal._placas} onChange={e => setPontosModal({ ...pontosModal, _placas: e.target.value })} />
         <textarea className="w-full border rounded px-3 py-2" rows={3} placeholder="Observação (ex: Projeto fechado - Carlos Souza - 14 placas - 02/05/2026)" value={pontosModal._motivo} onChange={e => setPontosModal({ ...pontosModal, _motivo: e.target.value })} />
         <div className="text-sm">Pontos a creditar: <b>{Number(pontosModal._placas || 0)}</b></div>
-        <button onClick={addPontos} className="w-full h-10 bg-[#1A3C5E] text-white rounded">Confirmar</button>
+        <button onClick={addPontos} disabled={savingPontos} className="w-full h-10 bg-[#1A3C5E] text-white rounded disabled:opacity-50">{savingPontos ? "Salvando..." : "Confirmar"}</button>
       </Modal>}
 
       {detalhe && <Modal title={`Histórico — ${detalhe.indicador?.nome || ""}`} onClose={() => setDetalhe(null)}>
