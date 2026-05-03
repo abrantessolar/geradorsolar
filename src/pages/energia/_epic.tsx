@@ -129,7 +129,9 @@ export function EpicMusicToggle() {
     else fade(0, () => a.pause());
   };
 
+  if (!trackUrl) return null;
   return (
+
     <button onClick={toggle}
       className="flex items-center justify-center text-lg"
       style={{
