@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import EnergiaAdminLayout from "./EnergiaAdminLayout";
-import { evCall, evGetAdminToken } from "@/lib/energiaApi";
-import { supabase } from "@/integrations/supabase/client";
+import { evCall, evGetAdminToken, fileToBase64 } from "@/lib/energiaApi";
 import { Plus, Trash2, Loader2, Upload } from "lucide-react";
 
 type Premio = { id?: string; nome: string; imagem_url?: string; pontos_necessarios: number; ordem: number; ativo: boolean };
@@ -29,10 +28,11 @@ export default function EnergiaAdminPremios() {
   };
 
   const upload = async (file: File): Promise<string> => {
-    const path = `${Date.now()}_${file.name}`;
-    const { error } = await supabase.storage.from("energia-premios").upload(path, file, { upsert: true });
-    if (error) throw error;
-    return supabase.storage.from("energia-premios").getPublicUrl(path).data.publicUrl;
+    const content_base64 = await fileToBase64(file);
+    const r = await evCall<{ url: string }>("admin_upload_premio_image", {
+      filename: file.name, content_base64, content_type: file.type,
+    }, evGetAdminToken());
+    return r.url;
   };
 
   return (

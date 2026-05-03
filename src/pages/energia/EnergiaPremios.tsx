@@ -37,20 +37,28 @@ export default function EnergiaPremios() {
           <div className="grid grid-cols-2 gap-3">
             {(data?.premios || []).map((p: any) => {
               const podeResgatar = data.indicador.pontos_acumulados >= p.pontos_necessarios;
+              const jaResgatado = (data?.resgates || []).some((r: any) => r.premio_id === p.id);
               return (
-                <div key={p.id} className="bg-white rounded-2xl p-4 shadow-sm flex flex-col items-center text-center">
+                <div key={p.id} className={`bg-white rounded-2xl p-4 shadow-sm flex flex-col items-center text-center relative ${jaResgatado ? "ring-2 ring-green-500" : ""}`}>
+                  {jaResgatado && (
+                    <div className="absolute top-2 right-2 bg-green-500 text-white rounded-full w-7 h-7 flex items-center justify-center shadow">
+                      <Check className="w-4 h-4" />
+                    </div>
+                  )}
                   {p.imagem_url ? <img src={p.imagem_url} alt={p.nome} className="w-24 h-24 object-contain mb-2" /> :
                     <div className="w-24 h-24 bg-[#F5A623]/20 rounded-xl flex items-center justify-center mb-2"><Gift className="w-12 h-12 text-[#F5A623]" /></div>}
                   <h3 className="font-bold text-[#1A3C5E] text-sm">{p.nome}</h3>
                   <p className="text-xs text-gray-500 mb-2">{p.pontos_necessarios} pts</p>
                   <button
                     onClick={() => resgatar(p.id)}
-                    disabled={!podeResgatar}
+                    disabled={!podeResgatar || jaResgatado}
                     className={`w-full h-9 rounded-lg text-xs font-bold flex items-center justify-center gap-1 ${
+                      jaResgatado ? "bg-green-100 text-green-700" :
                       podeResgatar ? "bg-gradient-to-r from-[#F5A623] to-[#E8651A] text-white" : "bg-gray-200 text-gray-400"
                     }`}
                   >
-                    {podeResgatar ? "Resgatar" : <><Lock className="w-3 h-3" /> Bloqueado</>}
+                    {jaResgatado ? <><Check className="w-3 h-3" /> Resgatado</> :
+                      podeResgatar ? "Resgatar" : <><Lock className="w-3 h-3" /> Bloqueado</>}
                   </button>
                 </div>
               );

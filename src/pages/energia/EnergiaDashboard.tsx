@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
-import { Zap, Sun, Battery, Factory, Radio, Loader2, Copy, Share2 } from "lucide-react";
+import { Zap, Sun, Battery, Factory, Radio, Loader2, Copy, Share2, X } from "lucide-react";
 import EnergiaLayout from "./EnergiaLayout";
 import { useEnergia } from "@/contexts/EnergiaContext";
-import { evCall } from "@/lib/energiaApi";
+import { evCall, evMaskPhone } from "@/lib/energiaApi";
+
+const CIDADES = ["Três Lagoas", "Água Clara", "Selvíria", "Bataguassu", "Outras"];
 
 const ETAPA_ICONS: Record<string, any> = {
   Raio: Zap, Painel: Sun, Gerador: Battery, Usina: Factory, Central: Radio, "Sol Maior": Sun,
@@ -34,12 +36,23 @@ export default function EnergiaDashboard() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [showLink, setShowLink] = useState(false);
+  const [showIndicar, setShowIndicar] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [form, setForm] = useState({ nome: "", telefone: "", cidade: "Três Lagoas", observacao: "" });
+  const [enviando, setEnviando] = useState(false);
+  const [resultado, setResultado] = useState<{ whatsapp_url: string } | null>(null);
 
-  useEffect(() => {
+  const refetch = () => {
     if (!indicador) return;
     evCall("cliente_dashboard", { indicador_id: indicador.id, cpf })
       .then(setData).catch(console.error).finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    refetch();
+    const t = setInterval(refetch, 30000);
+    return () => clearInterval(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [indicador, cpf]);
 
   if (!indicador) return <Navigate to="/energia" replace />;
@@ -108,12 +121,20 @@ export default function EnergiaDashboard() {
           </div>
         )}
 
-        <button
-          onClick={() => setShowLink(true)}
-          className="w-full h-14 rounded-2xl bg-gradient-to-r from-[#F5A623] to-[#E8651A] text-white font-bold text-lg shadow-lg hover:opacity-90 flex items-center justify-center gap-2"
-        >
-          <Share2 className="w-5 h-5" /> Indicar agora
-        </button>
+        <div className="grid grid-cols-2 gap-3">
+          <button
+            onClick={() => { setResultado(null); setForm({ nome: "", telefone: "", cidade: "Três Lagoas", observacao: "" }); setShowIndicar(true); }}
+            className="h-14 rounded-2xl bg-gradient-to-r from-[#F5A623] to-[#E8651A] text-white font-bold text-base shadow-lg hover:opacity-90 flex items-center justify-center gap-2"
+          >
+            <Share2 className="w-5 h-5" /> Indicar agora
+          </button>
+          <button
+            onClick={() => setShowLink(true)}
+            className="h-14 rounded-2xl bg-white border-2 border-[#1A3C5E] text-[#1A3C5E] font-bold text-base hover:bg-gray-50 flex items-center justify-center gap-2"
+          >
+            <Copy className="w-5 h-5" /> Meu link
+          </button>
+        </div>
 
         {showLink && (
           <div className="fixed inset-0 z-50 bg-black/60 flex items-end md:items-center justify-center p-4" onClick={() => setShowLink(false)}>
@@ -133,6 +154,74 @@ export default function EnergiaDashboard() {
                 </a>
               </div>
               <button onClick={() => setShowLink(false)} className="w-full text-sm text-gray-500 hover:text-gray-700">Fechar</button>
+            </div>
+          </div>
+        )}
+
+        {showIndicar && (
+          <div className="fixed inset-0 z-50 bg-black/60 flex items-end md:items-center justify-center p-4" onClick={() => setShowIndicar(false)}>
+            <div className="bg-white rounded-2xl p-5 max-w-md w-full space-y-3" onClick={e => e.stopPropagation()}>
+              <div className="flex justify-between items-center">
+                <h3 className="font-bold text-[#1A3C5E] text-lg">Nova indicação</h3>
+                <button onClick={() => setShowIndicar(false)}><X className="w-5 h-5 text-gray-400" /></button>
+              </div>
+              {resultado ? (
+                <div className="space-y-3">
+                  <div className="p-3 bg-green-50 text-green-800 rounded-lg text-sm">
+                    Indicação registrada! Envie a mensagem no WhatsApp do indicado:
+                  </div>
+                  <a href={resultado.whatsapp_url} target="_blank" rel="noreferrer"
+                    className="w-full h-12 rounded-lg bg-[#25D366] text-white font-bold flex items-center justify-center">
+                    Abrir WhatsApp do indicado
+                  </a>
+                  <button onClick={() => setShowIndicar(false)} className="w-full h-10 text-gray-500">Fechar</button>
+                </div>
+              ) : (
+                <>
+                  <div>
+                    <label className="text-xs text-gray-600">Nome completo</label>
+                    <input className="w-full h-11 border rounded-lg px-3" value={form.nome}
+                      onChange={e => setForm({ ...form, nome: e.target.value })} />
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-600">Telefone (WhatsApp)</label>
+                    <input className="w-full h-11 border rounded-lg px-3" placeholder="(67) 99999-9999"
+                      value={form.telefone}
+                      onChange={e => setForm({ ...form, telefone: evMaskPhone(e.target.value) })} />
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-600">Cidade</label>
+                    <select className="w-full h-11 border rounded-lg px-3" value={form.cidade}
+                      onChange={e => setForm({ ...form, cidade: e.target.value })}>
+                      {CIDADES.map(c => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-600">O que você sabe sobre ele(a)?</label>
+                    <textarea className="w-full border rounded-lg p-3" rows={3}
+                      placeholder="Conta de luz alta, casa nova, interesse em energia solar..."
+                      value={form.observacao}
+                      onChange={e => setForm({ ...form, observacao: e.target.value })} />
+                  </div>
+                  <button
+                    disabled={enviando || !form.nome || !form.telefone}
+                    onClick={async () => {
+                      setEnviando(true);
+                      try {
+                        const r = await evCall<{ whatsapp_url: string }>("cliente_criar_indicacao", {
+                          indicador_id: indicador.id, cpf, ...form,
+                        });
+                        setResultado({ whatsapp_url: r.whatsapp_url });
+                        refetch();
+                      } catch (e: any) { alert(e.message); }
+                      finally { setEnviando(false); }
+                    }}
+                    className="w-full h-12 rounded-lg bg-gradient-to-r from-[#F5A623] to-[#E8651A] text-white font-bold disabled:opacity-50"
+                  >
+                    {enviando ? "Enviando..." : "Registrar indicação"}
+                  </button>
+                </>
+              )}
             </div>
           </div>
         )}

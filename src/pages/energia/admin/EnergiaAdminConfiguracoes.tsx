@@ -5,8 +5,11 @@ import { Loader2 } from "lucide-react";
 
 const FIELDS = [
   { key: "webhook_kommo_url", label: "URL Webhook Kommo", type: "text" },
+  { key: "mensagem_whatsapp_indicado", label: "Mensagem WhatsApp para o indicado (use {indicador})", type: "textarea" },
   { key: "mensagem_resgate", label: "Mensagem ao solicitar resgate", type: "textarea" },
   { key: "texto_link_indicacao", label: "Texto do link de indicação", type: "textarea" },
+  { key: "modo_pontuacao", label: "Modo de pontuação (placas | valor)", type: "text" },
+  { key: "pontos_por_placa", label: "Pontos por placa", type: "text" },
   { key: "logo_url", label: "URL do logo", type: "text" },
   { key: "nome_plataforma", label: "Nome da plataforma", type: "text" },
 ];
