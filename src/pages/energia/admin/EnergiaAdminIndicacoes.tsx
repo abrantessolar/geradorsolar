@@ -74,7 +74,7 @@ export default function EnergiaAdminIndicacoes() {
               </tr>
             </thead>
             <tbody>
-              {list.map(i => (
+              {filtered.map(i => (
                 <tr key={i.id} className="border-t">
                   <td className="p-3">{indMap[i.indicador_id] || "—"}</td>
                   <td className="p-3">{i.nome_indicado || "—"}</td>
