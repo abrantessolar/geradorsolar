@@ -61,6 +61,17 @@ export default function EnergiaLayout({ children }: { children: ReactNode }) {
       </nav>
 
       <main className="max-w-3xl mx-auto px-4 py-5 relative z-10">{children}</main>
+
+      <footer className="relative z-10 mt-8 pb-6 text-center">
+        <a
+          href="/docs/regulamento-energia-que-volta.pdf"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ color: "#A08060", fontSize: 11, textDecoration: "underline" }}
+        >
+          Termos do Programa
+        </a>
+      </footer>
     </div>
   );
 }

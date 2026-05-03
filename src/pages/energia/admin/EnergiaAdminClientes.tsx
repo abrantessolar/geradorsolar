@@ -153,6 +153,12 @@ export default function EnergiaAdminClientes() {
                 <div className="text-[10px] text-gray-500">saldo para resgates</div>
               </div>
             </div>
+            <div className="text-xs p-2 rounded border bg-gray-50">
+              <b>Termos:</b>{" "}
+              {detalhe.indicador?.termos_aceitos_em
+                ? <>aceitos em {new Date(detalhe.indicador.termos_aceitos_em).toLocaleString("pt-BR")}</>
+                : <span className="text-red-600">ainda não aceitos</span>}
+            </div>
             <div>
               <div className="font-bold text-[#1A3C5E] mb-1">Indicações ({detalhe.indicacoes?.length || 0})</div>
               {(detalhe.indicacoes || []).map((i: any) => (

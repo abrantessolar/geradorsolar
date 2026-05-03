@@ -119,6 +119,7 @@ serve(async (req) => {
     if (action === "login_cliente") {
       const cpf = onlyDigits(payload.cpf);
       const data_nascimento = payload.data_nascimento;
+      const aceite_termos = !!payload.aceite_termos;
       if (!cpf || !data_nascimento) return err("CPF e data de nascimento obrigatórios");
       const { data } = await supabase
         .from("energia_indicadores")
@@ -127,8 +128,10 @@ serve(async (req) => {
         .eq("data_nascimento", data_nascimento)
         .maybeSingle();
       if (!data) return err("Cliente não encontrado. Entre em contato com a empresa.", 404);
-      await supabase.from("energia_indicadores").update({ ultimo_acesso: new Date().toISOString() }).eq("id", data.id);
-      return json({ indicador: data });
+      const upd: any = { ultimo_acesso: new Date().toISOString() };
+      if (aceite_termos && !data.termos_aceitos_em) upd.termos_aceitos_em = new Date().toISOString();
+      const { data: updated } = await supabase.from("energia_indicadores").update(upd).eq("id", data.id).select().maybeSingle();
+      return json({ indicador: updated || data });
     }
 
     if (action === "cadastro_publico") {

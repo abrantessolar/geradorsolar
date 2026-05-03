@@ -1,0 +1,1 @@
+ALTER TABLE public.energia_indicadores ADD COLUMN IF NOT EXISTS termos_aceitos_em TIMESTAMPTZ;
