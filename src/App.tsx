@@ -142,6 +142,22 @@ const App = () => (
                 <SeoNoIndex /><Layout><CustosPage /></Layout>
               </ProtectedRoute>
             } />
+            <Route path="/energia" element={<div><SeoNoIndex /><EnergiaProvider><EnergiaLogin /></EnergiaProvider></div>} />
+            <Route path="/energia/dashboard" element={<div><SeoNoIndex /><EnergiaProvider><EnergiaDashboard /></EnergiaProvider></div>} />
+            <Route path="/energia/trilha" element={<div><SeoNoIndex /><EnergiaProvider><EnergiaTrilha /></EnergiaProvider></div>} />
+            <Route path="/energia/premios" element={<div><SeoNoIndex /><EnergiaProvider><EnergiaPremios /></EnergiaProvider></div>} />
+            <Route path="/energia/indicacoes" element={<div><SeoNoIndex /><EnergiaProvider><EnergiaIndicacoes /></EnergiaProvider></div>} />
+            <Route path="/energia/ranking" element={<div><SeoNoIndex /><EnergiaProvider><EnergiaRanking /></EnergiaProvider></div>} />
+            <Route path="/energia/i/:codigo" element={<div><SeoNoIndex /><EnergiaCaptarIndicacao /></div>} />
+            <Route path="/energia/admin/login" element={<div><SeoNoIndex /><EnergiaAdminLogin /></div>} />
+            <Route path="/energia/admin" element={<div><SeoNoIndex /><EnergiaAdminVisaoGeral /></div>} />
+            <Route path="/energia/admin/premios" element={<div><SeoNoIndex /><EnergiaAdminPremios /></div>} />
+            <Route path="/energia/admin/trilha" element={<div><SeoNoIndex /><EnergiaAdminTrilha /></div>} />
+            <Route path="/energia/admin/pontuacao" element={<div><SeoNoIndex /><EnergiaAdminPontuacao /></div>} />
+            <Route path="/energia/admin/clientes" element={<div><SeoNoIndex /><EnergiaAdminClientes /></div>} />
+            <Route path="/energia/admin/indicacoes" element={<div><SeoNoIndex /><EnergiaAdminIndicacoes /></div>} />
+            <Route path="/energia/admin/resgates" element={<div><SeoNoIndex /><EnergiaAdminResgates /></div>} />
+            <Route path="/energia/admin/configuracoes" element={<div><SeoNoIndex /><EnergiaAdminConfiguracoes /></div>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
