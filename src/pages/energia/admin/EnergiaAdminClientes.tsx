@@ -101,7 +101,11 @@ export default function EnergiaAdminClientes() {
                   <td className="p-3"><button onClick={() => verDetalhe(i)} className="text-[#1A3C5E] hover:underline">{i.nome}</button></td>
                   <td className="p-3">{evMaskCpf(i.cpf || "")}</td>
                   <td className="p-3">{i.etapa_atual || "—"}</td>
-                  <td className="p-3 text-right font-bold">{i.pontos_acumulados}</td>
+                  <td className="p-3 text-right font-bold" title={`Históricos: ${i.pontos_historicos ?? i.pontos_acumulados ?? 0} | Disponíveis: ${i.pontos_disponiveis ?? i.pontos_acumulados ?? 0}`}>
+                    <span className="text-[#F5A623]">H:{i.pontos_historicos ?? i.pontos_acumulados ?? 0}</span>
+                    <span className="text-gray-400 mx-1">/</span>
+                    <span className="text-[#E8651A]">D:{i.pontos_disponiveis ?? i.pontos_acumulados ?? 0}</span>
+                  </td>
                   <td className="p-3 text-right">{indCount[i.id] || 0}</td>
                   <td className="p-3 text-xs text-gray-600">{i.ultimo_acesso ? new Date(i.ultimo_acesso).toLocaleDateString("pt-BR") : "—"}</td>
                   <td className="p-3 text-center">
