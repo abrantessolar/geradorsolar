@@ -221,13 +221,17 @@ serve(async (req) => {
         const premio_id = payload.premio_id;
         const { data: premio } = await supabase.from("energia_premios").select("*").eq("id", premio_id).maybeSingle();
         if (!premio) return err("Prêmio não encontrado", 404);
-        const { data: ind } = await supabase.from("energia_indicadores").select("pontos_acumulados").eq("id", cliente.id).maybeSingle();
-        if (!ind || ind.pontos_acumulados < premio.pontos_necessarios) return err("Pontos insuficientes");
+        const { data: ind } = await supabase.from("energia_indicadores").select("pontos_disponiveis").eq("id", cliente.id).maybeSingle();
+        if (!ind || (ind.pontos_disponiveis || 0) < premio.pontos_necessarios) return err("Saldo disponível insuficiente");
         await supabase.from("energia_resgates").insert({
           indicador_id: cliente.id, premio_id, pontos_utilizados: premio.pontos_necessarios, status: "pendente",
         });
-        await supabase.from("energia_indicadores").update({ pontos_acumulados: ind.pontos_acumulados - premio.pontos_necessarios }).eq("id", cliente.id);
-        await recalcEtapa(cliente.id);
+        const novo = (ind.pontos_disponiveis || 0) - premio.pontos_necessarios;
+        await supabase.from("energia_indicadores").update({ pontos_disponiveis: novo }).eq("id", cliente.id);
+        await supabase.from("energia_pontos_log").insert({
+          indicador_id: cliente.id, pontos: -premio.pontos_necessarios, motivo: `Resgate: ${premio.nome}`,
+        });
+        // não recalcula etapa — nível é definido por pontos_historicos
         const msg = await getConfig("mensagem_resgate");
         return json({ ok: true, mensagem: msg });
       }
