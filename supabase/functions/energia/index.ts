@@ -329,24 +329,32 @@ serve(async (req) => {
       }
 
       if (action === "admin_update_indicacao_status") {
-        const { id, status, valor_negocio } = payload;
+        const { id, status, valor_negocio, num_placas } = payload;
         const { data: ind } = await supabase.from("energia_indicacoes").select("*").eq("id", id).maybeSingle();
         if (!ind) return err("Indicação não encontrada", 404);
         const updates: any = { status };
         if (typeof valor_negocio === "number") updates.valor_negocio = valor_negocio;
+        if (typeof num_placas === "number") updates.num_placas = num_placas;
 
         if (status === "fechada" && ind.status !== "fechada") {
-          // calcula pontos
-          const pontosBase = Number(await getConfig("pontos_padrao_indicacao") || 100);
-          const bonusMin = Number(await getConfig("bonus_valor_minimo") || 0);
-          const bonusPts = Number(await getConfig("bonus_pontos") || 0);
+          const modo = (await getConfig("modo_pontuacao")) || "placas";
+          const placas = Number(num_placas ?? ind.num_placas ?? 0);
           const valor = Number(valor_negocio ?? ind.valor_negocio ?? 0);
           const { data: campanhas } = await supabase.from("energia_campanhas")
             .select("multiplicador").eq("ativa", true)
             .lte("inicio", new Date().toISOString().slice(0,10))
             .gte("fim", new Date().toISOString().slice(0,10));
           const mult = campanhas && campanhas.length ? Math.max(...campanhas.map((c: any) => Number(c.multiplicador))) : 1;
-          const pontos = Math.round(pontosBase * mult + (valor >= bonusMin && bonusMin > 0 ? bonusPts : 0));
+          let pontos = 0;
+          if (modo === "placas") {
+            const ppp = Number(await getConfig("pontos_por_placa") || 1);
+            pontos = Math.round(placas * ppp * mult);
+          } else {
+            const pontosBase = Number(await getConfig("pontos_padrao_indicacao") || 100);
+            const bonusMin = Number(await getConfig("bonus_valor_minimo") || 0);
+            const bonusPts = Number(await getConfig("bonus_pontos") || 0);
+            pontos = Math.round(pontosBase * mult + (valor >= bonusMin && bonusMin > 0 ? bonusPts : 0));
+          }
           updates.pontos_creditados = pontos;
           updates.fechada_em = new Date().toISOString();
 
@@ -354,11 +362,10 @@ serve(async (req) => {
           if (indicador) {
             await supabase.from("energia_indicadores").update({ pontos_acumulados: indicador.pontos_acumulados + pontos }).eq("id", indicador.id);
             await supabase.from("energia_pontos_log").insert({
-              indicador_id: indicador.id, pontos, motivo: `Indicação fechada: ${ind.nome_indicado || "sem nome"}`, admin_id: admin.sub,
+              indicador_id: indicador.id, pontos, motivo: `Indicação fechada: ${ind.nome_indicado || "sem nome"} (${placas} placas)`, admin_id: admin.sub,
             });
             await recalcEtapa(indicador.id);
 
-            // Webhook Kommo
             const webhook = await getConfig("webhook_kommo_url");
             if (webhook && typeof webhook === "string") {
               try {
@@ -366,9 +373,10 @@ serve(async (req) => {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
                   body: JSON.stringify({
+                    evento: "indicacao_fechada",
                     indicador: { nome: indicador.nome, cpf: indicador.cpf, telefone: indicador.telefone },
-                    indicado: { nome: ind.nome_indicado, telefone: ind.telefone_indicado, email: ind.email_indicado },
-                    pontos, valor_negocio: valor,
+                    indicado: { nome: ind.nome_indicado, telefone: ind.telefone_indicado, email: ind.email_indicado, cidade: ind.cidade },
+                    pontos, num_placas: placas, valor_negocio: valor,
                   }),
                 });
               } catch (e) { console.error("Webhook Kommo failed", e); }
@@ -377,6 +385,18 @@ serve(async (req) => {
         }
         await supabase.from("energia_indicacoes").update(updates).eq("id", id);
         return json({ ok: true });
+      }
+
+      if (action === "admin_upload_premio_image") {
+        const { filename, content_base64, content_type } = payload;
+        if (!filename || !content_base64) return err("Arquivo obrigatório");
+        const bin = Uint8Array.from(atob(content_base64), c => c.charCodeAt(0));
+        const path = `${Date.now()}_${filename.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
+        const { error: upErr } = await supabase.storage.from("energia-premios")
+          .upload(path, bin, { contentType: content_type || "image/png", upsert: true });
+        if (upErr) return err(upErr.message);
+        const { data: pub } = supabase.storage.from("energia-premios").getPublicUrl(path);
+        return json({ url: pub.publicUrl });
       }
 
       if (action === "admin_confirmar_entrega") {
