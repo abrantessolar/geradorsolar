@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import EnergiaAdminLayout from "./EnergiaAdminLayout";
 import { evCall, evGetAdminToken, fileToBase64 } from "@/lib/energiaApi";
-import { Plus, Trash2, Loader2, Upload } from "lucide-react";
+import { Plus, Trash2, Loader2, Upload, ArrowUp, ArrowDown } from "lucide-react";
 
 type Premio = { id?: string; nome: string; imagem_url?: string; pontos_necessarios: number; ordem: number; ativo: boolean };
 
