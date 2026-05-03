@@ -27,6 +27,16 @@ export default function EnergiaAdminPremios() {
     load();
   };
 
+  const move = async (idx: number, dir: -1 | 1) => {
+    const next = idx + dir;
+    if (next < 0 || next >= list.length) return;
+    const novo = [...list];
+    [novo[idx], novo[next]] = [novo[next], novo[idx]];
+    setList(novo);
+    await evCall("admin_reorder_premios", { ids: novo.map(p => p.id) }, evGetAdminToken());
+    load();
+  };
+
   const upload = async (file: File): Promise<string> => {
     const content_base64 = await fileToBase64(file);
     const r = await evCall<{ url: string }>("admin_upload_premio_image", {
