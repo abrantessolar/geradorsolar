@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import EnergiaAdminLayout from "./EnergiaAdminLayout";
 import { evCall, evGetAdminToken } from "@/lib/energiaApi";
 import { Loader2, Check } from "lucide-react";
@@ -8,6 +8,8 @@ export default function EnergiaAdminResgates() {
   const [premios, setPremios] = useState<any[]>([]);
   const [indicadores, setIndicadores] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [de, setDe] = useState("");
+  const [ate, setAte] = useState("");
 
   const load = async () => {
     setLoading(true);
