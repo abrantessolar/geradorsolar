@@ -40,6 +40,7 @@ export default function EnergiaDashboard() {
   const [copied, setCopied] = useState(false);
   const [form, setForm] = useState({ nome: "", telefone: "", cidade: "Três Lagoas", observacao: "" });
   const [enviando, setEnviando] = useState(false);
+  const enviandoRef = useRef(false);
   const [resultado, setResultado] = useState<{ whatsapp_url: string } | null>(null);
 
   const refetch = () => {
