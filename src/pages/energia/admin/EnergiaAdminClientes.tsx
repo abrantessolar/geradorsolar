@@ -75,8 +75,8 @@ export default function EnergiaAdminClientes() {
             </thead>
             <tbody>
               {filtered.map(i => (
-                <tr key={i.id} className="border-t">
-                  <td className="p-3">{i.nome}</td>
+                <tr key={i.id} className="border-t hover:bg-gray-50">
+                  <td className="p-3"><button onClick={() => verDetalhe(i)} className="text-[#1A3C5E] hover:underline">{i.nome}</button></td>
                   <td className="p-3">{evMaskCpf(i.cpf || "")}</td>
                   <td className="p-3">{i.etapa_atual || "—"}</td>
                   <td className="p-3 text-right font-bold">{i.pontos_acumulados}</td>
@@ -84,7 +84,7 @@ export default function EnergiaAdminClientes() {
                     <input type="checkbox" checked={i.aparece_ranking} onChange={() => saveToggle(i)} />
                   </td>
                   <td className="p-3 text-right">
-                    <button onClick={() => setPontosModal({ ...i, _pontos: 0, _motivo: "" })} className="px-2 py-1 text-xs bg-[#F5A623] text-white rounded">+ Pontos</button>
+                    <button onClick={() => setPontosModal({ ...i, _placas: 0, _motivo: "" })} className="px-2 py-1 text-xs bg-[#F5A623] text-white rounded">+ Placas</button>
                   </td>
                 </tr>
               ))}
