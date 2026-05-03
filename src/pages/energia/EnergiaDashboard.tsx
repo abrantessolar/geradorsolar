@@ -64,6 +64,7 @@ export default function EnergiaDashboard() {
   const enviandoRef = useRef(false);
   const [resultado, setResultado] = useState<{ whatsapp_url: string } | null>(null);
   const [levelUp, setLevelUp] = useState<string | null>(null);
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   const refetch = () => {
     if (!indicador) return;
