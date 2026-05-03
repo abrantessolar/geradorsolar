@@ -1,12 +1,14 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import EnergiaAdminLayout from "./EnergiaAdminLayout";
 import { evCall, evGetAdminToken } from "@/lib/energiaApi";
-import { Loader2 } from "lucide-react";
+import { Loader2, Search } from "lucide-react";
 
 export default function EnergiaAdminIndicacoes() {
   const [list, setList] = useState<any[]>([]);
   const [indicadores, setIndicadores] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [statusFilter, setStatusFilter] = useState("todos");
+  const [search, setSearch] = useState("");
 
   const load = async () => {
     setLoading(true);
@@ -20,6 +22,13 @@ export default function EnergiaAdminIndicacoes() {
   useEffect(() => { load(); }, []);
 
   const indMap = Object.fromEntries(indicadores.map(i => [i.id, i.nome]));
+  const filtered = useMemo(() => {
+    const q = search.toLowerCase();
+    return list.filter(i =>
+      (statusFilter === "todos" || i.status === statusFilter) &&
+      (!q || (i.nome_indicado || "").toLowerCase().includes(q) || (indMap[i.indicador_id] || "").toLowerCase().includes(q))
+    );
+  }, [list, statusFilter, search, indMap]);
 
   const updateStatus = async (id: string, status: string) => {
     const item = list.find(l => l.id === id);
@@ -39,6 +48,18 @@ export default function EnergiaAdminIndicacoes() {
   return (
     <EnergiaAdminLayout>
       <h1 className="text-2xl font-bold text-[#1A3C5E] mb-6">Indicações</h1>
+      <div className="flex flex-col md:flex-row gap-3 mb-4">
+        <div className="relative flex-1 max-w-md">
+          <Search className="w-4 h-4 absolute left-3 top-3 text-gray-400" />
+          <input className="w-full h-10 border rounded pl-9 pr-3" placeholder="Buscar indicado ou indicador..." value={search} onChange={e => setSearch(e.target.value)} />
+        </div>
+        <select className="h-10 border rounded px-3" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
+          <option value="todos">Todos status</option>
+          <option value="enviada">Enviada</option>
+          <option value="negociacao">Em negociação</option>
+          <option value="fechada">Fechada</option>
+        </select>
+      </div>
       {loading ? <Loader2 className="animate-spin" /> : (
         <div className="bg-white rounded-xl shadow-sm overflow-hidden">
           <table className="w-full text-sm">
@@ -53,7 +74,7 @@ export default function EnergiaAdminIndicacoes() {
               </tr>
             </thead>
             <tbody>
-              {list.map(i => (
+              {filtered.map(i => (
                 <tr key={i.id} className="border-t">
                   <td className="p-3">{indMap[i.indicador_id] || "—"}</td>
                   <td className="p-3">{i.nome_indicado || "—"}</td>

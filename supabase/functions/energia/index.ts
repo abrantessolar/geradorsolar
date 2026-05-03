@@ -266,11 +266,14 @@ serve(async (req) => {
       if (!admin) return err("Não autorizado", 401);
 
       if (action === "admin_overview") {
-        const [{ data: indicadores }, { data: indicacoes }, { data: resgates }] = await Promise.all([
+        const inicioMesIso = (() => { const d = new Date(); d.setDate(1); d.setHours(0,0,0,0); return d.toISOString(); })();
+        const [{ data: indicadores }, { data: indicacoes }, { data: resgates }, { data: pontosMes }] = await Promise.all([
           supabase.from("energia_indicadores").select("id, ultimo_acesso"),
           supabase.from("energia_indicacoes").select("status, valor_negocio, criado_em"),
           supabase.from("energia_resgates").select("status").eq("status", "pendente"),
+          supabase.from("energia_pontos_log").select("pontos").gte("criado_em", inicioMesIso),
         ]);
+        const pontos_mes = (pontosMes || []).reduce((a: number, p: any) => a + Number(p.pontos || 0), 0);
         const total = indicadores?.length || 0;
         const ativos = (indicadores || []).filter((i: any) => i.ultimo_acesso).length;
         const inicioMes = new Date(); inicioMes.setDate(1); inicioMes.setHours(0,0,0,0);
@@ -287,7 +290,7 @@ serve(async (req) => {
           const count = (indicacoes || []).filter((x: any) => { const dt = new Date(x.criado_em); return dt >= d && dt < next; }).length;
           grafico.push({ mes: d.toLocaleDateString("pt-BR", { month: "short" }), indicacoes: count });
         }
-        return json({ stats: { total, ativos, enviadas, negociacao, fechadas, volume, resgates_pendentes: resgates?.length || 0 }, grafico });
+        return json({ stats: { total, ativos, enviadas, negociacao, fechadas, volume, pontos_mes, resgates_pendentes: resgates?.length || 0 }, grafico });
       }
 
       if (action === "admin_list") {
@@ -420,6 +423,25 @@ serve(async (req) => {
         if (error) return err(error.message);
         await recalcEtapa(data.id);
         return json({ data });
+      }
+
+      if (action === "admin_cliente_detalhe") {
+        const id = payload.id;
+        const [{ data: ind }, { data: indicacoes }, { data: resgates }, { data: log }] = await Promise.all([
+          supabase.from("energia_indicadores").select("*").eq("id", id).maybeSingle(),
+          supabase.from("energia_indicacoes").select("*").eq("indicador_id", id).order("criado_em", { ascending: false }),
+          supabase.from("energia_resgates").select("*, energia_premios(nome)").eq("indicador_id", id).order("solicitado_em", { ascending: false }),
+          supabase.from("energia_pontos_log").select("*").eq("indicador_id", id).order("criado_em", { ascending: false }),
+        ]);
+        return json({ indicador: ind, indicacoes, resgates, log });
+      }
+
+      if (action === "admin_reorder_premios") {
+        const ids: string[] = payload.ids || [];
+        for (let i = 0; i < ids.length; i++) {
+          await supabase.from("energia_premios").update({ ordem: i }).eq("id", ids[i]);
+        }
+        return json({ ok: true });
       }
     }
 

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import EnergiaAdminLayout from "./EnergiaAdminLayout";
 import { evCall, evGetAdminToken, fileToBase64 } from "@/lib/energiaApi";
-import { Plus, Trash2, Loader2, Upload } from "lucide-react";
+import { Plus, Trash2, Loader2, Upload, ArrowUp, ArrowDown } from "lucide-react";
 
 type Premio = { id?: string; nome: string; imagem_url?: string; pontos_necessarios: number; ordem: number; ativo: boolean };
 
@@ -27,6 +27,16 @@ export default function EnergiaAdminPremios() {
     load();
   };
 
+  const move = async (idx: number, dir: -1 | 1) => {
+    const next = idx + dir;
+    if (next < 0 || next >= list.length) return;
+    const novo = [...list];
+    [novo[idx], novo[next]] = [novo[next], novo[idx]];
+    setList(novo);
+    await evCall("admin_reorder_premios", { ids: novo.map(p => p.id) }, evGetAdminToken());
+    load();
+  };
+
   const upload = async (file: File): Promise<string> => {
     const content_base64 = await fileToBase64(file);
     const r = await evCall<{ url: string }>("admin_upload_premio_image", {
@@ -45,13 +55,15 @@ export default function EnergiaAdminPremios() {
 
       {loading ? <Loader2 className="animate-spin" /> : (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {list.map(p => (
+          {list.map((p, idx) => (
             <div key={p.id} className="bg-white rounded-xl p-4 shadow-sm">
               {p.imagem_url ? <img src={p.imagem_url} className="w-full h-32 object-contain mb-2" /> : <div className="w-full h-32 bg-gray-100 rounded mb-2" />}
               <div className="font-bold">{p.nome}</div>
               <div className="text-sm text-gray-500">{p.pontos_necessarios} pts · ordem {p.ordem}</div>
               <div className={`text-xs mt-1 ${p.ativo ? "text-green-600" : "text-gray-400"}`}>{p.ativo ? "Ativo" : "Pausado"}</div>
               <div className="flex gap-2 mt-3">
+                <button onClick={() => move(idx, -1)} disabled={idx === 0} className="px-2 py-1 text-xs bg-gray-100 rounded disabled:opacity-30"><ArrowUp className="w-3 h-3" /></button>
+                <button onClick={() => move(idx, 1)} disabled={idx === list.length - 1} className="px-2 py-1 text-xs bg-gray-100 rounded disabled:opacity-30"><ArrowDown className="w-3 h-3" /></button>
                 <button onClick={() => setEditing(p)} className="flex-1 px-2 py-1 text-xs bg-gray-100 rounded">Editar</button>
                 <button onClick={() => del(p.id!)} className="px-2 py-1 text-xs bg-red-100 text-red-700 rounded"><Trash2 className="w-3 h-3" /></button>
               </div>

@@ -7,9 +7,9 @@ export default function EnergiaAdminClientes() {
   const [list, setList] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [editing, setEditing] = useState<any>(null);
   const [adding, setAdding] = useState<any>(null);
   const [pontosModal, setPontosModal] = useState<any>(null);
+  const [detalhe, setDetalhe] = useState<any>(null);
 
   const load = () => {
     setLoading(true);
@@ -36,8 +36,19 @@ export default function EnergiaAdminClientes() {
   };
 
   const addPontos = async () => {
-    await evCall("admin_add_pontos", { indicador_id: pontosModal.id, pontos: Number(pontosModal._pontos), motivo: pontosModal._motivo }, evGetAdminToken());
+    const placas = Number(pontosModal._placas || 0);
+    const pontos = placas; // 1 placa = 1 ponto
+    const motivo = pontosModal._motivo || `Lançamento manual: ${placas} placas`;
+    await evCall("admin_add_pontos", { indicador_id: pontosModal.id, pontos, motivo }, evGetAdminToken());
     setPontosModal(null); load();
+  };
+
+  const verDetalhe = async (i: any) => {
+    setDetalhe({ loading: true });
+    try {
+      const r: any = await evCall("admin_cliente_detalhe", { id: i.id }, evGetAdminToken());
+      setDetalhe(r);
+    } catch (e: any) { alert(e.message); setDetalhe(null); }
   };
 
   return (
@@ -64,8 +75,8 @@ export default function EnergiaAdminClientes() {
             </thead>
             <tbody>
               {filtered.map(i => (
-                <tr key={i.id} className="border-t">
-                  <td className="p-3">{i.nome}</td>
+                <tr key={i.id} className="border-t hover:bg-gray-50">
+                  <td className="p-3"><button onClick={() => verDetalhe(i)} className="text-[#1A3C5E] hover:underline">{i.nome}</button></td>
                   <td className="p-3">{evMaskCpf(i.cpf || "")}</td>
                   <td className="p-3">{i.etapa_atual || "—"}</td>
                   <td className="p-3 text-right font-bold">{i.pontos_acumulados}</td>
@@ -73,7 +84,7 @@ export default function EnergiaAdminClientes() {
                     <input type="checkbox" checked={i.aparece_ranking} onChange={() => saveToggle(i)} />
                   </td>
                   <td className="p-3 text-right">
-                    <button onClick={() => setPontosModal({ ...i, _pontos: 0, _motivo: "" })} className="px-2 py-1 text-xs bg-[#F5A623] text-white rounded">+ Pontos</button>
+                    <button onClick={() => setPontosModal({ ...i, _placas: 0, _motivo: "" })} className="px-2 py-1 text-xs bg-[#F5A623] text-white rounded">+ Placas</button>
                   </td>
                 </tr>
               ))}
@@ -92,9 +103,45 @@ export default function EnergiaAdminClientes() {
       </Modal>}
 
       {pontosModal && <Modal title={`Adicionar pontos — ${pontosModal.nome}`} onClose={() => setPontosModal(null)}>
-        <input type="number" className="w-full h-10 border rounded px-3" placeholder="Pontos (use negativo para subtrair)" value={pontosModal._pontos} onChange={e => setPontosModal({ ...pontosModal, _pontos: e.target.value })} />
-        <textarea className="w-full border rounded px-3 py-2" rows={3} placeholder="Observação (ex: Negócio fechado - Carlos Souza - 02/05/2026)" value={pontosModal._motivo} onChange={e => setPontosModal({ ...pontosModal, _motivo: e.target.value })} />
+        <p className="text-xs text-gray-500">1 placa = 1 ponto. Use número negativo para subtrair.</p>
+        <input type="number" className="w-full h-10 border rounded px-3" placeholder="Número de placas do projeto" value={pontosModal._placas} onChange={e => setPontosModal({ ...pontosModal, _placas: e.target.value })} />
+        <textarea className="w-full border rounded px-3 py-2" rows={3} placeholder="Observação (ex: Projeto fechado - Carlos Souza - 14 placas - 02/05/2026)" value={pontosModal._motivo} onChange={e => setPontosModal({ ...pontosModal, _motivo: e.target.value })} />
+        <div className="text-sm">Pontos a creditar: <b>{Number(pontosModal._placas || 0)}</b></div>
         <button onClick={addPontos} className="w-full h-10 bg-[#1A3C5E] text-white rounded">Confirmar</button>
+      </Modal>}
+
+      {detalhe && <Modal title={`Histórico — ${detalhe.indicador?.nome || ""}`} onClose={() => setDetalhe(null)}>
+        {detalhe.loading ? <Loader2 className="animate-spin" /> : (
+          <div className="space-y-4 max-h-[60vh] overflow-y-auto text-sm">
+            <div>
+              <div className="font-bold text-[#1A3C5E] mb-1">Indicações ({detalhe.indicacoes?.length || 0})</div>
+              {(detalhe.indicacoes || []).map((i: any) => (
+                <div key={i.id} className="border-b py-2 flex justify-between">
+                  <div><div>{i.nome_indicado || "—"} · {i.cidade || "—"}</div><div className="text-xs text-gray-500">{new Date(i.criado_em).toLocaleDateString("pt-BR")} · {i.status}</div></div>
+                  <div className="text-right"><div className="font-bold">{i.pontos_creditados || 0} pts</div><div className="text-xs text-gray-500">{i.num_placas || 0} placas</div></div>
+                </div>
+              ))}
+            </div>
+            <div>
+              <div className="font-bold text-[#1A3C5E] mb-1">Resgates ({detalhe.resgates?.length || 0})</div>
+              {(detalhe.resgates || []).map((r: any) => (
+                <div key={r.id} className="border-b py-2 flex justify-between">
+                  <div>{r.energia_premios?.nome || "—"}<div className="text-xs text-gray-500">{new Date(r.solicitado_em).toLocaleDateString("pt-BR")} · {r.status}</div></div>
+                  <div className="font-bold">-{r.pontos_utilizados} pts</div>
+                </div>
+              ))}
+            </div>
+            <div>
+              <div className="font-bold text-[#1A3C5E] mb-1">Log de pontos</div>
+              {(detalhe.log || []).map((l: any) => (
+                <div key={l.id} className="border-b py-2 flex justify-between">
+                  <div className="text-xs">{l.motivo || "—"}<div className="text-gray-500">{new Date(l.criado_em).toLocaleDateString("pt-BR")}</div></div>
+                  <div className={`font-bold ${l.pontos >= 0 ? "text-green-600" : "text-red-600"}`}>{l.pontos > 0 ? "+" : ""}{l.pontos}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </Modal>}
     </EnergiaAdminLayout>
   );
