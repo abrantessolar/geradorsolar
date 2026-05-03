@@ -282,6 +282,10 @@ serve(async (req) => {
           } catch (e) { console.error("Webhook Kommo confirm failed", e); }
         }
         return json({ ok: true });
+
+      if (action === "cliente_marcar_onboarding_visto") {
+        await supabase.from("energia_indicadores").update({ onboarding_visto: true }).eq("id", cliente.id);
+        return json({ ok: true });
       }
     }
     if (action === "login_admin") {

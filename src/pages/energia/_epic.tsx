@@ -58,43 +58,76 @@ export function EpicParticles({ count = 18 }: { count?: number }) {
   );
 }
 
-// Botão flutuante de música
-const TRACK = "https://cdn.pixabay.com/audio/2022/10/30/audio_347111d654.mp3"; // epic orchestral free
+// Botão flutuante de música de fundo épica
+const TRACK = "https://cdn.pixabay.com/audio/2022/03/15/audio_8cb749ec9e.mp3";
+const TRACK_FALLBACK = "https://cdn.pixabay.com/audio/2023/06/06/audio_3741b40cb1.mp3";
+const TARGET_VOLUME = 0.25;
 export function EpicMusicToggle() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const [on, setOn] = useState<boolean>(() => localStorage.getItem("ev_music") === "1");
+  const [on, setOn] = useState<boolean>(() => localStorage.getItem("energia_musica_ativa") !== "false");
+  const fadeRef = useRef<number | null>(null);
+
+  const fade = (to: number, done?: () => void) => {
+    const a = audioRef.current; if (!a) return;
+    if (fadeRef.current) clearInterval(fadeRef.current);
+    const step = (to - a.volume) / 12;
+    fadeRef.current = window.setInterval(() => {
+      const next = a.volume + step;
+      if ((step > 0 && next >= to) || (step < 0 && next <= to) || step === 0) {
+        a.volume = to;
+        if (fadeRef.current) clearInterval(fadeRef.current);
+        fadeRef.current = null;
+        done?.();
+      } else {
+        a.volume = Math.max(0, Math.min(1, next));
+      }
+    }, 40);
+  };
 
   useEffect(() => {
     const a = new Audio(TRACK);
-    a.loop = true; a.volume = 0;
+    a.loop = true; a.volume = 0; a.preload = "auto";
+    a.addEventListener("error", () => { if (a.src !== TRACK_FALLBACK) a.src = TRACK_FALLBACK; });
     audioRef.current = a;
-    return () => { a.pause(); audioRef.current = null; };
+    if (on) a.play().catch(() => {/* autoplay bloqueado */});
+    const onFirstClick = () => {
+      if (on && a.paused) a.play().catch(() => {});
+      if (on) fade(TARGET_VOLUME);
+      window.removeEventListener("click", onFirstClick);
+      window.removeEventListener("touchstart", onFirstClick);
+    };
+    window.addEventListener("click", onFirstClick);
+    window.addEventListener("touchstart", onFirstClick);
+    const onVis = () => {
+      if (!audioRef.current) return;
+      if (document.hidden) audioRef.current.pause();
+      else if (on) audioRef.current.play().catch(() => {});
+    };
+    document.addEventListener("visibilitychange", onVis);
+    return () => {
+      window.removeEventListener("click", onFirstClick);
+      window.removeEventListener("touchstart", onFirstClick);
+      document.removeEventListener("visibilitychange", onVis);
+      a.pause(); audioRef.current = null;
+      if (fadeRef.current) clearInterval(fadeRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  useEffect(() => {
+  const toggle = () => {
+    const next = !on; setOn(next); localStorage.setItem("energia_musica_ativa", next ? "true" : "false");
     const a = audioRef.current; if (!a) return;
-    if (on) {
-      a.play().catch(() => {});
-      let v = 0; const target = 0.3;
-      const t = setInterval(() => { v = Math.min(target, v + 0.03); a.volume = v; if (v >= target) clearInterval(t); }, 80);
-      return () => clearInterval(t);
-    } else {
-      let v = a.volume; const t = setInterval(() => {
-        v = Math.max(0, v - 0.05); a.volume = v;
-        if (v <= 0) { a.pause(); clearInterval(t); }
-      }, 60);
-      return () => clearInterval(t);
-    }
-  }, [on]);
+    if (next) { a.play().catch(() => {}); fade(TARGET_VOLUME); }
+    else fade(0, () => a.pause());
+  };
 
-  const toggle = () => { const v = !on; setOn(v); localStorage.setItem("ev_music", v ? "1" : "0"); };
   return (
     <button onClick={toggle}
       className="flex items-center justify-center text-lg"
       style={{
-        position: "fixed", bottom: 80, left: 16, zIndex: 50,
+        position: "fixed", bottom: 88, left: 16, zIndex: 50,
         width: 48, height: 48, borderRadius: "50%",
-        background: "rgba(30,18,0,0.9)", border: "1px solid #C17F24",
+        background: "rgba(20,12,0,0.9)", border: "1px solid #C17F24",
         boxShadow: "0 4px 16px rgba(0,0,0,0.5), 0 0 12px rgba(245,166,35,0.3)",
         color: "#F5A623",
       }}

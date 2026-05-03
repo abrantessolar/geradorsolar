@@ -5,6 +5,7 @@ import EnergiaLayout from "./EnergiaLayout";
 import { useEnergia } from "@/contexts/EnergiaContext";
 import { evCall, evMaskPhone } from "@/lib/energiaApi";
 import { EPIC_STAGES, epicMeta, epicName, epicMetaByName, EpicLevelUpOverlay } from "./_epic";
+import EnergiaOnboarding from "./EnergiaOnboarding";
 
 const CIDADES = ["Três Lagoas", "Água Clara", "Selvíria", "Bataguassu", "Outras"];
 
@@ -63,6 +64,7 @@ export default function EnergiaDashboard() {
   const enviandoRef = useRef(false);
   const [resultado, setResultado] = useState<{ whatsapp_url: string } | null>(null);
   const [levelUp, setLevelUp] = useState<string | null>(null);
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   const refetch = () => {
     if (!indicador) return;
@@ -73,6 +75,7 @@ export default function EnergiaDashboard() {
         const cur = epicName(d?.indicador?.etapa_atual);
         if (prev && prev !== cur) setLevelUp(cur);
         sessionStorage.setItem("ev_last_etapa", cur);
+        if (d?.indicador && d.indicador.onboarding_visto === false) setShowOnboarding(true);
       })
       .catch(console.error).finally(() => setLoading(false));
   };
@@ -108,30 +111,37 @@ export default function EnergiaDashboard() {
   return (
     <EnergiaLayout>
       {levelUp && <EpicLevelUpOverlay etapa={levelUp} onClose={() => setLevelUp(null)} />}
+      {showOnboarding && (
+        <EnergiaOnboarding
+          nome={ind.nome.split(" ")[0]}
+          onClose={() => setShowOnboarding(false)}
+          onIndicar={() => { setResultado(null); setForm({ nome: "", telefone: "", cidade: "Três Lagoas", observacao: "" }); setShowIndicar(true); }}
+        />
+      )}
 
       <div className="space-y-6">
         {/* Header do player */}
-        <div className="ev-card ev-card-glow p-5 ev-enter flex items-center gap-4">
-          <div className="ev-frame-relic w-16 h-16 flex items-center justify-center ev-pulse-ring">
-            <div className="w-full h-full rounded-full flex items-center justify-center text-2xl"
+        <div className="ev-card ev-card-glow p-3 sm:p-5 ev-enter flex items-center gap-3 sm:gap-4">
+          <div className="ev-frame-relic w-12 h-12 sm:w-16 sm:h-16 flex-shrink-0 flex items-center justify-center ev-pulse-ring">
+            <div className="w-full h-full rounded-full flex items-center justify-center text-xl sm:text-2xl"
               style={{ background: "#1A0F00" }}>{meta.icon}</div>
           </div>
           <div className="flex-1 min-w-0">
-            <h1 className="ev-font-epic text-xl font-black ev-text-glow truncate" style={{ color: "#F5E6C8" }}>
+            <h1 className="ev-font-epic text-base sm:text-xl font-black ev-text-glow truncate" style={{ color: "#F5E6C8" }}>
               Olá, {ind.nome.split(" ")[0]}
             </h1>
-            <p className="text-sm ev-font-epic" style={{ color: "#F5A623", textShadow: `0 0 10px ${meta.aura}` }}>
+            <p className="text-xs sm:text-sm ev-font-epic truncate" style={{ color: "#F5A623", textShadow: `0 0 10px ${meta.aura}` }}>
               {meta.title}
             </p>
           </div>
-          <div className="text-right">
-            <div className="text-3xl font-black ev-text-glow ev-sparkle" style={{ color: "#F5A623" }}>{ind.pontos_acumulados}</div>
+          <div className="text-right flex-shrink-0">
+            <div className="text-2xl sm:text-3xl font-black ev-text-glow ev-sparkle" style={{ color: "#F5A623" }}>{ind.pontos_acumulados}</div>
             <div className="text-[10px] ev-font-epic uppercase tracking-widest" style={{ color: "#A08060" }}>XP</div>
           </div>
         </div>
 
-        {/* Gauges */}
-        <div className="grid grid-cols-3 gap-3">
+        {/* Gauges - mobile: 1 coluna, sm+: 3 colunas */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <Gauge value={stats.fechadas} max={Math.max(10, stats.fechadas + 5)} label="Vitórias" color="#F5A623" />
           <Gauge value={stats.placas || 0} max={Math.max(20, (stats.placas || 0) + 10)} label="Placas indicadas" color="#E8651A" />
           <Gauge value={ind.pontos_acumulados} max={progressoMax} label={proximoPremio ? "Próx. relíquia" : "XP total"} color="#00C2FF" />

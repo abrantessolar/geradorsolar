@@ -41,7 +41,7 @@ export default function EnergiaPremios() {
       )}
       {loading ? <Loader2 className="w-6 h-6 animate-spin mx-auto" style={{ color: "#F5A623" }} /> : (
         <>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {(data?.premios || []).map((p: any, idx: number) => {
               const podeResgatar = data.indicador.pontos_acumulados >= p.pontos_necessarios;
               const jaResgatado = (data?.resgates || []).some((r: any) => r.premio_id === p.id);

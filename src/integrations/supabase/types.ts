@@ -577,6 +577,7 @@ export type Database = {
           etapa_atual: string | null
           id: string
           nome: string
+          onboarding_visto: boolean
           pontos_acumulados: number
           telefone: string | null
           ultimo_acesso: string | null
@@ -593,6 +594,7 @@ export type Database = {
           etapa_atual?: string | null
           id?: string
           nome: string
+          onboarding_visto?: boolean
           pontos_acumulados?: number
           telefone?: string | null
           ultimo_acesso?: string | null
@@ -609,6 +611,7 @@ export type Database = {
           etapa_atual?: string | null
           id?: string
           nome?: string
+          onboarding_visto?: boolean
           pontos_acumulados?: number
           telefone?: string | null
           ultimo_acesso?: string | null
