@@ -208,7 +208,7 @@ serve(async (req) => {
           supabase.from("energia_indicacoes").select("*").eq("indicador_id", cliente.id).order("criado_em", { ascending: false }),
           supabase.from("energia_resgates").select("*, energia_premios(nome, imagem_url)").eq("indicador_id", cliente.id).order("solicitado_em", { ascending: false }),
           rankingPublico
-            ? supabase.from("energia_indicadores").select("id, nome, pontos_acumulados, etapa_atual").eq("aparece_ranking", true).order("pontos_acumulados", { ascending: false }).limit(10)
+            ? supabase.from("energia_indicadores").select("id, nome, pontos_historicos, pontos_acumulados, etapa_atual").eq("aparece_ranking", true).order("pontos_historicos", { ascending: false }).limit(10)
             : Promise.resolve({ data: [] as any[] }),
         ]);
         const ranking = (rankingRes as any).data || [];
