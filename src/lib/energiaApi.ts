@@ -10,9 +10,9 @@ export async function evCall<T = any>(action: string, payload: Record<string, an
     headers,
   });
   if (error) {
-    // edge fn returns a Response with status ≠ 2xx — extract JSON message
     const ctx: any = (error as any).context;
     let msg = error.message;
+    const status = ctx?.status;
     if (ctx?.body && typeof ctx.body === "object" && ctx.body.error) msg = ctx.body.error;
     try {
       if (ctx && typeof ctx.text === "function") {
@@ -20,6 +20,12 @@ export async function evCall<T = any>(action: string, payload: Record<string, an
         try { const j = JSON.parse(txt); if (j.error) msg = j.error; } catch {}
       }
     } catch {}
+    if (adminToken && (status === 401 || /não autorizado/i.test(msg))) {
+      evClearAdminToken();
+      if (typeof window !== "undefined" && !window.location.pathname.endsWith("/energia/admin/login")) {
+        window.location.href = "/energia/admin/login";
+      }
+    }
     throw new Error(msg);
   }
   if (data && (data as any).error) throw new Error((data as any).error);
