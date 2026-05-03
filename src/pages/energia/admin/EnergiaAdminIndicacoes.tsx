@@ -45,7 +45,10 @@ export default function EnergiaAdminIndicacoes() {
             <thead className="bg-gray-50">
               <tr>
                 <th className="text-left p-3">Indicador</th><th className="text-left p-3">Indicado</th>
-                <th className="text-left p-3">Data</th><th className="text-right p-3">Valor</th>
+                <th className="text-left p-3">Telefone</th>
+                <th className="text-left p-3">Cidade</th>
+                <th className="text-left p-3">Data</th>
+                <th className="text-right p-3">Placas</th>
                 <th className="text-left p-3">Status</th><th className="text-right p-3">Pontos</th>
               </tr>
             </thead>
@@ -54,8 +57,10 @@ export default function EnergiaAdminIndicacoes() {
                 <tr key={i.id} className="border-t">
                   <td className="p-3">{indMap[i.indicador_id] || "—"}</td>
                   <td className="p-3">{i.nome_indicado || "—"}</td>
+                  <td className="p-3">{i.telefone_indicado || "—"}</td>
+                  <td className="p-3">{i.cidade || "—"}</td>
                   <td className="p-3">{new Date(i.criado_em).toLocaleDateString("pt-BR")}</td>
-                  <td className="p-3 text-right">R$ {Number(i.valor_negocio||0).toLocaleString("pt-BR")}</td>
+                  <td className="p-3 text-right">{i.num_placas || 0}</td>
                   <td className="p-3">
                     <select value={i.status} onChange={e => updateStatus(i.id, e.target.value)} className="border rounded px-2 h-8">
                       <option value="enviada">Enviada</option>
