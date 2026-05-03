@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Music, VolumeX } from "lucide-react";
+import { evCall } from "@/lib/energiaApi";
 
 // Mapeia etapas (antigas ou novas) para metadados épicos
 export const EPIC_STAGES: { key: string; title: string; icon: string; aura: string }[] = [
