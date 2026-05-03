@@ -507,39 +507,48 @@ export type Database = {
       }
       energia_indicacoes: {
         Row: {
+          cidade: string | null
           criado_em: string
           email_indicado: string | null
           fechada_em: string | null
           id: string
           indicador_id: string
           nome_indicado: string | null
+          num_placas: number | null
           observacao: string | null
+          observacao_indicador: string | null
           pontos_creditados: number
           status: string
           telefone_indicado: string | null
           valor_negocio: number | null
         }
         Insert: {
+          cidade?: string | null
           criado_em?: string
           email_indicado?: string | null
           fechada_em?: string | null
           id?: string
           indicador_id: string
           nome_indicado?: string | null
+          num_placas?: number | null
           observacao?: string | null
+          observacao_indicador?: string | null
           pontos_creditados?: number
           status?: string
           telefone_indicado?: string | null
           valor_negocio?: number | null
         }
         Update: {
+          cidade?: string | null
           criado_em?: string
           email_indicado?: string | null
           fechada_em?: string | null
           id?: string
           indicador_id?: string
           nome_indicado?: string | null
+          num_placas?: number | null
           observacao?: string | null
+          observacao_indicador?: string | null
           pontos_creditados?: number
           status?: string
           telefone_indicado?: string | null
@@ -558,6 +567,7 @@ export type Database = {
       energia_indicadores: {
         Row: {
           aparece_ranking: boolean
+          cidade: string | null
           codigo_link: string
           cpf: string
           criado_em: string
@@ -573,6 +583,7 @@ export type Database = {
         }
         Insert: {
           aparece_ranking?: boolean
+          cidade?: string | null
           codigo_link?: string
           cpf: string
           criado_em?: string
@@ -588,6 +599,7 @@ export type Database = {
         }
         Update: {
           aparece_ranking?: boolean
+          cidade?: string | null
           codigo_link?: string
           cpf?: string
           criado_em?: string
