@@ -5,6 +5,7 @@ import EnergiaLayout from "./EnergiaLayout";
 import { useEnergia } from "@/contexts/EnergiaContext";
 import { evCall, evMaskPhone } from "@/lib/energiaApi";
 import { EPIC_STAGES, epicMeta, epicName, epicMetaByName, EpicLevelUpOverlay } from "./_epic";
+import EnergiaOnboarding from "./EnergiaOnboarding";
 
 const CIDADES = ["Três Lagoas", "Água Clara", "Selvíria", "Bataguassu", "Outras"];
 
