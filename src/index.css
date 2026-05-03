@@ -191,6 +191,7 @@ body.pdf-capturing .pdf-force-show {
   100% { transform: scale(.95); box-shadow: 0 0 0 0 rgba(245,166,35,0); }
 }
 
+@keyframes ev-icon-pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.08); } }
 .ev-enter { animation: ev-epic-entrance .6s ease-out backwards; }
 .ev-pulse { animation: ev-conquest-pulse 2.4s ease-in-out infinite; }
 .ev-pulse-ring { animation: ev-pulse-ring 2.2s ease-out infinite; }
