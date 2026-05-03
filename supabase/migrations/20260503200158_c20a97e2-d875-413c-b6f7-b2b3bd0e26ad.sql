@@ -1,0 +1,1 @@
+ALTER TABLE public.energia_indicadores ADD COLUMN IF NOT EXISTS onboarding_visto boolean NOT NULL DEFAULT false;
