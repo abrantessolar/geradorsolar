@@ -137,7 +137,7 @@ export default function EnergiaDashboard() {
             </p>
           </div>
           <div className="text-right flex-shrink-0">
-            <div className="text-2xl sm:text-3xl font-black ev-text-glow ev-sparkle" style={{ color: "#F5A623" }}>{ind.pontos_acumulados}</div>
+            <div className="text-2xl sm:text-3xl font-black ev-text-glow ev-sparkle" style={{ color: "#F5A623" }}>{pHist}</div>
             <div className="text-[10px] ev-font-epic uppercase tracking-widest" style={{ color: "#A08060" }}>XP</div>
           </div>
         </div>
@@ -146,7 +146,17 @@ export default function EnergiaDashboard() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <Gauge value={stats.fechadas} max={Math.max(10, stats.fechadas + 5)} label="Vitórias" color="#F5A623" />
           <Gauge value={stats.placas || 0} max={Math.max(20, (stats.placas || 0) + 10)} label="Placas indicadas" color="#E8651A" />
-          <Gauge value={ind.pontos_acumulados} max={progressoMax} label={proximoPremio ? "Próx. relíquia" : "XP total"} color="#00C2FF" />
+          <Gauge value={pDisp} max={progressoMax} label={proximoPremio ? "Próx. relíquia" : "Saldo"} color="#00C2FF" />
+        </div>
+
+        {/* Indicadores de pontos H/D */}
+        <div className="flex justify-center gap-4 -mt-2 text-xs ev-font-epic">
+          <div className="flex items-center gap-1.5" style={{ color: "#F5A623" }}>
+            <span>⚡</span><b>{pHist}</b><span style={{ color: "#A08060" }}>pts históricos</span>
+          </div>
+          <div className="flex items-center gap-1.5" style={{ color: "#E8651A" }}>
+            <span>🎁</span><b>{pDisp}</b><span style={{ color: "#A08060" }}>pts disponíveis</span>
+          </div>
         </div>
 
         {/* Trilha sinuosa */}
