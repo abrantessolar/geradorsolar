@@ -4,7 +4,7 @@ import { Loader2, Copy, Share2, X, Lock, Crown } from "lucide-react";
 import EnergiaLayout from "./EnergiaLayout";
 import { useEnergia } from "@/contexts/EnergiaContext";
 import { evCall, evMaskPhone } from "@/lib/energiaApi";
-import { EPIC_STAGES, epicMeta, epicName, EpicLevelUpOverlay } from "./_epic";
+import { EPIC_STAGES, epicMeta, epicName, epicMetaByName, EpicLevelUpOverlay } from "./_epic";
 
 const CIDADES = ["Três Lagoas", "Água Clara", "Selvíria", "Bataguassu", "Outras"];
 
