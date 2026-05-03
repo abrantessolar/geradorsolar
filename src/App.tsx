@@ -19,6 +19,23 @@ import ClientesPage from "@/pages/ClientesPage";
 import UnauthorizedPage from "@/pages/UnauthorizedPage";
 import LeadNotification from "@/components/LeadNotification";
 import NotFound from "@/pages/NotFound";
+import { EnergiaProvider } from "@/contexts/EnergiaContext";
+import EnergiaLogin from "@/pages/energia/EnergiaLogin";
+import EnergiaDashboard from "@/pages/energia/EnergiaDashboard";
+import EnergiaTrilha from "@/pages/energia/EnergiaTrilha";
+import EnergiaPremios from "@/pages/energia/EnergiaPremios";
+import EnergiaIndicacoes from "@/pages/energia/EnergiaIndicacoes";
+import EnergiaRanking from "@/pages/energia/EnergiaRanking";
+import EnergiaCaptarIndicacao from "@/pages/energia/EnergiaCaptarIndicacao";
+import EnergiaAdminLogin from "@/pages/energia/admin/EnergiaAdminLogin";
+import EnergiaAdminVisaoGeral from "@/pages/energia/admin/EnergiaAdminVisaoGeral";
+import EnergiaAdminPremios from "@/pages/energia/admin/EnergiaAdminPremios";
+import EnergiaAdminTrilha from "@/pages/energia/admin/EnergiaAdminTrilha";
+import EnergiaAdminPontuacao from "@/pages/energia/admin/EnergiaAdminPontuacao";
+import EnergiaAdminClientes from "@/pages/energia/admin/EnergiaAdminClientes";
+import EnergiaAdminIndicacoes from "@/pages/energia/admin/EnergiaAdminIndicacoes";
+import EnergiaAdminResgates from "@/pages/energia/admin/EnergiaAdminResgates";
+import EnergiaAdminConfiguracoes from "@/pages/energia/admin/EnergiaAdminConfiguracoes";
 
 const queryClient = new QueryClient();
 
