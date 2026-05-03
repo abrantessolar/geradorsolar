@@ -28,10 +28,11 @@ export default function EnergiaAdminPremios() {
   };
 
   const upload = async (file: File): Promise<string> => {
-    const path = `${Date.now()}_${file.name}`;
-    const { error } = await supabase.storage.from("energia-premios").upload(path, file, { upsert: true });
-    if (error) throw error;
-    return supabase.storage.from("energia-premios").getPublicUrl(path).data.publicUrl;
+    const content_base64 = await fileToBase64(file);
+    const r = await evCall<{ url: string }>("admin_upload_premio_image", {
+      filename: file.name, content_base64, content_type: file.type,
+    }, evGetAdminToken());
+    return r.url;
   };
 
   return (
