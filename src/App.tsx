@@ -21,6 +21,7 @@ import LeadNotification from "@/components/LeadNotification";
 import NotFound from "@/pages/NotFound";
 import { EnergiaProvider } from "@/contexts/EnergiaContext";
 import EnergiaLogin from "@/pages/energia/EnergiaLogin";
+import EnergiaCadastro from "@/pages/energia/EnergiaCadastro";
 import EnergiaDashboard from "@/pages/energia/EnergiaDashboard";
 import EnergiaTrilha from "@/pages/energia/EnergiaTrilha";
 import EnergiaPremios from "@/pages/energia/EnergiaPremios";
