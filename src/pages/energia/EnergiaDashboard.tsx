@@ -297,7 +297,7 @@ export default function EnergiaDashboard() {
                       finally { setEnviando(false); enviandoRef.current = false; }
                     }}
                     className="ev-btn-primary w-full h-12 flex items-center justify-center">
-                    {enviando ? "Enviando..." : "REGISTRAR MISSÃO"}
+                    {enviando ? "Enviando..." : "REGISTRAR INDICAÇÃO"}
                   </button>
                 </>
               )}
