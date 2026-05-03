@@ -26,7 +26,9 @@ export default function EnergiaAdminIndicacoes() {
     const q = search.toLowerCase();
     return list.filter(i =>
       (statusFilter === "todos" || i.status === statusFilter) &&
-      (!q || (i.nome_indicado || "").toLowerCase().includes(q) || (indMap[i.indicador_id] || "").toLowerCase().includes(q))
+      (!q || (i.nome_indicado || "").toLowerCase().includes(q)
+        || (indMap[i.indicador_id] || "").toLowerCase().includes(q)
+        || (i.cidade || "").toLowerCase().includes(q))
     );
   }, [list, statusFilter, search, indMap]);
 
@@ -51,7 +53,7 @@ export default function EnergiaAdminIndicacoes() {
       <div className="flex flex-col md:flex-row gap-3 mb-4">
         <div className="relative flex-1 max-w-md">
           <Search className="w-4 h-4 absolute left-3 top-3 text-gray-400" />
-          <input className="w-full h-10 border rounded pl-9 pr-3" placeholder="Buscar indicado ou indicador..." value={search} onChange={e => setSearch(e.target.value)} />
+          <input className="w-full h-10 border rounded pl-9 pr-3" placeholder="Buscar indicado, indicador ou cidade..." value={search} onChange={e => setSearch(e.target.value)} />
         </div>
         <select className="h-10 border rounded px-3" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
           <option value="todos">Todos status</option>

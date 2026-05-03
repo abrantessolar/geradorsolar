@@ -5,13 +5,14 @@ import { Loader2 } from "lucide-react";
 
 const FIELDS = [
   { key: "webhook_kommo_url", label: "URL Webhook Kommo", type: "text" },
-  { key: "mensagem_whatsapp_indicado", label: "Mensagem WhatsApp para o indicado (use {indicador})", type: "textarea" },
+  { key: "mensagem_whatsapp_indicado", label: "Mensagem WhatsApp para o indicado (use {indicador} e {indicado})", type: "textarea" },
   { key: "mensagem_resgate", label: "Mensagem ao solicitar resgate", type: "textarea" },
   { key: "texto_link_indicacao", label: "Texto do link de indicação", type: "textarea" },
   { key: "modo_pontuacao", label: "Modo de pontuação (placas | valor)", type: "text" },
   { key: "pontos_por_placa", label: "Pontos por placa", type: "text" },
   { key: "logo_url", label: "URL do logo", type: "text" },
   { key: "nome_plataforma", label: "Nome da plataforma", type: "text" },
+  { key: "ranking_publico", label: "Exibir ranking publicamente", type: "toggle" },
 ];
 
 export default function EnergiaAdminConfiguracoes() {
@@ -40,6 +41,11 @@ export default function EnergiaAdminConfiguracoes() {
             <label className="block text-sm font-medium mb-1">{f.label}</label>
             {f.type === "textarea" ? (
               <textarea className="w-full border rounded p-2" rows={3} value={cfg[f.key] || ""} onChange={e => setCfg({ ...cfg, [f.key]: e.target.value })} />
+            ) : f.type === "toggle" ? (
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" checked={cfg[f.key] !== false} onChange={e => setCfg({ ...cfg, [f.key]: e.target.checked })} />
+                <span className="text-sm">{cfg[f.key] !== false ? "Ativado" : "Desativado"}</span>
+              </label>
             ) : (
               <input className="w-full h-10 border rounded px-3" value={cfg[f.key] || ""} onChange={e => setCfg({ ...cfg, [f.key]: e.target.value })} />
             )}

@@ -192,17 +192,21 @@ serve(async (req) => {
       if (!cliente) return err("Sessão inválida", 401);
 
       if (action === "cliente_dashboard") {
-        const [{ data: ind }, { data: etapas }, { data: premios }, { data: indicacoes }, { data: resgates }, { data: ranking }] = await Promise.all([
+        const rankingPublico = (await getConfig("ranking_publico")) !== false;
+        const [{ data: ind }, { data: etapas }, { data: premios }, { data: indicacoes }, { data: resgates }, rankingRes] = await Promise.all([
           supabase.from("energia_indicadores").select("*").eq("id", cliente.id).maybeSingle(),
           supabase.from("energia_etapas").select("*").order("ordem"),
           supabase.from("energia_premios").select("*").eq("ativo", true).order("pontos_necessarios"),
           supabase.from("energia_indicacoes").select("*").eq("indicador_id", cliente.id).order("criado_em", { ascending: false }),
           supabase.from("energia_resgates").select("*, energia_premios(nome, imagem_url)").eq("indicador_id", cliente.id).order("solicitado_em", { ascending: false }),
-          supabase.from("energia_indicadores").select("id, nome, pontos_acumulados, etapa_atual").eq("aparece_ranking", true).order("pontos_acumulados", { ascending: false }).limit(10),
+          rankingPublico
+            ? supabase.from("energia_indicadores").select("id, nome, pontos_acumulados, etapa_atual").eq("aparece_ranking", true).order("pontos_acumulados", { ascending: false }).limit(10)
+            : Promise.resolve({ data: [] as any[] }),
         ]);
+        const ranking = (rankingRes as any).data || [];
         const fechadas = (indicacoes || []).filter((i: any) => i.status === "fechada");
         const volume = fechadas.reduce((acc: number, i: any) => acc + Number(i.valor_negocio || 0), 0);
-        return json({ indicador: ind, etapas, premios, indicacoes, resgates, ranking, stats: { fechadas: fechadas.length, volume } });
+        return json({ indicador: ind, etapas, premios, indicacoes, resgates, ranking, ranking_publico: rankingPublico, stats: { fechadas: fechadas.length, volume } });
       }
 
       if (action === "cliente_resgatar") {
@@ -243,8 +247,9 @@ serve(async (req) => {
           await fireKommoNew(indFull, novaInd);
         }
         const tpl = (await getConfig("mensagem_whatsapp_indicado")) as string | undefined;
-        const msg = (tpl || "Oi! Você foi indicado(a) por {indicador} para conhecer a Três Lagoas Solar.")
-          .replace("{indicador}", indFull?.nome || "");
+        const msg = (tpl || "Oi {indicado}! {indicador} está te indicando para conhecer a Três Lagoas Solar.")
+          .replace(/\{indicador\}/g, indFull?.nome || "")
+          .replace(/\{indicado\}/g, nome || "");
         const wa = `https://wa.me/55${telDigits}?text=${encodeURIComponent(msg)}`;
         return json({ ok: true, indicacao: novaInd, whatsapp_url: wa });
       }
@@ -358,7 +363,10 @@ serve(async (req) => {
           let pontos = 0;
           if (modo === "placas") {
             const ppp = Number(await getConfig("pontos_por_placa") || 1);
-            pontos = Math.round(placas * ppp * mult);
+            const bonusMinPlacas = Number(await getConfig("bonus_placas_minimo") || 0);
+            const bonusPlacasPts = Number(await getConfig("bonus_placas_pontos") || 0);
+            const bonus = bonusMinPlacas > 0 && placas >= bonusMinPlacas ? bonusPlacasPts : 0;
+            pontos = Math.round((placas * ppp + bonus) * mult);
           } else {
             const pontosBase = Number(await getConfig("pontos_padrao_indicacao") || 100);
             const bonusMin = Number(await getConfig("bonus_valor_minimo") || 0);

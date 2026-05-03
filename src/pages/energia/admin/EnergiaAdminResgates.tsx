@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import EnergiaAdminLayout from "./EnergiaAdminLayout";
 import { evCall, evGetAdminToken } from "@/lib/energiaApi";
 import { Loader2, Check } from "lucide-react";
@@ -8,6 +8,8 @@ export default function EnergiaAdminResgates() {
   const [premios, setPremios] = useState<any[]>([]);
   const [indicadores, setIndicadores] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [de, setDe] = useState("");
+  const [ate, setAte] = useState("");
 
   const load = async () => {
     setLoading(true);
@@ -29,7 +31,16 @@ export default function EnergiaAdminResgates() {
   };
 
   const pendentes = list.filter(r => r.status === "pendente");
-  const entregues = list.filter(r => r.status === "entregue");
+  const entregues = useMemo(() => {
+    return list.filter(r => {
+      if (r.status !== "entregue") return false;
+      if (!r.entregue_em) return true;
+      const d = new Date(r.entregue_em);
+      if (de && d < new Date(de + "T00:00:00")) return false;
+      if (ate && d > new Date(ate + "T23:59:59")) return false;
+      return true;
+    });
+  }, [list, de, ate]);
 
   return (
     <EnergiaAdminLayout>
@@ -55,7 +66,14 @@ export default function EnergiaAdminResgates() {
             </table>
           </div>
 
-          <h2 className="font-bold mb-2">Histórico</h2>
+          <div className="flex flex-wrap gap-3 items-end mb-2">
+            <h2 className="font-bold">Histórico</h2>
+            <div className="flex gap-2 ml-auto items-end text-xs">
+              <label className="flex flex-col">De<input type="date" className="h-9 border rounded px-2" value={de} onChange={e => setDe(e.target.value)} /></label>
+              <label className="flex flex-col">Até<input type="date" className="h-9 border rounded px-2" value={ate} onChange={e => setAte(e.target.value)} /></label>
+              {(de || ate) && <button onClick={() => { setDe(""); setAte(""); }} className="h-9 px-3 border rounded">Limpar</button>}
+            </div>
+          </div>
           <div className="bg-white rounded-xl shadow-sm overflow-hidden">
             <table className="w-full text-sm">
               <thead className="bg-gray-50"><tr><th className="text-left p-3">Cliente</th><th className="text-left p-3">Prêmio</th><th className="text-left p-3">Entregue em</th></tr></thead>

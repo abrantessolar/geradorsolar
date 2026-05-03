@@ -19,11 +19,16 @@ export default function EnergiaRanking() {
 
   const ranking = data?.ranking || [];
   const minhaPos = ranking.findIndex((r: any) => r.id === indicador.id) + 1;
+  const bloqueado = data && data.ranking_publico === false;
 
   return (
     <EnergiaLayout>
       <h1 className="text-2xl font-bold text-[#1A3C5E] mb-4 flex items-center gap-2"><Trophy className="text-[#F5A623]" /> Ranking do Mês</h1>
-      {loading ? <Loader2 className="w-6 h-6 animate-spin mx-auto text-[#E8651A]" /> : (
+      {loading ? <Loader2 className="w-6 h-6 animate-spin mx-auto text-[#E8651A]" /> : bloqueado ? (
+        <div className="bg-white rounded-xl p-6 text-center text-gray-500">
+          O ranking público está desativado no momento.
+        </div>
+      ) : (
         <div className="space-y-2">
           {ranking.map((r: any, idx: number) => {
             const ehMeu = r.id === indicador.id;

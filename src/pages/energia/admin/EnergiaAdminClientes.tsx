@@ -5,18 +5,29 @@ import { Loader2, Plus, Search } from "lucide-react";
 
 export default function EnergiaAdminClientes() {
   const [list, setList] = useState<any[]>([]);
+  const [indicacoes, setIndicacoes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [adding, setAdding] = useState<any>(null);
   const [pontosModal, setPontosModal] = useState<any>(null);
   const [detalhe, setDetalhe] = useState<any>(null);
 
-  const load = () => {
+  const load = async () => {
     setLoading(true);
-    evCall<{ data: any[] }>("admin_list", { tabela: "energia_indicadores" }, evGetAdminToken())
-      .then(r => setList(r.data || [])).finally(() => setLoading(false));
+    const tk = evGetAdminToken();
+    const [a, b] = await Promise.all([
+      evCall<{ data: any[] }>("admin_list", { tabela: "energia_indicadores" }, tk),
+      evCall<{ data: any[] }>("admin_list", { tabela: "energia_indicacoes", select: "id,indicador_id" }, tk),
+    ]);
+    setList(a.data || []); setIndicacoes(b.data || []); setLoading(false);
   };
-  useEffect(load, []);
+  useEffect(() => { load(); }, []);
+
+  const indCount = useMemo(() => {
+    const m: Record<string, number> = {};
+    indicacoes.forEach(i => { m[i.indicador_id] = (m[i.indicador_id] || 0) + 1; });
+    return m;
+  }, [indicacoes]);
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
@@ -70,6 +81,8 @@ export default function EnergiaAdminClientes() {
               <tr>
                 <th className="text-left p-3">Nome</th><th className="text-left p-3">CPF</th>
                 <th className="text-left p-3">Etapa</th><th className="text-right p-3">Pontos</th>
+                <th className="text-right p-3">Indicações</th>
+                <th className="text-left p-3">Último acesso</th>
                 <th className="text-center p-3">Ranking</th><th className="p-3">Ações</th>
               </tr>
             </thead>
@@ -80,6 +93,8 @@ export default function EnergiaAdminClientes() {
                   <td className="p-3">{evMaskCpf(i.cpf || "")}</td>
                   <td className="p-3">{i.etapa_atual || "—"}</td>
                   <td className="p-3 text-right font-bold">{i.pontos_acumulados}</td>
+                  <td className="p-3 text-right">{indCount[i.id] || 0}</td>
+                  <td className="p-3 text-xs text-gray-600">{i.ultimo_acesso ? new Date(i.ultimo_acesso).toLocaleDateString("pt-BR") : "—"}</td>
                   <td className="p-3 text-center">
                     <input type="checkbox" checked={i.aparece_ranking} onChange={() => saveToggle(i)} />
                   </td>
