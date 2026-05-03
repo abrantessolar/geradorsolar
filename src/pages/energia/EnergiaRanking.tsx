@@ -54,7 +54,7 @@ export default function EnergiaRanking() {
                       <div className="text-3xl mb-1">{meta.icon}</div>
                       <p className="ev-font-epic font-black text-xs truncate w-full" style={{ color: "#F5E6C8" }}>{r.nome.split(" ")[0]}</p>
                       <p className="ev-font-epic text-2xl font-black ev-text-glow" style={{ color: POSITION_BORDER[realPos] }}>{realPos}º</p>
-                      <p className="text-[10px]" style={{ color: "#A08060" }}>{r.pontos_acumulados} pts</p>
+                      <p className="text-[10px]" style={{ color: "#A08060" }}>{r.pontos_historicos ?? r.pontos_acumulados ?? 0} pts</p>
                     </div>
                   </div>
                 );
@@ -74,7 +74,7 @@ export default function EnergiaRanking() {
                     <p className="ev-font-epic font-bold truncate" style={{ color: "#F5E6C8" }}>{r.nome}</p>
                     <p className="text-xs" style={{ color: "#A08060" }}>{epicMeta(r.etapa_atual).title}</p>
                   </div>
-                  <div className="font-black ev-text-glow" style={{ color: "#F5A623" }}>{r.pontos_acumulados} pts</div>
+                  <div className="font-black ev-text-glow" style={{ color: "#F5A623" }}>{r.pontos_historicos ?? r.pontos_acumulados ?? 0} pts</div>
                 </div>
               );
             })}

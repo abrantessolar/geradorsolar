@@ -92,6 +92,8 @@ export default function EnergiaDashboard() {
   if (!data) return <EnergiaLayout><p>Erro ao carregar.</p></EnergiaLayout>;
 
   const { indicador: ind, premios, stats } = data;
+  const pHist = ind.pontos_historicos ?? ind.pontos_acumulados ?? 0;
+  const pDisp = ind.pontos_disponiveis ?? ind.pontos_acumulados ?? 0;
   // monta etapas a partir do banco (ordenadas por pontos_minimos), com metadata épica por nome
   const backendEtapas: any[] = (data.etapas || []).slice().sort((a: any, b: any) => (a.pontos_minimos ?? 0) - (b.pontos_minimos ?? 0));
   const etapasEpicas = (backendEtapas.length ? backendEtapas : EPIC_STAGES.map((s, i) => ({ nome: s.title, pontos_minimos: i * 100 }))).map((b: any) => {
@@ -99,8 +101,8 @@ export default function EnergiaDashboard() {
     return { ...m, title: b.nome || m.title, pontos_minimos: b.pontos_minimos ?? 0, premio_id: b.premio_id };
   });
   const meta = epicMeta(ind.etapa_atual);
-  const proximoPremio = (premios || []).find((p: any) => p.pontos_necessarios > ind.pontos_acumulados);
-  const progressoMax = proximoPremio?.pontos_necessarios || ind.pontos_acumulados || 1;
+  const proximoPremio = (premios || []).find((p: any) => p.pontos_necessarios > pDisp);
+  const progressoMax = proximoPremio?.pontos_necessarios || pDisp || 1;
   const linkUrl = `${window.location.origin}/energia/i/${ind.codigo_link}`;
 
   const copyLink = async () => {
@@ -135,7 +137,7 @@ export default function EnergiaDashboard() {
             </p>
           </div>
           <div className="text-right flex-shrink-0">
-            <div className="text-2xl sm:text-3xl font-black ev-text-glow ev-sparkle" style={{ color: "#F5A623" }}>{ind.pontos_acumulados}</div>
+            <div className="text-2xl sm:text-3xl font-black ev-text-glow ev-sparkle" style={{ color: "#F5A623" }}>{pHist}</div>
             <div className="text-[10px] ev-font-epic uppercase tracking-widest" style={{ color: "#A08060" }}>XP</div>
           </div>
         </div>
@@ -144,7 +146,17 @@ export default function EnergiaDashboard() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <Gauge value={stats.fechadas} max={Math.max(10, stats.fechadas + 5)} label="Vitórias" color="#F5A623" />
           <Gauge value={stats.placas || 0} max={Math.max(20, (stats.placas || 0) + 10)} label="Placas indicadas" color="#E8651A" />
-          <Gauge value={ind.pontos_acumulados} max={progressoMax} label={proximoPremio ? "Próx. relíquia" : "XP total"} color="#00C2FF" />
+          <Gauge value={pDisp} max={progressoMax} label={proximoPremio ? "Próx. relíquia" : "Saldo"} color="#00C2FF" />
+        </div>
+
+        {/* Indicadores de pontos H/D */}
+        <div className="flex justify-center gap-4 -mt-2 text-xs ev-font-epic">
+          <div className="flex items-center gap-1.5" style={{ color: "#F5A623" }}>
+            <span>⚡</span><b>{pHist}</b><span style={{ color: "#A08060" }}>pts históricos</span>
+          </div>
+          <div className="flex items-center gap-1.5" style={{ color: "#E8651A" }}>
+            <span>🎁</span><b>{pDisp}</b><span style={{ color: "#A08060" }}>pts disponíveis</span>
+          </div>
         </div>
 
         {/* Trilha sinuosa */}
@@ -153,7 +165,7 @@ export default function EnergiaDashboard() {
         }}>
           <div className="flex items-end gap-1 min-w-max relative py-3">
             {etapasEpicas.map((e, idx) => {
-              const conquistada = ind.pontos_acumulados >= e.pontos_minimos;
+              const conquistada = pHist >= e.pontos_minimos;
               const atual = epicName(ind.etapa_atual) === e.key;
               const premio = (premios || []).find((p: any) => p.id === e.premio_id);
               const offsetY = idx % 2 === 0 ? 0 : 14;
@@ -197,10 +209,10 @@ export default function EnergiaDashboard() {
             <div className="mt-4">
               <div className="flex flex-col items-center text-xs mb-1.5 ev-font-epic uppercase tracking-wider gap-0.5" style={{ color: "#A08060" }}>
                 <span className="text-center">Caminho até {proximoPremio.nome}</span>
-                <span style={{ color: "#F5A623" }}>{ind.pontos_acumulados}/{proximoPremio.pontos_necessarios}</span>
+                <span style={{ color: "#F5A623" }}>{pDisp}/{proximoPremio.pontos_necessarios} disponíveis</span>
               </div>
               <div className="h-2 rounded-full overflow-hidden" style={{ background: "rgba(0,0,0,0.5)" }}>
-                <div className="h-full ev-trail-line-done transition-all" style={{ width: `${Math.min(100, (ind.pontos_acumulados/proximoPremio.pontos_necessarios)*100)}%` }} />
+                <div className="h-full ev-trail-line-done transition-all" style={{ width: `${Math.min(100, (pDisp/proximoPremio.pontos_necessarios)*100)}%` }} />
               </div>
             </div>
           )}
@@ -220,7 +232,9 @@ export default function EnergiaDashboard() {
               <p className="text-[10px] ev-font-epic uppercase tracking-widest" style={{ color: "#A08060" }}>Próxima relíquia</p>
               <h3 className="ev-font-epic font-black text-lg ev-text-glow" style={{ color: "#F5E6C8" }}>{proximoPremio.nome}</h3>
               <p className="text-sm font-bold ev-sparkle" style={{ color: "#E8651A" }}>
-                Faltam {proximoPremio.pontos_necessarios - ind.pontos_acumulados} pontos
+                {pDisp >= proximoPremio.pontos_necessarios
+                  ? "✨ Disponível para resgate!"
+                  : `Faltam ${proximoPremio.pontos_necessarios - pDisp} pts disponíveis`}
               </p>
             </div>
           </div>

@@ -101,7 +101,11 @@ export default function EnergiaAdminClientes() {
                   <td className="p-3"><button onClick={() => verDetalhe(i)} className="text-[#1A3C5E] hover:underline">{i.nome}</button></td>
                   <td className="p-3">{evMaskCpf(i.cpf || "")}</td>
                   <td className="p-3">{i.etapa_atual || "—"}</td>
-                  <td className="p-3 text-right font-bold">{i.pontos_acumulados}</td>
+                  <td className="p-3 text-right font-bold" title={`Históricos: ${i.pontos_historicos ?? i.pontos_acumulados ?? 0} | Disponíveis: ${i.pontos_disponiveis ?? i.pontos_acumulados ?? 0}`}>
+                    <span className="text-[#F5A623]">H:{i.pontos_historicos ?? i.pontos_acumulados ?? 0}</span>
+                    <span className="text-gray-400 mx-1">/</span>
+                    <span className="text-[#E8651A]">D:{i.pontos_disponiveis ?? i.pontos_acumulados ?? 0}</span>
+                  </td>
                   <td className="p-3 text-right">{indCount[i.id] || 0}</td>
                   <td className="p-3 text-xs text-gray-600">{i.ultimo_acesso ? new Date(i.ultimo_acesso).toLocaleDateString("pt-BR") : "—"}</td>
                   <td className="p-3 text-center">
@@ -137,6 +141,18 @@ export default function EnergiaAdminClientes() {
       {detalhe && <Modal title={`Histórico — ${detalhe.indicador?.nome || ""}`} onClose={() => setDetalhe(null)}>
         {detalhe.loading ? <Loader2 className="animate-spin" /> : (
           <div className="space-y-4 max-h-[60vh] overflow-y-auto text-sm">
+            <div className="grid grid-cols-2 gap-2">
+              <div className="p-3 rounded-lg border" style={{ borderColor: "#F5A623", background: "#FFF7E6" }}>
+                <div className="text-[10px] uppercase text-[#A08060]">Pontos históricos</div>
+                <div className="text-xl font-black text-[#F5A623]">{detalhe.indicador?.pontos_historicos ?? detalhe.indicador?.pontos_acumulados ?? 0}</div>
+                <div className="text-[10px] text-gray-500">define nível, nunca diminui</div>
+              </div>
+              <div className="p-3 rounded-lg border" style={{ borderColor: "#E8651A", background: "#FFF0E6" }}>
+                <div className="text-[10px] uppercase text-[#A08060]">Pontos disponíveis</div>
+                <div className="text-xl font-black text-[#E8651A]">{detalhe.indicador?.pontos_disponiveis ?? detalhe.indicador?.pontos_acumulados ?? 0}</div>
+                <div className="text-[10px] text-gray-500">saldo para resgates</div>
+              </div>
+            </div>
             <div>
               <div className="font-bold text-[#1A3C5E] mb-1">Indicações ({detalhe.indicacoes?.length || 0})</div>
               {(detalhe.indicacoes || []).map((i: any) => (

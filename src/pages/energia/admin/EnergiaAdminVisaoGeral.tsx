@@ -17,12 +17,13 @@ export default function EnergiaAdminVisaoGeral() {
       <h1 className="text-2xl font-bold text-[#1A3C5E] mb-6">Visão Geral</h1>
       {loading ? <Loader2 className="w-8 h-8 animate-spin text-[#E8651A]" /> : data && (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
             <Card icon={Users} color="#1A3C5E" label="Indicadores" value={data.stats.total} sub={`${data.stats.ativos} ativos`} />
             <Card icon={TrendingUp} color="#F5A623" label="Indicações no mês" value={data.stats.fechadas + data.stats.negociacao + data.stats.enviadas}
               sub={`${data.stats.fechadas} fechadas / ${data.stats.negociacao} negociação`} />
             <Card icon={Zap} color="#E8651A" label="Placas indicadas" value={(data.stats.placas_total ?? 0).toLocaleString("pt-BR")} sub="total fechadas" />
             <Card icon={Star} color="#2E9E4F" label="Pontos do mês" value={data.stats.pontos_mes ?? 0} sub="distribuídos" />
+            <Card icon={Package} color="#8B5CF6" label="Total resgatado" value={data.stats.total_resgatado ?? 0} sub="pts debitados" />
             <Card icon={Package} color={data.stats.resgates_pendentes > 0 ? "#dc2626" : "#16a34a"} label="Resgates pendentes" value={data.stats.resgates_pendentes} />
           </div>
           <div className="bg-white rounded-xl p-5 shadow-sm">

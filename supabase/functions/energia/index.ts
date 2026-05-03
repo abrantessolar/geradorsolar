@@ -82,13 +82,13 @@ async function checkAdmin(req: Request) {
 
 async function recalcEtapa(indicador_id: string) {
   const { data: ind } = await supabase
-    .from("energia_indicadores").select("pontos_acumulados").eq("id", indicador_id).maybeSingle();
+    .from("energia_indicadores").select("pontos_historicos").eq("id", indicador_id).maybeSingle();
   if (!ind) return;
   const { data: etapas } = await supabase
     .from("energia_etapas").select("nome, pontos_minimos").order("pontos_minimos", { ascending: true });
   if (!etapas) return;
   let etapa = etapas[0]?.nome || null;
-  for (const e of etapas) if (ind.pontos_acumulados >= e.pontos_minimos) etapa = e.nome;
+  for (const e of etapas) if ((ind.pontos_historicos || 0) >= e.pontos_minimos) etapa = e.nome;
   await supabase.from("energia_indicadores").update({ etapa_atual: etapa }).eq("id", indicador_id);
 }
 
@@ -208,7 +208,7 @@ serve(async (req) => {
           supabase.from("energia_indicacoes").select("*").eq("indicador_id", cliente.id).order("criado_em", { ascending: false }),
           supabase.from("energia_resgates").select("*, energia_premios(nome, imagem_url)").eq("indicador_id", cliente.id).order("solicitado_em", { ascending: false }),
           rankingPublico
-            ? supabase.from("energia_indicadores").select("id, nome, pontos_acumulados, etapa_atual").eq("aparece_ranking", true).order("pontos_acumulados", { ascending: false }).limit(10)
+            ? supabase.from("energia_indicadores").select("id, nome, pontos_historicos, pontos_acumulados, etapa_atual").eq("aparece_ranking", true).order("pontos_historicos", { ascending: false }).limit(10)
             : Promise.resolve({ data: [] as any[] }),
         ]);
         const ranking = (rankingRes as any).data || [];
@@ -221,13 +221,17 @@ serve(async (req) => {
         const premio_id = payload.premio_id;
         const { data: premio } = await supabase.from("energia_premios").select("*").eq("id", premio_id).maybeSingle();
         if (!premio) return err("Prêmio não encontrado", 404);
-        const { data: ind } = await supabase.from("energia_indicadores").select("pontos_acumulados").eq("id", cliente.id).maybeSingle();
-        if (!ind || ind.pontos_acumulados < premio.pontos_necessarios) return err("Pontos insuficientes");
+        const { data: ind } = await supabase.from("energia_indicadores").select("pontos_disponiveis").eq("id", cliente.id).maybeSingle();
+        if (!ind || (ind.pontos_disponiveis || 0) < premio.pontos_necessarios) return err("Saldo disponível insuficiente");
         await supabase.from("energia_resgates").insert({
           indicador_id: cliente.id, premio_id, pontos_utilizados: premio.pontos_necessarios, status: "pendente",
         });
-        await supabase.from("energia_indicadores").update({ pontos_acumulados: ind.pontos_acumulados - premio.pontos_necessarios }).eq("id", cliente.id);
-        await recalcEtapa(cliente.id);
+        const novo = (ind.pontos_disponiveis || 0) - premio.pontos_necessarios;
+        await supabase.from("energia_indicadores").update({ pontos_disponiveis: novo }).eq("id", cliente.id);
+        await supabase.from("energia_pontos_log").insert({
+          indicador_id: cliente.id, pontos: -premio.pontos_necessarios, motivo: `Resgate: ${premio.nome}`,
+        });
+        // não recalcula etapa — nível é definido por pontos_historicos
         const msg = await getConfig("mensagem_resgate");
         return json({ ok: true, mensagem: msg });
       }
@@ -315,13 +319,15 @@ serve(async (req) => {
 
       if (action === "admin_overview") {
         const inicioMesIso = (() => { const d = new Date(); d.setDate(1); d.setHours(0,0,0,0); return d.toISOString(); })();
-        const [{ data: indicadores }, { data: indicacoes }, { data: resgates }, { data: pontosMes }] = await Promise.all([
+        const [{ data: indicadores }, { data: indicacoes }, { data: resgates }, { data: pontosMes }, { data: todosResgates }] = await Promise.all([
           supabase.from("energia_indicadores").select("id, ultimo_acesso"),
           supabase.from("energia_indicacoes").select("status, num_placas, criado_em"),
           supabase.from("energia_resgates").select("status").eq("status", "pendente"),
           supabase.from("energia_pontos_log").select("pontos").gte("criado_em", inicioMesIso),
+          supabase.from("energia_resgates").select("pontos_utilizados"),
         ]);
-        const pontos_mes = (pontosMes || []).reduce((a: number, p: any) => a + Number(p.pontos || 0), 0);
+        const pontos_mes = (pontosMes || []).filter((p: any) => Number(p.pontos) > 0).reduce((a: number, p: any) => a + Number(p.pontos || 0), 0);
+        const total_resgatado = (todosResgates || []).reduce((a: number, r: any) => a + Number(r.pontos_utilizados || 0), 0);
         const total = indicadores?.length || 0;
         const ativos = (indicadores || []).filter((i: any) => i.ultimo_acesso).length;
         const inicioMes = new Date(); inicioMes.setDate(1); inicioMes.setHours(0,0,0,0);
@@ -338,7 +344,7 @@ serve(async (req) => {
           const count = (indicacoes || []).filter((x: any) => { const dt = new Date(x.criado_em); return dt >= d && dt < next; }).length;
           grafico.push({ mes: d.toLocaleDateString("pt-BR", { month: "short" }), indicacoes: count });
         }
-        return json({ stats: { total, ativos, enviadas, negociacao, fechadas, placas_total, pontos_mes, resgates_pendentes: resgates?.length || 0 }, grafico });
+        return json({ stats: { total, ativos, enviadas, negociacao, fechadas, placas_total, pontos_mes, total_resgatado, resgates_pendentes: resgates?.length || 0 }, grafico });
       }
 
       if (action === "admin_list") {
@@ -377,13 +383,19 @@ serve(async (req) => {
 
       if (action === "admin_add_pontos") {
         const { indicador_id, pontos, motivo } = payload;
-        const { data: ind } = await supabase.from("energia_indicadores").select("pontos_acumulados").eq("id", indicador_id).maybeSingle();
+        const { data: ind } = await supabase.from("energia_indicadores").select("pontos_historicos, pontos_disponiveis, pontos_acumulados").eq("id", indicador_id).maybeSingle();
         if (!ind) return err("Indicador não encontrado", 404);
-        const novo = ind.pontos_acumulados + Number(pontos);
-        await supabase.from("energia_indicadores").update({ pontos_acumulados: novo }).eq("id", indicador_id);
-        await supabase.from("energia_pontos_log").insert({ indicador_id, pontos: Number(pontos), motivo, admin_id: admin.sub });
+        const delta = Number(pontos);
+        const novoHist = (ind.pontos_historicos || 0) + delta;
+        const novoDisp = (ind.pontos_disponiveis || 0) + delta;
+        await supabase.from("energia_indicadores").update({
+          pontos_historicos: novoHist,
+          pontos_disponiveis: novoDisp,
+          pontos_acumulados: novoHist, // mantém legado em sincronia com histórico
+        }).eq("id", indicador_id);
+        await supabase.from("energia_pontos_log").insert({ indicador_id, pontos: delta, motivo, admin_id: admin.sub });
         await recalcEtapa(indicador_id);
-        return json({ ok: true, pontos_acumulados: novo });
+        return json({ ok: true, pontos_historicos: novoHist, pontos_disponiveis: novoDisp });
       }
 
       if (action === "admin_update_indicacao_status") {
@@ -410,7 +422,13 @@ serve(async (req) => {
 
           const { data: indicador } = await supabase.from("energia_indicadores").select("*").eq("id", ind.indicador_id).maybeSingle();
           if (indicador) {
-            await supabase.from("energia_indicadores").update({ pontos_acumulados: indicador.pontos_acumulados + pontos }).eq("id", indicador.id);
+            const novoHist = (indicador.pontos_historicos || 0) + pontos;
+            const novoDisp = (indicador.pontos_disponiveis || 0) + pontos;
+            await supabase.from("energia_indicadores").update({
+              pontos_historicos: novoHist,
+              pontos_disponiveis: novoDisp,
+              pontos_acumulados: novoHist,
+            }).eq("id", indicador.id);
             await supabase.from("energia_pontos_log").insert({
               indicador_id: indicador.id, pontos, motivo: `Indicação fechada: ${ind.nome_indicado || "sem nome"} (${placas} placas)`, admin_id: admin.sub,
             });

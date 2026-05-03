@@ -579,6 +579,8 @@ export type Database = {
           nome: string
           onboarding_visto: boolean
           pontos_acumulados: number
+          pontos_disponiveis: number
+          pontos_historicos: number
           telefone: string | null
           ultimo_acesso: string | null
         }
@@ -596,6 +598,8 @@ export type Database = {
           nome: string
           onboarding_visto?: boolean
           pontos_acumulados?: number
+          pontos_disponiveis?: number
+          pontos_historicos?: number
           telefone?: string | null
           ultimo_acesso?: string | null
         }
@@ -613,6 +617,8 @@ export type Database = {
           nome?: string
           onboarding_visto?: boolean
           pontos_acumulados?: number
+          pontos_disponiveis?: number
+          pontos_historicos?: number
           telefone?: string | null
           ultimo_acesso?: string | null
         }

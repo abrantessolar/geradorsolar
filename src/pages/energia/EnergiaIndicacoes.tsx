@@ -79,7 +79,7 @@ export default function EnergiaIndicacoes() {
                     <span>· {new Date(i.criado_em).toLocaleDateString("pt-BR")}</span>
                   </p>
                   {i.pontos_creditados > 0 && (
-                    <p className="text-xs font-bold mt-1 ev-sparkle" style={{ color: "#F5A623" }}>+{i.pontos_creditados} pts</p>
+                    <p className="text-xs font-bold mt-1 ev-sparkle" style={{ color: "#F5A623" }}>+{i.pontos_creditados} pts históricos e disponíveis</p>
                   )}
                 </div>
                 <div className="flex flex-col items-end gap-2 shrink-0">
