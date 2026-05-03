@@ -14,11 +14,11 @@ export default function EnergiaLayout({ children }: { children: ReactNode }) {
     { to: "/energia/dashboard", icon: Home, label: "Início" },
     { to: "/energia/trilha", icon: Map, label: "Trilha" },
     { to: "/energia/premios", icon: Gift, label: "Relíquias" },
-    { to: "/energia/indicacoes", icon: ScrollText, label: "Missões" },
+    { to: "/energia/indicacoes", icon: ScrollText, label: "Indicações" },
   ];
 
   return (
-    <div className="ev-epic pb-28">
+    <div className="ev-epic pb-10">
       <EpicParticles />
       <EpicMusicToggle />
       <header className="sticky top-0 z-30 px-4 py-3 flex items-center justify-between"
@@ -39,17 +39,19 @@ export default function EnergiaLayout({ children }: { children: ReactNode }) {
         </div>
       </header>
 
-      <main className="max-w-3xl mx-auto px-4 py-5 relative z-10">{children}</main>
-
-      <nav className="fixed bottom-0 left-0 right-0 z-30"
-        style={{ background: "rgba(13,10,0,0.96)", borderTop: "1px solid rgba(245,166,35,0.5)", boxShadow: "0 -4px 24px rgba(245,166,35,0.15)" }}>
-        <div className="max-w-3xl mx-auto grid grid-cols-4">
+      {/* Top navigation */}
+      <nav className="sticky top-[57px] z-20"
+        style={{ background: "rgba(20,12,0,0.95)", borderBottom: "1px solid #C17F24", backdropFilter: "blur(8px)" }}>
+        <div className="max-w-3xl mx-auto flex overflow-x-auto ev-scroll">
           {tabs.map(t => (
             <NavLink key={t.to} to={t.to}
               className={({ isActive }) =>
-                `flex flex-col items-center py-3 text-[11px] gap-1 ev-font-epic transition-all ${isActive ? "ev-text-glow" : ""}`
+                `flex-1 min-w-[88px] flex flex-col items-center py-2.5 text-[11px] gap-1 ev-font-epic transition-all border-b-2 ${isActive ? "ev-text-glow" : ""}`
               }
-              style={({ isActive }) => ({ color: isActive ? "#F5A623" : "#A08060" })}
+              style={({ isActive }) => ({
+                color: isActive ? "#F5A623" : "#A08060",
+                borderBottomColor: isActive ? "#F5A623" : "transparent",
+              })}
             >
               <t.icon className="w-5 h-5" />
               {t.label}
@@ -57,6 +59,8 @@ export default function EnergiaLayout({ children }: { children: ReactNode }) {
           ))}
         </div>
       </nav>
+
+      <main className="max-w-3xl mx-auto px-4 py-5 relative z-10">{children}</main>
     </div>
   );
 }
