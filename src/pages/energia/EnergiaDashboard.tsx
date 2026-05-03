@@ -9,23 +9,44 @@ import { EPIC_STAGES, epicMeta, epicName, EpicLevelUpOverlay } from "./_epic";
 const CIDADES = ["Três Lagoas", "Água Clara", "Selvíria", "Bataguassu", "Outras"];
 
 function Gauge({ value, max, label, color, format }: { value: number; max: number; label: string; color: string; format?: (n: number) => string }) {
-  const pct = Math.min(100, max > 0 ? (value / max) * 100 : 0);
-  const angle = (pct / 100) * 180 - 90;
+  const pct = Math.min(1, max > 0 ? value / max : 0);
+  const cx = 80, cy = 90, r = 70;
+  const circumference = Math.PI * r;
+  const dash = pct * circumference;
+  const pointerDeg = -180 + pct * 180; // -180° (left) to 0° (right)
+  const [animDeg, setAnimDeg] = useState(-180);
+  useEffect(() => {
+    const t = requestAnimationFrame(() => setAnimDeg(pointerDeg));
+    return () => cancelAnimationFrame(t);
+  }, [pointerDeg]);
+
   return (
-    <div className="ev-card p-4 flex flex-col items-center ev-enter">
-      <div className="relative w-32 h-20 overflow-hidden">
-        <div className="absolute inset-0 rounded-t-full border-8" style={{ borderColor: "rgba(193,127,36,0.25)", clipPath: "inset(0 0 50% 0)" }} />
-        <div className="absolute inset-0 rounded-t-full border-8" style={{
-          borderColor: color,
-          clipPath: `polygon(50% 100%, 50% 0%, ${50 + 50 * Math.cos((angle - 90) * Math.PI / 180)}% ${100 + 50 * Math.sin((angle - 90) * Math.PI / 180)}%)`,
-          filter: `drop-shadow(0 0 8px ${color})`,
-        }} />
-        <div className="absolute bottom-0 left-1/2 w-1 h-16 origin-bottom transition-transform"
-          style={{ background: "#F5E6C8", boxShadow: "0 0 8px #F5A623", transform: `translateX(-50%) rotate(${angle}deg)` }} />
-        <div className="absolute bottom-0 left-1/2 w-3 h-3 -translate-x-1/2 rounded-full" style={{ background: "#F5A623", boxShadow: "0 0 10px #F5A623" }} />
-      </div>
-      <div className="text-2xl font-black mt-1 ev-text-glow" style={{ color: "#F5E6C8" }}>{format ? format(value) : value}</div>
-      <div className="text-[10px] ev-font-epic uppercase tracking-widest text-center mt-1" style={{ color: "#A08060" }}>{label}</div>
+    <div className="ev-card p-3 flex flex-col items-center ev-enter">
+      <svg width="160" height="100" viewBox="0 0 160 100">
+        <path
+          d={`M ${cx - r} ${cy} A ${r} ${r} 0 0 1 ${cx + r} ${cy}`}
+          fill="none" stroke="#2A1A00" strokeWidth="8" strokeLinecap="round"
+        />
+        <path
+          d={`M ${cx - r} ${cy} A ${r} ${r} 0 0 1 ${cx + r} ${cy}`}
+          fill="none" stroke={color} strokeWidth="8" strokeLinecap="round"
+          strokeDasharray={`${dash} ${circumference}`}
+          style={{ filter: `drop-shadow(0 0 6px ${color})`, transition: "stroke-dasharray 1s ease-out" }}
+        />
+        <line
+          x1={cx} y1={cy} x2={cx} y2={cy - r}
+          stroke="#F5E6C8" strokeWidth="2" strokeLinecap="round"
+          style={{
+            transformOrigin: `${cx}px ${cy}px`,
+            transform: `rotate(${animDeg}deg)`,
+            transition: "transform 1s ease-out",
+            filter: "drop-shadow(0 0 4px #F5A623)",
+          }}
+        />
+        <circle cx={cx} cy={cy} r="4" fill="#F5A623" style={{ filter: "drop-shadow(0 0 6px #F5A623)" }} />
+      </svg>
+      <div className="text-xl font-black ev-text-glow -mt-1" style={{ color: "#F5A623" }}>{format ? format(value) : value}</div>
+      <div className="text-[10px] ev-font-epic uppercase tracking-widest text-center mt-0.5" style={{ color: "#A08060" }}>{label}</div>
     </div>
   );
 }
