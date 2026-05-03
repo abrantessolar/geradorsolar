@@ -165,7 +165,7 @@ export default function EnergiaDashboard() {
         }}>
           <div className="flex items-end gap-1 min-w-max relative py-3">
             {etapasEpicas.map((e, idx) => {
-              const conquistada = ind.pontos_acumulados >= e.pontos_minimos;
+              const conquistada = pHist >= e.pontos_minimos;
               const atual = epicName(ind.etapa_atual) === e.key;
               const premio = (premios || []).find((p: any) => p.id === e.premio_id);
               const offsetY = idx % 2 === 0 ? 0 : 14;
