@@ -115,6 +115,9 @@ export default function EnergiaOnboarding({ nome, onClose, onIndicar }: Props) {
               <p className="text-sm sm:text-base" style={{ color: "#F5E6C8" }}>
                 Cada placa do projeto do seu indicado vale 1 ponto. Acumule e suba de nível!
               </p>
+              <p className="text-xs mt-3" style={{ color: "#A08060" }}>
+                Seu nível é definido pelos pontos históricos totais. Resgatar prêmios não afeta seu nível.
+              </p>
             </div>
           )}
 
