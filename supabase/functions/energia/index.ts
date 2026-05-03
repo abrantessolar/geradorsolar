@@ -382,7 +382,7 @@ serve(async (req) => {
       }
 
       if (action === "admin_add_pontos") {
-        const { indicador_id, pontos, motivo } = payload;
+        const { indicador_id, pontos, motivo, placas } = payload;
         const { data: ind } = await supabase.from("energia_indicadores").select("pontos_historicos, pontos_disponiveis, pontos_acumulados").eq("id", indicador_id).maybeSingle();
         if (!ind) return err("Indicador não encontrado", 404);
         const delta = Number(pontos);
@@ -394,6 +394,18 @@ serve(async (req) => {
           pontos_acumulados: novoHist, // mantém legado em sincronia com histórico
         }).eq("id", indicador_id);
         await supabase.from("energia_pontos_log").insert({ indicador_id, pontos: delta, motivo, admin_id: admin.sub });
+        // Registra também como uma indicação fechada para aparecer em /admin/indicacoes
+        if (delta > 0) {
+          await supabase.from("energia_indicacoes").insert({
+            indicador_id,
+            nome_indicado: motivo || "Lançamento manual",
+            num_placas: Number(placas || delta) || null,
+            pontos_creditados: delta,
+            status: "fechada",
+            fechada_em: new Date().toISOString(),
+            observacao: "Lançamento manual via admin",
+          });
+        }
         await recalcEtapa(indicador_id);
         return json({ ok: true, pontos_historicos: novoHist, pontos_disponiveis: novoDisp });
       }
