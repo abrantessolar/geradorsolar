@@ -70,7 +70,7 @@ export default function EnergiaLogin() {
         </div>
 
         <p className="text-xs text-center text-gray-500">
-          Não consegue entrar? Entre em contato com a empresa.
+          Ainda não tem cadastro? <Link to="/energia/cadastro" className="text-[#E8651A] font-semibold">Cadastre-se</Link>
         </p>
         <Link to="/" className="block text-center text-xs text-[#1A3C5E]/60 hover:text-[#1A3C5E]">
           ← Voltar ao site
