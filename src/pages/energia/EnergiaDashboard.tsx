@@ -9,13 +9,14 @@ import EnergiaOnboarding from "./EnergiaOnboarding";
 
 const CIDADES = ["Três Lagoas", "Água Clara", "Selvíria", "Bataguassu", "Outras"];
 
-function Gauge({ value, max, label, color, format }: { value: number; max: number; label: string; color: string; format?: (n: number) => string }) {
+function Gauge({ value, max, label, color, format, sublabel }: { value: number; max: number; label: string; color: string; format?: (n: number) => string; sublabel?: string }) {
   const pct = Math.min(1, max > 0 ? value / max : 0);
   const cx = 80, cy = 90, r = 70;
   const circumference = Math.PI * r;
   const dash = pct * circumference;
-  const pointerDeg = -180 + pct * 180; // -180° (left) to 0° (right)
-  const [animDeg, setAnimDeg] = useState(-180);
+  // Pointer: 0 → -90° (left), max → 90° (right). Base "up" rotated by this angle.
+  const pointerDeg = -90 + pct * 180;
+  const [animDeg, setAnimDeg] = useState(-90);
   useEffect(() => {
     const t = requestAnimationFrame(() => setAnimDeg(pointerDeg));
     return () => cancelAnimationFrame(t);
