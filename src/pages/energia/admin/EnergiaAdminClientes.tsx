@@ -103,9 +103,45 @@ export default function EnergiaAdminClientes() {
       </Modal>}
 
       {pontosModal && <Modal title={`Adicionar pontos — ${pontosModal.nome}`} onClose={() => setPontosModal(null)}>
-        <input type="number" className="w-full h-10 border rounded px-3" placeholder="Pontos (use negativo para subtrair)" value={pontosModal._pontos} onChange={e => setPontosModal({ ...pontosModal, _pontos: e.target.value })} />
-        <textarea className="w-full border rounded px-3 py-2" rows={3} placeholder="Observação (ex: Negócio fechado - Carlos Souza - 02/05/2026)" value={pontosModal._motivo} onChange={e => setPontosModal({ ...pontosModal, _motivo: e.target.value })} />
+        <p className="text-xs text-gray-500">1 placa = 1 ponto. Use número negativo para subtrair.</p>
+        <input type="number" className="w-full h-10 border rounded px-3" placeholder="Número de placas do projeto" value={pontosModal._placas} onChange={e => setPontosModal({ ...pontosModal, _placas: e.target.value })} />
+        <textarea className="w-full border rounded px-3 py-2" rows={3} placeholder="Observação (ex: Projeto fechado - Carlos Souza - 14 placas - 02/05/2026)" value={pontosModal._motivo} onChange={e => setPontosModal({ ...pontosModal, _motivo: e.target.value })} />
+        <div className="text-sm">Pontos a creditar: <b>{Number(pontosModal._placas || 0)}</b></div>
         <button onClick={addPontos} className="w-full h-10 bg-[#1A3C5E] text-white rounded">Confirmar</button>
+      </Modal>}
+
+      {detalhe && <Modal title={`Histórico — ${detalhe.indicador?.nome || ""}`} onClose={() => setDetalhe(null)}>
+        {detalhe.loading ? <Loader2 className="animate-spin" /> : (
+          <div className="space-y-4 max-h-[60vh] overflow-y-auto text-sm">
+            <div>
+              <div className="font-bold text-[#1A3C5E] mb-1">Indicações ({detalhe.indicacoes?.length || 0})</div>
+              {(detalhe.indicacoes || []).map((i: any) => (
+                <div key={i.id} className="border-b py-2 flex justify-between">
+                  <div><div>{i.nome_indicado || "—"} · {i.cidade || "—"}</div><div className="text-xs text-gray-500">{new Date(i.criado_em).toLocaleDateString("pt-BR")} · {i.status}</div></div>
+                  <div className="text-right"><div className="font-bold">{i.pontos_creditados || 0} pts</div><div className="text-xs text-gray-500">{i.num_placas || 0} placas</div></div>
+                </div>
+              ))}
+            </div>
+            <div>
+              <div className="font-bold text-[#1A3C5E] mb-1">Resgates ({detalhe.resgates?.length || 0})</div>
+              {(detalhe.resgates || []).map((r: any) => (
+                <div key={r.id} className="border-b py-2 flex justify-between">
+                  <div>{r.energia_premios?.nome || "—"}<div className="text-xs text-gray-500">{new Date(r.solicitado_em).toLocaleDateString("pt-BR")} · {r.status}</div></div>
+                  <div className="font-bold">-{r.pontos_utilizados} pts</div>
+                </div>
+              ))}
+            </div>
+            <div>
+              <div className="font-bold text-[#1A3C5E] mb-1">Log de pontos</div>
+              {(detalhe.log || []).map((l: any) => (
+                <div key={l.id} className="border-b py-2 flex justify-between">
+                  <div className="text-xs">{l.motivo || "—"}<div className="text-gray-500">{new Date(l.criado_em).toLocaleDateString("pt-BR")}</div></div>
+                  <div className={`font-bold ${l.pontos >= 0 ? "text-green-600" : "text-red-600"}`}>{l.pontos > 0 ? "+" : ""}{l.pontos}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </Modal>}
     </EnergiaAdminLayout>
   );
