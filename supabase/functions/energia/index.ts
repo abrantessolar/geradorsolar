@@ -359,7 +359,10 @@ serve(async (req) => {
           let pontos = 0;
           if (modo === "placas") {
             const ppp = Number(await getConfig("pontos_por_placa") || 1);
-            pontos = Math.round(placas * ppp * mult);
+            const bonusMinPlacas = Number(await getConfig("bonus_placas_minimo") || 0);
+            const bonusPlacasPts = Number(await getConfig("bonus_placas_pontos") || 0);
+            const bonus = bonusMinPlacas > 0 && placas >= bonusMinPlacas ? bonusPlacasPts : 0;
+            pontos = Math.round((placas * ppp + bonus) * mult);
           } else {
             const pontosBase = Number(await getConfig("pontos_padrao_indicacao") || 100);
             const bonusMin = Number(await getConfig("bonus_valor_minimo") || 0);
