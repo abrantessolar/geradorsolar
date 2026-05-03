@@ -133,7 +133,7 @@ export default function EnergiaDashboard() {
         {/* Gauges */}
         <div className="grid grid-cols-3 gap-3">
           <Gauge value={stats.fechadas} max={Math.max(10, stats.fechadas + 5)} label="Vitórias" color="#F5A623" />
-          <Gauge value={stats.volume} max={Math.max(50000, stats.volume * 1.2)} label="Volume" color="#E8651A" format={n => `R$${(n/1000).toFixed(0)}k`} />
+          <Gauge value={stats.placas || 0} max={Math.max(20, (stats.placas || 0) + 10)} label="Placas indicadas" color="#E8651A" />
           <Gauge value={ind.pontos_acumulados} max={progressoMax} label={proximoPremio ? "Próx. relíquia" : "XP total"} color="#00C2FF" />
         </div>
 
