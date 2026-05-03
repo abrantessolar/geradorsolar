@@ -74,7 +74,7 @@ export default function EnergiaRanking() {
                     <p className="ev-font-epic font-bold truncate" style={{ color: "#F5E6C8" }}>{r.nome}</p>
                     <p className="text-xs" style={{ color: "#A08060" }}>{epicMeta(r.etapa_atual).title}</p>
                   </div>
-                  <div className="font-black ev-text-glow" style={{ color: "#F5A623" }}>{r.pontos_acumulados} pts</div>
+                  <div className="font-black ev-text-glow" style={{ color: "#F5A623" }}>{r.pontos_historicos ?? r.pontos_acumulados ?? 0} pts</div>
                 </div>
               );
             })}
