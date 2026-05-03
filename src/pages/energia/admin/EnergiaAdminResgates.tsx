@@ -50,7 +50,7 @@ export default function EnergiaAdminResgates() {
           <h2 className="font-bold mb-2">Pendentes ({pendentes.length})</h2>
           <div className="bg-white rounded-xl shadow-sm mb-6 overflow-hidden">
             <table className="w-full text-sm">
-              <thead className="bg-gray-50"><tr><th className="text-left p-3">Cliente</th><th className="text-left p-3">Prêmio</th><th className="text-left p-3">Solicitado</th><th className="text-right p-3">Pontos</th><th></th></tr></thead>
+              <thead className="bg-gray-50"><tr><th className="text-left p-3">Cliente</th><th className="text-left p-3">Prêmio</th><th className="text-left p-3">Solicitado</th><th className="text-right p-3">Pts debitados</th><th></th></tr></thead>
               <tbody>
                 {pendentes.map(r => (
                   <tr key={r.id} className="border-t">
