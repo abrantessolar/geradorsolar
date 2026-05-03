@@ -1,32 +1,31 @@
 import { useEffect, useRef, useState } from "react";
 import { Navigate } from "react-router-dom";
-import { Zap, Sun, Battery, Factory, Radio, Loader2, Copy, Share2, X } from "lucide-react";
+import { Loader2, Copy, Share2, X, Lock, Crown } from "lucide-react";
 import EnergiaLayout from "./EnergiaLayout";
 import { useEnergia } from "@/contexts/EnergiaContext";
 import { evCall, evMaskPhone } from "@/lib/energiaApi";
+import { EPIC_STAGES, epicMeta, epicName, EpicLevelUpOverlay } from "./_epic";
 
 const CIDADES = ["Três Lagoas", "Água Clara", "Selvíria", "Bataguassu", "Outras"];
-
-const ETAPA_ICONS: Record<string, any> = {
-  Raio: Zap, Painel: Sun, Gerador: Battery, Usina: Factory, Central: Radio, "Sol Maior": Sun,
-};
 
 function Gauge({ value, max, label, color, format }: { value: number; max: number; label: string; color: string; format?: (n: number) => string }) {
   const pct = Math.min(100, max > 0 ? (value / max) * 100 : 0);
   const angle = (pct / 100) * 180 - 90;
   return (
-    <div className="bg-white rounded-xl p-4 shadow-sm flex flex-col items-center">
+    <div className="ev-card p-4 flex flex-col items-center ev-enter">
       <div className="relative w-32 h-20 overflow-hidden">
-        <div className="absolute inset-0 rounded-t-full border-8 border-gray-100" style={{ clipPath: "inset(0 0 50% 0)" }} />
-        <div
-          className="absolute inset-0 rounded-t-full border-8"
-          style={{ borderColor: color, clipPath: `polygon(50% 100%, 50% 0%, ${50 + 50 * Math.cos((angle - 90) * Math.PI / 180)}% ${100 + 50 * Math.sin((angle - 90) * Math.PI / 180)}%)` }}
-        />
-        <div className="absolute bottom-0 left-1/2 w-1 h-16 bg-[#1A3C5E] origin-bottom transition-transform" style={{ transform: `translateX(-50%) rotate(${angle}deg)` }} />
-        <div className="absolute bottom-0 left-1/2 w-3 h-3 -translate-x-1/2 rounded-full bg-[#1A3C5E]" />
+        <div className="absolute inset-0 rounded-t-full border-8" style={{ borderColor: "rgba(193,127,36,0.25)", clipPath: "inset(0 0 50% 0)" }} />
+        <div className="absolute inset-0 rounded-t-full border-8" style={{
+          borderColor: color,
+          clipPath: `polygon(50% 100%, 50% 0%, ${50 + 50 * Math.cos((angle - 90) * Math.PI / 180)}% ${100 + 50 * Math.sin((angle - 90) * Math.PI / 180)}%)`,
+          filter: `drop-shadow(0 0 8px ${color})`,
+        }} />
+        <div className="absolute bottom-0 left-1/2 w-1 h-16 origin-bottom transition-transform"
+          style={{ background: "#F5E6C8", boxShadow: "0 0 8px #F5A623", transform: `translateX(-50%) rotate(${angle}deg)` }} />
+        <div className="absolute bottom-0 left-1/2 w-3 h-3 -translate-x-1/2 rounded-full" style={{ background: "#F5A623", boxShadow: "0 0 10px #F5A623" }} />
       </div>
-      <div className="text-2xl font-bold text-[#1A3C5E] mt-1">{format ? format(value) : value}</div>
-      <div className="text-xs text-gray-500 text-center mt-1">{label}</div>
+      <div className="text-2xl font-black mt-1 ev-text-glow" style={{ color: "#F5E6C8" }}>{format ? format(value) : value}</div>
+      <div className="text-[10px] ev-font-epic uppercase tracking-widest text-center mt-1" style={{ color: "#A08060" }}>{label}</div>
     </div>
   );
 }
@@ -42,11 +41,19 @@ export default function EnergiaDashboard() {
   const [enviando, setEnviando] = useState(false);
   const enviandoRef = useRef(false);
   const [resultado, setResultado] = useState<{ whatsapp_url: string } | null>(null);
+  const [levelUp, setLevelUp] = useState<string | null>(null);
 
   const refetch = () => {
     if (!indicador) return;
     evCall("cliente_dashboard", { indicador_id: indicador.id, cpf })
-      .then(setData).catch(console.error).finally(() => setLoading(false));
+      .then((d: any) => {
+        setData(d);
+        const prev = sessionStorage.getItem("ev_last_etapa");
+        const cur = epicName(d?.indicador?.etapa_atual);
+        if (prev && prev !== cur) setLevelUp(cur);
+        sessionStorage.setItem("ev_last_etapa", cur);
+      })
+      .catch(console.error).finally(() => setLoading(false));
   };
 
   useEffect(() => {
@@ -57,10 +64,17 @@ export default function EnergiaDashboard() {
   }, [indicador, cpf]);
 
   if (!indicador) return <Navigate to="/energia" replace />;
-  if (loading) return <EnergiaLayout><div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-[#E8651A]" /></div></EnergiaLayout>;
+  if (loading) return <EnergiaLayout><div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin" style={{ color: "#F5A623" }} /></div></EnergiaLayout>;
   if (!data) return <EnergiaLayout><p>Erro ao carregar.</p></EnergiaLayout>;
 
-  const { indicador: ind, etapas, premios, stats } = data;
+  const { indicador: ind, premios, stats } = data;
+  // monta etapas a partir do mapa épico, pontos vindos do backend ou progressão padrão
+  const backendEtapas: any[] = data.etapas || [];
+  const etapasEpicas = EPIC_STAGES.map((s, i) => {
+    const found = backendEtapas.find(b => epicName(b.nome) === s.key);
+    return { ...s, pontos_minimos: found?.pontos_minimos ?? i * 100, premio_id: found?.premio_id, _orig: found?.nome || s.key };
+  });
+  const meta = epicMeta(ind.etapa_atual);
   const proximoPremio = (premios || []).find((p: any) => p.pontos_necessarios > ind.pontos_acumulados);
   const progressoMax = proximoPremio?.pontos_necessarios || ind.pontos_acumulados || 1;
   const linkUrl = `${window.location.origin}/energia/i/${ind.codigo_link}`;
@@ -72,144 +86,187 @@ export default function EnergiaDashboard() {
 
   return (
     <EnergiaLayout>
-      <div className="space-y-5">
-        <div className="bg-gradient-to-r from-[#1A3C5E] to-[#2C5A8C] text-white rounded-2xl p-5 shadow-lg">
-          <h1 className="text-xl font-bold">Olá, {ind.nome.split(" ")[0]} <span className="text-[#F5A623]">⚡</span></h1>
-          <p className="text-sm text-white/80">Você é um <span className="font-bold text-[#F5A623]">{ind.etapa_atual || "Raio"}</span></p>
+      {levelUp && <EpicLevelUpOverlay etapa={levelUp} onClose={() => setLevelUp(null)} />}
+
+      <div className="space-y-6">
+        {/* Header do player */}
+        <div className="ev-card ev-card-glow p-5 ev-enter flex items-center gap-4">
+          <div className="ev-frame-relic w-16 h-16 flex items-center justify-center ev-pulse-ring">
+            <div className="w-full h-full rounded-full flex items-center justify-center text-2xl"
+              style={{ background: "#1A0F00" }}>{meta.icon}</div>
+          </div>
+          <div className="flex-1 min-w-0">
+            <h1 className="ev-font-epic text-xl font-black ev-text-glow truncate" style={{ color: "#F5E6C8" }}>
+              Olá, {ind.nome.split(" ")[0]}
+            </h1>
+            <p className="text-sm ev-font-epic" style={{ color: "#F5A623", textShadow: `0 0 10px ${meta.aura}` }}>
+              {meta.title}
+            </p>
+          </div>
+          <div className="text-right">
+            <div className="text-3xl font-black ev-text-glow ev-sparkle" style={{ color: "#F5A623" }}>{ind.pontos_acumulados}</div>
+            <div className="text-[10px] ev-font-epic uppercase tracking-widest" style={{ color: "#A08060" }}>XP</div>
+          </div>
         </div>
 
+        {/* Gauges */}
         <div className="grid grid-cols-3 gap-3">
-          <Gauge value={stats.fechadas} max={Math.max(10, stats.fechadas + 5)} label="Indicações fechadas" color="#F5A623" />
-          <Gauge value={stats.volume} max={Math.max(50000, stats.volume * 1.2)} label="Volume gerado" color="#E8651A" format={n => `R$ ${(n/1000).toFixed(0)}k`} />
-          <Gauge value={ind.pontos_acumulados} max={progressoMax} label={proximoPremio ? `Até ${proximoPremio.nome}` : "Pontos"} color="#1A3C5E" />
+          <Gauge value={stats.fechadas} max={Math.max(10, stats.fechadas + 5)} label="Vitórias" color="#F5A623" />
+          <Gauge value={stats.volume} max={Math.max(50000, stats.volume * 1.2)} label="Volume" color="#E8651A" format={n => `R$${(n/1000).toFixed(0)}k`} />
+          <Gauge value={ind.pontos_acumulados} max={progressoMax} label={proximoPremio ? "Próx. relíquia" : "XP total"} color="#00C2FF" />
         </div>
 
-        {/* Trilha horizontal */}
-        <div className="bg-white rounded-2xl p-4 shadow-sm overflow-x-auto">
-          <div className="flex items-center gap-2 min-w-max">
-            {(etapas || []).map((e: any, idx: number) => {
+        {/* Trilha sinuosa */}
+        <div className="ev-card p-5 overflow-x-auto ev-scroll ev-enter" style={{
+          background: "linear-gradient(180deg, rgba(30,18,0,0.85), rgba(13,10,0,0.95)), radial-gradient(ellipse at 50% 0%, rgba(245,166,35,0.18), transparent 70%)",
+        }}>
+          <div className="flex items-end gap-1 min-w-max relative py-3">
+            {etapasEpicas.map((e, idx) => {
               const conquistada = ind.pontos_acumulados >= e.pontos_minimos;
-              const atual = ind.etapa_atual === e.nome;
-              const Icon = ETAPA_ICONS[e.nome] || Sun;
+              const atual = epicName(ind.etapa_atual) === e.key;
+              const premio = (premios || []).find((p: any) => p.id === e.premio_id);
+              const offsetY = idx % 2 === 0 ? 0 : 14;
               return (
-                <div key={e.id} className="flex items-center">
-                  <div className="flex flex-col items-center gap-1">
-                    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all ${
-                      atual ? "bg-gradient-to-br from-[#F5A623] to-[#E8651A] animate-pulse shadow-lg" :
-                      conquistada ? "bg-[#F5A623]/80" : "bg-gray-200"
-                    }`}>
-                      <Icon className={`w-7 h-7 ${conquistada || atual ? "text-white" : "text-gray-400"}`} />
+                <div key={e.key} className="flex items-end">
+                  <div className="flex flex-col items-center gap-2" style={{ marginTop: offsetY }}>
+                    <div className={`relative w-16 h-16 rounded-full flex items-center justify-center text-2xl transition-all ${atual ? "ev-pulse" : ""}`}
+                      style={{
+                        background: conquistada ? "linear-gradient(135deg, #F5A623, #E8651A)" : "rgba(0,0,0,0.55)",
+                        border: `2px solid ${conquistada ? "#F5E6C8" : "rgba(193,127,36,0.4)"}`,
+                        boxShadow: conquistada ? `0 0 20px ${e.aura}` : "none",
+                        transform: atual ? "scale(1.1)" : "scale(1)",
+                      }}>
+                      {atual && <Crown className="absolute -top-5 w-5 h-5" style={{ color: "#F5A623", filter: "drop-shadow(0 0 6px #F5A623)" }} />}
+                      {conquistada ? <span style={{ filter: "drop-shadow(0 0 4px #fff)" }}>{e.icon}</span>
+                        : <Lock className="w-5 h-5" style={{ color: "#A08060" }} />}
                     </div>
-                    <span className={`text-[11px] font-medium ${conquistada || atual ? "text-[#1A3C5E]" : "text-gray-400"}`}>{e.nome}</span>
+                    <div className="text-[10px] ev-font-epic uppercase tracking-wider text-center max-w-[72px]"
+                      style={{ color: conquistada ? "#F5A623" : "#A08060" }}>{e.key}</div>
+                    {/* mini relíquia */}
+                    <div className="ev-frame-relic w-10 h-10">
+                      <div className="w-full h-full rounded-full flex items-center justify-center overflow-hidden"
+                        style={{ filter: conquistada ? "none" : "grayscale(1) brightness(0.45)" }}>
+                        {premio?.imagem_url
+                          ? <img src={premio.imagem_url} alt="" className="w-7 h-7 object-contain" />
+                          : <span className="text-xs">🎁</span>}
+                      </div>
+                    </div>
                   </div>
-                  {idx < etapas.length - 1 && <div className={`h-1 w-6 mx-1 rounded ${conquistada ? "bg-[#F5A623]" : "bg-gray-200"}`} />}
+                  {idx < etapasEpicas.length - 1 && (
+                    <div className="h-1.5 w-10 mx-1 rounded-full self-center"
+                      style={conquistada
+                        ? {} : { background: "repeating-linear-gradient(90deg, rgba(193,127,36,0.4) 0 6px, transparent 6px 12px)" }}
+                      {...(conquistada ? { className: "h-1.5 w-10 mx-1 rounded-full self-center ev-trail-line-done" } : {})} />
+                  )}
                 </div>
               );
             })}
           </div>
+
+          {proximoPremio && (
+            <div className="mt-4">
+              <div className="flex justify-between text-xs mb-1 ev-font-epic uppercase tracking-wider" style={{ color: "#A08060" }}>
+                <span>Caminho até {proximoPremio.nome}</span>
+                <span style={{ color: "#F5A623" }}>{ind.pontos_acumulados}/{proximoPremio.pontos_necessarios}</span>
+              </div>
+              <div className="h-2 rounded-full overflow-hidden" style={{ background: "rgba(0,0,0,0.5)" }}>
+                <div className="h-full ev-trail-line-done transition-all" style={{ width: `${Math.min(100, (ind.pontos_acumulados/proximoPremio.pontos_necessarios)*100)}%` }} />
+              </div>
+            </div>
+          )}
         </div>
 
+        {/* Próxima relíquia */}
         {proximoPremio && (
-          <div className="bg-white rounded-2xl p-5 shadow-sm flex gap-4 items-center">
-            {proximoPremio.imagem_url ? (
-              <img src={proximoPremio.imagem_url} alt={proximoPremio.nome} className="w-20 h-20 object-contain" />
-            ) : <div className="w-20 h-20 bg-[#F5A623]/20 rounded-xl flex items-center justify-center"><Sun className="w-10 h-10 text-[#F5A623]" /></div>}
+          <div className="ev-card ev-card-glow p-5 flex gap-4 items-center ev-enter">
+            <div className="ev-frame-relic w-24 h-24 flex items-center justify-center">
+              <div className="w-full h-full rounded-full flex items-center justify-center overflow-hidden">
+                {proximoPremio.imagem_url
+                  ? <img src={proximoPremio.imagem_url} alt={proximoPremio.nome} className="w-20 h-20 object-contain" />
+                  : <span className="text-3xl">🎁</span>}
+              </div>
+            </div>
             <div className="flex-1">
-              <p className="text-xs text-gray-500">Próximo prêmio</p>
-              <h3 className="font-bold text-[#1A3C5E]">{proximoPremio.nome}</h3>
-              <p className="text-sm text-[#E8651A] font-semibold">Faltam {proximoPremio.pontos_necessarios - ind.pontos_acumulados} pontos</p>
+              <p className="text-[10px] ev-font-epic uppercase tracking-widest" style={{ color: "#A08060" }}>Próxima relíquia</p>
+              <h3 className="ev-font-epic font-black text-lg ev-text-glow" style={{ color: "#F5E6C8" }}>{proximoPremio.nome}</h3>
+              <p className="text-sm font-bold ev-sparkle" style={{ color: "#E8651A" }}>
+                Faltam {proximoPremio.pontos_necessarios - ind.pontos_acumulados} pontos
+              </p>
             </div>
           </div>
         )}
 
+        {/* Botões de ação */}
         <div className="grid grid-cols-2 gap-3">
           <button
             onClick={() => { setResultado(null); setForm({ nome: "", telefone: "", cidade: "Três Lagoas", observacao: "" }); setShowIndicar(true); }}
-            className="h-14 rounded-2xl bg-gradient-to-r from-[#F5A623] to-[#E8651A] text-white font-bold text-base shadow-lg hover:opacity-90 flex items-center justify-center gap-2"
-          >
-            <Share2 className="w-5 h-5" /> Indicar agora
+            className="ev-btn-primary h-14 flex items-center justify-center gap-2 ev-font-epic">
+            <Share2 className="w-5 h-5 ev-sparkle" /> INDICAR AGORA
           </button>
-          <button
-            onClick={() => setShowLink(true)}
-            className="h-14 rounded-2xl bg-white border-2 border-[#1A3C5E] text-[#1A3C5E] font-bold text-base hover:bg-gray-50 flex items-center justify-center gap-2"
-          >
-            <Copy className="w-5 h-5" /> Meu link
+          <button onClick={() => setShowLink(true)} className="ev-btn-secondary h-14 flex items-center justify-center gap-2 ev-font-epic">
+            <Copy className="w-5 h-5" /> MEU LINK
           </button>
         </div>
 
         {showLink && (
-          <div className="fixed inset-0 z-50 bg-black/60 flex items-end md:items-center justify-center p-4" onClick={() => setShowLink(false)}>
-            <div className="bg-white rounded-2xl p-5 max-w-md w-full space-y-3" onClick={e => e.stopPropagation()}>
-              <h3 className="font-bold text-[#1A3C5E]">Seu link de indicação</h3>
-              <div className="bg-gray-50 rounded-lg p-3 text-sm break-all">{linkUrl}</div>
+          <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.75)" }} onClick={() => setShowLink(false)}>
+            <div className="ev-card ev-card-glow p-5 max-w-md w-full space-y-3 ev-enter" onClick={e => e.stopPropagation()}>
+              <h3 className="ev-font-epic font-black text-lg ev-text-glow" style={{ color: "#F5A623" }}>Seu portal de indicação</h3>
+              <div className="rounded-lg p-3 text-sm break-all" style={{ background: "rgba(0,0,0,0.5)", color: "#F5E6C8", border: "1px solid rgba(193,127,36,0.4)" }}>{linkUrl}</div>
               <div className="grid grid-cols-2 gap-2">
-                <button onClick={copyLink} className="h-11 rounded-lg bg-[#1A3C5E] text-white font-medium flex items-center justify-center gap-2">
+                <button onClick={copyLink} className="ev-btn-secondary h-11 flex items-center justify-center gap-2">
                   <Copy className="w-4 h-4" /> {copied ? "Copiado!" : "Copiar"}
                 </button>
-                <a
-                  href={`https://wa.me/?text=${encodeURIComponent("Olá! Estou usando energia solar da Três Lagoas Solar e quero te indicar. Acesse: " + linkUrl)}`}
-                  target="_blank" rel="noreferrer"
-                  className="h-11 rounded-lg bg-[#25D366] text-white font-medium flex items-center justify-center"
-                >
-                  WhatsApp
-                </a>
+                <a href={`https://wa.me/?text=${encodeURIComponent("Olá! Estou usando energia solar da Três Lagoas Solar e quero te indicar. Acesse: " + linkUrl)}`}
+                  target="_blank" rel="noreferrer" className="h-11 rounded-xl font-bold flex items-center justify-center"
+                  style={{ background: "#25D366", color: "#0D0A00" }}>WhatsApp</a>
               </div>
-              <button onClick={() => setShowLink(false)} className="w-full text-sm text-gray-500 hover:text-gray-700">Fechar</button>
+              <button onClick={() => setShowLink(false)} className="w-full text-sm" style={{ color: "#A08060" }}>Fechar</button>
             </div>
           </div>
         )}
 
         {showIndicar && (
-          <div className="fixed inset-0 z-50 bg-black/60 flex items-end md:items-center justify-center p-4" onClick={() => setShowIndicar(false)}>
-            <div className="bg-white rounded-2xl p-5 max-w-md w-full space-y-3" onClick={e => e.stopPropagation()}>
+          <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.75)" }} onClick={() => setShowIndicar(false)}>
+            <div className="ev-card ev-card-glow p-5 max-w-md w-full space-y-3 ev-enter" onClick={e => e.stopPropagation()}>
               <div className="flex justify-between items-center">
-                <h3 className="font-bold text-[#1A3C5E] text-lg">Nova indicação</h3>
-                <button onClick={() => setShowIndicar(false)}><X className="w-5 h-5 text-gray-400" /></button>
+                <h3 className="ev-font-epic font-black text-lg ev-text-glow" style={{ color: "#F5A623" }}>Nova Missão</h3>
+                <button onClick={() => setShowIndicar(false)}><X className="w-5 h-5" style={{ color: "#A08060" }} /></button>
               </div>
               {resultado ? (
                 <div className="space-y-3">
-                  <div className="p-3 bg-green-50 text-green-800 rounded-lg text-sm">
-                    Indicação registrada! Envie a mensagem no WhatsApp do indicado:
+                  <div className="p-3 rounded-lg text-sm" style={{ background: "rgba(46,158,79,0.18)", color: "#F5E6C8", border: "1px solid rgba(46,158,79,0.5)" }}>
+                    Missão registrada! Envie a mensagem no WhatsApp do indicado:
                   </div>
                   <a href={resultado.whatsapp_url} target="_blank" rel="noreferrer"
-                    className="w-full h-12 rounded-lg bg-[#25D366] text-white font-bold flex items-center justify-center">
-                    Abrir WhatsApp do indicado
-                  </a>
-                  <button onClick={() => setShowIndicar(false)} className="w-full h-10 text-gray-500">Fechar</button>
+                    className="w-full h-12 rounded-xl font-bold flex items-center justify-center"
+                    style={{ background: "#25D366", color: "#0D0A00" }}>Abrir WhatsApp do indicado</a>
+                  <button onClick={() => setShowIndicar(false)} className="w-full h-10" style={{ color: "#A08060" }}>Fechar</button>
                 </div>
               ) : (
                 <>
-                  <div>
-                    <label className="text-xs text-gray-600">Nome completo</label>
-                    <input className="w-full h-11 border rounded-lg px-3" value={form.nome}
-                      onChange={e => setForm({ ...form, nome: e.target.value })} />
-                  </div>
-                  <div>
-                    <label className="text-xs text-gray-600">Telefone (WhatsApp)</label>
-                    <input className="w-full h-11 border rounded-lg px-3" placeholder="(67) 99999-9999"
-                      value={form.telefone}
+                  <FieldDark label="Nome completo">
+                    <input className="ev-input" value={form.nome} onChange={e => setForm({ ...form, nome: e.target.value })} />
+                  </FieldDark>
+                  <FieldDark label="Telefone (WhatsApp)">
+                    <input className="ev-input" placeholder="(67) 99999-9999" value={form.telefone}
                       onChange={e => setForm({ ...form, telefone: evMaskPhone(e.target.value) })} />
-                  </div>
-                  <div>
-                    <label className="text-xs text-gray-600">Cidade</label>
-                    <select className="w-full h-11 border rounded-lg px-3" value={form.cidade}
-                      onChange={e => setForm({ ...form, cidade: e.target.value })}>
-                      {CIDADES.map(c => <option key={c} value={c}>{c}</option>)}
+                  </FieldDark>
+                  <FieldDark label="Cidade">
+                    <select className="ev-input" value={form.cidade} onChange={e => setForm({ ...form, cidade: e.target.value })}>
+                      {CIDADES.map(c => <option key={c} value={c} style={{ background: "#1A0F00" }}>{c}</option>)}
                     </select>
-                  </div>
-                  <div>
-                    <label className="text-xs text-gray-600">O que você sabe sobre ele(a)?</label>
-                    <textarea className="w-full border rounded-lg p-3" rows={3}
+                  </FieldDark>
+                  <FieldDark label="O que você sabe sobre ele(a)?">
+                    <textarea className="ev-input" style={{ height: "auto", padding: "10px 12px" }} rows={3}
                       placeholder="Conta de luz alta, casa nova, interesse em energia solar..."
-                      value={form.observacao}
-                      onChange={e => setForm({ ...form, observacao: e.target.value })} />
-                  </div>
+                      value={form.observacao} onChange={e => setForm({ ...form, observacao: e.target.value })} />
+                  </FieldDark>
                   <button
                     disabled={enviando || !form.nome || !form.telefone}
                     onClick={async () => {
                       if (enviandoRef.current) return;
-                      enviandoRef.current = true;
-                      setEnviando(true);
+                      enviandoRef.current = true; setEnviando(true);
                       try {
                         const r = await evCall<{ whatsapp_url: string }>("cliente_criar_indicacao", {
                           indicador_id: indicador.id, cpf, ...form,
@@ -219,9 +276,8 @@ export default function EnergiaDashboard() {
                       } catch (e: any) { alert(e.message); }
                       finally { setEnviando(false); enviandoRef.current = false; }
                     }}
-                    className="w-full h-12 rounded-lg bg-gradient-to-r from-[#F5A623] to-[#E8651A] text-white font-bold disabled:opacity-50"
-                  >
-                    {enviando ? "Enviando..." : "Registrar indicação"}
+                    className="ev-btn-primary w-full h-12 flex items-center justify-center">
+                    {enviando ? "Enviando..." : "REGISTRAR MISSÃO"}
                   </button>
                 </>
               )}
@@ -230,5 +286,14 @@ export default function EnergiaDashboard() {
         )}
       </div>
     </EnergiaLayout>
+  );
+}
+
+function FieldDark({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <label className="block text-[10px] ev-font-epic uppercase tracking-widest mb-1" style={{ color: "#F5A623" }}>{label}</label>
+      {children}
+    </div>
   );
 }
