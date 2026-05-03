@@ -192,17 +192,21 @@ serve(async (req) => {
       if (!cliente) return err("Sessão inválida", 401);
 
       if (action === "cliente_dashboard") {
-        const [{ data: ind }, { data: etapas }, { data: premios }, { data: indicacoes }, { data: resgates }, { data: ranking }] = await Promise.all([
+        const rankingPublico = (await getConfig("ranking_publico")) !== false;
+        const [{ data: ind }, { data: etapas }, { data: premios }, { data: indicacoes }, { data: resgates }, rankingRes] = await Promise.all([
           supabase.from("energia_indicadores").select("*").eq("id", cliente.id).maybeSingle(),
           supabase.from("energia_etapas").select("*").order("ordem"),
           supabase.from("energia_premios").select("*").eq("ativo", true).order("pontos_necessarios"),
           supabase.from("energia_indicacoes").select("*").eq("indicador_id", cliente.id).order("criado_em", { ascending: false }),
           supabase.from("energia_resgates").select("*, energia_premios(nome, imagem_url)").eq("indicador_id", cliente.id).order("solicitado_em", { ascending: false }),
-          supabase.from("energia_indicadores").select("id, nome, pontos_acumulados, etapa_atual").eq("aparece_ranking", true).order("pontos_acumulados", { ascending: false }).limit(10),
+          rankingPublico
+            ? supabase.from("energia_indicadores").select("id, nome, pontos_acumulados, etapa_atual").eq("aparece_ranking", true).order("pontos_acumulados", { ascending: false }).limit(10)
+            : Promise.resolve({ data: [] as any[] }),
         ]);
+        const ranking = (rankingRes as any).data || [];
         const fechadas = (indicacoes || []).filter((i: any) => i.status === "fechada");
         const volume = fechadas.reduce((acc: number, i: any) => acc + Number(i.valor_negocio || 0), 0);
-        return json({ indicador: ind, etapas, premios, indicacoes, resgates, ranking, stats: { fechadas: fechadas.length, volume } });
+        return json({ indicador: ind, etapas, premios, indicacoes, resgates, ranking, ranking_publico: rankingPublico, stats: { fechadas: fechadas.length, volume } });
       }
 
       if (action === "cliente_resgatar") {
