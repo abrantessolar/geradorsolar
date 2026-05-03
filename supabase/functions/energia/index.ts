@@ -242,7 +242,8 @@ serve(async (req) => {
         if (!allowed.includes(t)) return err("Tabela não permitida");
         let q: any = supabase.from(t).select(payload.select || "*");
         if (t === "energia_premios" || t === "energia_etapas") q = q.order("ordem");
-        else if (t === "energia_indicacoes" || t === "energia_resgates") q = q.order("criado_em", { ascending: false });
+        else if (t === "energia_indicacoes") q = q.order("criado_em", { ascending: false });
+        else if (t === "energia_resgates") q = q.order("solicitado_em", { ascending: false });
         const { data, error } = await q;
         if (error) return err(error.message);
         return json({ data });
