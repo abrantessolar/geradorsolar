@@ -66,7 +66,7 @@ export default function EnergiaLogin() {
           </div>
           <div>
             <label className="block text-xs ev-font-epic uppercase tracking-widest mb-1" style={{ color: "#F5A623" }}>Data de nascimento</label>
-            <input type="date" className="ev-input" value={data} onChange={e => setData(e.target.value)} onKeyDown={e => e.key === "Enter" && handle()} />
+            <input type="tel" inputMode="numeric" autoComplete="bday" placeholder="DD/MM/AAAA" maxLength={10} className="ev-input" value={data} onChange={e => setData(maskDateBR(e.target.value))} onKeyDown={e => e.key === "Enter" && handle()} />
           </div>
           <button disabled={loading} onClick={handle}
             className="ev-btn-primary w-full h-12 flex items-center justify-center gap-2">
