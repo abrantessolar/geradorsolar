@@ -82,13 +82,13 @@ async function checkAdmin(req: Request) {
 
 async function recalcEtapa(indicador_id: string) {
   const { data: ind } = await supabase
-    .from("energia_indicadores").select("pontos_acumulados").eq("id", indicador_id).maybeSingle();
+    .from("energia_indicadores").select("pontos_historicos").eq("id", indicador_id).maybeSingle();
   if (!ind) return;
   const { data: etapas } = await supabase
     .from("energia_etapas").select("nome, pontos_minimos").order("pontos_minimos", { ascending: true });
   if (!etapas) return;
   let etapa = etapas[0]?.nome || null;
-  for (const e of etapas) if (ind.pontos_acumulados >= e.pontos_minimos) etapa = e.nome;
+  for (const e of etapas) if ((ind.pontos_historicos || 0) >= e.pontos_minimos) etapa = e.nome;
   await supabase.from("energia_indicadores").update({ etapa_atual: etapa }).eq("id", indicador_id);
 }
 
