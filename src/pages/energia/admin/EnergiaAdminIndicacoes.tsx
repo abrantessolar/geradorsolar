@@ -34,16 +34,13 @@ export default function EnergiaAdminIndicacoes() {
 
   const updateStatus = async (id: string, status: string) => {
     const item = list.find(l => l.id === id);
-    let v = item?.valor_negocio || 0;
     let placas = item?.num_placas || 0;
     if (status === "fechada") {
-      const r = prompt("Número de placas vendidas?", String(placas || 0));
+      const r = prompt("Número de placas do projeto?", String(placas || 0));
       if (r === null) return;
       placas = Number(r);
-      const r2 = prompt("Valor do negócio (R$)? (opcional)", String(v));
-      if (r2 !== null) v = Number(r2);
     }
-    await evCall("admin_update_indicacao_status", { id, status, valor_negocio: v, num_placas: placas }, evGetAdminToken());
+    await evCall("admin_update_indicacao_status", { id, status, num_placas: placas }, evGetAdminToken());
     load();
   };
 
