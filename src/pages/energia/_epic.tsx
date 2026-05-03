@@ -64,7 +64,7 @@ export function EpicParticles({ count = 18 }: { count?: number }) {
 }
 
 // Botão flutuante de música de fundo épica (singleton global p/ persistir entre rotas)
-const TARGET_VOLUME = 0.25;
+const TARGET_VOLUME = 0.06;
 type GlobalAudio = { el: HTMLAudioElement; url: string };
 function getGlobalAudio(url: string): GlobalAudio {
   const w = window as any;
