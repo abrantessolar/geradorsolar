@@ -420,7 +420,13 @@ serve(async (req) => {
 
           const { data: indicador } = await supabase.from("energia_indicadores").select("*").eq("id", ind.indicador_id).maybeSingle();
           if (indicador) {
-            await supabase.from("energia_indicadores").update({ pontos_acumulados: indicador.pontos_acumulados + pontos }).eq("id", indicador.id);
+            const novoHist = (indicador.pontos_historicos || 0) + pontos;
+            const novoDisp = (indicador.pontos_disponiveis || 0) + pontos;
+            await supabase.from("energia_indicadores").update({
+              pontos_historicos: novoHist,
+              pontos_disponiveis: novoDisp,
+              pontos_acumulados: novoHist,
+            }).eq("id", indicador.id);
             await supabase.from("energia_pontos_log").insert({
               indicador_id: indicador.id, pontos, motivo: `Indicação fechada: ${ind.nome_indicado || "sem nome"} (${placas} placas)`, admin_id: admin.sub,
             });
