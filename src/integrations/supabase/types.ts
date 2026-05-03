@@ -582,6 +582,7 @@ export type Database = {
           pontos_disponiveis: number
           pontos_historicos: number
           telefone: string | null
+          termos_aceitos_em: string | null
           ultimo_acesso: string | null
         }
         Insert: {
@@ -601,6 +602,7 @@ export type Database = {
           pontos_disponiveis?: number
           pontos_historicos?: number
           telefone?: string | null
+          termos_aceitos_em?: string | null
           ultimo_acesso?: string | null
         }
         Update: {
@@ -620,6 +622,7 @@ export type Database = {
           pontos_disponiveis?: number
           pontos_historicos?: number
           telefone?: string | null
+          termos_aceitos_em?: string | null
           ultimo_acesso?: string | null
         }
         Relationships: []
