@@ -22,6 +22,13 @@ export default function EnergiaAdminIndicacoes() {
   useEffect(() => { load(); }, []);
 
   const indMap = Object.fromEntries(indicadores.map(i => [i.id, i.nome]));
+  const filtered = useMemo(() => {
+    const q = search.toLowerCase();
+    return list.filter(i =>
+      (statusFilter === "todos" || i.status === statusFilter) &&
+      (!q || (i.nome_indicado || "").toLowerCase().includes(q) || (indMap[i.indicador_id] || "").toLowerCase().includes(q))
+    );
+  }, [list, statusFilter, search, indMap]);
 
   const updateStatus = async (id: string, status: string) => {
     const item = list.find(l => l.id === id);
