@@ -30,7 +30,10 @@ export default function EnergiaIndicacoes() {
             <div key={i.id} className="bg-white rounded-xl p-4 shadow-sm flex justify-between items-center">
               <div>
                 <p className="font-medium text-[#1A3C5E]">{i.nome_indicado || "Indicação anônima"}</p>
-                <p className="text-xs text-gray-500">{new Date(i.criado_em).toLocaleDateString("pt-BR")}</p>
+                <p className="text-xs text-gray-500">
+                  {new Date(i.criado_em).toLocaleDateString("pt-BR")}
+                  {i.cidade && <> · {i.cidade}</>}
+                </p>
                 {i.pontos_creditados > 0 && <p className="text-xs text-[#E8651A] font-bold">+{i.pontos_creditados} pts</p>}
               </div>
               <span className={`px-3 py-1 rounded-full text-xs font-bold ${STATUS_COLOR[i.status]}`}>{STATUS_LABEL[i.status]}</span>
