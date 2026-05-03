@@ -21,17 +21,19 @@ const brToIso = (v: string) => {
 export default function EnergiaLogin() {
   const [cpf, setCpf] = useState("");
   const [data, setData] = useState("");
+  const [aceite, setAceite] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const { setIndicador, setCpf: saveCpf } = useEnergia();
   const nav = useNavigate();
 
   const handle = async () => {
+    if (!aceite) return;
     setError(""); setLoading(true);
     try {
       const iso = brToIso(data);
       if (!iso) { setError("Data inválida. Use DD/MM/AAAA"); setLoading(false); return; }
-      const res = await evCall<{ indicador: any }>("login_cliente", { cpf, data_nascimento: iso });
+      const res = await evCall<{ indicador: any }>("login_cliente", { cpf, data_nascimento: iso, aceite_termos: true });
       setIndicador(res.indicador);
       saveCpf(cpf.replace(/\D/g, ""));
       nav("/energia/dashboard");
