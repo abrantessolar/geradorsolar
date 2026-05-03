@@ -144,6 +144,8 @@ const App = () => (
               </ProtectedRoute>
             } />
             <Route path="/energia" element={<div><SeoNoIndex /><EnergiaProvider><EnergiaLogin /></EnergiaProvider></div>} />
+            <Route path="/energia/cadastro" element={<div><SeoNoIndex /><EnergiaProvider><EnergiaCadastro /></EnergiaProvider></div>} />
+
             <Route path="/energia/dashboard" element={<div><SeoNoIndex /><EnergiaProvider><EnergiaDashboard /></EnergiaProvider></div>} />
             <Route path="/energia/trilha" element={<div><SeoNoIndex /><EnergiaProvider><EnergiaTrilha /></EnergiaProvider></div>} />
             <Route path="/energia/premios" element={<div><SeoNoIndex /><EnergiaProvider><EnergiaPremios /></EnergiaProvider></div>} />
