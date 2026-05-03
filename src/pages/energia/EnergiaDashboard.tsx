@@ -92,6 +92,8 @@ export default function EnergiaDashboard() {
   if (!data) return <EnergiaLayout><p>Erro ao carregar.</p></EnergiaLayout>;
 
   const { indicador: ind, premios, stats } = data;
+  const pHist = ind.pontos_historicos ?? ind.pontos_acumulados ?? 0;
+  const pDisp = ind.pontos_disponiveis ?? ind.pontos_acumulados ?? 0;
   // monta etapas a partir do banco (ordenadas por pontos_minimos), com metadata épica por nome
   const backendEtapas: any[] = (data.etapas || []).slice().sort((a: any, b: any) => (a.pontos_minimos ?? 0) - (b.pontos_minimos ?? 0));
   const etapasEpicas = (backendEtapas.length ? backendEtapas : EPIC_STAGES.map((s, i) => ({ nome: s.title, pontos_minimos: i * 100 }))).map((b: any) => {
@@ -99,8 +101,8 @@ export default function EnergiaDashboard() {
     return { ...m, title: b.nome || m.title, pontos_minimos: b.pontos_minimos ?? 0, premio_id: b.premio_id };
   });
   const meta = epicMeta(ind.etapa_atual);
-  const proximoPremio = (premios || []).find((p: any) => p.pontos_necessarios > ind.pontos_acumulados);
-  const progressoMax = proximoPremio?.pontos_necessarios || ind.pontos_acumulados || 1;
+  const proximoPremio = (premios || []).find((p: any) => p.pontos_necessarios > pDisp);
+  const progressoMax = proximoPremio?.pontos_necessarios || pDisp || 1;
   const linkUrl = `${window.location.origin}/energia/i/${ind.codigo_link}`;
 
   const copyLink = async () => {
