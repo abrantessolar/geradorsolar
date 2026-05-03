@@ -256,7 +256,7 @@ export default function EnergiaDashboard() {
               {resultado ? (
                 <div className="space-y-3">
                   <div className="p-3 rounded-lg text-sm" style={{ background: "rgba(46,158,79,0.18)", color: "#F5E6C8", border: "1px solid rgba(46,158,79,0.5)" }}>
-                    Missão registrada! Envie a mensagem no WhatsApp do indicado:
+                    Indicação registrada! Envie a mensagem no WhatsApp do indicado:
                   </div>
                   <a href={resultado.whatsapp_url} target="_blank" rel="noreferrer"
                     className="w-full h-12 rounded-xl font-bold flex items-center justify-center"
