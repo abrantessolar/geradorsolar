@@ -4,7 +4,7 @@ import { evCall, evGetAdminToken } from "@/lib/energiaApi";
 import { Loader2, Plus, Trash2 } from "lucide-react";
 
 export default function EnergiaAdminPontuacao() {
-  const [config, setConfig] = useState<any>({ pontos_padrao_indicacao: 100, bonus_valor_minimo: 20000, bonus_pontos: 50 });
+  const [config, setConfig] = useState<any>({ modo_pontuacao: "placas", pontos_por_placa: 1, bonus_placas_minimo: 0, bonus_placas_pontos: 0, pontos_padrao_indicacao: 100, bonus_valor_minimo: 20000, bonus_pontos: 50 });
   const [campanhas, setCampanhas] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
