@@ -22,14 +22,17 @@ export default function EnergiaAdminIndicacoes() {
   const indMap = Object.fromEntries(indicadores.map(i => [i.id, i.nome]));
 
   const updateStatus = async (id: string, status: string) => {
-    const valor = list.find(l => l.id === id)?.valor_negocio || 0;
-    let v = valor;
+    const item = list.find(l => l.id === id);
+    let v = item?.valor_negocio || 0;
+    let placas = item?.num_placas || 0;
     if (status === "fechada") {
-      const r = prompt("Valor do negócio (R$)?", String(valor));
+      const r = prompt("Número de placas vendidas?", String(placas || 0));
       if (r === null) return;
-      v = Number(r);
+      placas = Number(r);
+      const r2 = prompt("Valor do negócio (R$)? (opcional)", String(v));
+      if (r2 !== null) v = Number(r2);
     }
-    await evCall("admin_update_indicacao_status", { id, status, valor_negocio: v }, evGetAdminToken());
+    await evCall("admin_update_indicacao_status", { id, status, valor_negocio: v, num_placas: placas }, evGetAdminToken());
     load();
   };
 
