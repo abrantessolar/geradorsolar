@@ -36,12 +36,23 @@ export default function EnergiaDashboard() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [showLink, setShowLink] = useState(false);
+  const [showIndicar, setShowIndicar] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [form, setForm] = useState({ nome: "", telefone: "", cidade: "Três Lagoas", observacao: "" });
+  const [enviando, setEnviando] = useState(false);
+  const [resultado, setResultado] = useState<{ whatsapp_url: string } | null>(null);
 
-  useEffect(() => {
+  const refetch = () => {
     if (!indicador) return;
     evCall("cliente_dashboard", { indicador_id: indicador.id, cpf })
       .then(setData).catch(console.error).finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    refetch();
+    const t = setInterval(refetch, 30000);
+    return () => clearInterval(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [indicador, cpf]);
 
   if (!indicador) return <Navigate to="/energia" replace />;
