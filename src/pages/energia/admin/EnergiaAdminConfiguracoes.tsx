@@ -41,6 +41,11 @@ export default function EnergiaAdminConfiguracoes() {
             <label className="block text-sm font-medium mb-1">{f.label}</label>
             {f.type === "textarea" ? (
               <textarea className="w-full border rounded p-2" rows={3} value={cfg[f.key] || ""} onChange={e => setCfg({ ...cfg, [f.key]: e.target.value })} />
+            ) : f.type === "toggle" ? (
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" checked={cfg[f.key] !== false} onChange={e => setCfg({ ...cfg, [f.key]: e.target.checked })} />
+                <span className="text-sm">{cfg[f.key] !== false ? "Ativado" : "Desativado"}</span>
+              </label>
             ) : (
               <input className="w-full h-10 border rounded px-3" value={cfg[f.key] || ""} onChange={e => setCfg({ ...cfg, [f.key]: e.target.value })} />
             )}
