@@ -232,7 +232,9 @@ export default function EnergiaDashboard() {
               <p className="text-[10px] ev-font-epic uppercase tracking-widest" style={{ color: "#A08060" }}>Próxima relíquia</p>
               <h3 className="ev-font-epic font-black text-lg ev-text-glow" style={{ color: "#F5E6C8" }}>{proximoPremio.nome}</h3>
               <p className="text-sm font-bold ev-sparkle" style={{ color: "#E8651A" }}>
-                Faltam {proximoPremio.pontos_necessarios - ind.pontos_acumulados} pontos
+                {pDisp >= proximoPremio.pontos_necessarios
+                  ? "✨ Disponível para resgate!"
+                  : `Faltam ${proximoPremio.pontos_necessarios - pDisp} pts disponíveis`}
               </p>
             </div>
           </div>
