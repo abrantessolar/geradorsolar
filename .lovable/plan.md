@@ -1,62 +1,123 @@
-## Ajustes na Proposta em PDF
+## Módulo "Energia que Volta" — Plataforma de Indicação Gamificada
 
-Todas as alterações em `src/components/PropostaTemplatePages.tsx`.
+Plataforma independente integrada ao site da Três Lagoas Solar, com trilha gamificada temática solar, login de cliente por CPF + data de nascimento (sem sessão persistente), e painel admin separado.
 
-### 1. Payback — descer 2mm
-- Linha 654: trocar `transform: 'translateY(-30px)'` por `transform: 'translateY(-22px)'` (~2mm a menos de offset para cima → o "1,8" desce 2mm).
+### 1. Acesso e Rotas
 
-### 2. Subtítulo da seção "Nossos Projetos" (última página)
-- Linha 859: substituir
-  - de: `Quase uma década entregando energia limpa em Três Lagoas e região`
-  - para: `Projetos entregues com excelência técnica, como você merece`
+- **Botão na landing page** (topo, ao lado de "Área do Consultor"): "Energia que Volta"
+- **`/energia`** — Login do cliente (CPF + data nasc.)
+- **`/energia/dashboard`**, `/energia/trilha`, `/energia/premios`, `/energia/indicacoes`, `/energia/ranking` — telas do cliente (sem sessão persistente; CPF+nasc validado a cada visita; após login guarda apenas o `indicador_id` em memória React durante a navegação — ao recarregar pede login novamente)
+- **`/energia/admin`** — Login admin separado (usuário/senha próprios, tabela própria, hash bcrypt em edge function)
+- **`/energia/admin/...`** — Painel admin (visão geral, prêmios, trilha, pontuação, clientes, indicações, resgates, configurações)
+- **`/energia/i/:codigo`** — Link público de indicação (capta lead, registra indicação como "enviada", redireciona para landing)
+- Rotas adicionadas em `src/App.tsx`, com `<SeoNoIndex />` nas internas
 
-### 3. Telefone do representante na CTA final (última página)
-- Bloco linhas 921–928: a CTA atualmente já mostra `data.responsavel_telefone || '(67) 99644-8995'` mas o `data.responsavel_email` não aparece em lugar nenhum nesta página. Verificar o caso reportado: garantir que **quando `responsavel_telefone` está vazio**, ele caia no fallback `(67) 99644-8995` (já está). Acrescentar abaixo do nome do representante uma linha com o e-mail dele:
-```tsx
-{data.responsavel_email && (
-  <div style={{ fontSize: 12, opacity: 0.85, marginTop: 2, fontFamily: 'Arial, sans-serif' }}>
-    {data.responsavel_email}
-  </div>
-)}
+### 2. Banco de Dados (novas tabelas)
+
+```text
+energia_admins              (id, usuario, senha_hash, nome, ativo, criado_em)
+energia_indicadores         (id, nome, cpf, data_nascimento, telefone, email,
+                             codigo_link UNIQUE, pontos_acumulados, etapa_atual,
+                             aparece_ranking BOOL, ultimo_acesso, criado_em)
+energia_premios             (id, nome, imagem_url, pontos_necessarios, ordem,
+                             ativo, criado_em)
+energia_etapas              (id, nome, ordem, pontos_minimos, premio_id, icone)
+energia_indicacoes          (id, indicador_id, nome_indicado, telefone_indicado,
+                             valor_negocio, status [enviada|negociacao|fechada],
+                             pontos_creditados, criado_em, fechada_em, observacao)
+energia_resgates            (id, indicador_id, premio_id, pontos_utilizados,
+                             status [pendente|entregue], solicitado_em, entregue_em)
+energia_pontos_log          (id, indicador_id, pontos, motivo, admin_id, criado_em)
+energia_campanhas           (id, nome, inicio, fim, multiplicador, ativa)
+energia_config              (chave UNIQUE, valor JSONB)
+   -- chaves: pontos_padrao_indicacao, bonus_valor_minimo, bonus_pontos,
+   --        webhook_kommo_url, mensagem_resgate, texto_link_indicacao,
+   --        logo_url, nome_plataforma
 ```
 
-### 4. Reordenação das páginas (1-2-3-4 → 1-4-2-3)
-Hoje o JSX renderiza nesta ordem:
-- P1 (425–485): Capa
-- P2 (491–624): Especificações + Gráfico + Diferenciais
-- P3 (630–843): Investimento + Fluxo de Caixa
-- P4 (849–932): Portfólio + CTA
+**RLS**: tabelas restritas; acesso público apenas via edge functions (que validam CPF/data ou token admin). Sem acesso direto do client anon.
 
-Nova ordem desejada:
-- 1ª: Capa (atual P1)
-- 2ª: Portfólio + CTA (atual P4)
-- 3ª: Especificações + Gráfico + Diferenciais (atual P2)
-- 4ª: Investimento + Fluxo de Caixa (atual P3)
+### 3. Edge Functions (lógica server-side)
 
-Implementação: **mover o bloco JSX da P4 (linhas 847–932) para logo após o fechamento da P1 (linha 485)**, mantendo os comentários de cabeçalho atualizados:
-- `PÁGINA 2 — PORTFÓLIO`
-- `PÁGINA 3 — ESPECIFICAÇÕES + GRÁFICO + DIFERENCIAIS`
-- `PÁGINA 4 — INVESTIMENTO + FLUXO DE CAIXA`
+Como não há sessão Supabase, toda interação client/admin passa por edge functions com validação:
 
-Como `generatePropostaPDF.ts` itera sobre `pagesContainer.children` na ordem do DOM, basta a reordenação do JSX — nada mais precisa mudar.
+- `ev-login-cliente` — recebe CPF+data, valida em `energia_indicadores`, retorna `indicador_id` + dados básicos
+- `ev-login-admin` — usuário+senha, bcrypt compare, retorna token JWT simples (assinado com secret) válido 8h
+- `ev-cliente-data` — recebe `indicador_id`+CPF (revalida), retorna dashboard, trilha, prêmios, indicações, ranking
+- `ev-cliente-resgatar` — valida pontos, cria resgate pendente
+- `ev-captar-indicacao` — recebe `codigo_link` + dados do indicado (público), cria indicação status "enviada"
+- `ev-admin-*` — CRUD de prêmios, etapas, pontuação, clientes, indicações, resgates, config (valida token admin)
+- `ev-fechar-indicacao` — ao mudar status para "fechada": calcula pontos (base × multiplicador campanha + bônus), credita ao indicador, recalcula etapa, dispara webhook Kommo
 
-### 5. Auditoria de contraste (legibilidade quando impresso)
-A paleta atual usa dois cinzas para textos pequenos:
-- `GRAY = '#7a7a7a'` — usado em legendas, descrições de diferenciais (12–14px)
-- `GRAY_LIGHT = '#a8a8a8'` — usado em rótulos uppercase, "*valores aproximados", "de" (10–11px)
+Secret necessário: `EV_ADMIN_JWT_SECRET` (será solicitado via add_secret).
 
-Esses tons ficam fracos em impressão, especialmente em fontes ≤12px. Proposta:
-- `GRAY` → `#4a4a4a` (cinza escuro, ainda não preto)
-- `GRAY_LIGHT` → `#6a6a6a` (cinza médio para rótulos secundários)
+### 4. Telas do Cliente
 
-Aplicar substituindo apenas as duas constantes nas linhas 74–75. Como todos os usos passam pelas constantes, o ajuste se propaga automaticamente para:
-- Rótulos uppercase ("ESPECIFICAÇÕES TÉCNICAS", etc.)
-- Legendas dos eixos do gráfico mensal
-- "Geração" / "Consumo" da legenda do gráfico
-- Textos dos cards de diferenciais
-- "*valores aproximados" e linhas "de" das parcelas
-- Subtítulo da seção de portfólio
-- Subtexto da CTA final (mantém-se com `opacity` sobre branco — não afetado)
+```text
+src/pages/energia/
+  LoginPage.tsx              CPF mask + data nascimento
+  DashboardPage.tsx          Saudação, 3 gauges (recharts RadialBar),
+                             trilha horizontal, card próximo prêmio,
+                             botão "Indicar agora" (modal com link + WhatsApp)
+  TrilhaPage.tsx             Visão expandida das casas (Raio→Sol Maior)
+  PremiosPage.tsx            Grid catálogo + histórico resgates
+  IndicacoesPage.tsx         Lista cronológica com badges de status
+  RankingPage.tsx            Top 10 + posição do cliente
+  components/
+    EnergiaLayout.tsx        Bottom nav (4 ícones) + header
+    Trilha.tsx               SVG/divs com casas iluminadas/cadeado/pulsando
+    GaugeIndicator.tsx       Velocímetro (recharts)
+    PremioCard.tsx
+```
 
-### Resumo dos arquivos alterados
-- `src/components/PropostaTemplatePages.tsx` (todas as mudanças acima)
+Visual: paleta solar (#F5A623, #E8651A, #1A3C5E, #FFFFFF), flat lúdico, animações `animate-pulse` na casa atual.
+
+### 5. Telas do Admin
+
+```text
+src/pages/energia/admin/
+  LoginPage.tsx
+  AdminLayout.tsx            Sidebar com 8 itens
+  VisaoGeralPage.tsx         Cards + gráfico mensal (recharts)
+  PremiosPage.tsx            CRUD + upload PNG (bucket novo: energia-premios)
+  TrilhaPage.tsx             Editar etapas, drag-reorder (dnd-kit)
+  PontuacaoPage.tsx          Valor padrão, regra bônus, campanhas
+  ClientesPage.tsx           Lista + busca + adicionar pontos manual + toggle ranking
+  IndicacoesPage.tsx         Lista + alterar status (dispara fechamento)
+  ResgatesPage.tsx           Pendentes + confirmar entrega + histórico
+  ConfiguracoesPage.tsx      Webhook Kommo, mensagens, logo, nome
+```
+
+Auth admin: token guardado em `sessionStorage` (expira ao fechar aba), enviado em todas as chamadas como header `x-ev-admin-token`.
+
+### 6. Lógica de Pontuação e Etapas
+
+- Ao fechar indicação: `pontos = pontos_padrao × multiplicador_campanha_ativa + (valor_negocio >= bonus_valor_minimo ? bonus_pontos : 0)`
+- Recalcula `etapa_atual` consultando `energia_etapas` ordenadas por `pontos_minimos` (a maior etapa cujo `pontos_minimos <= pontos_acumulados`)
+- Resgate: `pontos_utilizados` é debitado de `pontos_acumulados`
+
+### 7. Integração com Site Atual
+
+- Botão "Energia que Volta" no header da `LandingPage.tsx`, ao lado do botão Área do Consultor
+- Bucket público novo: `energia-premios` (imagens PNG dos prêmios)
+- `mem://features/energia-que-volta` será criado documentando o módulo
+- Não toca em nenhum módulo existente (gestor, calculadora, admin atual)
+
+### 8. Etapas de Implementação
+
+1. Criar migração com 9 tabelas + RLS + bucket
+2. Solicitar secret `EV_ADMIN_JWT_SECRET` e seed do primeiro admin
+3. Edge functions de login (cliente + admin)
+4. Edge functions de dados (cliente)
+5. Telas do cliente (login → dashboard → demais)
+6. Edge functions admin
+7. Telas admin
+8. Edge function `ev-fechar-indicacao` com webhook Kommo
+9. Botão na landing page + rotas em App.tsx
+10. Salvar memória do módulo
+
+### Observações
+
+- **Sem sessão persistente do cliente** (conforme escolhido): cada acesso pede CPF+nasc. O link `/energia/i/:codigo` não exige login para o indicado preencher dados.
+- **Indicadores são cadastrados pelo admin** (importação manual ou criação) — não há autoinscrição.
+- **Webhook Kommo**: URL configurável em `energia_config`; payload JSON com `{indicador, indicado, pontos, valor}`.

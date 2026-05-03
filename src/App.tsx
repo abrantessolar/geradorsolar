@@ -19,6 +19,23 @@ import ClientesPage from "@/pages/ClientesPage";
 import UnauthorizedPage from "@/pages/UnauthorizedPage";
 import LeadNotification from "@/components/LeadNotification";
 import NotFound from "@/pages/NotFound";
+import { EnergiaProvider } from "@/contexts/EnergiaContext";
+import EnergiaLogin from "@/pages/energia/EnergiaLogin";
+import EnergiaDashboard from "@/pages/energia/EnergiaDashboard";
+import EnergiaTrilha from "@/pages/energia/EnergiaTrilha";
+import EnergiaPremios from "@/pages/energia/EnergiaPremios";
+import EnergiaIndicacoes from "@/pages/energia/EnergiaIndicacoes";
+import EnergiaRanking from "@/pages/energia/EnergiaRanking";
+import EnergiaCaptarIndicacao from "@/pages/energia/EnergiaCaptarIndicacao";
+import EnergiaAdminLogin from "@/pages/energia/admin/EnergiaAdminLogin";
+import EnergiaAdminVisaoGeral from "@/pages/energia/admin/EnergiaAdminVisaoGeral";
+import EnergiaAdminPremios from "@/pages/energia/admin/EnergiaAdminPremios";
+import EnergiaAdminTrilha from "@/pages/energia/admin/EnergiaAdminTrilha";
+import EnergiaAdminPontuacao from "@/pages/energia/admin/EnergiaAdminPontuacao";
+import EnergiaAdminClientes from "@/pages/energia/admin/EnergiaAdminClientes";
+import EnergiaAdminIndicacoes from "@/pages/energia/admin/EnergiaAdminIndicacoes";
+import EnergiaAdminResgates from "@/pages/energia/admin/EnergiaAdminResgates";
+import EnergiaAdminConfiguracoes from "@/pages/energia/admin/EnergiaAdminConfiguracoes";
 
 const queryClient = new QueryClient();
 
@@ -125,6 +142,22 @@ const App = () => (
                 <SeoNoIndex /><Layout><CustosPage /></Layout>
               </ProtectedRoute>
             } />
+            <Route path="/energia" element={<div><SeoNoIndex /><EnergiaProvider><EnergiaLogin /></EnergiaProvider></div>} />
+            <Route path="/energia/dashboard" element={<div><SeoNoIndex /><EnergiaProvider><EnergiaDashboard /></EnergiaProvider></div>} />
+            <Route path="/energia/trilha" element={<div><SeoNoIndex /><EnergiaProvider><EnergiaTrilha /></EnergiaProvider></div>} />
+            <Route path="/energia/premios" element={<div><SeoNoIndex /><EnergiaProvider><EnergiaPremios /></EnergiaProvider></div>} />
+            <Route path="/energia/indicacoes" element={<div><SeoNoIndex /><EnergiaProvider><EnergiaIndicacoes /></EnergiaProvider></div>} />
+            <Route path="/energia/ranking" element={<div><SeoNoIndex /><EnergiaProvider><EnergiaRanking /></EnergiaProvider></div>} />
+            <Route path="/energia/i/:codigo" element={<div><SeoNoIndex /><EnergiaCaptarIndicacao /></div>} />
+            <Route path="/energia/admin/login" element={<div><SeoNoIndex /><EnergiaAdminLogin /></div>} />
+            <Route path="/energia/admin" element={<div><SeoNoIndex /><EnergiaAdminVisaoGeral /></div>} />
+            <Route path="/energia/admin/premios" element={<div><SeoNoIndex /><EnergiaAdminPremios /></div>} />
+            <Route path="/energia/admin/trilha" element={<div><SeoNoIndex /><EnergiaAdminTrilha /></div>} />
+            <Route path="/energia/admin/pontuacao" element={<div><SeoNoIndex /><EnergiaAdminPontuacao /></div>} />
+            <Route path="/energia/admin/clientes" element={<div><SeoNoIndex /><EnergiaAdminClientes /></div>} />
+            <Route path="/energia/admin/indicacoes" element={<div><SeoNoIndex /><EnergiaAdminIndicacoes /></div>} />
+            <Route path="/energia/admin/resgates" element={<div><SeoNoIndex /><EnergiaAdminResgates /></div>} />
+            <Route path="/energia/admin/configuracoes" element={<div><SeoNoIndex /><EnergiaAdminConfiguracoes /></div>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
