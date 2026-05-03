@@ -142,6 +142,30 @@ serve(async (req) => {
       return json({ indicador: data });
     }
 
+    // Helper: dispara webhook Kommo de NOVA indicação
+    async function fireKommoNew(ind: any, indicacao: any) {
+      const webhook = await getConfig("webhook_kommo_url");
+      if (!webhook || typeof webhook !== "string") return;
+      try {
+        await fetch(webhook, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            evento: "nova_indicacao",
+            tag: "indicação",
+            indicador: { nome: ind.nome, telefone: ind.telefone, cpf: ind.cpf },
+            indicado: {
+              nome: indicacao.nome_indicado,
+              telefone: indicacao.telefone_indicado,
+              email: indicacao.email_indicado,
+              cidade: indicacao.cidade,
+              observacao: indicacao.observacao_indicador,
+            },
+          }),
+        });
+      } catch (e) { console.error("Webhook Kommo new failed", e); }
+    }
+
     if (action === "captar_indicacao") {
       const codigo = payload.codigo_link;
       const { nome, telefone, email } = payload;
