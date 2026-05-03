@@ -168,18 +168,21 @@ serve(async (req) => {
 
     if (action === "captar_indicacao") {
       const codigo = payload.codigo_link;
-      const { nome, telefone, email } = payload;
+      const { nome, telefone, email, cidade, observacao } = payload;
       if (!codigo || !nome) return err("Dados incompletos");
       const { data: ind } = await supabase
-        .from("energia_indicadores").select("id").eq("codigo_link", codigo).maybeSingle();
+        .from("energia_indicadores").select("*").eq("codigo_link", codigo).maybeSingle();
       if (!ind) return err("Link inválido", 404);
-      await supabase.from("energia_indicacoes").insert({
+      const { data: novaInd } = await supabase.from("energia_indicacoes").insert({
         indicador_id: ind.id,
         nome_indicado: nome,
         telefone_indicado: telefone || null,
         email_indicado: email || null,
+        cidade: cidade || null,
+        observacao_indicador: observacao || null,
         status: "enviada",
-      });
+      }).select().maybeSingle();
+      await fireKommoNew(ind, novaInd);
       return json({ ok: true });
     }
 
