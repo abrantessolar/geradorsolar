@@ -48,6 +48,18 @@ export default function EnergiaAdminIndicacoes() {
   return (
     <EnergiaAdminLayout>
       <h1 className="text-2xl font-bold text-[#1A3C5E] mb-6">Indicações</h1>
+      <div className="flex flex-col md:flex-row gap-3 mb-4">
+        <div className="relative flex-1 max-w-md">
+          <Search className="w-4 h-4 absolute left-3 top-3 text-gray-400" />
+          <input className="w-full h-10 border rounded pl-9 pr-3" placeholder="Buscar indicado ou indicador..." value={search} onChange={e => setSearch(e.target.value)} />
+        </div>
+        <select className="h-10 border rounded px-3" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
+          <option value="todos">Todos status</option>
+          <option value="enviada">Enviada</option>
+          <option value="negociacao">Em negociação</option>
+          <option value="fechada">Fechada</option>
+        </select>
+      </div>
       {loading ? <Loader2 className="animate-spin" /> : (
         <div className="bg-white rounded-xl shadow-sm overflow-hidden">
           <table className="w-full text-sm">
