@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import EnergiaAdminLayout from "./EnergiaAdminLayout";
 import { evCall, evGetAdminToken, fileToBase64 } from "@/lib/energiaApi";
-import { Plus, Trash2, Loader2, Upload, ArrowUp, ArrowDown } from "lucide-react";
+import { Plus, Trash2, Loader2, Upload, ArrowUp, ArrowDown, Sparkles } from "lucide-react";
+import { PREMIO_ICONS, PremioIcon, isPremioIcon, ICON_PREFIX } from "../premioIcons";
 
 type Premio = { id?: string; nome: string; imagem_url?: string; pontos_necessarios: number; ordem: number; ativo: boolean };
 
@@ -57,7 +58,9 @@ export default function EnergiaAdminPremios() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {list.map((p, idx) => (
             <div key={p.id} className="bg-white rounded-xl p-4 shadow-sm">
-              {p.imagem_url ? <img src={p.imagem_url} className="w-full h-32 object-contain mb-2" /> : <div className="w-full h-32 bg-gray-100 rounded mb-2" />}
+              {isPremioIcon(p.imagem_url)
+                ? <div className="w-full h-32 flex items-center justify-center bg-[#0D0A00] rounded mb-2"><PremioIcon value={p.imagem_url} size={110} /></div>
+                : p.imagem_url ? <img src={p.imagem_url} className="w-full h-32 object-contain mb-2" /> : <div className="w-full h-32 bg-gray-100 rounded mb-2" />}
               <div className="font-bold">{p.nome}</div>
               <div className="text-sm text-gray-500">{p.pontos_necessarios} pts · ordem {p.ordem}</div>
               <div className={`text-xs mt-1 ${p.ativo ? "text-green-600" : "text-gray-400"}`}>{p.ativo ? "Ativo" : "Pausado"}</div>
