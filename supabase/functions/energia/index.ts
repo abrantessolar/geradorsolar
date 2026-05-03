@@ -424,6 +424,25 @@ serve(async (req) => {
         await recalcEtapa(data.id);
         return json({ data });
       }
+
+      if (action === "admin_cliente_detalhe") {
+        const id = payload.id;
+        const [{ data: ind }, { data: indicacoes }, { data: resgates }, { data: log }] = await Promise.all([
+          supabase.from("energia_indicadores").select("*").eq("id", id).maybeSingle(),
+          supabase.from("energia_indicacoes").select("*").eq("indicador_id", id).order("criado_em", { ascending: false }),
+          supabase.from("energia_resgates").select("*, energia_premios(nome)").eq("indicador_id", id).order("solicitado_em", { ascending: false }),
+          supabase.from("energia_pontos_log").select("*").eq("indicador_id", id).order("criado_em", { ascending: false }),
+        ]);
+        return json({ indicador: ind, indicacoes, resgates, log });
+      }
+
+      if (action === "admin_reorder_premios") {
+        const ids: string[] = payload.ids || [];
+        for (let i = 0; i < ids.length; i++) {
+          await supabase.from("energia_premios").update({ ordem: i }).eq("id", ids[i]);
+        }
+        return json({ ok: true });
+      }
     }
 
     return err("Ação desconhecida: " + action, 404);
