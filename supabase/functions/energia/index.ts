@@ -319,13 +319,15 @@ serve(async (req) => {
 
       if (action === "admin_overview") {
         const inicioMesIso = (() => { const d = new Date(); d.setDate(1); d.setHours(0,0,0,0); return d.toISOString(); })();
-        const [{ data: indicadores }, { data: indicacoes }, { data: resgates }, { data: pontosMes }] = await Promise.all([
+        const [{ data: indicadores }, { data: indicacoes }, { data: resgates }, { data: pontosMes }, { data: todosResgates }] = await Promise.all([
           supabase.from("energia_indicadores").select("id, ultimo_acesso"),
           supabase.from("energia_indicacoes").select("status, num_placas, criado_em"),
           supabase.from("energia_resgates").select("status").eq("status", "pendente"),
           supabase.from("energia_pontos_log").select("pontos").gte("criado_em", inicioMesIso),
+          supabase.from("energia_resgates").select("pontos_utilizados"),
         ]);
-        const pontos_mes = (pontosMes || []).reduce((a: number, p: any) => a + Number(p.pontos || 0), 0);
+        const pontos_mes = (pontosMes || []).filter((p: any) => Number(p.pontos) > 0).reduce((a: number, p: any) => a + Number(p.pontos || 0), 0);
+        const total_resgatado = (todosResgates || []).reduce((a: number, r: any) => a + Number(r.pontos_utilizados || 0), 0);
         const total = indicadores?.length || 0;
         const ativos = (indicadores || []).filter((i: any) => i.ultimo_acesso).length;
         const inicioMes = new Date(); inicioMes.setDate(1); inicioMes.setHours(0,0,0,0);
@@ -342,7 +344,7 @@ serve(async (req) => {
           const count = (indicacoes || []).filter((x: any) => { const dt = new Date(x.criado_em); return dt >= d && dt < next; }).length;
           grafico.push({ mes: d.toLocaleDateString("pt-BR", { month: "short" }), indicacoes: count });
         }
-        return json({ stats: { total, ativos, enviadas, negociacao, fechadas, placas_total, pontos_mes, resgates_pendentes: resgates?.length || 0 }, grafico });
+        return json({ stats: { total, ativos, enviadas, negociacao, fechadas, placas_total, pontos_mes, total_resgatado, resgates_pendentes: resgates?.length || 0 }, grafico });
       }
 
       if (action === "admin_list") {
