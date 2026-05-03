@@ -70,8 +70,29 @@ export default function EnergiaLogin() {
             <label className="block text-xs ev-font-epic uppercase tracking-widest mb-1" style={{ color: "#F5A623" }}>Data de nascimento</label>
             <input type="tel" inputMode="numeric" autoComplete="bday" placeholder="DD/MM/AAAA" maxLength={10} className="ev-input" value={data} onChange={e => setData(maskDateBR(e.target.value))} onKeyDown={e => e.key === "Enter" && handle()} />
           </div>
-          <button disabled={loading} onClick={handle}
-            className="ev-btn-primary w-full h-12 flex items-center justify-center gap-2">
+          <label className="flex items-start gap-2 cursor-pointer select-none" style={{ fontSize: 13, color: "#F5E6C8" }}>
+            <input
+              type="checkbox"
+              checked={aceite}
+              onChange={e => setAceite(e.target.checked)}
+              style={{ accentColor: "#C17F24", width: 16, height: 16, marginTop: 2, border: "1px solid #C17F24", background: "#1a0f00" }}
+            />
+            <span>
+              Li e aceito os{" "}
+              <a
+                href="/docs/regulamento-energia-que-volta.pdf"
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={e => e.stopPropagation()}
+                style={{ color: "#F5A623", textDecoration: "underline", fontSize: 13 }}
+              >
+                Termos e Condições do Programa Energia que Volta
+              </a>
+            </span>
+          </label>
+          <button disabled={loading || !aceite} onClick={handle}
+            className="ev-btn-primary w-full h-12 flex items-center justify-center gap-2"
+            style={!aceite ? { opacity: 0.5, pointerEvents: "none" } : undefined}>
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
             ENTRAR NA SAGA
           </button>
