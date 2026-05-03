@@ -401,6 +401,322 @@ export type Database = {
         }
         Relationships: []
       }
+      energia_admins: {
+        Row: {
+          ativo: boolean
+          criado_em: string
+          id: string
+          nome: string
+          senha_hash: string
+          usuario: string
+        }
+        Insert: {
+          ativo?: boolean
+          criado_em?: string
+          id?: string
+          nome: string
+          senha_hash: string
+          usuario: string
+        }
+        Update: {
+          ativo?: boolean
+          criado_em?: string
+          id?: string
+          nome?: string
+          senha_hash?: string
+          usuario?: string
+        }
+        Relationships: []
+      }
+      energia_campanhas: {
+        Row: {
+          ativa: boolean
+          fim: string
+          id: string
+          inicio: string
+          multiplicador: number
+          nome: string
+        }
+        Insert: {
+          ativa?: boolean
+          fim: string
+          id?: string
+          inicio: string
+          multiplicador?: number
+          nome: string
+        }
+        Update: {
+          ativa?: boolean
+          fim?: string
+          id?: string
+          inicio?: string
+          multiplicador?: number
+          nome?: string
+        }
+        Relationships: []
+      }
+      energia_config: {
+        Row: {
+          chave: string
+          valor: Json
+        }
+        Insert: {
+          chave: string
+          valor?: Json
+        }
+        Update: {
+          chave?: string
+          valor?: Json
+        }
+        Relationships: []
+      }
+      energia_etapas: {
+        Row: {
+          icone: string | null
+          id: string
+          nome: string
+          ordem: number
+          pontos_minimos: number
+          premio_id: string | null
+        }
+        Insert: {
+          icone?: string | null
+          id?: string
+          nome: string
+          ordem?: number
+          pontos_minimos?: number
+          premio_id?: string | null
+        }
+        Update: {
+          icone?: string | null
+          id?: string
+          nome?: string
+          ordem?: number
+          pontos_minimos?: number
+          premio_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "energia_etapas_premio_id_fkey"
+            columns: ["premio_id"]
+            isOneToOne: false
+            referencedRelation: "energia_premios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      energia_indicacoes: {
+        Row: {
+          criado_em: string
+          email_indicado: string | null
+          fechada_em: string | null
+          id: string
+          indicador_id: string
+          nome_indicado: string | null
+          observacao: string | null
+          pontos_creditados: number
+          status: string
+          telefone_indicado: string | null
+          valor_negocio: number | null
+        }
+        Insert: {
+          criado_em?: string
+          email_indicado?: string | null
+          fechada_em?: string | null
+          id?: string
+          indicador_id: string
+          nome_indicado?: string | null
+          observacao?: string | null
+          pontos_creditados?: number
+          status?: string
+          telefone_indicado?: string | null
+          valor_negocio?: number | null
+        }
+        Update: {
+          criado_em?: string
+          email_indicado?: string | null
+          fechada_em?: string | null
+          id?: string
+          indicador_id?: string
+          nome_indicado?: string | null
+          observacao?: string | null
+          pontos_creditados?: number
+          status?: string
+          telefone_indicado?: string | null
+          valor_negocio?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "energia_indicacoes_indicador_id_fkey"
+            columns: ["indicador_id"]
+            isOneToOne: false
+            referencedRelation: "energia_indicadores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      energia_indicadores: {
+        Row: {
+          aparece_ranking: boolean
+          codigo_link: string
+          cpf: string
+          criado_em: string
+          data_nascimento: string
+          email: string | null
+          etapa_atual: string | null
+          id: string
+          nome: string
+          pontos_acumulados: number
+          telefone: string | null
+          ultimo_acesso: string | null
+        }
+        Insert: {
+          aparece_ranking?: boolean
+          codigo_link?: string
+          cpf: string
+          criado_em?: string
+          data_nascimento: string
+          email?: string | null
+          etapa_atual?: string | null
+          id?: string
+          nome: string
+          pontos_acumulados?: number
+          telefone?: string | null
+          ultimo_acesso?: string | null
+        }
+        Update: {
+          aparece_ranking?: boolean
+          codigo_link?: string
+          cpf?: string
+          criado_em?: string
+          data_nascimento?: string
+          email?: string | null
+          etapa_atual?: string | null
+          id?: string
+          nome?: string
+          pontos_acumulados?: number
+          telefone?: string | null
+          ultimo_acesso?: string | null
+        }
+        Relationships: []
+      }
+      energia_pontos_log: {
+        Row: {
+          admin_id: string | null
+          criado_em: string
+          id: string
+          indicador_id: string
+          motivo: string | null
+          pontos: number
+        }
+        Insert: {
+          admin_id?: string | null
+          criado_em?: string
+          id?: string
+          indicador_id: string
+          motivo?: string | null
+          pontos: number
+        }
+        Update: {
+          admin_id?: string | null
+          criado_em?: string
+          id?: string
+          indicador_id?: string
+          motivo?: string | null
+          pontos?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "energia_pontos_log_admin_id_fkey"
+            columns: ["admin_id"]
+            isOneToOne: false
+            referencedRelation: "energia_admins"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "energia_pontos_log_indicador_id_fkey"
+            columns: ["indicador_id"]
+            isOneToOne: false
+            referencedRelation: "energia_indicadores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      energia_premios: {
+        Row: {
+          ativo: boolean
+          criado_em: string
+          id: string
+          imagem_url: string | null
+          nome: string
+          ordem: number
+          pontos_necessarios: number
+        }
+        Insert: {
+          ativo?: boolean
+          criado_em?: string
+          id?: string
+          imagem_url?: string | null
+          nome: string
+          ordem?: number
+          pontos_necessarios?: number
+        }
+        Update: {
+          ativo?: boolean
+          criado_em?: string
+          id?: string
+          imagem_url?: string | null
+          nome?: string
+          ordem?: number
+          pontos_necessarios?: number
+        }
+        Relationships: []
+      }
+      energia_resgates: {
+        Row: {
+          entregue_em: string | null
+          id: string
+          indicador_id: string
+          pontos_utilizados: number
+          premio_id: string
+          solicitado_em: string
+          status: string
+        }
+        Insert: {
+          entregue_em?: string | null
+          id?: string
+          indicador_id: string
+          pontos_utilizados: number
+          premio_id: string
+          solicitado_em?: string
+          status?: string
+        }
+        Update: {
+          entregue_em?: string | null
+          id?: string
+          indicador_id?: string
+          pontos_utilizados?: number
+          premio_id?: string
+          solicitado_em?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "energia_resgates_indicador_id_fkey"
+            columns: ["indicador_id"]
+            isOneToOne: false
+            referencedRelation: "energia_indicadores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "energia_resgates_premio_id_fkey"
+            columns: ["premio_id"]
+            isOneToOne: false
+            referencedRelation: "energia_premios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       equipamentos_calculadora: {
         Row: {
           ativo: boolean
