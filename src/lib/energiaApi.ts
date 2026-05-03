@@ -40,6 +40,27 @@ export const evMaskCpf = (v: string) => {
     .replace(/\.(\d{3})(\d)/, ".$1-$2");
 };
 
+export const evMaskPhone = (v: string) => {
+  const d = (v || "").replace(/\D/g, "").slice(0, 11);
+  if (d.length <= 10) {
+    return d.replace(/^(\d{0,2})(\d{0,4})(\d{0,4}).*/, (_, a, b, c) =>
+      [a && `(${a}`, a && a.length === 2 ? ") " : "", b, c && `-${c}`].filter(Boolean).join("")
+    );
+  }
+  return d.replace(/^(\d{2})(\d{5})(\d{0,4}).*/, "($1) $2-$3");
+};
+
+export const fileToBase64 = (file: File) => new Promise<string>((resolve, reject) => {
+  const r = new FileReader();
+  r.onload = () => {
+    const s = String(r.result || "");
+    const idx = s.indexOf(",");
+    resolve(idx >= 0 ? s.slice(idx + 1) : s);
+  };
+  r.onerror = reject;
+  r.readAsDataURL(file);
+});
+
 export const evGetAdminToken = () => sessionStorage.getItem("ev_admin_token") || "";
 export const evSetAdminToken = (t: string) => sessionStorage.setItem("ev_admin_token", t);
 export const evClearAdminToken = () => sessionStorage.removeItem("ev_admin_token");
