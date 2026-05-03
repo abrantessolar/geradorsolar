@@ -4,7 +4,7 @@ import { Loader2, Copy, Share2, X, Lock, Crown } from "lucide-react";
 import EnergiaLayout from "./EnergiaLayout";
 import { useEnergia } from "@/contexts/EnergiaContext";
 import { evCall, evMaskPhone } from "@/lib/energiaApi";
-import { EPIC_STAGES, epicMeta, epicName, EpicLevelUpOverlay } from "./_epic";
+import { EPIC_STAGES, epicMeta, epicName, epicMetaByName, EpicLevelUpOverlay } from "./_epic";
 
 const CIDADES = ["Três Lagoas", "Água Clara", "Selvíria", "Bataguassu", "Outras"];
 
@@ -89,11 +89,11 @@ export default function EnergiaDashboard() {
   if (!data) return <EnergiaLayout><p>Erro ao carregar.</p></EnergiaLayout>;
 
   const { indicador: ind, premios, stats } = data;
-  // monta etapas a partir do mapa épico, pontos vindos do backend ou progressão padrão
-  const backendEtapas: any[] = data.etapas || [];
-  const etapasEpicas = EPIC_STAGES.map((s, i) => {
-    const found = backendEtapas.find(b => epicName(b.nome) === s.key);
-    return { ...s, pontos_minimos: found?.pontos_minimos ?? i * 100, premio_id: found?.premio_id, _orig: found?.nome || s.key };
+  // monta etapas a partir do banco (ordenadas por pontos_minimos), com metadata épica por nome
+  const backendEtapas: any[] = (data.etapas || []).slice().sort((a: any, b: any) => (a.pontos_minimos ?? 0) - (b.pontos_minimos ?? 0));
+  const etapasEpicas = (backendEtapas.length ? backendEtapas : EPIC_STAGES.map((s, i) => ({ nome: s.title, pontos_minimos: i * 100 }))).map((b: any) => {
+    const m = epicMetaByName(b.nome);
+    return { ...m, title: b.nome || m.title, pontos_minimos: b.pontos_minimos ?? 0, premio_id: b.premio_id };
   });
   const meta = epicMeta(ind.etapa_atual);
   const proximoPremio = (premios || []).find((p: any) => p.pontos_necessarios > ind.pontos_acumulados);

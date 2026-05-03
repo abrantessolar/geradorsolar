@@ -8,12 +8,20 @@ export const EPIC_STAGES: { key: string; title: string; icon: string; aura: stri
   { key: "Ampere",   title: "Indicador Ampere",   icon: "⚡⚡", aura: "rgba(245,166,35,0.85)" },
   { key: "Megawatt", title: "Indicador Megawatt", icon: "🔥", aura: "rgba(232,101,26,0.9)" },
   { key: "Gigawatt", title: "Indicador Gigawatt", icon: "🌟", aura: "rgba(255,215,80,1)" },
+  { key: "Master",   title: "Indicador Master",   icon: "👑", aura: "rgba(255,180,40,1)" },
+  { key: "Supernova",title: "Indicador Supernova",icon: "💫", aura: "rgba(255,140,200,1)" },
 ];
 
 // Mapeamento de nomes legados para novos
 const LEGACY_MAP: Record<string, string> = {
   Raio: "Faísca", Painel: "Volt", Gerador: "Ampere", Usina: "Megawatt", Central: "Gigawatt", "Sol Maior": "Gigawatt",
 };
+
+// Pega metadata épica por nome do banco (se não achar, usa default genérico)
+export function epicMetaByName(nome?: string | null) {
+  const k = epicName(nome);
+  return EPIC_STAGES.find(s => s.key === k) || { key: k, title: nome || k, icon: "⭐", aura: "rgba(245,166,35,0.7)" };
+}
 export const epicName = (n?: string | null) => (n ? (LEGACY_MAP[n] || n) : "Faísca");
 export const epicMeta = (n?: string | null) => {
   const k = epicName(n);

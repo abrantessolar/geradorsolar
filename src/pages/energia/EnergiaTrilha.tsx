@@ -4,7 +4,7 @@ import { Loader2, Lock, Check } from "lucide-react";
 import EnergiaLayout from "./EnergiaLayout";
 import { useEnergia } from "@/contexts/EnergiaContext";
 import { evCall } from "@/lib/energiaApi";
-import { EPIC_STAGES, epicName } from "./_epic";
+import { EPIC_STAGES, epicName, epicMetaByName } from "./_epic";
 
 export default function EnergiaTrilha() {
   const { indicador, cpf } = useEnergia();
@@ -24,10 +24,10 @@ export default function EnergiaTrilha() {
 
   if (!indicador) return <Navigate to="/energia" replace />;
 
-  const backendEtapas: any[] = data?.etapas || [];
-  const etapas = EPIC_STAGES.map((s, i) => {
-    const found = backendEtapas.find(b => epicName(b.nome) === s.key);
-    return { ...s, pontos_minimos: found?.pontos_minimos ?? i * 100, premio_id: found?.premio_id };
+  const backendEtapas: any[] = (data?.etapas || []).slice().sort((a: any, b: any) => (a.pontos_minimos ?? 0) - (b.pontos_minimos ?? 0));
+  const etapas = (backendEtapas.length ? backendEtapas : EPIC_STAGES.map((s, i) => ({ nome: s.title, pontos_minimos: i * 100 }))).map((b: any) => {
+    const meta = epicMetaByName(b.nome);
+    return { ...meta, title: b.nome || meta.title, pontos_minimos: b.pontos_minimos ?? 0, premio_id: b.premio_id };
   });
 
   return (
