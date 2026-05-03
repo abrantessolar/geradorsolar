@@ -123,6 +123,25 @@ serve(async (req) => {
       return json({ indicador: data });
     }
 
+    if (action === "cadastro_publico") {
+      const nome = (payload.nome || "").trim();
+      const cpf = onlyDigits(payload.cpf);
+      const data_nascimento = payload.data_nascimento;
+      const telefone = (payload.telefone || "").trim();
+      const email = (payload.email || "").trim();
+      const eh_cliente = !!payload.eh_cliente;
+      if (!nome || !cpf || !data_nascimento || !telefone) return err("Preencha nome, CPF, data de nascimento e telefone");
+      if (cpf.length !== 11) return err("CPF inválido");
+      const { data: existente } = await supabase.from("energia_indicadores").select("id").eq("cpf", cpf).maybeSingle();
+      if (existente) return err("Já existe cadastro com este CPF. Faça login.", 409);
+      const { data, error } = await supabase.from("energia_indicadores")
+        .insert({ nome, cpf, data_nascimento, telefone, email: email || null, eh_cliente })
+        .select().maybeSingle();
+      if (error) return err(error.message);
+      await recalcEtapa(data.id);
+      return json({ indicador: data });
+    }
+
     if (action === "captar_indicacao") {
       const codigo = payload.codigo_link;
       const { nome, telefone, email } = payload;

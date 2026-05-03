@@ -1,0 +1,2 @@
+ALTER TABLE public.energia_indicadores ADD COLUMN IF NOT EXISTS eh_cliente boolean NOT NULL DEFAULT false;
+CREATE UNIQUE INDEX IF NOT EXISTS energia_indicadores_cpf_unique ON public.energia_indicadores (cpf);
