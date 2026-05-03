@@ -207,6 +207,8 @@ export default function EnergiaDashboard() {
                   <button
                     disabled={enviando || !form.nome || !form.telefone}
                     onClick={async () => {
+                      if (enviandoRef.current) return;
+                      enviandoRef.current = true;
                       setEnviando(true);
                       try {
                         const r = await evCall<{ whatsapp_url: string }>("cliente_criar_indicacao", {
@@ -215,7 +217,7 @@ export default function EnergiaDashboard() {
                         setResultado({ whatsapp_url: r.whatsapp_url });
                         refetch();
                       } catch (e: any) { alert(e.message); }
-                      finally { setEnviando(false); }
+                      finally { setEnviando(false); enviandoRef.current = false; }
                     }}
                     className="w-full h-12 rounded-lg bg-gradient-to-r from-[#F5A623] to-[#E8651A] text-white font-bold disabled:opacity-50"
                   >
