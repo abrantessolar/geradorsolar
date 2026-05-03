@@ -209,10 +209,10 @@ export default function EnergiaDashboard() {
             <div className="mt-4">
               <div className="flex flex-col items-center text-xs mb-1.5 ev-font-epic uppercase tracking-wider gap-0.5" style={{ color: "#A08060" }}>
                 <span className="text-center">Caminho até {proximoPremio.nome}</span>
-                <span style={{ color: "#F5A623" }}>{ind.pontos_acumulados}/{proximoPremio.pontos_necessarios}</span>
+                <span style={{ color: "#F5A623" }}>{pDisp}/{proximoPremio.pontos_necessarios} disponíveis</span>
               </div>
               <div className="h-2 rounded-full overflow-hidden" style={{ background: "rgba(0,0,0,0.5)" }}>
-                <div className="h-full ev-trail-line-done transition-all" style={{ width: `${Math.min(100, (ind.pontos_acumulados/proximoPremio.pontos_necessarios)*100)}%` }} />
+                <div className="h-full ev-trail-line-done transition-all" style={{ width: `${Math.min(100, (pDisp/proximoPremio.pontos_necessarios)*100)}%` }} />
               </div>
             </div>
           )}
