@@ -562,6 +562,7 @@ export type Database = {
           cpf: string
           criado_em: string
           data_nascimento: string
+          eh_cliente: boolean
           email: string | null
           etapa_atual: string | null
           id: string
@@ -576,6 +577,7 @@ export type Database = {
           cpf: string
           criado_em?: string
           data_nascimento: string
+          eh_cliente?: boolean
           email?: string | null
           etapa_atual?: string | null
           id?: string
@@ -590,6 +592,7 @@ export type Database = {
           cpf?: string
           criado_em?: string
           data_nascimento?: string
+          eh_cliente?: boolean
           email?: string | null
           etapa_atual?: string | null
           id?: string
