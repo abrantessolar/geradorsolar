@@ -4,6 +4,7 @@ import { Loader2, Gift, Check, Lock } from "lucide-react";
 import EnergiaLayout from "./EnergiaLayout";
 import { useEnergia } from "@/contexts/EnergiaContext";
 import { evCall } from "@/lib/energiaApi";
+import { PremioIcon, isPremioIcon } from "./premioIcons";
 
 export default function EnergiaPremios() {
   const { indicador, cpf } = useEnergia();
@@ -67,9 +68,11 @@ export default function EnergiaPremios() {
                   <div className="ev-frame-relic w-28 h-28 mb-3">
                     <div className="w-full h-full rounded-full flex items-center justify-center overflow-hidden"
                       style={{ filter: podeResgatar ? "none" : "grayscale(1) brightness(0.5)" }}>
-                      {p.imagem_url
-                        ? <img src={p.imagem_url} alt={p.nome} className="w-24 h-24 object-contain" />
-                        : <Gift className="w-12 h-12" style={{ color: "#F5A623" }} />}
+                      {isPremioIcon(p.imagem_url)
+                        ? <PremioIcon value={p.imagem_url} size={96} />
+                        : p.imagem_url
+                          ? <img src={p.imagem_url} alt={p.nome} className="w-24 h-24 object-contain" />
+                          : <Gift className="w-12 h-12" style={{ color: "#F5A623" }} />}
                     </div>
                   </div>
                   <h3 className="ev-font-epic font-black text-sm" style={{ color: "#F5E6C8" }}>{p.nome}</h3>

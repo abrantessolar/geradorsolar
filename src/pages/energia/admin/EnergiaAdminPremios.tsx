@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import EnergiaAdminLayout from "./EnergiaAdminLayout";
 import { evCall, evGetAdminToken, fileToBase64 } from "@/lib/energiaApi";
-import { Plus, Trash2, Loader2, Upload, ArrowUp, ArrowDown } from "lucide-react";
+import { Plus, Trash2, Loader2, Upload, ArrowUp, ArrowDown, Sparkles } from "lucide-react";
+import { PREMIO_ICONS, PremioIcon, isPremioIcon, ICON_PREFIX } from "../premioIcons";
 
 type Premio = { id?: string; nome: string; imagem_url?: string; pontos_necessarios: number; ordem: number; ativo: boolean };
 
@@ -57,7 +58,9 @@ export default function EnergiaAdminPremios() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {list.map((p, idx) => (
             <div key={p.id} className="bg-white rounded-xl p-4 shadow-sm">
-              {p.imagem_url ? <img src={p.imagem_url} className="w-full h-32 object-contain mb-2" /> : <div className="w-full h-32 bg-gray-100 rounded mb-2" />}
+              {isPremioIcon(p.imagem_url)
+                ? <div className="w-full h-32 flex items-center justify-center bg-[#0D0A00] rounded mb-2"><PremioIcon value={p.imagem_url} size={110} /></div>
+                : p.imagem_url ? <img src={p.imagem_url} className="w-full h-32 object-contain mb-2" /> : <div className="w-full h-32 bg-gray-100 rounded mb-2" />}
               <div className="font-bold">{p.nome}</div>
               <div className="text-sm text-gray-500">{p.pontos_necessarios} pts · ordem {p.ordem}</div>
               <div className={`text-xs mt-1 ${p.ativo ? "text-green-600" : "text-gray-400"}`}>{p.ativo ? "Ativo" : "Pausado"}</div>
@@ -79,14 +82,35 @@ export default function EnergiaAdminPremios() {
             <input className="w-full h-10 border rounded px-3" placeholder="Nome" value={editing.nome} onChange={e => setEditing({ ...editing, nome: e.target.value })} />
             <input type="number" className="w-full h-10 border rounded px-3" placeholder="Pontos necessários" value={editing.pontos_necessarios} onChange={e => setEditing({ ...editing, pontos_necessarios: Number(e.target.value) })} />
             <input type="number" className="w-full h-10 border rounded px-3" placeholder="Ordem" value={editing.ordem} onChange={e => setEditing({ ...editing, ordem: Number(e.target.value) })} />
+            <div>
+              <div className="text-xs font-bold mb-2 flex items-center gap-1"><Sparkles className="w-3 h-3" /> Escolher ícone da biblioteca</div>
+              <div className="grid grid-cols-4 gap-2 max-h-48 overflow-y-auto p-2 bg-[#0D0A00] rounded">
+                {Object.entries(PREMIO_ICONS).map(([key, def]) => {
+                  const val = ICON_PREFIX + key;
+                  const selected = editing.imagem_url === val;
+                  return (
+                    <button key={key} type="button" onClick={() => setEditing({ ...editing, imagem_url: val })}
+                      title={def.label}
+                      className="flex items-center justify-center rounded p-1 transition"
+                      style={{ background: selected ? "rgba(245,166,35,0.25)" : "transparent", border: selected ? "2px solid #F5A623" : "1px solid #C17F24" }}>
+                      {def.render(56)}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
             <label className="flex items-center gap-2 text-sm cursor-pointer">
-              <Upload className="w-4 h-4" /> Imagem PNG
+              <Upload className="w-4 h-4" /> Ou enviar imagem PNG
               <input type="file" accept="image/*" className="hidden" onChange={async e => {
                 const f = e.target.files?.[0]; if (!f) return;
                 const url = await upload(f); setEditing({ ...editing, imagem_url: url });
               }} />
             </label>
-            {editing.imagem_url && <img src={editing.imagem_url} className="w-24 h-24 object-contain mx-auto" />}
+            {editing.imagem_url && (
+              isPremioIcon(editing.imagem_url)
+                ? <div className="flex justify-center bg-[#0D0A00] rounded p-2"><PremioIcon value={editing.imagem_url} size={96} /></div>
+                : <img src={editing.imagem_url} className="w-24 h-24 object-contain mx-auto" />
+            )}
             <label className="flex items-center gap-2"><input type="checkbox" checked={editing.ativo} onChange={e => setEditing({ ...editing, ativo: e.target.checked })} /> Ativo</label>
             <div className="flex gap-2">
               <button onClick={() => setEditing(null)} className="flex-1 h-10 border rounded">Cancelar</button>
