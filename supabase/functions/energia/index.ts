@@ -205,8 +205,8 @@ serve(async (req) => {
         ]);
         const ranking = (rankingRes as any).data || [];
         const fechadas = (indicacoes || []).filter((i: any) => i.status === "fechada");
-        const volume = fechadas.reduce((acc: number, i: any) => acc + Number(i.valor_negocio || 0), 0);
-        return json({ indicador: ind, etapas, premios, indicacoes, resgates, ranking, ranking_publico: rankingPublico, stats: { fechadas: fechadas.length, volume } });
+        const placas = fechadas.reduce((acc: number, i: any) => acc + Number(i.num_placas || 0), 0);
+        return json({ indicador: ind, etapas, premios, indicacoes, resgates, ranking, ranking_publico: rankingPublico, stats: { fechadas: fechadas.length, placas } });
       }
 
       if (action === "cliente_resgatar") {
@@ -304,7 +304,7 @@ serve(async (req) => {
         const inicioMesIso = (() => { const d = new Date(); d.setDate(1); d.setHours(0,0,0,0); return d.toISOString(); })();
         const [{ data: indicadores }, { data: indicacoes }, { data: resgates }, { data: pontosMes }] = await Promise.all([
           supabase.from("energia_indicadores").select("id, ultimo_acesso"),
-          supabase.from("energia_indicacoes").select("status, valor_negocio, criado_em"),
+          supabase.from("energia_indicacoes").select("status, num_placas, criado_em"),
           supabase.from("energia_resgates").select("status").eq("status", "pendente"),
           supabase.from("energia_pontos_log").select("pontos").gte("criado_em", inicioMesIso),
         ]);
@@ -316,7 +316,7 @@ serve(async (req) => {
         const enviadas = doMes.filter((i: any) => i.status === "enviada").length;
         const negociacao = doMes.filter((i: any) => i.status === "negociacao").length;
         const fechadas = doMes.filter((i: any) => i.status === "fechada").length;
-        const volume = (indicacoes || []).filter((i: any) => i.status === "fechada").reduce((a: number, i: any) => a + Number(i.valor_negocio||0), 0);
+        const placas_total = (indicacoes || []).filter((i: any) => i.status === "fechada").reduce((a: number, i: any) => a + Number(i.num_placas||0), 0);
         // gráfico mensal últimos 6 meses
         const grafico: any[] = [];
         for (let i = 5; i >= 0; i--) {
@@ -325,7 +325,7 @@ serve(async (req) => {
           const count = (indicacoes || []).filter((x: any) => { const dt = new Date(x.criado_em); return dt >= d && dt < next; }).length;
           grafico.push({ mes: d.toLocaleDateString("pt-BR", { month: "short" }), indicacoes: count });
         }
-        return json({ stats: { total, ativos, enviadas, negociacao, fechadas, volume, pontos_mes, resgates_pendentes: resgates?.length || 0 }, grafico });
+        return json({ stats: { total, ativos, enviadas, negociacao, fechadas, placas_total, pontos_mes, resgates_pendentes: resgates?.length || 0 }, grafico });
       }
 
       if (action === "admin_list") {
@@ -374,35 +374,24 @@ serve(async (req) => {
       }
 
       if (action === "admin_update_indicacao_status") {
-        const { id, status, valor_negocio, num_placas } = payload;
+        const { id, status, num_placas } = payload;
         const { data: ind } = await supabase.from("energia_indicacoes").select("*").eq("id", id).maybeSingle();
         if (!ind) return err("Indicação não encontrada", 404);
         const updates: any = { status };
-        if (typeof valor_negocio === "number") updates.valor_negocio = valor_negocio;
         if (typeof num_placas === "number") updates.num_placas = num_placas;
 
         if (status === "fechada" && ind.status !== "fechada") {
-          const modo = (await getConfig("modo_pontuacao")) || "placas";
           const placas = Number(num_placas ?? ind.num_placas ?? 0);
-          const valor = Number(valor_negocio ?? ind.valor_negocio ?? 0);
           const { data: campanhas } = await supabase.from("energia_campanhas")
             .select("multiplicador").eq("ativa", true)
             .lte("inicio", new Date().toISOString().slice(0,10))
             .gte("fim", new Date().toISOString().slice(0,10));
           const mult = campanhas && campanhas.length ? Math.max(...campanhas.map((c: any) => Number(c.multiplicador))) : 1;
-          let pontos = 0;
-          if (modo === "placas") {
-            const ppp = Number(await getConfig("pontos_por_placa") || 1);
-            const bonusMinPlacas = Number(await getConfig("bonus_placas_minimo") || 0);
-            const bonusPlacasPts = Number(await getConfig("bonus_placas_pontos") || 0);
-            const bonus = bonusMinPlacas > 0 && placas >= bonusMinPlacas ? bonusPlacasPts : 0;
-            pontos = Math.round((placas * ppp + bonus) * mult);
-          } else {
-            const pontosBase = Number(await getConfig("pontos_padrao_indicacao") || 100);
-            const bonusMin = Number(await getConfig("bonus_valor_minimo") || 0);
-            const bonusPts = Number(await getConfig("bonus_pontos") || 0);
-            pontos = Math.round(pontosBase * mult + (valor >= bonusMin && bonusMin > 0 ? bonusPts : 0));
-          }
+          const ppp = Number(await getConfig("pontos_por_placa") || 1);
+          const bonusMinPlacas = Number(await getConfig("bonus_placas_minimo") || 0);
+          const bonusPlacasPts = Number(await getConfig("bonus_placas_pontos") || 0);
+          const bonus = bonusMinPlacas > 0 && placas >= bonusMinPlacas ? bonusPlacasPts : 0;
+          const pontos = Math.round((placas * ppp + bonus) * mult);
           updates.pontos_creditados = pontos;
           updates.fechada_em = new Date().toISOString();
 
@@ -424,7 +413,7 @@ serve(async (req) => {
                     evento: "indicacao_fechada",
                     indicador: { nome: indicador.nome, cpf: indicador.cpf, telefone: indicador.telefone },
                     indicado: { nome: ind.nome_indicado, telefone: ind.telefone_indicado, email: ind.email_indicado, cidade: ind.cidade },
-                    pontos, num_placas: placas, valor_negocio: valor,
+                    pontos, num_placas: placas,
                   }),
                 });
               } catch (e) { console.error("Webhook Kommo failed", e); }

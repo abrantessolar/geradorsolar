@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import EnergiaAdminLayout from "./EnergiaAdminLayout";
 import { evCall, evGetAdminToken } from "@/lib/energiaApi";
-import { Loader2, Users, TrendingUp, DollarSign, Package, Star } from "lucide-react";
+import { Loader2, Users, TrendingUp, Package, Star, Zap } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip } from "recharts";
 
 export default function EnergiaAdminVisaoGeral() {
@@ -21,7 +21,7 @@ export default function EnergiaAdminVisaoGeral() {
             <Card icon={Users} color="#1A3C5E" label="Indicadores" value={data.stats.total} sub={`${data.stats.ativos} ativos`} />
             <Card icon={TrendingUp} color="#F5A623" label="Indicações no mês" value={data.stats.fechadas + data.stats.negociacao + data.stats.enviadas}
               sub={`${data.stats.fechadas} fechadas / ${data.stats.negociacao} negociação`} />
-            <Card icon={DollarSign} color="#E8651A" label="Volume gerado" value={`R$ ${(data.stats.volume).toLocaleString("pt-BR")}`} />
+            <Card icon={Zap} color="#E8651A" label="Placas indicadas" value={(data.stats.placas_total ?? 0).toLocaleString("pt-BR")} sub="total fechadas" />
             <Card icon={Star} color="#2E9E4F" label="Pontos do mês" value={data.stats.pontos_mes ?? 0} sub="distribuídos" />
             <Card icon={Package} color={data.stats.resgates_pendentes > 0 ? "#dc2626" : "#16a34a"} label="Resgates pendentes" value={data.stats.resgates_pendentes} />
           </div>

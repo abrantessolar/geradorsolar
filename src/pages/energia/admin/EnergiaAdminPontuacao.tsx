@@ -4,7 +4,7 @@ import { evCall, evGetAdminToken } from "@/lib/energiaApi";
 import { Loader2, Plus, Trash2 } from "lucide-react";
 
 export default function EnergiaAdminPontuacao() {
-  const [config, setConfig] = useState<any>({ modo_pontuacao: "placas", pontos_por_placa: 1, bonus_placas_minimo: 0, bonus_placas_pontos: 0, pontos_padrao_indicacao: 100, bonus_valor_minimo: 20000, bonus_pontos: 50 });
+  const [config, setConfig] = useState<any>({ pontos_por_placa: 1, bonus_placas_minimo: 0, bonus_placas_pontos: 0 });
   const [campanhas, setCampanhas] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -41,33 +41,11 @@ export default function EnergiaAdminPontuacao() {
       <h1 className="text-2xl font-bold text-[#1A3C5E] mb-6">Pontuação</h1>
 
       <div className="bg-white p-5 rounded-xl shadow-sm space-y-4 mb-6 max-w-md">
-        <h2 className="font-bold">Modo de pontuação</h2>
-        <div>
-          <label className="block text-xs text-gray-500">Modo</label>
-          <div className="flex gap-2">
-            <select className="flex-1 h-9 border rounded px-2" value={config.modo_pontuacao || "placas"}
-              onChange={e => setConfig({ ...config, modo_pontuacao: e.target.value })}>
-              <option value="placas">Placas (1 placa = N pontos)</option>
-              <option value="valor">Valor (pontos fixos por indicação)</option>
-            </select>
-            <button onClick={() => saveConfig("modo_pontuacao", config.modo_pontuacao)} className="px-3 bg-[#1A3C5E] text-white rounded text-xs">Salvar</button>
-          </div>
-        </div>
-
-        {(config.modo_pontuacao || "placas") === "placas" ? (
-          <>
-            <Field label="Pontos por placa" value={config.pontos_por_placa} onSave={v => saveConfig("pontos_por_placa", v)} />
-            <h3 className="font-semibold text-sm pt-2">Bônus por volume de placas</h3>
-            <Field label="A partir de quantas placas" value={config.bonus_placas_minimo} onSave={v => saveConfig("bonus_placas_minimo", v)} />
-            <Field label="Pontos extras de bônus" value={config.bonus_placas_pontos} onSave={v => saveConfig("bonus_placas_pontos", v)} />
-          </>
-        ) : (
-          <>
-            <Field label="Pontos por indicação fechada" value={config.pontos_padrao_indicacao} onSave={v => saveConfig("pontos_padrao_indicacao", v)} />
-            <Field label="Bônus se valor ≥ R$" value={config.bonus_valor_minimo} onSave={v => saveConfig("bonus_valor_minimo", v)} />
-            <Field label="Pontos extra de bônus" value={config.bonus_pontos} onSave={v => saveConfig("bonus_pontos", v)} />
-          </>
-        )}
+        <h2 className="font-bold">Pontuação por placas</h2>
+        <Field label="Pontos por placa" value={config.pontos_por_placa} onSave={v => saveConfig("pontos_por_placa", v)} />
+        <h3 className="font-semibold text-sm pt-2">Bônus por volume de placas</h3>
+        <Field label="A partir de quantas placas" value={config.bonus_placas_minimo} onSave={v => saveConfig("bonus_placas_minimo", v)} />
+        <Field label="Pontos extras de bônus" value={config.bonus_placas_pontos} onSave={v => saveConfig("bonus_placas_pontos", v)} />
       </div>
 
       <div className="bg-white p-5 rounded-xl shadow-sm">
