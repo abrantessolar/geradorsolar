@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import EnergiaAdminLayout from "./EnergiaAdminLayout";
 import { evCall, evGetAdminToken } from "@/lib/energiaApi";
-import { Loader2 } from "lucide-react";
+import { Loader2, Search } from "lucide-react";
 
 export default function EnergiaAdminIndicacoes() {
   const [list, setList] = useState<any[]>([]);
