@@ -381,13 +381,19 @@ serve(async (req) => {
 
       if (action === "admin_add_pontos") {
         const { indicador_id, pontos, motivo } = payload;
-        const { data: ind } = await supabase.from("energia_indicadores").select("pontos_acumulados").eq("id", indicador_id).maybeSingle();
+        const { data: ind } = await supabase.from("energia_indicadores").select("pontos_historicos, pontos_disponiveis, pontos_acumulados").eq("id", indicador_id).maybeSingle();
         if (!ind) return err("Indicador não encontrado", 404);
-        const novo = ind.pontos_acumulados + Number(pontos);
-        await supabase.from("energia_indicadores").update({ pontos_acumulados: novo }).eq("id", indicador_id);
-        await supabase.from("energia_pontos_log").insert({ indicador_id, pontos: Number(pontos), motivo, admin_id: admin.sub });
+        const delta = Number(pontos);
+        const novoHist = (ind.pontos_historicos || 0) + delta;
+        const novoDisp = (ind.pontos_disponiveis || 0) + delta;
+        await supabase.from("energia_indicadores").update({
+          pontos_historicos: novoHist,
+          pontos_disponiveis: novoDisp,
+          pontos_acumulados: novoHist, // mantém legado em sincronia com histórico
+        }).eq("id", indicador_id);
+        await supabase.from("energia_pontos_log").insert({ indicador_id, pontos: delta, motivo, admin_id: admin.sub });
         await recalcEtapa(indicador_id);
-        return json({ ok: true, pontos_acumulados: novo });
+        return json({ ok: true, pontos_historicos: novoHist, pontos_disponiveis: novoDisp });
       }
 
       if (action === "admin_update_indicacao_status") {
