@@ -185,8 +185,8 @@ export default function EnergiaDashboard() {
 
           {proximoPremio && (
             <div className="mt-4">
-              <div className="flex justify-between text-xs mb-1 ev-font-epic uppercase tracking-wider" style={{ color: "#A08060" }}>
-                <span>Caminho até {proximoPremio.nome}</span>
+              <div className="flex flex-col items-center text-xs mb-1.5 ev-font-epic uppercase tracking-wider gap-0.5" style={{ color: "#A08060" }}>
+                <span className="text-center">Caminho até {proximoPremio.nome}</span>
                 <span style={{ color: "#F5A623" }}>{ind.pontos_acumulados}/{proximoPremio.pontos_necessarios}</span>
               </div>
               <div className="h-2 rounded-full overflow-hidden" style={{ background: "rgba(0,0,0,0.5)" }}>
