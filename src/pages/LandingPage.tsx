@@ -121,12 +121,21 @@ export default function LandingPage() {
             <a href="#projetos" className="text-foreground/80 hover:text-primary transition-colors">Projetos</a>
             <button onClick={scrollToSimulator} className="text-foreground/80 hover:text-primary transition-colors">Simular</button>
           </nav>
-          <Link
-            to="/login"
-            className="px-5 py-2 rounded-lg bg-secondary text-secondary-foreground font-bold text-sm hover:bg-secondary/90 transition-all"
-          >
-            Área do Consultor
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link
+              to="/energia"
+              className="px-4 py-2 rounded-lg bg-gradient-to-r from-[#F5A623] to-[#E8651A] text-white font-bold text-sm hover:opacity-90 transition-all shadow-md flex items-center gap-2"
+            >
+              <Sun className="w-4 h-4" />
+              Energia que Volta
+            </Link>
+            <Link
+              to="/login"
+              className="px-5 py-2 rounded-lg bg-secondary text-secondary-foreground font-bold text-sm hover:bg-secondary/90 transition-all"
+            >
+              Área do Consultor
+            </Link>
+          </div>
         </div>
       </header>
 
