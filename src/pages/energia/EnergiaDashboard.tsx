@@ -185,8 +185,8 @@ export default function EnergiaDashboard() {
 
           {proximoPremio && (
             <div className="mt-4">
-              <div className="flex justify-between text-xs mb-1 ev-font-epic uppercase tracking-wider" style={{ color: "#A08060" }}>
-                <span>Caminho até {proximoPremio.nome}</span>
+              <div className="flex flex-col items-center text-xs mb-1.5 ev-font-epic uppercase tracking-wider gap-0.5" style={{ color: "#A08060" }}>
+                <span className="text-center">Caminho até {proximoPremio.nome}</span>
                 <span style={{ color: "#F5A623" }}>{ind.pontos_acumulados}/{proximoPremio.pontos_necessarios}</span>
               </div>
               <div className="h-2 rounded-full overflow-hidden" style={{ background: "rgba(0,0,0,0.5)" }}>
@@ -250,13 +250,13 @@ export default function EnergiaDashboard() {
           <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.75)" }} onClick={() => setShowIndicar(false)}>
             <div className="ev-card ev-card-glow p-5 max-w-md w-full space-y-3 ev-enter" onClick={e => e.stopPropagation()}>
               <div className="flex justify-between items-center">
-                <h3 className="ev-font-epic font-black text-lg ev-text-glow" style={{ color: "#F5A623" }}>Nova Missão</h3>
+                <h3 className="ev-font-epic font-black text-lg ev-text-glow" style={{ color: "#F5A623" }}>Nova Indicação</h3>
                 <button onClick={() => setShowIndicar(false)}><X className="w-5 h-5" style={{ color: "#A08060" }} /></button>
               </div>
               {resultado ? (
                 <div className="space-y-3">
                   <div className="p-3 rounded-lg text-sm" style={{ background: "rgba(46,158,79,0.18)", color: "#F5E6C8", border: "1px solid rgba(46,158,79,0.5)" }}>
-                    Missão registrada! Envie a mensagem no WhatsApp do indicado:
+                    Indicação registrada! Envie a mensagem no WhatsApp do indicado:
                   </div>
                   <a href={resultado.whatsapp_url} target="_blank" rel="noreferrer"
                     className="w-full h-12 rounded-xl font-bold flex items-center justify-center"
@@ -297,7 +297,7 @@ export default function EnergiaDashboard() {
                       finally { setEnviando(false); enviandoRef.current = false; }
                     }}
                     className="ev-btn-primary w-full h-12 flex items-center justify-center">
-                    {enviando ? "Enviando..." : "REGISTRAR MISSÃO"}
+                    {enviando ? "Enviando..." : "REGISTRAR INDICAÇÃO"}
                   </button>
                 </>
               )}

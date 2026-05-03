@@ -253,6 +253,36 @@ serve(async (req) => {
         const wa = `https://wa.me/55${telDigits}?text=${encodeURIComponent(msg)}`;
         return json({ ok: true, indicacao: novaInd, whatsapp_url: wa });
       }
+
+      if (action === "cliente_solicitar_confirmacao") {
+        const { indicacao_id } = payload;
+        if (!indicacao_id) return err("indicacao_id obrigatório");
+        const { data: indicacao } = await supabase.from("energia_indicacoes")
+          .select("*").eq("id", indicacao_id).eq("indicador_id", cliente.id).maybeSingle();
+        if (!indicacao) return err("Indicação não encontrada", 404);
+        const { data: indFull } = await supabase.from("energia_indicadores")
+          .select("*").eq("id", cliente.id).maybeSingle();
+        const webhook = await getConfig("webhook_kommo_url");
+        if (webhook && typeof webhook === "string") {
+          try {
+            await fetch(webhook, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                evento: "cliente_solicitou_confirmacao",
+                indicador: { nome: indFull?.nome, cpf: indFull?.cpf, telefone: indFull?.telefone },
+                indicado: {
+                  nome: indicacao.nome_indicado,
+                  telefone: indicacao.telefone_indicado,
+                  cidade: indicacao.cidade,
+                },
+                mensagem: `${indFull?.nome} informa que o cliente ${indicacao.nome_indicado} fechou negócio. Confirme e registre os pontos na plataforma.`,
+              }),
+            });
+          } catch (e) { console.error("Webhook Kommo confirm failed", e); }
+        }
+        return json({ ok: true });
+      }
     }
     if (action === "login_admin") {
       const { usuario, senha } = payload;

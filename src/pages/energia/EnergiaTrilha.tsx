@@ -11,9 +11,15 @@ export default function EnergiaTrilha() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const load = () => {
     if (!indicador) return;
     evCall("cliente_dashboard", { indicador_id: indicador.id, cpf }).then(setData).finally(() => setLoading(false));
+  };
+  useEffect(() => {
+    load();
+    const t = setInterval(load, 30000);
+    return () => clearInterval(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [indicador, cpf]);
 
   if (!indicador) return <Navigate to="/energia" replace />;
