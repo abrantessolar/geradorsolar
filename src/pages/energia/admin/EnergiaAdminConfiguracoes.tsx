@@ -8,8 +8,6 @@ const FIELDS = [
   { key: "mensagem_whatsapp_indicado", label: "Mensagem WhatsApp para o indicado (use {indicador} e {indicado})", type: "textarea" },
   { key: "mensagem_resgate", label: "Mensagem ao solicitar resgate", type: "textarea" },
   { key: "texto_link_indicacao", label: "Texto do link de indicação", type: "textarea" },
-  { key: "modo_pontuacao", label: "Modo de pontuação (placas | valor)", type: "text" },
-  { key: "pontos_por_placa", label: "Pontos por placa", type: "text" },
   { key: "logo_url", label: "URL do logo", type: "text" },
   { key: "nome_plataforma", label: "Nome da plataforma", type: "text" },
   { key: "ranking_publico", label: "Exibir ranking publicamente", type: "toggle" },
