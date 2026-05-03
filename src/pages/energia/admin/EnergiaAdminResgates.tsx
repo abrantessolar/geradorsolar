@@ -76,12 +76,13 @@ export default function EnergiaAdminResgates() {
           </div>
           <div className="bg-white rounded-xl shadow-sm overflow-hidden">
             <table className="w-full text-sm">
-              <thead className="bg-gray-50"><tr><th className="text-left p-3">Cliente</th><th className="text-left p-3">Prêmio</th><th className="text-left p-3">Entregue em</th></tr></thead>
+              <thead className="bg-gray-50"><tr><th className="text-left p-3">Cliente</th><th className="text-left p-3">Prêmio</th><th className="text-right p-3">Pts debitados</th><th className="text-left p-3">Entregue em</th></tr></thead>
               <tbody>
                 {entregues.map(r => (
                   <tr key={r.id} className="border-t">
                     <td className="p-3">{iMap[r.indicador_id]}</td>
                     <td className="p-3">{pMap[r.premio_id]}</td>
+                    <td className="p-3 text-right">{r.pontos_utilizados}</td>
                     <td className="p-3">{r.entregue_em ? new Date(r.entregue_em).toLocaleDateString("pt-BR") : "—"}</td>
                   </tr>
                 ))}
