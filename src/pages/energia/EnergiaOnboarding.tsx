@@ -48,12 +48,17 @@ export default function EnergiaOnboarding({ nome, onClose, onIndicar }: Props) {
 
         <div className="flex-1 overflow-y-auto px-6 py-8 flex flex-col items-center justify-center text-center">
           {step === 0 && (
-            <div className="ev-enter">
-              <div className="text-7xl mb-6 ev-pulse" style={{ filter: "drop-shadow(0 0 30px #F5A623)" }}>☀️</div>
-              <h2 className="ev-font-epic text-2xl sm:text-3xl font-black ev-text-glow mb-3" style={{ color: "#F5A623" }}>
+            <div className="ev-enter flex flex-col items-center justify-center text-center" style={{ gap: 32 }}>
+              <span
+                className="ev-pulse leading-none"
+                style={{ fontSize: 96, filter: "drop-shadow(0 0 30px #F5A623)", background: "transparent" }}
+              >
+                ☀️
+              </span>
+              <h2 className="ev-font-epic text-2xl sm:text-3xl font-black ev-text-glow" style={{ color: "#F5A623", margin: 0 }}>
                 Bem-vindo ao Energia que Volta, {nome}!
               </h2>
-              <p className="text-base sm:text-lg" style={{ color: "#F5E6C8" }}>
+              <p className="text-base sm:text-lg" style={{ color: "#F5E6C8", margin: 0 }}>
                 Você indica. A gente fecha. A energia volta pra você.
               </p>
             </div>
