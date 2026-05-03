@@ -205,8 +205,8 @@ serve(async (req) => {
         ]);
         const ranking = (rankingRes as any).data || [];
         const fechadas = (indicacoes || []).filter((i: any) => i.status === "fechada");
-        const volume = fechadas.reduce((acc: number, i: any) => acc + Number(i.valor_negocio || 0), 0);
-        return json({ indicador: ind, etapas, premios, indicacoes, resgates, ranking, ranking_publico: rankingPublico, stats: { fechadas: fechadas.length, volume } });
+        const placas = fechadas.reduce((acc: number, i: any) => acc + Number(i.num_placas || 0), 0);
+        return json({ indicador: ind, etapas, premios, indicacoes, resgates, ranking, ranking_publico: rankingPublico, stats: { fechadas: fechadas.length, placas } });
       }
 
       if (action === "cliente_resgatar") {
