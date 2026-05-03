@@ -54,7 +54,7 @@ export default function EnergiaAdminClientes() {
       const placas = Number(pontosModal._placas || 0);
       const pontos = placas;
       const motivo = pontosModal._motivo || `Lançamento manual: ${placas} placas`;
-      await evCall("admin_add_pontos", { indicador_id: pontosModal.id, pontos, motivo }, evGetAdminToken());
+      await evCall("admin_add_pontos", { indicador_id: pontosModal.id, pontos, motivo, placas }, evGetAdminToken());
       setPontosModal(null); load();
     } catch (e: any) {
       alert(e.message);
