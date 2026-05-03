@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { Zap, Sun, Battery, Factory, Radio, Loader2, Copy, Share2, X } from "lucide-react";
 import EnergiaLayout from "./EnergiaLayout";
