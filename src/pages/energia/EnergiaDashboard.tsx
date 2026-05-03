@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
-import { Zap, Sun, Battery, Factory, Radio, Loader2, Copy, Share2 } from "lucide-react";
+import { Zap, Sun, Battery, Factory, Radio, Loader2, Copy, Share2, X } from "lucide-react";
 import EnergiaLayout from "./EnergiaLayout";
 import { useEnergia } from "@/contexts/EnergiaContext";
-import { evCall } from "@/lib/energiaApi";
+import { evCall, evMaskPhone } from "@/lib/energiaApi";
+
+const CIDADES = ["Três Lagoas", "Água Clara", "Selvíria", "Bataguassu", "Outras"];
 
 const ETAPA_ICONS: Record<string, any> = {
   Raio: Zap, Painel: Sun, Gerador: Battery, Usina: Factory, Central: Radio, "Sol Maior": Sun,
