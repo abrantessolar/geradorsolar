@@ -304,7 +304,7 @@ serve(async (req) => {
         const inicioMesIso = (() => { const d = new Date(); d.setDate(1); d.setHours(0,0,0,0); return d.toISOString(); })();
         const [{ data: indicadores }, { data: indicacoes }, { data: resgates }, { data: pontosMes }] = await Promise.all([
           supabase.from("energia_indicadores").select("id, ultimo_acesso"),
-          supabase.from("energia_indicacoes").select("status, valor_negocio, criado_em"),
+          supabase.from("energia_indicacoes").select("status, num_placas, criado_em"),
           supabase.from("energia_resgates").select("status").eq("status", "pendente"),
           supabase.from("energia_pontos_log").select("pontos").gte("criado_em", inicioMesIso),
         ]);
@@ -316,7 +316,7 @@ serve(async (req) => {
         const enviadas = doMes.filter((i: any) => i.status === "enviada").length;
         const negociacao = doMes.filter((i: any) => i.status === "negociacao").length;
         const fechadas = doMes.filter((i: any) => i.status === "fechada").length;
-        const volume = (indicacoes || []).filter((i: any) => i.status === "fechada").reduce((a: number, i: any) => a + Number(i.valor_negocio||0), 0);
+        const placas_total = (indicacoes || []).filter((i: any) => i.status === "fechada").reduce((a: number, i: any) => a + Number(i.num_placas||0), 0);
         // gráfico mensal últimos 6 meses
         const grafico: any[] = [];
         for (let i = 5; i >= 0; i--) {
@@ -325,7 +325,7 @@ serve(async (req) => {
           const count = (indicacoes || []).filter((x: any) => { const dt = new Date(x.criado_em); return dt >= d && dt < next; }).length;
           grafico.push({ mes: d.toLocaleDateString("pt-BR", { month: "short" }), indicacoes: count });
         }
-        return json({ stats: { total, ativos, enviadas, negociacao, fechadas, volume, pontos_mes, resgates_pendentes: resgates?.length || 0 }, grafico });
+        return json({ stats: { total, ativos, enviadas, negociacao, fechadas, placas_total, pontos_mes, resgates_pendentes: resgates?.length || 0 }, grafico });
       }
 
       if (action === "admin_list") {
