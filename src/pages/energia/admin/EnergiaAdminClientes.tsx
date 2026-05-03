@@ -36,8 +36,19 @@ export default function EnergiaAdminClientes() {
   };
 
   const addPontos = async () => {
-    await evCall("admin_add_pontos", { indicador_id: pontosModal.id, pontos: Number(pontosModal._pontos), motivo: pontosModal._motivo }, evGetAdminToken());
+    const placas = Number(pontosModal._placas || 0);
+    const pontos = placas; // 1 placa = 1 ponto
+    const motivo = pontosModal._motivo || `Lançamento manual: ${placas} placas`;
+    await evCall("admin_add_pontos", { indicador_id: pontosModal.id, pontos, motivo }, evGetAdminToken());
     setPontosModal(null); load();
+  };
+
+  const verDetalhe = async (i: any) => {
+    setDetalhe({ loading: true });
+    try {
+      const r: any = await evCall("admin_cliente_detalhe", { id: i.id }, evGetAdminToken());
+      setDetalhe(r);
+    } catch (e: any) { alert(e.message); setDetalhe(null); }
   };
 
   return (
