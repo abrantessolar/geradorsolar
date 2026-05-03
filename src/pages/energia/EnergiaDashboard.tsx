@@ -49,6 +49,7 @@ function Gauge({ value, max, label, color, format, sublabel }: { value: number; 
       </svg>
       <div className="text-xl font-black ev-text-glow -mt-1" style={{ color: "#F5A623" }}>{format ? format(value) : value}</div>
       <div className="text-[10px] ev-font-epic uppercase tracking-widest text-center mt-0.5" style={{ color: "#A08060" }}>{label}</div>
+      {sublabel && <div className="text-[9px] ev-font-epic text-center mt-0.5" style={{ color: "#A08060" }}>{sublabel}</div>}
     </div>
   );
 }
