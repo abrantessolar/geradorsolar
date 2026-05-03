@@ -9,13 +9,14 @@ import EnergiaOnboarding from "./EnergiaOnboarding";
 
 const CIDADES = ["Três Lagoas", "Água Clara", "Selvíria", "Bataguassu", "Outras"];
 
-function Gauge({ value, max, label, color, format }: { value: number; max: number; label: string; color: string; format?: (n: number) => string }) {
+function Gauge({ value, max, label, color, format, sublabel }: { value: number; max: number; label: string; color: string; format?: (n: number) => string; sublabel?: string }) {
   const pct = Math.min(1, max > 0 ? value / max : 0);
   const cx = 80, cy = 90, r = 70;
   const circumference = Math.PI * r;
   const dash = pct * circumference;
-  const pointerDeg = -180 + pct * 180; // -180° (left) to 0° (right)
-  const [animDeg, setAnimDeg] = useState(-180);
+  // Pointer: 0 → -90° (left), max → 90° (right). Base "up" rotated by this angle.
+  const pointerDeg = -90 + pct * 180;
+  const [animDeg, setAnimDeg] = useState(-90);
   useEffect(() => {
     const t = requestAnimationFrame(() => setAnimDeg(pointerDeg));
     return () => cancelAnimationFrame(t);
@@ -48,6 +49,7 @@ function Gauge({ value, max, label, color, format }: { value: number; max: numbe
       </svg>
       <div className="text-xl font-black ev-text-glow -mt-1" style={{ color: "#F5A623" }}>{format ? format(value) : value}</div>
       <div className="text-[10px] ev-font-epic uppercase tracking-widest text-center mt-0.5" style={{ color: "#A08060" }}>{label}</div>
+      {sublabel && <div className="text-[9px] ev-font-epic text-center mt-0.5" style={{ color: "#A08060" }}>{sublabel}</div>}
     </div>
   );
 }
@@ -144,9 +146,22 @@ export default function EnergiaDashboard() {
 
         {/* Gauges - mobile: 1 coluna, sm+: 3 colunas */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <Gauge value={stats.fechadas} max={Math.max(10, stats.fechadas + 5)} label="Vitórias" color="#F5A623" />
-          <Gauge value={stats.placas || 0} max={Math.max(20, (stats.placas || 0) + 10)} label="Placas indicadas" color="#E8651A" />
-          <Gauge value={pDisp} max={progressoMax} label={proximoPremio ? "Próx. relíquia" : "Saldo"} color="#00C2FF" />
+          {(() => {
+            const pctReliquia = proximoPremio ? Math.min(100, Math.round((pDisp / proximoPremio.pontos_necessarios) * 100)) : 100;
+            const pronto = proximoPremio ? pDisp >= proximoPremio.pontos_necessarios : true;
+            return <>
+              <Gauge value={stats.fechadas} max={20} label="Vitórias" color="#F5A623" />
+              <Gauge value={stats.placas || 0} max={Math.max(20, (stats.placas || 0) + 10)} label="Placas indicadas" color="#E8651A" />
+              <Gauge
+                value={pctReliquia}
+                max={100}
+                label="Próx. relíquia"
+                color="#00C2FF"
+                format={(n) => `${n}%`}
+                sublabel={proximoPremio ? (pronto ? "Pronto!" : `${pDisp} / ${proximoPremio.pontos_necessarios} pts`) : "—"}
+              />
+            </>;
+          })()}
         </div>
 
         {/* Indicadores de pontos H/D */}
