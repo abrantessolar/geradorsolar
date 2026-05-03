@@ -153,10 +153,9 @@ export default function EnergiaDashboard() {
                     </div>
                   </div>
                   {idx < etapasEpicas.length - 1 && (
-                    <div className="h-1.5 w-10 mx-1 rounded-full self-center"
-                      style={conquistada
-                        ? {} : { background: "repeating-linear-gradient(90deg, rgba(193,127,36,0.4) 0 6px, transparent 6px 12px)" }}
-                      {...(conquistada ? { className: "h-1.5 w-10 mx-1 rounded-full self-center ev-trail-line-done" } : {})} />
+                    conquistada
+                      ? <div className="h-1.5 w-10 mx-1 rounded-full self-center ev-trail-line-done" />
+                      : <div className="h-1.5 w-10 mx-1 rounded-full self-center" style={{ background: "repeating-linear-gradient(90deg, rgba(193,127,36,0.4) 0 6px, transparent 6px 12px)" }} />
                   )}
                 </div>
               );
