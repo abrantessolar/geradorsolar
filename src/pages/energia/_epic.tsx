@@ -23,7 +23,11 @@ export function epicMetaByName(nome?: string | null) {
   const k = epicName(nome);
   return EPIC_STAGES.find(s => s.key === k) || { key: k, title: nome || k, icon: "⭐", aura: "rgba(245,166,35,0.7)" };
 }
-export const epicName = (n?: string | null) => (n ? (LEGACY_MAP[n] || n) : "Faísca");
+export const epicName = (n?: string | null) => {
+  if (!n) return "Faísca";
+  const stripped = n.replace(/^Indicador\s+/i, "").trim();
+  return LEGACY_MAP[stripped] || LEGACY_MAP[n] || stripped;
+};
 export const epicMeta = (n?: string | null) => {
   const k = epicName(n);
   return EPIC_STAGES.find(s => s.key === k) || EPIC_STAGES[0];
