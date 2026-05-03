@@ -7,9 +7,9 @@ export default function EnergiaAdminClientes() {
   const [list, setList] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [editing, setEditing] = useState<any>(null);
   const [adding, setAdding] = useState<any>(null);
   const [pontosModal, setPontosModal] = useState<any>(null);
+  const [detalhe, setDetalhe] = useState<any>(null);
 
   const load = () => {
     setLoading(true);
