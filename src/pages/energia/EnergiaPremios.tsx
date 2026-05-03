@@ -15,7 +15,12 @@ export default function EnergiaPremios() {
     if (!indicador) return;
     evCall("cliente_dashboard", { indicador_id: indicador.id, cpf }).then(setData).finally(() => setLoading(false));
   };
-  useEffect(load, [indicador, cpf]);
+  useEffect(() => {
+    load();
+    const t = setInterval(load, 30000);
+    return () => clearInterval(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [indicador, cpf]);
 
   const resgatar = async (premio_id: string) => {
     try {
