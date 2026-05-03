@@ -66,7 +66,14 @@ export default function EnergiaAdminResgates() {
             </table>
           </div>
 
-          <h2 className="font-bold mb-2">Histórico</h2>
+          <div className="flex flex-wrap gap-3 items-end mb-2">
+            <h2 className="font-bold">Histórico</h2>
+            <div className="flex gap-2 ml-auto items-end text-xs">
+              <label className="flex flex-col">De<input type="date" className="h-9 border rounded px-2" value={de} onChange={e => setDe(e.target.value)} /></label>
+              <label className="flex flex-col">Até<input type="date" className="h-9 border rounded px-2" value={ate} onChange={e => setAte(e.target.value)} /></label>
+              {(de || ate) && <button onClick={() => { setDe(""); setAte(""); }} className="h-9 px-3 border rounded">Limpar</button>}
+            </div>
+          </div>
           <div className="bg-white rounded-xl shadow-sm overflow-hidden">
             <table className="w-full text-sm">
               <thead className="bg-gray-50"><tr><th className="text-left p-3">Cliente</th><th className="text-left p-3">Prêmio</th><th className="text-left p-3">Entregue em</th></tr></thead>
