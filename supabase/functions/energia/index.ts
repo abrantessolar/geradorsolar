@@ -224,21 +224,28 @@ serve(async (req) => {
         const { nome, telefone, cidade, observacao } = payload;
         if (!nome || !telefone) return err("Nome e telefone obrigatórios");
         const { data: indFull } = await supabase.from("energia_indicadores").select("*").eq("id", cliente.id).maybeSingle();
-        const { data: novaInd } = await supabase.from("energia_indicacoes").insert({
-          indicador_id: cliente.id,
-          nome_indicado: nome,
-          telefone_indicado: telefone,
-          cidade: cidade || null,
-          observacao_indicador: observacao || null,
-          status: "enviada",
-        }).select().maybeSingle();
-        await fireKommoNew(indFull, novaInd);
-        // monta link wa.me com mensagem para o INDICADO
+        // Idempotência: mesma indicação (telefone) criada nos últimos 30s
+        const since = new Date(Date.now() - 30_000).toISOString();
+        const telDigits = onlyDigits(telefone);
+        const { data: recentes } = await supabase.from("energia_indicacoes")
+          .select("*").eq("indicador_id", cliente.id).gte("criado_em", since);
+        let novaInd = (recentes || []).find((r: any) => onlyDigits(r.telefone_indicado || "") === telDigits);
+        if (!novaInd) {
+          const { data: inserted } = await supabase.from("energia_indicacoes").insert({
+            indicador_id: cliente.id,
+            nome_indicado: nome,
+            telefone_indicado: telefone,
+            cidade: cidade || null,
+            observacao_indicador: observacao || null,
+            status: "enviada",
+          }).select().maybeSingle();
+          novaInd = inserted;
+          await fireKommoNew(indFull, novaInd);
+        }
         const tpl = (await getConfig("mensagem_whatsapp_indicado")) as string | undefined;
         const msg = (tpl || "Oi! Você foi indicado(a) por {indicador} para conhecer a Três Lagoas Solar.")
           .replace("{indicador}", indFull?.nome || "");
-        const tel = onlyDigits(telefone);
-        const wa = `https://wa.me/55${tel}?text=${encodeURIComponent(msg)}`;
+        const wa = `https://wa.me/55${telDigits}?text=${encodeURIComponent(msg)}`;
         return json({ ok: true, indicacao: novaInd, whatsapp_url: wa });
       }
     }
