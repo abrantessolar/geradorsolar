@@ -33,8 +33,10 @@ export default function EnergiaCadastro() {
     if (form.eh_cliente === "") { setError("Informe se já é cliente da Três Lagoas Solar"); return; }
     setLoading(true);
     try {
+      const iso = brToIso(form.data_nascimento);
+      if (!iso) { setError("Data inválida. Use DD/MM/AAAA"); setLoading(false); return; }
       const res = await evCall<{ indicador: any }>("cadastro_publico", {
-        nome: form.nome, cpf: form.cpf, data_nascimento: form.data_nascimento,
+        nome: form.nome, cpf: form.cpf, data_nascimento: iso,
         telefone: form.telefone, email: form.email, eh_cliente: form.eh_cliente === "sim",
       });
       setIndicador(res.indicador);
