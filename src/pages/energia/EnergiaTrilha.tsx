@@ -36,7 +36,8 @@ export default function EnergiaTrilha() {
       {loading ? <Loader2 className="w-6 h-6 animate-spin mx-auto" style={{ color: "#F5A623" }} /> : (
         <div className="space-y-3">
           {etapas.map((e, idx) => {
-            const conquistada = (data?.indicador?.pontos_acumulados || 0) >= e.pontos_minimos;
+            const pHist = data?.indicador?.pontos_historicos ?? data?.indicador?.pontos_acumulados ?? 0;
+            const conquistada = pHist >= e.pontos_minimos;
             const atual = epicName(data?.indicador?.etapa_atual) === e.key;
             const premio = (data?.premios || []).find((p: any) => p.id === e.premio_id);
             return (
