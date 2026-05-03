@@ -50,8 +50,14 @@ export default function EnergiaOnboarding({ nome, onClose, onIndicar }: Props) {
           {step === 0 && (
             <div className="ev-enter flex flex-col items-center justify-center text-center" style={{ gap: 32 }}>
               <span
-                className="ev-pulse leading-none"
-                style={{ fontSize: 96, filter: "drop-shadow(0 0 30px #F5A623)", background: "transparent" }}
+                className="leading-none"
+                style={{
+                  fontSize: 96,
+                  filter: "drop-shadow(0 0 30px #F5A623)",
+                  background: "transparent",
+                  display: "inline-block",
+                  animation: "ev-icon-pulse 2.4s ease-in-out infinite",
+                }}
               >
                 ☀️
               </span>
