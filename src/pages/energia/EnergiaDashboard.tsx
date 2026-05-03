@@ -75,6 +75,7 @@ export default function EnergiaDashboard() {
         const cur = epicName(d?.indicador?.etapa_atual);
         if (prev && prev !== cur) setLevelUp(cur);
         sessionStorage.setItem("ev_last_etapa", cur);
+        if (d?.indicador && d.indicador.onboarding_visto === false) setShowOnboarding(true);
       })
       .catch(console.error).finally(() => setLoading(false));
   };
