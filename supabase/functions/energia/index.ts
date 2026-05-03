@@ -243,8 +243,9 @@ serve(async (req) => {
           await fireKommoNew(indFull, novaInd);
         }
         const tpl = (await getConfig("mensagem_whatsapp_indicado")) as string | undefined;
-        const msg = (tpl || "Oi! Você foi indicado(a) por {indicador} para conhecer a Três Lagoas Solar.")
-          .replace("{indicador}", indFull?.nome || "");
+        const msg = (tpl || "Oi {indicado}! {indicador} está te indicando para conhecer a Três Lagoas Solar.")
+          .replace(/\{indicador\}/g, indFull?.nome || "")
+          .replace(/\{indicado\}/g, nome || "");
         const wa = `https://wa.me/55${telDigits}?text=${encodeURIComponent(msg)}`;
         return json({ ok: true, indicacao: novaInd, whatsapp_url: wa });
       }
