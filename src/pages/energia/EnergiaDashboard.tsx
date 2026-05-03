@@ -146,9 +146,22 @@ export default function EnergiaDashboard() {
 
         {/* Gauges - mobile: 1 coluna, sm+: 3 colunas */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <Gauge value={stats.fechadas} max={Math.max(10, stats.fechadas + 5)} label="Vitórias" color="#F5A623" />
-          <Gauge value={stats.placas || 0} max={Math.max(20, (stats.placas || 0) + 10)} label="Placas indicadas" color="#E8651A" />
-          <Gauge value={pDisp} max={progressoMax} label={proximoPremio ? "Próx. relíquia" : "Saldo"} color="#00C2FF" />
+          {(() => {
+            const pctReliquia = proximoPremio ? Math.min(100, Math.round((pDisp / proximoPremio.pontos_necessarios) * 100)) : 100;
+            const pronto = proximoPremio ? pDisp >= proximoPremio.pontos_necessarios : true;
+            return <>
+              <Gauge value={stats.fechadas} max={20} label="Vitórias" color="#F5A623" />
+              <Gauge value={stats.placas || 0} max={Math.max(20, (stats.placas || 0) + 10)} label="Placas indicadas" color="#E8651A" />
+              <Gauge
+                value={pctReliquia}
+                max={100}
+                label="Próx. relíquia"
+                color="#00C2FF"
+                format={(n) => `${n}%`}
+                sublabel={proximoPremio ? (pronto ? "Pronto!" : `${pDisp} / ${proximoPremio.pontos_necessarios} pts`) : "—"}
+              />
+            </>;
+          })()}
         </div>
 
         {/* Indicadores de pontos H/D */}
