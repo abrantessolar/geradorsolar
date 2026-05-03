@@ -141,8 +141,17 @@ export function EpicMusicToggle() {
   const toggle = () => {
     const next = !on; setOn(next); localStorage.setItem("energia_musica_ativa", next ? "true" : "false");
     const a = audioRef.current; if (!a) return;
-    if (next) { a.play().catch(() => {}); fade(TARGET_VOLUME); }
-    else fade(0, () => a.pause());
+    // iOS Safari ignora a propriedade volume em HTMLMediaElement, então usamos muted+pause
+    // sincronamente dentro do gesto do usuário para garantir o silenciamento.
+    if (fadeRef.current) { clearInterval(fadeRef.current); fadeRef.current = null; }
+    if (next) {
+      a.muted = false;
+      a.volume = TARGET_VOLUME;
+      a.play().catch(() => {});
+    } else {
+      a.muted = true;
+      try { a.pause(); } catch {}
+    }
   };
 
   if (!trackUrl) return null;

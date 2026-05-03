@@ -10,6 +10,14 @@ const maskPhone = (v: string) => {
   if (d.length <= 10) return d.replace(/^(\d{0,2})(\d{0,4})(\d{0,4}).*/, (_, a, b, c) => [a && `(${a}`, a && a.length === 2 ? ") " : "", b, c && `-${c}`].filter(Boolean).join(""));
   return d.replace(/^(\d{2})(\d{5})(\d{4}).*/, "($1) $2-$3");
 };
+const maskDateBR = (v: string) => {
+  const d = v.replace(/\D/g, "").slice(0, 8);
+  return [d.slice(0, 2), d.slice(2, 4), d.slice(4, 8)].filter(Boolean).join("/");
+};
+const brToIso = (v: string) => {
+  const m = v.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  return m ? `${m[3]}-${m[2]}-${m[1]}` : "";
+};
 
 export default function EnergiaCadastro() {
   const [form, setForm] = useState({ nome: "", cpf: "", data_nascimento: "", telefone: "", email: "", eh_cliente: "" });
@@ -25,8 +33,10 @@ export default function EnergiaCadastro() {
     if (form.eh_cliente === "") { setError("Informe se já é cliente da Três Lagoas Solar"); return; }
     setLoading(true);
     try {
+      const iso = brToIso(form.data_nascimento);
+      if (!iso) { setError("Data inválida. Use DD/MM/AAAA"); setLoading(false); return; }
       const res = await evCall<{ indicador: any }>("cadastro_publico", {
-        nome: form.nome, cpf: form.cpf, data_nascimento: form.data_nascimento,
+        nome: form.nome, cpf: form.cpf, data_nascimento: iso,
         telefone: form.telefone, email: form.email, eh_cliente: form.eh_cliente === "sim",
       });
       setIndicador(res.indicador);
@@ -59,7 +69,7 @@ export default function EnergiaCadastro() {
         <div className="space-y-3">
           <Field label="Nome completo *"><input className="ev-input" value={form.nome} onChange={e => set("nome", e.target.value)} /></Field>
           <Field label="CPF *"><input className="ev-input" placeholder="000.000.000-00" value={form.cpf} onChange={e => set("cpf", evMaskCpf(e.target.value))} /></Field>
-          <Field label="Data de nascimento *"><input type="date" className="ev-input" value={form.data_nascimento} onChange={e => set("data_nascimento", e.target.value)} /></Field>
+          <Field label="Data de nascimento *"><input type="tel" inputMode="numeric" autoComplete="bday" placeholder="DD/MM/AAAA" maxLength={10} className="ev-input" value={form.data_nascimento} onChange={e => set("data_nascimento", maskDateBR(e.target.value))} /></Field>
           <Field label="Telefone (WhatsApp) *"><input className="ev-input" placeholder="(00) 00000-0000" value={form.telefone} onChange={e => set("telefone", maskPhone(e.target.value))} /></Field>
           <Field label="E-mail"><input type="email" className="ev-input" value={form.email} onChange={e => set("email", e.target.value)} /></Field>
 
