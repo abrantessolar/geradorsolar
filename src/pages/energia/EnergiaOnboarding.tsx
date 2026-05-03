@@ -78,6 +78,7 @@ export default function EnergiaOnboarding({ nome, onClose, onIndicar }: Props) {
                   { icon: "⚡", t: "Indique um amigo ou familiar", d: 0.1 },
                   { icon: "🤝", t: "Nossa equipe fecha o contrato", d: 0.3 },
                   { icon: "🎁", t: "Você ganha pontos e troca por prêmios", d: 0.5 },
+                  { icon: "🏆", t: "Seu nível nunca regride — mesmo após resgatar prêmios", d: 0.7 },
                 ].map((it, i) => (
                   <div key={i} className="flex items-center gap-4 ev-enter"
                     style={{ animationDelay: `${it.d}s` }}>
