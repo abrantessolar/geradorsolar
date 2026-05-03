@@ -82,11 +82,18 @@ export function EpicMusicToggle() {
   const toggle = () => { const v = !on; setOn(v); localStorage.setItem("ev_music", v ? "1" : "0"); };
   return (
     <button onClick={toggle}
-      className="fixed top-3 right-3 z-50 w-10 h-10 rounded-full ev-card-glow flex items-center justify-center"
-      style={{ background: "rgba(30,18,0,0.85)", border: "1px solid rgba(245,166,35,0.6)", color: "#F5A623" }}
+      className="flex items-center justify-center text-lg"
+      style={{
+        position: "fixed", bottom: 80, left: 16, zIndex: 50,
+        width: 48, height: 48, borderRadius: "50%",
+        background: "rgba(30,18,0,0.9)", border: "1px solid #C17F24",
+        boxShadow: "0 4px 16px rgba(0,0,0,0.5), 0 0 12px rgba(245,166,35,0.3)",
+        color: "#F5A623",
+      }}
       title={on ? "Silenciar música" : "Tocar música épica"}
+      aria-label={on ? "Silenciar música" : "Tocar música"}
     >
-      {on ? <Music className="w-4 h-4 ev-sparkle" /> : <VolumeX className="w-4 h-4" />}
+      <span style={{ fontSize: 20, lineHeight: 1 }}>{on ? "🎵" : "🔇"}</span>
     </button>
   );
 }
