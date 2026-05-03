@@ -23,7 +23,11 @@ export function epicMetaByName(nome?: string | null) {
   const k = epicName(nome);
   return EPIC_STAGES.find(s => s.key === k) || { key: k, title: nome || k, icon: "⭐", aura: "rgba(245,166,35,0.7)" };
 }
-export const epicName = (n?: string | null) => (n ? (LEGACY_MAP[n] || n) : "Faísca");
+export const epicName = (n?: string | null) => {
+  if (!n) return "Faísca";
+  const stripped = n.replace(/^Indicador\s+/i, "").trim();
+  return LEGACY_MAP[stripped] || LEGACY_MAP[n] || stripped;
+};
 export const epicMeta = (n?: string | null) => {
   const k = epicName(n);
   return EPIC_STAGES.find(s => s.key === k) || EPIC_STAGES[0];
@@ -59,8 +63,18 @@ export function EpicParticles({ count = 18 }: { count?: number }) {
   );
 }
 
-// Botão flutuante de música de fundo épica
-const TARGET_VOLUME = 0.25;
+// Botão flutuante de música de fundo épica (singleton global p/ persistir entre rotas)
+const TARGET_VOLUME = 0.5;
+type GlobalAudio = { el: HTMLAudioElement; url: string };
+function getGlobalAudio(url: string): GlobalAudio {
+  const w = window as any;
+  if (w.__energiaAudio && w.__energiaAudio.url === url) return w.__energiaAudio;
+  if (w.__energiaAudio) { try { w.__energiaAudio.el.pause(); } catch {} }
+  const el = new Audio(url);
+  el.loop = true; el.volume = 0; el.preload = "auto";
+  w.__energiaAudio = { el, url };
+  return w.__energiaAudio;
+}
 export function EpicMusicToggle() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [on, setOn] = useState<boolean>(() => localStorage.getItem("energia_musica_ativa") !== "false");
@@ -71,9 +85,10 @@ export function EpicMusicToggle() {
     const a = audioRef.current; if (!a) return;
     if (fadeRef.current) clearInterval(fadeRef.current);
     const step = (to - a.volume) / 12;
+    if (step === 0) { done?.(); return; }
     fadeRef.current = window.setInterval(() => {
       const next = a.volume + step;
-      if ((step > 0 && next >= to) || (step < 0 && next <= to) || step === 0) {
+      if ((step > 0 && next >= to) || (step < 0 && next <= to)) {
         a.volume = to;
         if (fadeRef.current) clearInterval(fadeRef.current);
         fadeRef.current = null;
@@ -94,12 +109,13 @@ export function EpicMusicToggle() {
 
   useEffect(() => {
     if (!trackUrl) return;
-    const a = new Audio(trackUrl);
-    a.loop = true; a.volume = 0; a.preload = "auto";
-    audioRef.current = a;
-    if (on) a.play().catch(() => {/* autoplay bloqueado */});
+    const g = getGlobalAudio(trackUrl);
+    audioRef.current = g.el;
+    if (on && g.el.paused) {
+      g.el.play().then(() => fade(TARGET_VOLUME)).catch(() => {});
+    }
     const onFirstClick = () => {
-      if (on && a.paused) a.play().catch(() => {});
+      if (on && g.el.paused) g.el.play().catch(() => {});
       if (on) fade(TARGET_VOLUME);
       window.removeEventListener("click", onFirstClick);
       window.removeEventListener("touchstart", onFirstClick);
@@ -116,8 +132,8 @@ export function EpicMusicToggle() {
       window.removeEventListener("click", onFirstClick);
       window.removeEventListener("touchstart", onFirstClick);
       document.removeEventListener("visibilitychange", onVis);
-      a.pause(); audioRef.current = null;
       if (fadeRef.current) clearInterval(fadeRef.current);
+      // não pausar nem destruir: singleton continua tocando entre rotas
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [trackUrl]);
