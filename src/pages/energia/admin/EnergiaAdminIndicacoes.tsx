@@ -26,7 +26,9 @@ export default function EnergiaAdminIndicacoes() {
     const q = search.toLowerCase();
     return list.filter(i =>
       (statusFilter === "todos" || i.status === statusFilter) &&
-      (!q || (i.nome_indicado || "").toLowerCase().includes(q) || (indMap[i.indicador_id] || "").toLowerCase().includes(q))
+      (!q || (i.nome_indicado || "").toLowerCase().includes(q)
+        || (indMap[i.indicador_id] || "").toLowerCase().includes(q)
+        || (i.cidade || "").toLowerCase().includes(q))
     );
   }, [list, statusFilter, search, indMap]);
 
