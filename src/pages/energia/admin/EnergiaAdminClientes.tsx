@@ -10,6 +10,7 @@ export default function EnergiaAdminClientes() {
   const [search, setSearch] = useState("");
   const [adding, setAdding] = useState<any>(null);
   const [pontosModal, setPontosModal] = useState<any>(null);
+  const [savingPontos, setSavingPontos] = useState(false);
   const [detalhe, setDetalhe] = useState<any>(null);
 
   const load = async () => {
