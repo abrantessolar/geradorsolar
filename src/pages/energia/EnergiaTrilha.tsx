@@ -55,7 +55,7 @@ export default function EnergiaTrilha() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <h3 className="ev-font-epic font-black text-lg" style={{ color: conquistada ? "#F5E6C8" : "#A08060" }}>{e.title}</h3>
-                  <p className="text-xs" style={{ color: "#A08060" }}>{e.pontos_minimos} pontos de XP</p>
+                  <p className="text-xs" style={{ color: "#A08060" }}>{e.pontos_minimos} pts históricos necessários</p>
                   {premio && <p className="text-sm font-bold mt-1" style={{ color: "#F5A623" }}>🎁 {premio.nome}</p>}
                 </div>
                 <div className="ev-badge-epic" style={{ color: atual ? "#F5A623" : conquistada ? "#2E9E4F" : "#A08060" }}>
