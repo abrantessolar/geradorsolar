@@ -108,6 +108,14 @@ serve(async (req) => {
 
   try {
     // ===== PUBLIC =====
+    if (action === "public_config") {
+      const chave = String(payload.chave || "");
+      const allowed = ["musica_url", "logo_url", "nome_plataforma", "ranking_publico", "texto_link_indicacao"];
+      if (!allowed.includes(chave)) return err("Chave não permitida");
+      const valor = await getConfig(chave);
+      return json({ valor: valor ?? null });
+    }
+
     if (action === "login_cliente") {
       const cpf = onlyDigits(payload.cpf);
       const data_nascimento = payload.data_nascimento;

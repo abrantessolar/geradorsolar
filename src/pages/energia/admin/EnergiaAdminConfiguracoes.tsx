@@ -10,6 +10,7 @@ const FIELDS = [
   { key: "texto_link_indicacao", label: "Texto do link de indicação", type: "textarea" },
   { key: "logo_url", label: "URL do logo", type: "text" },
   { key: "nome_plataforma", label: "Nome da plataforma", type: "text" },
+  { key: "musica_url", label: "URL da Música de Fundo", type: "text" },
   { key: "ranking_publico", label: "Exibir ranking publicamente", type: "toggle" },
 ];
 

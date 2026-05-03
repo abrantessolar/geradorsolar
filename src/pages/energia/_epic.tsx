@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Music, VolumeX } from "lucide-react";
+import { evCall } from "@/lib/energiaApi";
 
 // Mapeia etapas (antigas ou novas) para metadados épicos
 export const EPIC_STAGES: { key: string; title: string; icon: string; aura: string }[] = [
@@ -59,12 +60,11 @@ export function EpicParticles({ count = 18 }: { count?: number }) {
 }
 
 // Botão flutuante de música de fundo épica
-const TRACK = "https://cdn.pixabay.com/audio/2022/03/15/audio_8cb749ec9e.mp3";
-const TRACK_FALLBACK = "https://cdn.pixabay.com/audio/2023/06/06/audio_3741b40cb1.mp3";
 const TARGET_VOLUME = 0.25;
 export function EpicMusicToggle() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [on, setOn] = useState<boolean>(() => localStorage.getItem("energia_musica_ativa") !== "false");
+  const [trackUrl, setTrackUrl] = useState<string>("");
   const fadeRef = useRef<number | null>(null);
 
   const fade = (to: number, done?: () => void) => {
@@ -85,9 +85,17 @@ export function EpicMusicToggle() {
   };
 
   useEffect(() => {
-    const a = new Audio(TRACK);
+    let cancelled = false;
+    evCall<{ valor: string | null }>("public_config", { chave: "musica_url" })
+      .then(r => { if (!cancelled) setTrackUrl((r?.valor || "").trim()); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
+    if (!trackUrl) return;
+    const a = new Audio(trackUrl);
     a.loop = true; a.volume = 0; a.preload = "auto";
-    a.addEventListener("error", () => { if (a.src !== TRACK_FALLBACK) a.src = TRACK_FALLBACK; });
     audioRef.current = a;
     if (on) a.play().catch(() => {/* autoplay bloqueado */});
     const onFirstClick = () => {
@@ -112,7 +120,7 @@ export function EpicMusicToggle() {
       if (fadeRef.current) clearInterval(fadeRef.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [trackUrl]);
 
   const toggle = () => {
     const next = !on; setOn(next); localStorage.setItem("energia_musica_ativa", next ? "true" : "false");
@@ -121,7 +129,9 @@ export function EpicMusicToggle() {
     else fade(0, () => a.pause());
   };
 
+  if (!trackUrl) return null;
   return (
+
     <button onClick={toggle}
       className="flex items-center justify-center text-lg"
       style={{
