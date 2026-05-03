@@ -141,6 +141,18 @@ export default function EnergiaAdminClientes() {
       {detalhe && <Modal title={`Histórico — ${detalhe.indicador?.nome || ""}`} onClose={() => setDetalhe(null)}>
         {detalhe.loading ? <Loader2 className="animate-spin" /> : (
           <div className="space-y-4 max-h-[60vh] overflow-y-auto text-sm">
+            <div className="grid grid-cols-2 gap-2">
+              <div className="p-3 rounded-lg border" style={{ borderColor: "#F5A623", background: "#FFF7E6" }}>
+                <div className="text-[10px] uppercase text-[#A08060]">Pontos históricos</div>
+                <div className="text-xl font-black text-[#F5A623]">{detalhe.indicador?.pontos_historicos ?? detalhe.indicador?.pontos_acumulados ?? 0}</div>
+                <div className="text-[10px] text-gray-500">define nível, nunca diminui</div>
+              </div>
+              <div className="p-3 rounded-lg border" style={{ borderColor: "#E8651A", background: "#FFF0E6" }}>
+                <div className="text-[10px] uppercase text-[#A08060]">Pontos disponíveis</div>
+                <div className="text-xl font-black text-[#E8651A]">{detalhe.indicador?.pontos_disponiveis ?? detalhe.indicador?.pontos_acumulados ?? 0}</div>
+                <div className="text-[10px] text-gray-500">saldo para resgates</div>
+              </div>
+            </div>
             <div>
               <div className="font-bold text-[#1A3C5E] mb-1">Indicações ({detalhe.indicacoes?.length || 0})</div>
               {(detalhe.indicacoes || []).map((i: any) => (
