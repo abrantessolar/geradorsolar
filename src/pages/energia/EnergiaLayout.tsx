@@ -40,7 +40,7 @@ export default function EnergiaLayout({ children }: { children: ReactNode }) {
       </header>
 
       {/* Top navigation */}
-      <nav className="sticky top-[57px] z-20"
+      <nav className="sticky top-0 z-20"
         style={{ background: "rgba(20,12,0,0.95)", borderBottom: "1px solid #C17F24", backdropFilter: "blur(8px)" }}>
         <div className="max-w-3xl mx-auto flex overflow-x-auto ev-scroll">
           {tabs.map(t => (
