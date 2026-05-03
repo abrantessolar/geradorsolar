@@ -104,6 +104,122 @@ body.pdf-capturing .pdf-force-show {
   }
 }
 
+/* ============ ENERGIA QUE VOLTA — TEMA SOLAR ÉPICO ============ */
+.ev-epic {
+  font-family: 'Inter', system-ui, sans-serif;
+  color: #F5E6C8;
+  background:
+    radial-gradient(ellipse at 50% -10%, rgba(245,166,35,0.35), transparent 60%),
+    radial-gradient(ellipse at 80% 110%, rgba(232,101,26,0.18), transparent 60%),
+    linear-gradient(180deg, #0D0A00 0%, #1A0F00 100%);
+  background-attachment: fixed;
+  min-height: 100vh;
+  position: relative;
+}
+.ev-epic::before {
+  content: ""; position: fixed; inset: 0;
+  background-image:
+    radial-gradient(2px 2px at 20% 30%, rgba(245,230,200,0.6), transparent),
+    radial-gradient(1px 1px at 70% 60%, rgba(245,166,35,0.6), transparent),
+    radial-gradient(1.5px 1.5px at 40% 80%, rgba(245,230,200,0.4), transparent),
+    radial-gradient(1px 1px at 90% 20%, rgba(245,166,35,0.5), transparent),
+    radial-gradient(2px 2px at 10% 70%, rgba(245,230,200,0.5), transparent),
+    radial-gradient(1px 1px at 55% 15%, rgba(245,166,35,0.45), transparent);
+  pointer-events: none; z-index: 0;
+  animation: ev-twinkle 6s ease-in-out infinite;
+}
+.ev-epic > * { position: relative; z-index: 1; }
+
+.ev-font-epic { font-family: 'Cinzel', 'Playfair Display', serif; letter-spacing: 0.02em; }
+.ev-text-glow { text-shadow: 0 0 12px rgba(245,166,35,0.7), 0 0 24px rgba(245,166,35,0.35); }
+
+.ev-card {
+  background: rgba(30, 18, 0, 0.78);
+  border: 1px solid rgba(193, 127, 36, 0.55);
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  border-radius: 1rem;
+  box-shadow: 0 6px 30px rgba(0,0,0,0.45), inset 0 1px 0 rgba(245,230,200,0.06);
+}
+.ev-card-glow { box-shadow: 0 0 24px rgba(245,166,35,0.35), 0 6px 30px rgba(0,0,0,0.5), inset 0 1px 0 rgba(245,230,200,0.1); }
+
+.ev-input {
+  width: 100%; height: 44px; padding: 0 12px;
+  background: rgba(0,0,0,0.45); color: #F5E6C8;
+  border: 1px solid rgba(193,127,36,0.45); border-radius: 8px;
+  outline: none; transition: all .2s;
+}
+.ev-input:focus { border-color: #F5A623; box-shadow: 0 0 0 3px rgba(245,166,35,0.18); }
+.ev-input::placeholder { color: rgba(160,128,96,0.7); }
+
+.ev-btn-primary {
+  background: linear-gradient(135deg, #F5A623 0%, #E8651A 100%);
+  color: #0D0A00; font-weight: 800; letter-spacing: 0.04em; border-radius: 12px;
+  box-shadow: 0 0 24px rgba(245,166,35,0.55), inset 0 1px 0 rgba(255,255,255,0.4);
+  transition: all .2s;
+}
+.ev-btn-primary:hover:not(:disabled) { transform: scale(1.03); box-shadow: 0 0 36px rgba(245,166,35,0.85); }
+.ev-btn-primary:disabled { opacity: .55; cursor: not-allowed; }
+
+.ev-btn-secondary {
+  background: rgba(0,0,0,0.45); color: #F5E6C8;
+  border: 1.5px solid #F5A623; border-radius: 12px; font-weight: 700;
+  transition: all .2s;
+}
+.ev-btn-secondary:hover { background: rgba(245,166,35,0.12); }
+
+@keyframes ev-float {
+  0%, 100% { transform: translateY(0) rotate(0deg); opacity: .7; }
+  50% { transform: translateY(-30px) rotate(180deg); opacity: 1; }
+}
+@keyframes ev-twinkle { 0%,100% { opacity:.55 } 50% { opacity: 1 } }
+@keyframes ev-energy-flow { 0% { background-position: 0% 50% } 100% { background-position: 200% 50% } }
+@keyframes ev-conquest-pulse {
+  0%,100% { box-shadow: 0 0 12px #F5A623, 0 0 24px rgba(232,101,26,0.4); }
+  50% { box-shadow: 0 0 28px #F5A623, 0 0 60px rgba(232,101,26,0.7); }
+}
+@keyframes ev-epic-entrance {
+  0% { opacity: 0; transform: translateY(28px) scale(.96); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes ev-sparkle {
+  0%,100% { text-shadow: 0 0 6px #F5A623; }
+  50% { text-shadow: 0 0 22px #F5A623, 0 0 44px #E8651A; }
+}
+@keyframes ev-pulse-ring {
+  0% { transform: scale(.95); box-shadow: 0 0 0 0 rgba(245,166,35,0.6); }
+  70% { transform: scale(1.05); box-shadow: 0 0 0 16px rgba(245,166,35,0); }
+  100% { transform: scale(.95); box-shadow: 0 0 0 0 rgba(245,166,35,0); }
+}
+
+.ev-enter { animation: ev-epic-entrance .6s ease-out backwards; }
+.ev-pulse { animation: ev-conquest-pulse 2.4s ease-in-out infinite; }
+.ev-pulse-ring { animation: ev-pulse-ring 2.2s ease-out infinite; }
+.ev-sparkle { animation: ev-sparkle 2.6s ease-in-out infinite; }
+
+.ev-trail-line-done {
+  background: linear-gradient(90deg, #F5A623, #E8651A, #F5A623);
+  background-size: 200% 100%;
+  animation: ev-energy-flow 2.5s linear infinite;
+}
+
+.ev-frame-relic {
+  position: relative; padding: 4px;
+  background: linear-gradient(135deg, #C17F24, #F5A623, #E8651A, #C17F24);
+  border-radius: 999px;
+  box-shadow: 0 0 18px rgba(245,166,35,0.5);
+}
+
+.ev-badge-epic {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 4px 10px; border-radius: 999px;
+  font-family: 'Cinzel', serif; font-weight: 700; font-size: 11px;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  border: 1px solid currentColor;
+}
+
+.ev-scroll::-webkit-scrollbar { height: 6px; width: 6px; }
+.ev-scroll::-webkit-scrollbar-thumb { background: rgba(245,166,35,0.4); border-radius: 999px; }
+
 @media print {
   /* Hide interactive elements */
   .no-print {
