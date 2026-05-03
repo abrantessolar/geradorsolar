@@ -6,6 +6,7 @@ import { useEnergia } from "@/contexts/EnergiaContext";
 import { evCall, evMaskPhone } from "@/lib/energiaApi";
 import { EPIC_STAGES, epicMeta, epicName, epicMetaByName, EpicLevelUpOverlay } from "./_epic";
 import EnergiaOnboarding from "./EnergiaOnboarding";
+import { PremioIcon, isPremioIcon } from "./premioIcons";
 
 const CIDADES = ["Três Lagoas", "Água Clara", "Selvíria", "Bataguassu", "Outras"];
 
@@ -204,9 +205,11 @@ export default function EnergiaDashboard() {
                     <div className="ev-frame-relic w-10 h-10">
                       <div className="w-full h-full rounded-full flex items-center justify-center overflow-hidden"
                         style={{ filter: conquistada ? "none" : "grayscale(1) brightness(0.45)" }}>
-                        {premio?.imagem_url
-                          ? <img src={premio.imagem_url} alt="" className="w-7 h-7 object-contain" />
-                          : <span className="text-xs">🎁</span>}
+                        {isPremioIcon(premio?.imagem_url)
+                          ? <PremioIcon value={premio.imagem_url} size={36} />
+                          : premio?.imagem_url
+                            ? <img src={premio.imagem_url} alt="" className="w-7 h-7 object-contain" />
+                            : <span className="text-xs">🎁</span>}
                       </div>
                     </div>
                   </div>
@@ -238,9 +241,11 @@ export default function EnergiaDashboard() {
           <div className="ev-card ev-card-glow p-5 flex gap-4 items-center ev-enter">
             <div className="ev-frame-relic w-24 h-24 flex items-center justify-center">
               <div className="w-full h-full rounded-full flex items-center justify-center overflow-hidden">
-                {proximoPremio.imagem_url
-                  ? <img src={proximoPremio.imagem_url} alt={proximoPremio.nome} className="w-20 h-20 object-contain" />
-                  : <span className="text-3xl">🎁</span>}
+                {isPremioIcon(proximoPremio.imagem_url)
+                  ? <PremioIcon value={proximoPremio.imagem_url} size={80} />
+                  : proximoPremio.imagem_url
+                    ? <img src={proximoPremio.imagem_url} alt={proximoPremio.nome} className="w-20 h-20 object-contain" />
+                    : <span className="text-3xl">🎁</span>}
               </div>
             </div>
             <div className="flex-1">
