@@ -7,6 +7,8 @@ export default function EnergiaAdminIndicacoes() {
   const [list, setList] = useState<any[]>([]);
   const [indicadores, setIndicadores] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [statusFilter, setStatusFilter] = useState("todos");
+  const [search, setSearch] = useState("");
 
   const load = async () => {
     setLoading(true);
