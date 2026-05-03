@@ -10,6 +10,14 @@ const maskPhone = (v: string) => {
   if (d.length <= 10) return d.replace(/^(\d{0,2})(\d{0,4})(\d{0,4}).*/, (_, a, b, c) => [a && `(${a}`, a && a.length === 2 ? ") " : "", b, c && `-${c}`].filter(Boolean).join(""));
   return d.replace(/^(\d{2})(\d{5})(\d{4}).*/, "($1) $2-$3");
 };
+const maskDateBR = (v: string) => {
+  const d = v.replace(/\D/g, "").slice(0, 8);
+  return [d.slice(0, 2), d.slice(2, 4), d.slice(4, 8)].filter(Boolean).join("/");
+};
+const brToIso = (v: string) => {
+  const m = v.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  return m ? `${m[3]}-${m[2]}-${m[1]}` : "";
+};
 
 export default function EnergiaCadastro() {
   const [form, setForm] = useState({ nome: "", cpf: "", data_nascimento: "", telefone: "", email: "", eh_cliente: "" });
