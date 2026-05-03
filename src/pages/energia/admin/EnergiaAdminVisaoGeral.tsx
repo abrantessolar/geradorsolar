@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import EnergiaAdminLayout from "./EnergiaAdminLayout";
 import { evCall, evGetAdminToken } from "@/lib/energiaApi";
-import { Loader2, Users, TrendingUp, DollarSign, Package, Star } from "lucide-react";
+import { Loader2, Users, TrendingUp, Package, Star, Zap } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip } from "recharts";
 
 export default function EnergiaAdminVisaoGeral() {
