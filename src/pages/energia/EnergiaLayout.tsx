@@ -21,7 +21,7 @@ export default function EnergiaLayout({ children }: { children: ReactNode }) {
     <div className="ev-epic pb-10">
       <EpicParticles />
       <EpicMusicToggle />
-      <header className="sticky top-0 z-30 px-4 py-3 flex items-center justify-between"
+      <header className="relative z-30 px-4 py-3 flex items-center justify-between"
         style={{ background: "linear-gradient(180deg, rgba(13,10,0,0.95), rgba(26,15,0,0.85))", borderBottom: "1px solid rgba(245,166,35,0.35)", backdropFilter: "blur(10px)" }}>
         <div className="flex items-center gap-2">
           <Sun className="w-6 h-6 ev-sparkle" style={{ color: "#F5A623" }} />
@@ -40,7 +40,7 @@ export default function EnergiaLayout({ children }: { children: ReactNode }) {
       </header>
 
       {/* Top navigation */}
-      <nav className="sticky top-[57px] z-20"
+      <nav className="relative z-20"
         style={{ background: "rgba(20,12,0,0.95)", borderBottom: "1px solid #C17F24", backdropFilter: "blur(8px)" }}>
         <div className="max-w-3xl mx-auto flex overflow-x-auto ev-scroll">
           {tabs.map(t => (
