@@ -5,6 +5,19 @@ import { evCall, evMaskCpf } from "@/lib/energiaApi";
 import { useEnergia } from "@/contexts/EnergiaContext";
 import { EpicParticles } from "./_epic";
 
+const maskDateBR = (v: string) => {
+  const d = v.replace(/\D/g, "").slice(0, 8);
+  const p1 = d.slice(0, 2);
+  const p2 = d.slice(2, 4);
+  const p3 = d.slice(4, 8);
+  return [p1, p2, p3].filter(Boolean).join("/");
+};
+const brToIso = (v: string) => {
+  const m = v.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (!m) return "";
+  return `${m[3]}-${m[2]}-${m[1]}`;
+};
+
 export default function EnergiaLogin() {
   const [cpf, setCpf] = useState("");
   const [data, setData] = useState("");
@@ -16,7 +29,9 @@ export default function EnergiaLogin() {
   const handle = async () => {
     setError(""); setLoading(true);
     try {
-      const res = await evCall<{ indicador: any }>("login_cliente", { cpf, data_nascimento: data });
+      const iso = brToIso(data);
+      if (!iso) { setError("Data inválida. Use DD/MM/AAAA"); setLoading(false); return; }
+      const res = await evCall<{ indicador: any }>("login_cliente", { cpf, data_nascimento: iso });
       setIndicador(res.indicador);
       saveCpf(cpf.replace(/\D/g, ""));
       nav("/energia/dashboard");
