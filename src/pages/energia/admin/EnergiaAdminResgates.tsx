@@ -31,7 +31,16 @@ export default function EnergiaAdminResgates() {
   };
 
   const pendentes = list.filter(r => r.status === "pendente");
-  const entregues = list.filter(r => r.status === "entregue");
+  const entregues = useMemo(() => {
+    return list.filter(r => {
+      if (r.status !== "entregue") return false;
+      if (!r.entregue_em) return true;
+      const d = new Date(r.entregue_em);
+      if (de && d < new Date(de + "T00:00:00")) return false;
+      if (ate && d > new Date(ate + "T23:59:59")) return false;
+      return true;
+    });
+  }, [list, de, ate]);
 
   return (
     <EnergiaAdminLayout>
