@@ -127,7 +127,7 @@ serve(async (req) => {
         .eq("cpf", cpf)
         .eq("data_nascimento", data_nascimento)
         .maybeSingle();
-      if (!data) return err("Cliente não encontrado. Entre em contato com a empresa.", 404);
+      if (!data) return err("CPF não encontrado. Cadastre-se para participar do programa.", 404);
       const upd: any = { ultimo_acesso: new Date().toISOString() };
       if (aceite_termos && !data.termos_aceitos_em) upd.termos_aceitos_em = new Date().toISOString();
       const { data: updated } = await supabase.from("energia_indicadores").update(upd).eq("id", data.id).select().maybeSingle();
