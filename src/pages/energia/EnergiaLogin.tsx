@@ -4,6 +4,7 @@ import { Sun, AlertCircle, Loader2 } from "lucide-react";
 import { evCall, evMaskCpf } from "@/lib/energiaApi";
 import { useEnergia } from "@/contexts/EnergiaContext";
 import { EpicParticles } from "./_epic";
+import EnergiaWelcomePopup from "./EnergiaWelcomePopup";
 
 const maskDateBR = (v: string) => {
   const d = v.replace(/\D/g, "").slice(0, 8);
@@ -48,6 +49,7 @@ export default function EnergiaLogin() {
 
   return (
     <div className="ev-epic flex items-center justify-center px-4 py-10">
+      <EnergiaWelcomePopup />
       <EpicParticles count={24} />
       <div className="relative z-10 max-w-md w-full ev-card ev-card-glow ev-enter p-8 space-y-5">
         <div className="text-center space-y-2">
