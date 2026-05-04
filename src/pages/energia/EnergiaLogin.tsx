@@ -66,6 +66,21 @@ export default function EnergiaLogin() {
           </div>
         )}
 
+        {notFound && (
+          <div className="p-4 rounded-lg space-y-3 text-sm"
+            style={{ background: "rgba(245,166,35,0.10)", color: "#F5E6C8", border: "1px solid rgba(245,166,35,0.5)" }}>
+            <div className="flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" style={{ color: "#F5A623" }} />
+              <span>CPF não encontrado em nossa base. Que tal se cadastrar e começar sua saga agora?</span>
+            </div>
+            <Link to="/energia/cadastro"
+              state={{ cpf }}
+              className="ev-btn-primary w-full h-11 flex items-center justify-center font-bold">
+              CRIAR MEU CADASTRO
+            </Link>
+          </div>
+        )}
+
         <div className="space-y-3">
           <div>
             <label className="block text-xs ev-font-epic uppercase tracking-widest mb-1" style={{ color: "#F5A623" }}>CPF</label>
