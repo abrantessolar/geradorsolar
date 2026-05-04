@@ -23,13 +23,14 @@ export default function EnergiaLogin() {
   const [data, setData] = useState("");
   const [aceite, setAceite] = useState(false);
   const [error, setError] = useState("");
+  const [notFound, setNotFound] = useState(false);
   const [loading, setLoading] = useState(false);
   const { setIndicador, setCpf: saveCpf } = useEnergia();
   const nav = useNavigate();
 
   const handle = async () => {
     if (!aceite) return;
-    setError(""); setLoading(true);
+    setError(""); setNotFound(false); setLoading(true);
     try {
       const iso = brToIso(data);
       if (!iso) { setError("Data inválida. Use DD/MM/AAAA"); setLoading(false); return; }
@@ -37,7 +38,11 @@ export default function EnergiaLogin() {
       setIndicador(res.indicador);
       saveCpf(cpf.replace(/\D/g, ""));
       nav("/energia/dashboard");
-    } catch (e: any) { setError(e.message || "Erro ao entrar"); }
+    } catch (e: any) {
+      const msg = e.message || "Erro ao entrar";
+      if (/não encontrado|nao encontrado|cadastre-se/i.test(msg)) setNotFound(true);
+      else setError(msg);
+    }
     finally { setLoading(false); }
   };
 
@@ -58,6 +63,21 @@ export default function EnergiaLogin() {
           <div className="flex items-center gap-2 p-3 rounded-lg text-sm"
             style={{ background: "rgba(232,101,26,0.18)", color: "#F5E6C8", border: "1px solid rgba(232,101,26,0.5)" }}>
             <AlertCircle className="w-4 h-4" /> {error}
+          </div>
+        )}
+
+        {notFound && (
+          <div className="p-4 rounded-lg space-y-3 text-sm"
+            style={{ background: "rgba(245,166,35,0.10)", color: "#F5E6C8", border: "1px solid rgba(245,166,35,0.5)" }}>
+            <div className="flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" style={{ color: "#F5A623" }} />
+              <span>CPF não encontrado em nossa base. Que tal se cadastrar e começar sua saga agora?</span>
+            </div>
+            <Link to="/energia/cadastro"
+              state={{ cpf }}
+              className="ev-btn-primary w-full h-11 flex items-center justify-center font-bold">
+              CRIAR MEU CADASTRO
+            </Link>
           </div>
         )}
 
