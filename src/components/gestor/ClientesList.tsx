@@ -48,6 +48,7 @@ export type ClienteBase = {
   data_fechamento: string | null;
   razao_social?: string | null;
   outros_nomes?: any;
+  instalador?: string | null;
 };
 
 function calcKwp(qtd?: number | null, potW?: string | null): string {
