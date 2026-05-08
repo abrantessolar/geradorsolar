@@ -435,7 +435,7 @@ export default function ProjetosUnificados({
       {editCliente && <ClienteEditModal cliente={editCliente} onClose={() => setEditCliente(null)} onSaved={() => { onRefresh(); setEditCliente(null); }} />}
       {deleteCliente && (
         <DeleteConfirmModal
-          nome={deleteCliente.nome_completo || 'Cliente'}
+          nome={displayClienteName(deleteCliente)}
           id={deleteCliente.id.startsWith('proj-') ? deleteCliente.id.replace('proj-', '') : deleteCliente.id}
           tabela={deleteCliente.id.startsWith('proj-') ? 'projetos' : 'clientes_base'}
           onClose={() => setDeleteCliente(null)}
