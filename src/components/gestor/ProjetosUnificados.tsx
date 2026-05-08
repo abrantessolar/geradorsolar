@@ -341,7 +341,7 @@ export default function ProjetosUnificados({
                 <div key={c.id} className="border border-border rounded-lg p-3 space-y-2">
                   <div className="flex items-start justify-between">
                     <div className="min-w-0">
-                      <p className="font-medium text-sm truncate">{c.nome_completo || '—'}</p>
+                      <p className="font-medium text-sm truncate">{displayClienteName(c)}</p>
                       <div className="flex items-center gap-2 mt-0.5">
                         <WhatsAppLink phone={c.telefone} />
                       </div>
