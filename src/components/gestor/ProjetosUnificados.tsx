@@ -194,6 +194,7 @@ export default function ProjetosUnificados({
     cliente: { label: 'Cliente', render: c => <span className="font-medium max-w-[180px] truncate block">{displayClienteName(c)}</span> },
     telefone: { label: 'Telefone', render: c => <WhatsAppLink phone={c.telefone} />, className: 'text-xs' },
     data_instalacao: { label: 'Data Instalação', render: c => <>{c.instalado_em ? fmtDateBR(c.instalado_em) : '—'}</>, className: 'text-xs' },
+    instalador: { label: 'Instalador', render: c => c.instalador ? <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 text-xs font-medium">{c.instalador}</span> : <span className="text-muted-foreground text-xs">—</span>, className: 'text-xs' },
     qtd_placas: { label: 'Qtd Placas', render: c => <>{c.qtd_placas || '—'}</>, className: 'text-xs' },
     kwp: { label: 'kWp', render: c => <span className="font-medium">{c.kwp ? Number(c.kwp).toFixed(2) : calcKwp(c.qtd_placas, c.potencia_placa)}</span>, className: 'text-xs' },
     marca_inv: { label: 'Marca Inv.', render: c => <>{c.marca_inversor || '—'}</>, className: 'text-xs' },
