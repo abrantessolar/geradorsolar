@@ -191,6 +191,7 @@ export default function ClienteDadosModal({ cliente, onClose }: { cliente: Clien
     const sys = sistemaStr(c);
     if (sys) add('SISTEMA', sys);
     add('DATA INSTALAÇÃO', fmtDate(c.instalado_em));
+    add('INSTALADOR', fmt(c.instalador));
     add('DATA VISTORIA', fmtDate(c.vistoriado_em));
     add('VALOR', fmtMoney(c.valor));
     add('FORMA PAGAMENTO', fmt(c.forma_pagamento));
