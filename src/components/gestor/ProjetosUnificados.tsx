@@ -140,6 +140,7 @@ export default function ProjetosUnificados({
     uc: p.unidade_geradora_codigo_uc || null,
     nome_planta: p.nome_planta || null,
     instalado_em: p.data_instalacao || null,
+    instalador: p.instalador || null,
     vistoriado_em: p.vistoriado_em || null,
     qtd_placas: p.qtd_placas || null,
     marca_placa: p.marca_placa || null,
