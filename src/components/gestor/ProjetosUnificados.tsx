@@ -353,6 +353,7 @@ export default function ProjetosUnificados({
                     <div><span className="text-muted-foreground">KWp:</span> {c.kwp ? Number(c.kwp).toFixed(2) : calcKwp(c.qtd_placas, c.potencia_placa)}</div>
                     <div><span className="text-muted-foreground">Placas:</span> {c.qtd_placas || '—'}</div>
                     <div><span className="text-muted-foreground">Inversor:</span> {c.marca_inversor || '—'}</div>
+                    <div className="col-span-2"><span className="text-muted-foreground">Instalador:</span> {c.instalador || '—'}</div>
                   </div>
                    <div className="flex gap-1.5 items-center pt-1 border-t border-border/50">
                      <button onClick={() => setDadosCliente(c)} className="text-primary hover:text-primary/80 p-1"><Eye className="w-4 h-4" /></button>
