@@ -117,7 +117,7 @@ export default function ProjetosUnificados({
   const aguardandoDrag = useDraggableColumns('cols_aguardando', aguardandoDefaultOrder);
 
   // Draggable columns for instalados
-  const instaladosDefaultOrder = ['cliente', 'telefone', 'data_instalacao', 'qtd_placas', 'kwp', 'marca_inv', 'pot_inv', 'acoes'];
+  const instaladosDefaultOrder = ['cliente', 'telefone', 'data_instalacao', 'instalador', 'qtd_placas', 'kwp', 'marca_inv', 'pot_inv', 'acoes'];
   const instaladosDrag = useDraggableColumns('cols_instalados', instaladosDefaultOrder);
 
   const mapProjetoToDados = (p: Projeto) => ({
