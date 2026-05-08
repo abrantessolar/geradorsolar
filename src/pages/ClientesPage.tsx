@@ -106,6 +106,7 @@ export default function ClientesPage() {
       cep: p.cep || null,
       outros_nomes: p.outros_nomes || [],
       observacoes_historico: p.observacoes_historico || [],
+      instalador: p.instalador || null,
     }));
 
     setClientes([...fromBase, ...fromProjetos]);

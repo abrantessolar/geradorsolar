@@ -117,7 +117,7 @@ export default function ProjetosUnificados({
   const aguardandoDrag = useDraggableColumns('cols_aguardando', aguardandoDefaultOrder);
 
   // Draggable columns for instalados
-  const instaladosDefaultOrder = ['cliente', 'telefone', 'data_instalacao', 'qtd_placas', 'kwp', 'marca_inv', 'pot_inv', 'acoes'];
+  const instaladosDefaultOrder = ['cliente', 'telefone', 'data_instalacao', 'instalador', 'qtd_placas', 'kwp', 'marca_inv', 'pot_inv', 'acoes'];
   const instaladosDrag = useDraggableColumns('cols_instalados', instaladosDefaultOrder);
 
   const mapProjetoToDados = (p: Projeto) => ({
@@ -140,6 +140,7 @@ export default function ProjetosUnificados({
     uc: p.unidade_geradora_codigo_uc || null,
     nome_planta: p.nome_planta || null,
     instalado_em: p.data_instalacao || null,
+    instalador: p.instalador || null,
     vistoriado_em: p.vistoriado_em || null,
     qtd_placas: p.qtd_placas || null,
     marca_placa: p.marca_placa || null,
@@ -194,6 +195,7 @@ export default function ProjetosUnificados({
     cliente: { label: 'Cliente', render: c => <span className="font-medium max-w-[180px] truncate block">{displayClienteName(c)}</span> },
     telefone: { label: 'Telefone', render: c => <WhatsAppLink phone={c.telefone} />, className: 'text-xs' },
     data_instalacao: { label: 'Data Instalação', render: c => <>{c.instalado_em ? fmtDateBR(c.instalado_em) : '—'}</>, className: 'text-xs' },
+    instalador: { label: 'Instalador', render: c => c.instalador ? <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 text-xs font-medium">{c.instalador}</span> : <span className="text-muted-foreground text-xs">—</span>, className: 'text-xs' },
     qtd_placas: { label: 'Qtd Placas', render: c => <>{c.qtd_placas || '—'}</>, className: 'text-xs' },
     kwp: { label: 'kWp', render: c => <span className="font-medium">{c.kwp ? Number(c.kwp).toFixed(2) : calcKwp(c.qtd_placas, c.potencia_placa)}</span>, className: 'text-xs' },
     marca_inv: { label: 'Marca Inv.', render: c => <>{c.marca_inversor || '—'}</>, className: 'text-xs' },
@@ -352,6 +354,7 @@ export default function ProjetosUnificados({
                     <div><span className="text-muted-foreground">KWp:</span> {c.kwp ? Number(c.kwp).toFixed(2) : calcKwp(c.qtd_placas, c.potencia_placa)}</div>
                     <div><span className="text-muted-foreground">Placas:</span> {c.qtd_placas || '—'}</div>
                     <div><span className="text-muted-foreground">Inversor:</span> {c.marca_inversor || '—'}</div>
+                    <div className="col-span-2"><span className="text-muted-foreground">Instalador:</span> {c.instalador || '—'}</div>
                   </div>
                    <div className="flex gap-1.5 items-center pt-1 border-t border-border/50">
                      <button onClick={() => setDadosCliente(c)} className="text-primary hover:text-primary/80 p-1"><Eye className="w-4 h-4" /></button>
