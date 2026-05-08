@@ -38,6 +38,16 @@ function calcKwp(qtd?: number | null, potW?: string | null): string {
   return ((qtd * pot) / 1000).toFixed(2);
 }
 
+function displayClienteName(c: ClienteBase): string {
+  if (c.nome_completo && c.nome_completo.trim()) return c.nome_completo;
+  if (c.razao_social && String(c.razao_social).trim()) return String(c.razao_social);
+  const outros = Array.isArray(c.outros_nomes) ? c.outros_nomes : [];
+  const firstOutro = outros.find((o: any) => o && (o.nome || '').trim());
+  if (firstOutro) return firstOutro.nome;
+  if (c.cpf) return `CPF ${c.cpf}`;
+  return '—';
+}
+
 type FilterMode = 'todos' | 'aguardando' | 'instalados';
 
 export default function ProjetosUnificados({
