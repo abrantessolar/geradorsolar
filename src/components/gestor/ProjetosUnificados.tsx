@@ -191,7 +191,7 @@ export default function ProjetosUnificados({
 
   // Column definitions for instalados
   const instaladosColDefs: Record<string, { label: string; render: (c: ClienteBase) => React.ReactNode; className?: string }> = {
-    cliente: { label: 'Cliente', render: c => <span className="font-medium max-w-[180px] truncate block">{c.nome_completo || '—'}</span> },
+    cliente: { label: 'Cliente', render: c => <span className="font-medium max-w-[180px] truncate block">{displayClienteName(c)}</span> },
     telefone: { label: 'Telefone', render: c => <WhatsAppLink phone={c.telefone} />, className: 'text-xs' },
     data_instalacao: { label: 'Data Instalação', render: c => <>{c.instalado_em ? fmtDateBR(c.instalado_em) : '—'}</>, className: 'text-xs' },
     qtd_placas: { label: 'Qtd Placas', render: c => <>{c.qtd_placas || '—'}</>, className: 'text-xs' },
