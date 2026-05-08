@@ -66,6 +66,7 @@ export default function ClientesPage() {
       id: `proj-${p.id}`,
       criado_em: p.criado_em,
       nome_completo: p.nome_completo || p.razao_social,
+      razao_social: p.razao_social || null,
       cpf: p.cpf || p.cnpj,
       endereco: p.endereco_completo,
       telefone: p.telefone,

@@ -38,6 +38,16 @@ function calcKwp(qtd?: number | null, potW?: string | null): string {
   return ((qtd * pot) / 1000).toFixed(2);
 }
 
+function displayClienteName(c: ClienteBase): string {
+  if (c.nome_completo && c.nome_completo.trim()) return c.nome_completo;
+  if (c.razao_social && String(c.razao_social).trim()) return String(c.razao_social);
+  const outros = Array.isArray(c.outros_nomes) ? c.outros_nomes : [];
+  const firstOutro = outros.find((o: any) => o && (o.nome || '').trim());
+  if (firstOutro) return firstOutro.nome;
+  if (c.cpf) return `CPF ${c.cpf}`;
+  return '—';
+}
+
 type FilterMode = 'todos' | 'aguardando' | 'instalados';
 
 export default function ProjetosUnificados({
@@ -181,7 +191,7 @@ export default function ProjetosUnificados({
 
   // Column definitions for instalados
   const instaladosColDefs: Record<string, { label: string; render: (c: ClienteBase) => React.ReactNode; className?: string }> = {
-    cliente: { label: 'Cliente', render: c => <span className="font-medium max-w-[180px] truncate block">{c.nome_completo || '—'}</span> },
+    cliente: { label: 'Cliente', render: c => <span className="font-medium max-w-[180px] truncate block">{displayClienteName(c)}</span> },
     telefone: { label: 'Telefone', render: c => <WhatsAppLink phone={c.telefone} />, className: 'text-xs' },
     data_instalacao: { label: 'Data Instalação', render: c => <>{c.instalado_em ? fmtDateBR(c.instalado_em) : '—'}</>, className: 'text-xs' },
     qtd_placas: { label: 'Qtd Placas', render: c => <>{c.qtd_placas || '—'}</>, className: 'text-xs' },
@@ -331,7 +341,7 @@ export default function ProjetosUnificados({
                 <div key={c.id} className="border border-border rounded-lg p-3 space-y-2">
                   <div className="flex items-start justify-between">
                     <div className="min-w-0">
-                      <p className="font-medium text-sm truncate">{c.nome_completo || '—'}</p>
+                      <p className="font-medium text-sm truncate">{displayClienteName(c)}</p>
                       <div className="flex items-center gap-2 mt-0.5">
                         <WhatsAppLink phone={c.telefone} />
                       </div>
@@ -425,7 +435,7 @@ export default function ProjetosUnificados({
       {editCliente && <ClienteEditModal cliente={editCliente} onClose={() => setEditCliente(null)} onSaved={() => { onRefresh(); setEditCliente(null); }} />}
       {deleteCliente && (
         <DeleteConfirmModal
-          nome={deleteCliente.nome_completo || 'Cliente'}
+          nome={displayClienteName(deleteCliente)}
           id={deleteCliente.id.startsWith('proj-') ? deleteCliente.id.replace('proj-', '') : deleteCliente.id}
           tabela={deleteCliente.id.startsWith('proj-') ? 'projetos' : 'clientes_base'}
           onClose={() => setDeleteCliente(null)}
