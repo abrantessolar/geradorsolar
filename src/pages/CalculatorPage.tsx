@@ -125,23 +125,27 @@ export default function CalculatorPage() {
   const [panelDelta, setPanelDelta] = useState(0);
   const [paymentTab, setPaymentTab] = useState<'financing' | 'card'>('financing');
   const [showCostPanel, setShowCostPanel] = useState(false);
-  const [selectedLine, setSelectedLine] = useState<number | null>(() => {
-    if (ep?.selectedLine) {
-      const idx = LINES.indexOf(ep.selectedLine as any);
-      return idx >= 0 ? idx : null;
-    }
-    return null;
-  });
-  const [customKits, setCustomKits] = useState<Record<string, CustomKitData>>(() => {
-    const base = {
-      excellence: defaultCustomKit(0),
-      premium: defaultCustomKit(0),
-    };
+  const [kit, setKit] = useState<KitData>(() => {
     if (ep?.customKit) {
-      base[ep.selectedLine] = ep.customKit;
+      const ck = ep.customKit;
+      // Backward compat: old customKit shape from CustomKitForm
+      return {
+        tipoInversor: ck.tipoInversor ?? (ep.selectedLine === 'premium' ? 'micro' : 'string'),
+        marcaInversor: ck.marcaInversor ?? ck.inverterBrand ?? '',
+        modeloInversor: ck.modeloInversor ?? ck.inverterModel ?? '',
+        potenciaInversorKw: ck.potenciaInversorKw ?? ck.inverterPower ?? 0,
+        qtdInversores: ck.qtdInversores ?? 1,
+        marcaPlaca: ck.marcaPlaca ?? ck.panelBrand ?? '',
+        modeloPlaca: ck.modeloPlaca ?? ck.panelModel ?? '',
+        potenciaPlacaWp: ck.potenciaPlacaWp ?? ck.panelPowerWp ?? 570,
+        qtdPlacas: ck.qtdPlacas ?? ck.panelCount ?? 0,
+        custoKit: ck.custoKit ?? ck.kitCost ?? 0,
+        precoVendaManual: ck.precoVendaManual ?? (ck.costMode === 'sale_price' ? ck.salePrice : null),
+      };
     }
-    return base;
+    return defaultKit(0);
   });
+
 
   // Show toast when loading from edit
   useEffect(() => {
