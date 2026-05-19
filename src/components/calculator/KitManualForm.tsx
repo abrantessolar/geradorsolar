@@ -176,16 +176,16 @@ export default function KitManualForm({ kit, onChange, isAuthenticated }: Props)
         <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
           Dados das Placas
         </h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <div>
-            <label className="text-[11px] text-muted-foreground">Marca</label>
-            <input className="solar-input text-sm py-2" value={kit.marcaPlaca}
-              onChange={e => update({ marcaPlaca: e.target.value })} placeholder="Ex: ASTRONERGY" />
-          </div>
-          <div>
-            <label className="text-[11px] text-muted-foreground">Modelo</label>
-            <input className="solar-input text-sm py-2" value={kit.modeloPlaca}
-              onChange={e => update({ modeloPlaca: e.target.value })} placeholder="CHSM72M-HC" />
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+          <div className="md:col-span-2">
+            <label className="text-[11px] text-muted-foreground">Marca / Modelo</label>
+            <EquipmentCombobox
+              kind="placa"
+              potencia={kit.potenciaPlacaWp}
+              marca={kit.marcaPlaca}
+              modelo={kit.modeloPlaca}
+              onPick={(marca, modelo) => update({ marcaPlaca: marca, modeloPlaca: modelo })}
+            />
           </div>
           <div>
             <label className="text-[11px] text-muted-foreground">Potência (Wp)</label>
