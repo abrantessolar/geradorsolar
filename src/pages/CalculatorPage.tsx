@@ -790,10 +790,9 @@ export default function CalculatorPage() {
           </button>
         </div>
         {/* Indicators */}
-        {systemCards[0] && (() => {
-          const refCard = systemCards[0];
-          const gen = refCard.dimensioning.monthlyGeneration;
-          const cons = refCard.dimensioning.avgMonthlyKwh;
+        {(() => {
+          const gen = systemCard.dimensioning.monthlyGeneration;
+          const cons = systemCard.dimensioning.avgMonthlyKwh;
           const exc = gen - cons;
           return (
             <div className="space-y-0.5 text-center" style={{ fontSize: '12px', color: '#888' }}>
@@ -813,207 +812,106 @@ export default function CalculatorPage() {
         )}
       </section>
 
-      {/* System Cards */}
-      <section className="space-y-4 animate-fade-in-up" style={{ animationDelay: '500ms' }}>
-        <h2 className="text-2xl font-bold text-primary text-center">Sistemas Disponíveis</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-          {systemCards.map((card, idx) => {
-            const isPremium = card.line === 'premium';
-            const maxP = card.maxPanels;
-            const remaining = card.panelsRemaining;
-            // Compute overload status for non-premium
-            const panelKwpTotal = card.dimensioning.powerKwp;
-            const inverterKwForOverload = (() => {
-              if (isPremium) return 0;
-              if (card.isCustom) {
-                const ck = customKits[card.line];
-                return ck?.inverterPower || 0;
-              }
-              const ptDet = (card.ptDetails as any);
-              return ptDet?.inverterPower ? parseFloat(ptDet.inverterPower) : card.inverter?.power || 0;
-            })();
-            const overload = !isPremium && inverterKwForOverload > 0 ? getOverloadStatus(panelKwpTotal, inverterKwForOverload) : null;
-            const overloadColors = { green: '#22c55e', yellow: '#eab308', red: '#E84855' };
-            return (
-              <div key={card.line} 
-                className={`solar-card p-6 space-y-4 relative cursor-pointer transition-all ${selectedLine === idx ? 'ring-2 ring-primary shadow-lg' : 'hover:shadow-md'}`}
-                onClick={() => setSelectedLine(idx)}
-              >
-                <div className="text-center">
-                  <h3 className="text-lg font-bold text-primary">{LINE_NAMES[card.line]}</h3>
-                  <p className="text-xs text-muted-foreground">{LINE_SUBS[card.line]}</p>
-                </div>
+      {/* Kit Manual Form (substitui cards de seleção de linha) */}
+      <KitManualForm kit={kit} onChange={setKit} isAuthenticated={isAuthenticated} />
 
-                {/* Custom mode toggle - only for authenticated users */}
-                {isAuthenticated && (
-                  <div className="flex items-center justify-between px-2 py-1.5 rounded-lg bg-muted/50 border border-border/50">
-                    <span className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
-                      <Settings2 className="w-3.5 h-3.5" />
-                      {customKits[card.line]?.enabled ? 'Personalizar' : 'Usar tabela de preços'}
-                    </span>
-                    <Switch
-                      checked={customKits[card.line]?.enabled || false}
-                      onCheckedChange={(checked) => setCustomKits(prev => ({
-                        ...prev,
-                        [card.line]: { ...(prev[card.line] || defaultCustomKit(finalPanels)), enabled: checked, panelCount: checked && !prev[card.line]?.panelCount ? finalPanels : (prev[card.line]?.panelCount || finalPanels) },
-                      }))}
-                    />
-                  </div>
-                )}
-
-                {/* Custom kit form */}
-                {customKits[card.line]?.enabled && (
-                  <CustomKitForm
-                    data={customKits[card.line]}
-                    onChange={(d) => setCustomKits(prev => ({ ...prev, [card.line]: d }))}
-                    line={card.line}
-                    isAuthenticated={isAuthenticated}
-                  />
-                )}
-
-                <div className="space-y-2 text-sm">
-                  {isPremium ? (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Micro inversores</span>
-                      <span className="font-medium">{card.microCount}× {card.inverterBrand} {card.inverterModel}</span>
-                    </div>
-                  ) : (
-                    <>
-                      <div className="flex justify-between"><span className="text-muted-foreground">Inversor</span><span className="font-medium">{card.inverterBrand} {card.inverterModel}</span></div>
-                      <div className="flex justify-between items-start">
-                        <span className="text-muted-foreground">Suporta até</span>
-                        <span className="font-medium text-right" style={overload ? { color: overloadColors[overload.level] } : undefined}>
-                          {maxP} placas de {card.panelPowerLabel}
-                        </span>
-                      </div>
-                      {overload && (
-                        <div className={`text-[10px] px-2 py-1 rounded ${
-                          overload.level === 'green' ? 'bg-green-50 text-green-700' :
-                          overload.level === 'yellow' ? 'bg-yellow-50 text-yellow-700' :
-                          'bg-red-50 text-red-700'
-                        }`}>
-                          {LINE_NAMES[card.line]}: {formatNumber(panelKwpTotal)} kWp | Lim: {formatNumber(inverterKwForOverload * 1.7)} kWp | Margem: {formatNumber(overload.margin)} kWp — {overload.label}
-                        </div>
-                      )}
-                    </>
-                  )}
-                  <div className="flex justify-between"><span className="text-muted-foreground">Placas</span><span className="font-medium">{card.panelCount}× {card.panelBrand} ({card.panelPowerLabel})</span></div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">Potência</span><span className="font-medium">{formatNumber(card.dimensioning.powerKwp)} kWp</span></div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">Geração/mês</span><span className="font-medium">{formatNumber(card.dimensioning.monthlyGeneration, 0)} kWh</span></div>
-                  {card.isCustom ? (
-                    <div className="flex justify-between items-center">
-                      <span className="text-muted-foreground text-xs">Fonte</span>
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-secondary/20 text-secondary-foreground font-medium">⚡ Personalizada</span>
-                    </div>
-                  ) : card.hasPriceTableCost && (
-                    <div className="flex justify-between items-center">
-                      <span className="text-muted-foreground text-xs">Fonte</span>
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700">Tabela de preços</span>
-                    </div>
-                  )}
-                </div>
-
-                <div className="text-center py-3 border-y border-border">
-                  <p className="text-xs text-muted-foreground mb-1">Investimento</p>
-                  <p className="text-2xl font-bold text-primary">{formatCurrency(card.totalPrice)}</p>
-                </div>
-
-                {/* Payment tabs */}
-                <div className="space-y-2">
-                  <div className="flex gap-1">
-                    <button onClick={() => setPaymentTab('financing')}
-                      className={`flex-1 text-xs py-1.5 rounded font-medium transition-colors ${paymentTab === 'financing' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>
-                      Financiamento
-                    </button>
-                    <button onClick={() => setPaymentTab('card')}
-                      className={`flex-1 text-xs py-1.5 rounded font-medium transition-colors ${paymentTab === 'card' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>
-                      <CreditCard className="w-3 h-3 inline mr-1" />Cartão
-                    </button>
-                  </div>
-                  {paymentTab === 'financing' ? (
-                    <div className="space-y-1 text-xs">
-                      {Object.entries(card.installments).map(([n, v]) => {
-                        const inst = typeof v === 'number' ? { perMonth: v, total: v * Number(n) } : v as { perMonth: number; total: number };
-                        return (
-                          <div key={n} className="flex justify-between">
-                            <span className="text-muted-foreground">{n}×</span>
-                            <span className="font-medium">{formatCurrency(inst.perMonth)}</span>
-                          </div>
-                        );
-                      })}
-                      <p className="text-[10px] text-muted-foreground mt-1 italic">
-                        * Estimativa. Sujeito à aprovação de crédito.
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="space-y-1 text-xs max-h-48 overflow-y-auto">
-                      {Object.entries(card.cardInstallments)
-                        .sort(([a], [b]) => Number(b) - Number(a))
-                        .map(([n, v]) => (
-                        <div key={n} className="flex justify-between">
-                          <span className="text-muted-foreground">{n}×</span>
-                          <span className="font-medium">
-                            {formatCurrency((v as any).perMonth)}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* Internal cost breakdown - only for authenticated users */}
-                {isAuthenticated && (
-                  <div className="border-t border-border pt-3 space-y-2">
-                    <button onClick={() => setShowCostPanel(p => !p)}
-                      className="flex items-center gap-2 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors w-full">
-                      {showCostPanel ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                      {showCostPanel ? 'Ocultar custos internos' : 'Ver custos internos'}
-                    </button>
-                    {showCostPanel && (
-                      <div className="space-y-1.5 text-xs p-3 rounded-lg bg-muted/50 border border-border/50">
-                        <p className="font-semibold text-muted-foreground uppercase tracking-wide text-[10px] mb-2">Detalhamento interno</p>
-                        <div className="flex justify-between"><span className="text-muted-foreground">Equipamentos</span><span>{formatCurrency(card.costBreakdown.equipmentCost)}</span></div>
-                        <div className="flex justify-between"><span className="text-muted-foreground">Instalação ({card.panelCount}× R$100)</span><span>{formatCurrency(card.costBreakdown.installationCost)}</span></div>
-                        <div className="flex justify-between"><span className="text-muted-foreground">Homologação</span><span>{formatCurrency(card.costBreakdown.homologationCost)}</span></div>
-                        <div className="flex justify-between"><span className="text-muted-foreground">Material CA ({card.caInverterKw || card.inverter?.power || 0} kW)</span><span>{formatCurrency(card.costBreakdown.caMaterialCost)}</span></div>
-                        {card.costBreakdown.trunkCableCost > 0 && (
-                          <div className="flex justify-between"><span className="text-muted-foreground">Cabo tronco</span><span>{formatCurrency(card.costBreakdown.trunkCableCost)}</span></div>
-                        )}
-                        <div className="flex justify-between pt-1.5 border-t border-border font-semibold"><span>Custo total</span><span>{formatCurrency(card.costBreakdown.totalCost)}</span></div>
-                        <div className="flex justify-between"><span className="text-muted-foreground">Margem</span><span>{card.costBreakdown.profitMargin}%</span></div>
-                        <div className="flex justify-between font-bold text-primary"><span>Preço de venda</span><span>{formatCurrency(card.costBreakdown.salePrice)}</span></div>
-                        <div className="flex justify-between text-green-600 font-semibold"><span>Lucro bruto</span><span>{formatCurrency(card.costBreakdown.grossProfit)}</span></div>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {selectedLine === idx && (
-                  <div className="absolute top-3 right-3 w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center">
-                    <Check className="w-4 h-4" />
-                  </div>
-                )}
+      {/* Resultado: Card único */}
+      <section className="space-y-4 animate-fade-in-up" style={{ animationDelay: '550ms' }}>
+        <div className="solar-card p-6 space-y-4 max-w-2xl mx-auto">
+          <div className="space-y-2 text-sm">
+            {systemCard.microCount > 0 ? (
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Micro inversores</span>
+                <span className="font-medium">{systemCard.microCount}× {systemCard.inverterBrand} {systemCard.inverterModel}</span>
               </div>
-            );
-          })}
-        </div>
-        {/* Central Generate Proposal Button */}
-        <div className="text-center pt-4">
-          {selectedLine === null ? (
-            <p className="text-sm text-muted-foreground mb-3">Clique em uma das opções acima para selecionar</p>
-          ) : (
-            <p className="text-sm text-muted-foreground mb-3">
-              Selecionado: <span className="font-semibold text-primary">{LINE_NAMES[systemCards[selectedLine].line]}</span>
-            </p>
+            ) : (
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Inversor</span>
+                <span className="font-medium">{systemCard.inverterBrand} {systemCard.inverterModel}</span>
+              </div>
+            )}
+            <div className="flex justify-between"><span className="text-muted-foreground">Placas</span><span className="font-medium">{systemCard.panelCount}× {systemCard.panelBrand} ({systemCard.panelPowerLabel})</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">Potência</span><span className="font-medium">{formatNumber(systemCard.dimensioning.powerKwp)} kWp</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">Geração/mês</span><span className="font-medium">{formatNumber(systemCard.dimensioning.monthlyGeneration, 0)} kWh</span></div>
+          </div>
+
+          <div className="text-center py-3 border-y border-border">
+            <p className="text-xs text-muted-foreground mb-1">Investimento</p>
+            <p className="text-2xl font-bold text-primary">{formatCurrency(systemCard.totalPrice)}</p>
+          </div>
+
+          {/* Payment tabs */}
+          <div className="space-y-2">
+            <div className="flex gap-1">
+              <button onClick={() => setPaymentTab('financing')}
+                className={`flex-1 text-xs py-1.5 rounded font-medium transition-colors ${paymentTab === 'financing' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>
+                Financiamento
+              </button>
+              <button onClick={() => setPaymentTab('card')}
+                className={`flex-1 text-xs py-1.5 rounded font-medium transition-colors ${paymentTab === 'card' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>
+                <CreditCard className="w-3 h-3 inline mr-1" />Cartão
+              </button>
+            </div>
+            {paymentTab === 'financing' ? (
+              <div className="space-y-1 text-xs">
+                {Object.entries(systemCard.installments).map(([n, v]) => {
+                  const inst = typeof v === 'number' ? { perMonth: v, total: v * Number(n) } : v as { perMonth: number; total: number };
+                  return (
+                    <div key={n} className="flex justify-between">
+                      <span className="text-muted-foreground">{n}×</span>
+                      <span className="font-medium">{formatCurrency(inst.perMonth)}</span>
+                    </div>
+                  );
+                })}
+                <p className="text-[10px] text-muted-foreground mt-1 italic">
+                  * Estimativa. Sujeito à aprovação de crédito.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-1 text-xs max-h-48 overflow-y-auto">
+                {Object.entries(systemCard.cardInstallments)
+                  .sort(([a], [b]) => Number(b) - Number(a))
+                  .map(([n, v]) => (
+                  <div key={n} className="flex justify-between">
+                    <span className="text-muted-foreground">{n}×</span>
+                    <span className="font-medium">{formatCurrency((v as any).perMonth)}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Internal cost breakdown */}
+          {isAuthenticated && (
+            <div className="border-t border-border pt-3 space-y-2">
+              <button onClick={() => setShowCostPanel(p => !p)}
+                className="flex items-center gap-2 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors w-full">
+                {showCostPanel ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                {showCostPanel ? 'Ocultar custos internos' : 'Ver custos internos'}
+              </button>
+              {showCostPanel && (
+                <div className="space-y-1.5 text-xs p-3 rounded-lg bg-muted/50 border border-border/50">
+                  <div className="flex justify-between"><span className="text-muted-foreground">Custo do kit</span><span>{formatCurrency(systemCard.costBreakdown.equipmentCost)}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Instalação ({systemCard.panelCount}× R$100)</span><span>{formatCurrency(systemCard.costBreakdown.installationCost)}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Homologação</span><span>{formatCurrency(systemCard.costBreakdown.homologationCost)}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Material CA ({formatNumber(systemCard.caInverterKw)} kW)</span><span>{formatCurrency(systemCard.costBreakdown.caMaterialCost)}</span></div>
+                  {systemCard.costBreakdown.trunkCableCost > 0 && (
+                    <div className="flex justify-between"><span className="text-muted-foreground">Cabo tronco</span><span>{formatCurrency(systemCard.costBreakdown.trunkCableCost)}</span></div>
+                  )}
+                  <div className="flex justify-between pt-1.5 border-t border-border font-semibold"><span>Custo total</span><span>{formatCurrency(systemCard.costBreakdown.totalCost)}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Margem</span><span>{systemCard.costBreakdown.profitMargin}%</span></div>
+                  <div className="flex justify-between font-bold text-primary"><span>Preço de venda</span><span>{formatCurrency(systemCard.costBreakdown.salePrice)}</span></div>
+                  <div className={`flex justify-between font-semibold ${systemCard.costBreakdown.grossProfit >= 0 ? 'text-green-600' : 'text-destructive'}`}><span>Lucro bruto</span><span>{formatCurrency(systemCard.costBreakdown.grossProfit)}</span></div>
+                </div>
+              )}
+            </div>
           )}
+        </div>
+
+        {/* Generate Proposal Button */}
+        <div className="text-center pt-4">
           <button
-            onClick={() => {
-              if (selectedLine === null) {
-                toast.error('Selecione uma opção de sistema antes de gerar a proposta.');
-                return;
-              }
-              generateProposal(selectedLine);
-            }}
+            onClick={generateProposal}
             className="solar-btn-primary px-8 py-3 text-base flex items-center justify-center gap-2 mx-auto"
           >
             {editMode ? 'Atualizar Proposta' : 'Gerar Proposta'} <ArrowRight className="w-5 h-5" />
@@ -1022,24 +920,23 @@ export default function CalculatorPage() {
       </section>
 
       {/* Financial Summary */}
-      {selectedLine !== null && systemCards[selectedLine] && (
-        <section className="solar-card p-6 space-y-4 animate-fade-in-up" style={{ animationDelay: '600ms' }}>
-          <h2 className="text-xl font-bold text-primary">Viabilidade Financeira ({LINE_NAMES[systemCards[selectedLine].line]})</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {[
-              { label: 'Economia mensal', value: formatCurrency(systemCards[selectedLine].dimensioning.monthlySavings) },
-              { label: 'Payback', value: `${formatNumber(systemCards[selectedLine].dimensioning.paybackYears)} anos` },
-              { label: 'Retorno 10 anos', value: formatCurrency(systemCards[selectedLine].dimensioning.return10) },
-              { label: 'Retorno 25 anos', value: formatCurrency(systemCards[selectedLine].dimensioning.return25) },
-            ].map(item => (
-              <div key={item.label} className="text-center p-4 rounded-lg bg-muted/50">
-                <p className="text-xs text-muted-foreground mb-1">{item.label}</p>
-                <p className="text-lg font-bold text-primary">{item.value}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
+      <section className="solar-card p-6 space-y-4 animate-fade-in-up" style={{ animationDelay: '600ms' }}>
+        <h2 className="text-xl font-bold text-primary">Viabilidade Financeira</h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {[
+            { label: 'Economia mensal', value: formatCurrency(systemCard.dimensioning.monthlySavings) },
+            { label: 'Payback', value: `${formatNumber(systemCard.dimensioning.paybackYears)} anos` },
+            { label: 'Retorno 10 anos', value: formatCurrency(systemCard.dimensioning.return10) },
+            { label: 'Retorno 25 anos', value: formatCurrency(systemCard.dimensioning.return25) },
+          ].map(item => (
+            <div key={item.label} className="text-center p-4 rounded-lg bg-muted/50">
+              <p className="text-xs text-muted-foreground mb-1">{item.label}</p>
+              <p className="text-lg font-bold text-primary">{item.value}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
     </div>
   );
 }
