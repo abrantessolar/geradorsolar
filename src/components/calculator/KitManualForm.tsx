@@ -145,19 +145,30 @@ export default function KitManualForm({ kit, onChange, isAuthenticated }: Props)
         <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
           Dados do Inversor
         </h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <div>
-            <label className="text-[11px] text-muted-foreground">Marca</label>
-            <input className="solar-input text-sm py-2" value={kit.marcaInversor}
-              onChange={e => update({ marcaInversor: e.target.value })}
-              placeholder={isMicro ? 'Ex: SUNGROW' : 'Ex: SOFAR'} />
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+          <div className="md:col-span-2">
+            <label className="text-[11px] text-muted-foreground">Marca / Modelo</label>
+            <EquipmentCombobox
+              kind={isMicro ? 'inversor-micro' : 'inversor-string'}
+              potencia={kit.potenciaInversorKw}
+              marca={kit.marcaInversor}
+              modelo={kit.modeloInversor}
+              onPick={(marca, modelo) => update({ marcaInversor: marca, modeloInversor: modelo })}
+            />
           </div>
           <div>
-            <label className="text-[11px] text-muted-foreground">Modelo</label>
-            <input className="solar-input text-sm py-2" value={kit.modeloInversor}
-              onChange={e => update({ modeloInversor: e.target.value })}
-              placeholder={isMicro ? 'MS-A2' : 'KTLM-G3'} />
+            <label className="text-[11px] text-muted-foreground">Potência (kW)</label>
+            <input className="solar-input text-sm py-2" type="number" step="0.1"
+              value={kit.potenciaInversorKw || ''}
+              onChange={e => update({ potenciaInversorKw: parseFloat(e.target.value) || 0 })} />
           </div>
+          <div>
+            <label className="text-[11px] text-muted-foreground">Quantidade</label>
+            <input className="solar-input text-sm py-2" type="number"
+              value={kit.qtdInversores || ''}
+              onChange={e => update({ qtdInversores: parseInt(e.target.value) || 1 })} />
+          </div>
+        </div>
           <div>
             <label className="text-[11px] text-muted-foreground">Potência (kW)</label>
             <input className="solar-input text-sm py-2" type="number" step="0.1"
