@@ -971,6 +971,57 @@ export type Database = {
         }
         Relationships: []
       }
+      historico_kits: {
+        Row: {
+          criador_user_id: string | null
+          custo_kit: number
+          id: string
+          marca_inversor: string
+          marca_placa: string
+          modelo_inversor: string
+          modelo_placa: string
+          potencia_inversor_kw: number
+          potencia_placa_wp: number
+          quantidade_inversores: number
+          quantidade_placas: number
+          tipo_inversor: string
+          usado_em: string
+          vezes_usado: number
+        }
+        Insert: {
+          criador_user_id?: string | null
+          custo_kit?: number
+          id?: string
+          marca_inversor?: string
+          marca_placa?: string
+          modelo_inversor?: string
+          modelo_placa?: string
+          potencia_inversor_kw?: number
+          potencia_placa_wp?: number
+          quantidade_inversores?: number
+          quantidade_placas?: number
+          tipo_inversor: string
+          usado_em?: string
+          vezes_usado?: number
+        }
+        Update: {
+          criador_user_id?: string | null
+          custo_kit?: number
+          id?: string
+          marca_inversor?: string
+          marca_placa?: string
+          modelo_inversor?: string
+          modelo_placa?: string
+          potencia_inversor_kw?: number
+          potencia_placa_wp?: number
+          quantidade_inversores?: number
+          quantidade_placas?: number
+          tipo_inversor?: string
+          usado_em?: string
+          vezes_usado?: number
+        }
+        Relationships: []
+      }
       historico_propostas: {
         Row: {
           acao: string
