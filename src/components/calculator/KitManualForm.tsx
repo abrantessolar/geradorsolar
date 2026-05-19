@@ -169,19 +169,6 @@ export default function KitManualForm({ kit, onChange, isAuthenticated }: Props)
               onChange={e => update({ qtdInversores: parseInt(e.target.value) || 1 })} />
           </div>
         </div>
-          <div>
-            <label className="text-[11px] text-muted-foreground">Potência (kW)</label>
-            <input className="solar-input text-sm py-2" type="number" step="0.1"
-              value={kit.potenciaInversorKw || ''}
-              onChange={e => update({ potenciaInversorKw: parseFloat(e.target.value) || 0 })} />
-          </div>
-          <div>
-            <label className="text-[11px] text-muted-foreground">Quantidade</label>
-            <input className="solar-input text-sm py-2" type="number"
-              value={kit.qtdInversores || ''}
-              onChange={e => update({ qtdInversores: parseInt(e.target.value) || 1 })} />
-          </div>
-        </div>
       </div>
 
       {/* Placas */}
