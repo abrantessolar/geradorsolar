@@ -1,25 +1,23 @@
-import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Plus, Minus, ChevronDown, ChevronUp, Zap, Sun, TrendingUp, ArrowRight, AlertTriangle, Eye, EyeOff, CreditCard, Settings2, Check } from 'lucide-react';
-import { Switch } from '@/components/ui/switch';
-import CustomKitForm, { CustomKitData, defaultCustomKit, calcCustomBreakdown } from '@/components/CustomKitForm';
+import { Plus, Minus, ChevronDown, ChevronUp, Zap, Sun, TrendingUp, ArrowRight, AlertTriangle, Eye, EyeOff, CreditCard } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { toast } from 'sonner';
+import KitManualForm, { KitData, defaultKit, calcKitBreakdown } from '@/components/calculator/KitManualForm';
+import { upsertKitHistory } from '@/data/kitHistory';
 import {
   ClientData, MonthlyConsumption, ConsumptionMode, ConsumerUnit, EquipmentItem,
   MONTH_LABELS, MONTH_KEYS, SEASONAL_FACTORS, UC_COLORS,
-  BRAZILIAN_STATES, LINE_NAMES, LINE_SUBS,
 } from '@/data/types';
 import type { EquipmentCatalogItem } from '@/data/types';
 import {
   estimateFullConsumption, calcEquipmentMonthly, calcDimensioning,
-  findInverterForPanels, findPanel, calcInstallments,
-  calcCardInstallments, calcCostBreakdown, getCaMaterialCost, calcTrunkCableCost,
-  formatCurrency, formatNumber, maxPanelsForInverter, calcMicroInverterCount, getOverloadStatus,
+  calcInstallments, calcCardInstallments,
+  formatCurrency, formatNumber,
 } from '@/data/calculations';
-import { getSettings, saveProposal, lookupIrradiation, getPriceTable } from '@/data/store';
-import { savePropostaDB, searchCidadesDB, syncKitsFromDB, syncPriceTableFromDB } from '@/data/supabaseStore';
-import type { Proposal, PriceTableEntry, PriceTableLineDetails } from '@/data/types';
+import { getSettings, saveProposal, lookupIrradiation } from '@/data/store';
+import { savePropostaDB, searchCidadesDB } from '@/data/supabaseStore';
+import type { Proposal } from '@/data/types';
 import { useAuth } from '@/contexts/AuthContext';
 
 const EQUIPMENT_COLORS = [
@@ -27,7 +25,6 @@ const EQUIPMENT_COLORS = [
   '#F39C12', '#2ECC71', '#8E44AD', '#16A085', '#D35400',
 ];
 
-const LINES = ['excellence', 'premium'] as const;
 
 
 const emptyMonthly = (): MonthlyConsumption => ({
