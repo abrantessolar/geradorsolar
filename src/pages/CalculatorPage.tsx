@@ -289,7 +289,7 @@ export default function CalculatorPage() {
 
 
   const chartData = useMemo(() => {
-    const baseDim = systemCards[0]?.dimensioning;
+    const baseDim = systemCard.dimensioning;
     if (!baseDim) return [];
     return MONTH_KEYS.map((k, i) => {
       const irrMonth = monthlyIrr ? monthlyIrr[i] : irradiation * SEASONAL_FACTORS[k];
@@ -318,7 +318,8 @@ export default function CalculatorPage() {
       });
       return row;
     });
-  }, [consumption, equipment, systemCards, irradiation, monthlyIrr, settings.systemLoss, units, totalAverage]);
+  }, [consumption, equipment, systemCard, irradiation, monthlyIrr, settings.systemLoss, units, totalAverage]);
+
 
   const handleEstimate = (unitIdx: number) => {
     setUnits(prev => prev.map((u, i) => {
