@@ -5,6 +5,7 @@ import { getSettings } from '@/data/store';
 import { getCaMaterialCost, formatCurrency, formatNumber, getOverloadStatus } from '@/data/calculations';
 import HistoricoKitsPopover from './HistoricoKitsPopover';
 import type { KitInput } from '@/data/kitHistory';
+import EquipmentCombobox from './EquipmentCombobox';
 
 export interface KitData {
   tipoInversor: 'string' | 'micro';
