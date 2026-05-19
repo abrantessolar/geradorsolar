@@ -350,8 +350,12 @@ export default function CalculatorPage() {
     setEquipment(prev => prev.map(e => e.id === id ? { ...e, [field]: value } : e));
   };
 
-  const generateProposal = async (lineIdx: number) => {
-    const card = systemCards[lineIdx];
+  const generateProposal = async () => {
+    const card = systemCard;
+    if (!kit.marcaInversor || !kit.potenciaInversorKw || !kit.marcaPlaca || !kit.potenciaPlacaWp || !kit.qtdPlacas) {
+      toast.error('Preencha os dados do kit (inversor e placas) antes de gerar a proposta.');
+      return;
+    }
     const consumerUnitsForProposal: ConsumerUnit[] = units.map(u => ({
       id: u.id,
       name: u.name,
@@ -359,22 +363,46 @@ export default function CalculatorPage() {
       monthlyValues: u.mode === 'monthly' ? u.monthlyValues : undefined,
     }));
 
-    const custom = customKits[card.line];
-    const isCustom = custom?.enabled;
     const sellerData = activeSellers.find(s => s.nome === client.seller);
+    const isMicro = kit.tipoInversor === 'micro';
+
+    const customKitSaved = {
+      enabled: true,
+      // new shape
+      tipoInversor: kit.tipoInversor,
+      marcaInversor: kit.marcaInversor,
+      modeloInversor: kit.modeloInversor,
+      potenciaInversorKw: kit.potenciaInversorKw,
+      qtdInversores: kit.qtdInversores,
+      marcaPlaca: kit.marcaPlaca,
+      modeloPlaca: kit.modeloPlaca,
+      potenciaPlacaWp: kit.potenciaPlacaWp,
+      qtdPlacas: kit.qtdPlacas,
+      custoKit: kit.custoKit,
+      precoVendaManual: kit.precoVendaManual,
+      // legacy compat for ProposalPage
+      inverterBrand: kit.marcaInversor,
+      inverterModel: kit.modeloInversor,
+      inverterPower: kit.potenciaInversorKw,
+      panelBrand: kit.marcaPlaca,
+      panelModel: kit.modeloPlaca,
+      panelPowerWp: kit.potenciaPlacaWp,
+      panelCount: kit.qtdPlacas,
+      kitCost: kit.custoKit,
+      salePrice: card.totalPrice,
+      costMode: kit.precoVendaManual !== null ? 'sale_price' : 'kit_cost',
+    };
 
     const proposal: Proposal = {
       id: editMode && editProposalId ? editProposalId : crypto.randomUUID(),
       clientData: { ...client, id: editMode ? (ep?.clientData?.id || crypto.randomUUID()) : crypto.randomUUID() },
       consumption, consumerUnits: consumerUnitsForProposal, equipment,
       selectedLine: card.line,
-      selectedKit: isCustom
-        ? {
-            inverter: { id: 'custom', line: card.line as any, type: 'inversor', brand: custom.inverterBrand, model: custom.inverterModel, power: custom.inverterPower, warranty: 10, costPrice: 0, minPower: 0, maxPower: 999, active: true },
-            panel: { id: 'custom', line: card.line as any, type: 'placa', brand: custom.panelBrand, model: custom.panelModel, power: custom.panelPowerWp, warranty: 25, costPrice: 0, minPower: 0, maxPower: 999, active: true },
-            panelCount: custom.panelCount,
-          }
-        : { inverter: card.inverter, panel: card.panel, panelCount: card.panelCount },
+      selectedKit: {
+        inverter: { id: 'custom', line: card.line as any, type: 'inversor', brand: kit.marcaInversor, model: kit.modeloInversor, power: kit.potenciaInversorKw, warranty: 10, costPrice: 0, minPower: 0, maxPower: 999, active: true },
+        panel: { id: 'custom', line: card.line as any, type: 'placa', brand: kit.marcaPlaca, model: kit.modeloPlaca, power: kit.potenciaPlacaWp, warranty: 25, costPrice: 0, minPower: 0, maxPower: 999, active: true },
+        panelCount: kit.qtdPlacas,
+      },
       totalPrice: card.totalPrice,
       installmentValues: card.installments,
       cardInstallments: card.cardInstallments,
@@ -387,14 +415,29 @@ export default function CalculatorPage() {
       monthlyIrradiation: monthlyIrr || undefined,
       sellerPhone: sellerData?.telefone || '',
       sellerEmail: sellerData?.email || '',
-      microInverterCount: card.microCount,
+      microInverterCount: isMicro ? kit.qtdInversores : 0,
       inverterBrand: card.inverterBrand,
       inverterModel: card.inverterModel,
       panelBrand: card.panelBrand,
       panelPowerLabel: card.panelPowerLabel,
-      customKit: isCustom ? custom : undefined,
+      customKit: customKitSaved,
       numero_proposta: editNumero || undefined,
     };
+
+    // Save kit to history (fire-and-forget)
+    upsertKitHistory({
+      tipoInversor: kit.tipoInversor,
+      marcaInversor: kit.marcaInversor,
+      modeloInversor: kit.modeloInversor,
+      potenciaInversorKw: kit.potenciaInversorKw,
+      qtdInversores: kit.qtdInversores,
+      marcaPlaca: kit.marcaPlaca,
+      modeloPlaca: kit.modeloPlaca,
+      potenciaPlacaWp: kit.potenciaPlacaWp,
+      qtdPlacas: kit.qtdPlacas,
+      custoKit: kit.custoKit,
+    }, session?.user?.id || null).catch(e => console.error('upsertKitHistory:', e));
+
 
     saveProposal(proposal);
     try {
