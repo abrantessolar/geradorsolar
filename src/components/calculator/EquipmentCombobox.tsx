@@ -176,17 +176,32 @@ export default function EquipmentCombobox({ kind, potencia, marca, modelo, onPic
                     })}
                   </CommandGroup>
                 )}
-                {query.trim() && potencia > 0 && filtered.length > 0 && (
-                  <div className="p-2 border-t">
-                    <Button size="sm" variant="ghost" className="w-full justify-start text-xs" onClick={handleAddNew} disabled={saving}>
-                      {saving ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Plus className="w-3 h-3 mr-1" />}
-                      Cadastrar novo "{query.trim()}"
-                    </Button>
-                  </div>
-                )}
               </>
             )}
           </CommandList>
+          {/* Footer sempre visível: cadastrar novo */}
+          <div className="p-2 border-t bg-muted/30">
+            {potencia <= 0 ? (
+              <p className="text-[11px] text-muted-foreground px-1">
+                Informe a potência ({isInverter ? 'kW' : 'Wp'}) para cadastrar
+              </p>
+            ) : !query.trim() ? (
+              <p className="text-[11px] text-muted-foreground px-1">
+                Digite <span className="font-semibold">Marca Modelo</span> acima para cadastrar novo
+              </p>
+            ) : (
+              <Button
+                size="sm"
+                variant="default"
+                className="w-full justify-center text-xs h-8"
+                onClick={handleAddNew}
+                disabled={saving}
+              >
+                {saving ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Plus className="w-3 h-3 mr-1" />}
+                Cadastrar "{query.trim()}" ({isInverter ? `${potencia} kW` : `${potencia} Wp`})
+              </Button>
+            )}
+          </div>
         </Command>
       </PopoverContent>
     </Popover>
