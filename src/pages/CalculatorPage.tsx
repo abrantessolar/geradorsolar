@@ -1,25 +1,23 @@
-import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Plus, Minus, ChevronDown, ChevronUp, Zap, Sun, TrendingUp, ArrowRight, AlertTriangle, Eye, EyeOff, CreditCard, Settings2, Check } from 'lucide-react';
-import { Switch } from '@/components/ui/switch';
-import CustomKitForm, { CustomKitData, defaultCustomKit, calcCustomBreakdown } from '@/components/CustomKitForm';
+import { Plus, Minus, ChevronDown, ChevronUp, Zap, Sun, TrendingUp, ArrowRight, AlertTriangle, Eye, EyeOff, CreditCard } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { toast } from 'sonner';
+import KitManualForm, { KitData, defaultKit, calcKitBreakdown } from '@/components/calculator/KitManualForm';
+import { upsertKitHistory } from '@/data/kitHistory';
 import {
   ClientData, MonthlyConsumption, ConsumptionMode, ConsumerUnit, EquipmentItem,
   MONTH_LABELS, MONTH_KEYS, SEASONAL_FACTORS, UC_COLORS,
-  BRAZILIAN_STATES, LINE_NAMES, LINE_SUBS,
 } from '@/data/types';
 import type { EquipmentCatalogItem } from '@/data/types';
 import {
   estimateFullConsumption, calcEquipmentMonthly, calcDimensioning,
-  findInverterForPanels, findPanel, calcInstallments,
-  calcCardInstallments, calcCostBreakdown, getCaMaterialCost, calcTrunkCableCost,
-  formatCurrency, formatNumber, maxPanelsForInverter, calcMicroInverterCount, getOverloadStatus,
+  calcInstallments, calcCardInstallments,
+  formatCurrency, formatNumber,
 } from '@/data/calculations';
-import { getSettings, saveProposal, lookupIrradiation, getPriceTable } from '@/data/store';
-import { savePropostaDB, searchCidadesDB, syncKitsFromDB, syncPriceTableFromDB } from '@/data/supabaseStore';
-import type { Proposal, PriceTableEntry, PriceTableLineDetails } from '@/data/types';
+import { getSettings, saveProposal, lookupIrradiation } from '@/data/store';
+import { savePropostaDB, searchCidadesDB } from '@/data/supabaseStore';
+import type { Proposal } from '@/data/types';
 import { useAuth } from '@/contexts/AuthContext';
 
 const EQUIPMENT_COLORS = [
@@ -27,7 +25,6 @@ const EQUIPMENT_COLORS = [
   '#F39C12', '#2ECC71', '#8E44AD', '#16A085', '#D35400',
 ];
 
-const LINES = ['excellence', 'premium'] as const;
 
 
 const emptyMonthly = (): MonthlyConsumption => ({
@@ -128,23 +125,27 @@ export default function CalculatorPage() {
   const [panelDelta, setPanelDelta] = useState(0);
   const [paymentTab, setPaymentTab] = useState<'financing' | 'card'>('financing');
   const [showCostPanel, setShowCostPanel] = useState(false);
-  const [selectedLine, setSelectedLine] = useState<number | null>(() => {
-    if (ep?.selectedLine) {
-      const idx = LINES.indexOf(ep.selectedLine as any);
-      return idx >= 0 ? idx : null;
-    }
-    return null;
-  });
-  const [customKits, setCustomKits] = useState<Record<string, CustomKitData>>(() => {
-    const base = {
-      excellence: defaultCustomKit(0),
-      premium: defaultCustomKit(0),
-    };
+  const [kit, setKit] = useState<KitData>(() => {
     if (ep?.customKit) {
-      base[ep.selectedLine] = ep.customKit;
+      const ck = ep.customKit;
+      // Backward compat: old customKit shape from CustomKitForm
+      return {
+        tipoInversor: ck.tipoInversor ?? (ep.selectedLine === 'premium' ? 'micro' : 'string'),
+        marcaInversor: ck.marcaInversor ?? ck.inverterBrand ?? '',
+        modeloInversor: ck.modeloInversor ?? ck.inverterModel ?? '',
+        potenciaInversorKw: ck.potenciaInversorKw ?? ck.inverterPower ?? 0,
+        qtdInversores: ck.qtdInversores ?? 1,
+        marcaPlaca: ck.marcaPlaca ?? ck.panelBrand ?? '',
+        modeloPlaca: ck.modeloPlaca ?? ck.panelModel ?? '',
+        potenciaPlacaWp: ck.potenciaPlacaWp ?? ck.panelPowerWp ?? 570,
+        qtdPlacas: ck.qtdPlacas ?? ck.panelCount ?? 0,
+        custoKit: ck.custoKit ?? ck.kitCost ?? 0,
+        precoVendaManual: ck.precoVendaManual ?? (ck.costMode === 'sale_price' ? ck.salePrice : null),
+      };
     }
-    return base;
+    return defaultKit(0);
   });
+
 
   // Show toast when loading from edit
   useEffect(() => {
@@ -242,163 +243,53 @@ export default function CalculatorPage() {
 
   const finalPanels = Math.max(1, basePanelCount + panelDelta);
 
-  const [priceTable, setPriceTable] = useState<PriceTableEntry[]>(() => getPriceTable());
-  const [dbDataLoaded, setDbDataLoaded] = useState(false);
-
-  // Load kits and price table from database
+  // Sync kit panel count with calculator's recommended finalPanels
   useEffect(() => {
-    const loadFromDB = async () => {
-      try {
-        const [kits, pt] = await Promise.all([syncKitsFromDB(), syncPriceTableFromDB()]);
-        if (pt.length > 0) setPriceTable(pt);
-        setDbDataLoaded(true);
-      } catch (e) {
-        console.error('Erro ao carregar dados do banco:', e);
-        setDbDataLoaded(true);
-      }
+    setKit(prev => prev.qtdPlacas === finalPanels ? prev : { ...prev, qtdPlacas: finalPanels });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [finalPanels]);
+
+  // Compute single system card from kit
+  const systemCard = useMemo(() => {
+    const isMicro = kit.tipoInversor === 'micro';
+    const panelCount = kit.qtdPlacas || 0;
+    const panelKwp = ((kit.potenciaPlacaWp || 0) / 1000) * panelCount;
+    const breakdown = calcKitBreakdown(kit);
+    const totalPrice = breakdown.salePrice;
+    const monthlyGeneration = panelKwp * irradiation * 30 * (1 - settings.systemLoss / 100);
+    const dim = calcDimensioning(consumption, equipment, client.networkType, irradiation, client.kwhPrice, totalPrice, settings.systemLoss);
+    const totalInverterKw = isMicro
+      ? (kit.potenciaInversorKw || 0) * (kit.qtdInversores || 0)
+      : (kit.potenciaInversorKw || 0);
+    const cardInstallments = calcCardInstallments(totalPrice, settings.creditCardRates);
+    return {
+      line: isMicro ? 'premium' as const : 'excellence' as const,
+      panelCount, totalPrice, microCount: isMicro ? kit.qtdInversores : 0,
+      costBreakdown: {
+        equipmentCost: breakdown.equipmentCost,
+        installationCost: breakdown.installationCost,
+        homologationCost: breakdown.homologationCost,
+        caMaterialCost: breakdown.caMaterialCost,
+        trunkCableCost: breakdown.trunkCableCost,
+        totalCost: breakdown.totalCost,
+        profitMargin: Math.round(breakdown.effectiveMargin * 100) / 100,
+        salePrice: breakdown.salePrice,
+        grossProfit: breakdown.grossProfit,
+      },
+      cardInstallments,
+      caInverterKw: totalInverterKw,
+      inverterBrand: kit.marcaInversor || '—',
+      inverterModel: kit.modeloInversor || `${kit.potenciaInversorKw} kW`,
+      panelBrand: kit.marcaPlaca || '—',
+      panelPowerLabel: `${kit.potenciaPlacaWp} Wp`,
+      installments: calcInstallments(totalPrice),
+      dimensioning: { ...dim, panelCount, powerKwp: panelKwp, monthlyGeneration, surplus: monthlyGeneration - dim.avgMonthlyKwh },
     };
-    loadFromDB();
-  }, []);
+  }, [kit, consumption, equipment, client, irradiation, settings.systemLoss, settings.creditCardRates]);
 
-  // Find best price table entry for a given line and panel count
-  const findPriceTableEntry = useCallback((line: 'excellence' | 'premium', panels: number): PriceTableEntry | null => {
-    const entries = priceTable.filter(e => e[line] !== null && e[line]! > 0 && e.panels >= panels);
-    entries.sort((a, b) => a.panels - b.panels);
-    // Exact match first, then next available
-    const exact = entries.find(e => e.panels === panels);
-    if (exact) return exact;
-    return entries[0] || null;
-  }, [priceTable]);
-
-  const systemCards = useMemo(() => {
-    return LINES.map(line => {
-      const custom = customKits[line];
-      const isCustom = custom?.enabled;
-
-      const panel = findPanel(line);
-      const panelPowerKwp = (panel?.power || 570) / 1000;
-
-      // Custom mode
-      if (isCustom && custom) {
-        const customPanelKwp = (custom.panelPowerWp / 1000) * custom.panelCount;
-        const customBreakdown = calcCustomBreakdown(custom, line);
-        const customPrice = customBreakdown.salePrice;
-        const isPremium = line === 'premium';
-        const microCount = isPremium ? calcMicroInverterCount(custom.panelCount) : 0;
-        const maxPanels = isPremium ? 999 : Math.floor((custom.inverterPower * 1.7) / (custom.panelPowerWp / 1000));
-        const panelsRemaining = isPremium ? 999 : maxPanels - custom.panelCount;
-        const monthlyGen = customPanelKwp * irradiation * 30 * (1 - settings.systemLoss / 100);
-        const dim = calcDimensioning(consumption, equipment, client.networkType, irradiation, client.kwhPrice, customPrice, settings.systemLoss);
-
-        return {
-          line, inverter: null, panel: null, panelCount: custom.panelCount, totalPrice: customPrice,
-          maxPanels, panelsRemaining, microCount, isCustom: true,
-          ptDetails: null, ptEntry: null, hasPriceTableCost: false,
-          costBreakdown: {
-            equipmentCost: customBreakdown.equipmentCost, installationCost: customBreakdown.installationCost,
-            homologationCost: customBreakdown.homologationCost, caMaterialCost: customBreakdown.caMaterialCost,
-            trunkCableCost: customBreakdown.trunkCableCost, totalCost: customBreakdown.totalCost,
-            profitMargin: customBreakdown.profitMargin, salePrice: customBreakdown.salePrice,
-            grossProfit: customBreakdown.grossProfit,
-          },
-          cardInstallments: calcCardInstallments(customPrice, settings.creditCardRates),
-          inverterBrand: custom.inverterBrand || '—',
-          inverterModel: custom.inverterModel || `${custom.inverterPower} kW`,
-          panelBrand: custom.panelBrand || '—',
-          panelPowerLabel: `${custom.panelPowerWp} Wp`,
-          installments: calcInstallments(customPrice),
-          dimensioning: { ...dim, panelCount: custom.panelCount, powerKwp: customPanelKwp, monthlyGeneration: monthlyGen, surplus: monthlyGen - dim.avgMonthlyKwh },
-        };
-      }
-
-      // Table mode (original)
-      const ptEntry = findPriceTableEntry(line, finalPanels);
-      const ptDetails = (ptEntry?.details as any)?.[line] as PriceTableLineDetails | undefined;
-      const usedPanels = ptEntry ? ptEntry.panels : finalPanels;
-      const inverter = findInverterForPanels(line, usedPanels, panelPowerKwp);
-      const powerKwp = usedPanels * panelPowerKwp;
-      const hasPriceTableCost = ptEntry && ptEntry[line] !== null && ptEntry[line]! > 0;
-      const isPremium = line === 'premium';
-      const microCount = isPremium ? calcMicroInverterCount(usedPanels) : 0;
-
-      // Determine inverter power from price table or kit
-      const ptInverterPower = ptDetails?.inverterPower ? parseFloat(ptDetails.inverterPower) : null;
-      const ptPanelPower = ptDetails?.panelPower ? parseFloat(ptDetails.panelPower) : null;
-      // If inverter power > 100, it's likely in watts (e.g. micro 2250W), convert to kW
-      const effectiveInverterKw = ptInverterPower 
-        ? (ptInverterPower > 100 ? ptInverterPower / 1000 : ptInverterPower) 
-        : (inverter?.power || 0);
-      const effectivePanelWp = ptPanelPower || panel?.power || 570;
-      const effectivePanelKwp = effectivePanelWp / 1000;
-
-      // Calculate Material CA using the REAL inverter power from price table
-      let caInverterKw: number;
-      if (isPremium) {
-        caInverterKw = effectiveInverterKw * microCount;
-      } else {
-        caInverterKw = effectiveInverterKw;
-      }
-      const caMaterialCost = getCaMaterialCost(caInverterKw);
-
-      // Build cost breakdown using price table value as sale price
-      const baseCostBreakdown = calcCostBreakdown(inverter, panel, usedPanels, line);
-      const installationCost = settings.installationPricePerPanel * usedPanels;
-      const homologationCost = settings.homologationPrice;
-      const trunkCableCost = isPremium ? calcTrunkCableCost(usedPanels) : 0;
-
-      let costBreakdown: typeof baseCostBreakdown;
-      if (hasPriceTableCost) {
-        // ptEntry[line] is the COST from the price table, not the sale price
-        const equipmentCost = ptEntry[line]!;
-        const totalCost = equipmentCost + installationCost + homologationCost + caMaterialCost + trunkCableCost;
-        const salePrice = totalCost / (1 - settings.profitMargin / 100);
-        const grossProfit = salePrice - totalCost;
-        const profitMargin = settings.profitMargin;
-        costBreakdown = {
-          equipmentCost, installationCost, homologationCost,
-          caMaterialCost, trunkCableCost, totalCost,
-          profitMargin: Math.round(profitMargin * 100) / 100,
-          salePrice, grossProfit,
-        };
-      } else {
-        // Fallback: override CA material cost with corrected value
-        const totalCost = baseCostBreakdown.equipmentCost + installationCost + homologationCost + caMaterialCost + trunkCableCost;
-        const salePrice = totalCost / (1 - settings.profitMargin / 100);
-        costBreakdown = {
-          ...baseCostBreakdown,
-          caMaterialCost,
-          totalCost,
-          salePrice,
-          grossProfit: salePrice - totalCost,
-        };
-      }
-
-      const totalPrice = costBreakdown.salePrice;
-      const dim = calcDimensioning(consumption, equipment, client.networkType, irradiation, client.kwhPrice, totalPrice, settings.systemLoss);
-      const maxPanels = isPremium ? 999 : Math.floor((effectiveInverterKw * 1.7) / effectivePanelKwp);
-      const panelsRemaining = isPremium ? 999 : maxPanels - usedPanels;
-      const monthlyGeneration = powerKwp * irradiation * 30 * (1 - settings.systemLoss / 100);
-      const surplus = monthlyGeneration - dim.avgMonthlyKwh;
-      const cardInstallments = calcCardInstallments(totalPrice, settings.creditCardRates);
-
-      console.log(`Kit selecionado: ${LINE_NAMES[line]} | ${usedPanels} placas | Custo: R$ ${totalPrice.toFixed(2)} | CA (${caInverterKw} kW): R$ ${caMaterialCost}`);
-
-      return {
-        line, inverter, panel, panelCount: usedPanels, totalPrice, maxPanels, panelsRemaining, microCount,
-        isCustom: false, ptDetails, ptEntry, hasPriceTableCost, costBreakdown, cardInstallments,
-        caInverterKw,
-        inverterBrand: ptDetails?.inverterBrand || inverter?.brand || '',
-        inverterModel: ptDetails?.inverterPower ? `${ptDetails.inverterPower} kW` : inverter?.model || '',
-        panelBrand: ptDetails?.panelBrand || panel?.brand || '',
-        panelPowerLabel: ptDetails?.panelPower ? `${ptDetails.panelPower} Wp` : `${panel?.power || 570} Wp`,
-        installments: calcInstallments(totalPrice),
-        dimensioning: { ...dim, panelCount: usedPanels, powerKwp, monthlyGeneration, surplus },
-      };
-    });
-  }, [consumption, equipment, client, irradiation, finalPanels, settings.systemLoss, settings.creditCardRates, findPriceTableEntry, customKits, dbDataLoaded]);
 
   const chartData = useMemo(() => {
-    const baseDim = systemCards[0]?.dimensioning;
+    const baseDim = systemCard.dimensioning;
     if (!baseDim) return [];
     return MONTH_KEYS.map((k, i) => {
       const irrMonth = monthlyIrr ? monthlyIrr[i] : irradiation * SEASONAL_FACTORS[k];
@@ -427,7 +318,8 @@ export default function CalculatorPage() {
       });
       return row;
     });
-  }, [consumption, equipment, systemCards, irradiation, monthlyIrr, settings.systemLoss, units, totalAverage]);
+  }, [consumption, equipment, systemCard, irradiation, monthlyIrr, settings.systemLoss, units, totalAverage]);
+
 
   const handleEstimate = (unitIdx: number) => {
     setUnits(prev => prev.map((u, i) => {
@@ -458,8 +350,12 @@ export default function CalculatorPage() {
     setEquipment(prev => prev.map(e => e.id === id ? { ...e, [field]: value } : e));
   };
 
-  const generateProposal = async (lineIdx: number) => {
-    const card = systemCards[lineIdx];
+  const generateProposal = async () => {
+    const card = systemCard;
+    if (!kit.marcaInversor || !kit.potenciaInversorKw || !kit.marcaPlaca || !kit.potenciaPlacaWp || !kit.qtdPlacas) {
+      toast.error('Preencha os dados do kit (inversor e placas) antes de gerar a proposta.');
+      return;
+    }
     const consumerUnitsForProposal: ConsumerUnit[] = units.map(u => ({
       id: u.id,
       name: u.name,
@@ -467,22 +363,46 @@ export default function CalculatorPage() {
       monthlyValues: u.mode === 'monthly' ? u.monthlyValues : undefined,
     }));
 
-    const custom = customKits[card.line];
-    const isCustom = custom?.enabled;
     const sellerData = activeSellers.find(s => s.nome === client.seller);
+    const isMicro = kit.tipoInversor === 'micro';
+
+    const customKitSaved = {
+      enabled: true,
+      // new shape
+      tipoInversor: kit.tipoInversor,
+      marcaInversor: kit.marcaInversor,
+      modeloInversor: kit.modeloInversor,
+      potenciaInversorKw: kit.potenciaInversorKw,
+      qtdInversores: kit.qtdInversores,
+      marcaPlaca: kit.marcaPlaca,
+      modeloPlaca: kit.modeloPlaca,
+      potenciaPlacaWp: kit.potenciaPlacaWp,
+      qtdPlacas: kit.qtdPlacas,
+      custoKit: kit.custoKit,
+      precoVendaManual: kit.precoVendaManual,
+      // legacy compat for ProposalPage
+      inverterBrand: kit.marcaInversor,
+      inverterModel: kit.modeloInversor,
+      inverterPower: kit.potenciaInversorKw,
+      panelBrand: kit.marcaPlaca,
+      panelModel: kit.modeloPlaca,
+      panelPowerWp: kit.potenciaPlacaWp,
+      panelCount: kit.qtdPlacas,
+      kitCost: kit.custoKit,
+      salePrice: card.totalPrice,
+      costMode: kit.precoVendaManual !== null ? 'sale_price' : 'kit_cost',
+    };
 
     const proposal: Proposal = {
       id: editMode && editProposalId ? editProposalId : crypto.randomUUID(),
       clientData: { ...client, id: editMode ? (ep?.clientData?.id || crypto.randomUUID()) : crypto.randomUUID() },
       consumption, consumerUnits: consumerUnitsForProposal, equipment,
       selectedLine: card.line,
-      selectedKit: isCustom
-        ? {
-            inverter: { id: 'custom', line: card.line as any, type: 'inversor', brand: custom.inverterBrand, model: custom.inverterModel, power: custom.inverterPower, warranty: 10, costPrice: 0, minPower: 0, maxPower: 999, active: true },
-            panel: { id: 'custom', line: card.line as any, type: 'placa', brand: custom.panelBrand, model: custom.panelModel, power: custom.panelPowerWp, warranty: 25, costPrice: 0, minPower: 0, maxPower: 999, active: true },
-            panelCount: custom.panelCount,
-          }
-        : { inverter: card.inverter, panel: card.panel, panelCount: card.panelCount },
+      selectedKit: {
+        inverter: { id: 'custom', line: card.line as any, type: 'inversor', brand: kit.marcaInversor, model: kit.modeloInversor, power: kit.potenciaInversorKw, warranty: 10, costPrice: 0, minPower: 0, maxPower: 999, active: true },
+        panel: { id: 'custom', line: card.line as any, type: 'placa', brand: kit.marcaPlaca, model: kit.modeloPlaca, power: kit.potenciaPlacaWp, warranty: 25, costPrice: 0, minPower: 0, maxPower: 999, active: true },
+        panelCount: kit.qtdPlacas,
+      },
       totalPrice: card.totalPrice,
       installmentValues: card.installments,
       cardInstallments: card.cardInstallments,
@@ -495,14 +415,29 @@ export default function CalculatorPage() {
       monthlyIrradiation: monthlyIrr || undefined,
       sellerPhone: sellerData?.telefone || '',
       sellerEmail: sellerData?.email || '',
-      microInverterCount: card.microCount,
+      microInverterCount: isMicro ? kit.qtdInversores : 0,
       inverterBrand: card.inverterBrand,
       inverterModel: card.inverterModel,
       panelBrand: card.panelBrand,
       panelPowerLabel: card.panelPowerLabel,
-      customKit: isCustom ? custom : undefined,
+      customKit: customKitSaved,
       numero_proposta: editNumero || undefined,
     };
+
+    // Save kit to history (fire-and-forget)
+    upsertKitHistory({
+      tipoInversor: kit.tipoInversor,
+      marcaInversor: kit.marcaInversor,
+      modeloInversor: kit.modeloInversor,
+      potenciaInversorKw: kit.potenciaInversorKw,
+      qtdInversores: kit.qtdInversores,
+      marcaPlaca: kit.marcaPlaca,
+      modeloPlaca: kit.modeloPlaca,
+      potenciaPlacaWp: kit.potenciaPlacaWp,
+      qtdPlacas: kit.qtdPlacas,
+      custoKit: kit.custoKit,
+    }, session?.user?.id || null).catch(e => console.error('upsertKitHistory:', e));
+
 
     saveProposal(proposal);
     try {
@@ -855,10 +790,9 @@ export default function CalculatorPage() {
           </button>
         </div>
         {/* Indicators */}
-        {systemCards[0] && (() => {
-          const refCard = systemCards[0];
-          const gen = refCard.dimensioning.monthlyGeneration;
-          const cons = refCard.dimensioning.avgMonthlyKwh;
+        {(() => {
+          const gen = systemCard.dimensioning.monthlyGeneration;
+          const cons = systemCard.dimensioning.avgMonthlyKwh;
           const exc = gen - cons;
           return (
             <div className="space-y-0.5 text-center" style={{ fontSize: '12px', color: '#888' }}>
@@ -878,207 +812,106 @@ export default function CalculatorPage() {
         )}
       </section>
 
-      {/* System Cards */}
-      <section className="space-y-4 animate-fade-in-up" style={{ animationDelay: '500ms' }}>
-        <h2 className="text-2xl font-bold text-primary text-center">Sistemas Disponíveis</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-          {systemCards.map((card, idx) => {
-            const isPremium = card.line === 'premium';
-            const maxP = card.maxPanels;
-            const remaining = card.panelsRemaining;
-            // Compute overload status for non-premium
-            const panelKwpTotal = card.dimensioning.powerKwp;
-            const inverterKwForOverload = (() => {
-              if (isPremium) return 0;
-              if (card.isCustom) {
-                const ck = customKits[card.line];
-                return ck?.inverterPower || 0;
-              }
-              const ptDet = (card.ptDetails as any);
-              return ptDet?.inverterPower ? parseFloat(ptDet.inverterPower) : card.inverter?.power || 0;
-            })();
-            const overload = !isPremium && inverterKwForOverload > 0 ? getOverloadStatus(panelKwpTotal, inverterKwForOverload) : null;
-            const overloadColors = { green: '#22c55e', yellow: '#eab308', red: '#E84855' };
-            return (
-              <div key={card.line} 
-                className={`solar-card p-6 space-y-4 relative cursor-pointer transition-all ${selectedLine === idx ? 'ring-2 ring-primary shadow-lg' : 'hover:shadow-md'}`}
-                onClick={() => setSelectedLine(idx)}
-              >
-                <div className="text-center">
-                  <h3 className="text-lg font-bold text-primary">{LINE_NAMES[card.line]}</h3>
-                  <p className="text-xs text-muted-foreground">{LINE_SUBS[card.line]}</p>
-                </div>
+      {/* Kit Manual Form (substitui cards de seleção de linha) */}
+      <KitManualForm kit={kit} onChange={setKit} isAuthenticated={isAuthenticated} />
 
-                {/* Custom mode toggle - only for authenticated users */}
-                {isAuthenticated && (
-                  <div className="flex items-center justify-between px-2 py-1.5 rounded-lg bg-muted/50 border border-border/50">
-                    <span className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
-                      <Settings2 className="w-3.5 h-3.5" />
-                      {customKits[card.line]?.enabled ? 'Personalizar' : 'Usar tabela de preços'}
-                    </span>
-                    <Switch
-                      checked={customKits[card.line]?.enabled || false}
-                      onCheckedChange={(checked) => setCustomKits(prev => ({
-                        ...prev,
-                        [card.line]: { ...(prev[card.line] || defaultCustomKit(finalPanels)), enabled: checked, panelCount: checked && !prev[card.line]?.panelCount ? finalPanels : (prev[card.line]?.panelCount || finalPanels) },
-                      }))}
-                    />
-                  </div>
-                )}
-
-                {/* Custom kit form */}
-                {customKits[card.line]?.enabled && (
-                  <CustomKitForm
-                    data={customKits[card.line]}
-                    onChange={(d) => setCustomKits(prev => ({ ...prev, [card.line]: d }))}
-                    line={card.line}
-                    isAuthenticated={isAuthenticated}
-                  />
-                )}
-
-                <div className="space-y-2 text-sm">
-                  {isPremium ? (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Micro inversores</span>
-                      <span className="font-medium">{card.microCount}× {card.inverterBrand} {card.inverterModel}</span>
-                    </div>
-                  ) : (
-                    <>
-                      <div className="flex justify-between"><span className="text-muted-foreground">Inversor</span><span className="font-medium">{card.inverterBrand} {card.inverterModel}</span></div>
-                      <div className="flex justify-between items-start">
-                        <span className="text-muted-foreground">Suporta até</span>
-                        <span className="font-medium text-right" style={overload ? { color: overloadColors[overload.level] } : undefined}>
-                          {maxP} placas de {card.panelPowerLabel}
-                        </span>
-                      </div>
-                      {overload && (
-                        <div className={`text-[10px] px-2 py-1 rounded ${
-                          overload.level === 'green' ? 'bg-green-50 text-green-700' :
-                          overload.level === 'yellow' ? 'bg-yellow-50 text-yellow-700' :
-                          'bg-red-50 text-red-700'
-                        }`}>
-                          {LINE_NAMES[card.line]}: {formatNumber(panelKwpTotal)} kWp | Lim: {formatNumber(inverterKwForOverload * 1.7)} kWp | Margem: {formatNumber(overload.margin)} kWp — {overload.label}
-                        </div>
-                      )}
-                    </>
-                  )}
-                  <div className="flex justify-between"><span className="text-muted-foreground">Placas</span><span className="font-medium">{card.panelCount}× {card.panelBrand} ({card.panelPowerLabel})</span></div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">Potência</span><span className="font-medium">{formatNumber(card.dimensioning.powerKwp)} kWp</span></div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">Geração/mês</span><span className="font-medium">{formatNumber(card.dimensioning.monthlyGeneration, 0)} kWh</span></div>
-                  {card.isCustom ? (
-                    <div className="flex justify-between items-center">
-                      <span className="text-muted-foreground text-xs">Fonte</span>
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-secondary/20 text-secondary-foreground font-medium">⚡ Personalizada</span>
-                    </div>
-                  ) : card.hasPriceTableCost && (
-                    <div className="flex justify-between items-center">
-                      <span className="text-muted-foreground text-xs">Fonte</span>
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700">Tabela de preços</span>
-                    </div>
-                  )}
-                </div>
-
-                <div className="text-center py-3 border-y border-border">
-                  <p className="text-xs text-muted-foreground mb-1">Investimento</p>
-                  <p className="text-2xl font-bold text-primary">{formatCurrency(card.totalPrice)}</p>
-                </div>
-
-                {/* Payment tabs */}
-                <div className="space-y-2">
-                  <div className="flex gap-1">
-                    <button onClick={() => setPaymentTab('financing')}
-                      className={`flex-1 text-xs py-1.5 rounded font-medium transition-colors ${paymentTab === 'financing' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>
-                      Financiamento
-                    </button>
-                    <button onClick={() => setPaymentTab('card')}
-                      className={`flex-1 text-xs py-1.5 rounded font-medium transition-colors ${paymentTab === 'card' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>
-                      <CreditCard className="w-3 h-3 inline mr-1" />Cartão
-                    </button>
-                  </div>
-                  {paymentTab === 'financing' ? (
-                    <div className="space-y-1 text-xs">
-                      {Object.entries(card.installments).map(([n, v]) => {
-                        const inst = typeof v === 'number' ? { perMonth: v, total: v * Number(n) } : v as { perMonth: number; total: number };
-                        return (
-                          <div key={n} className="flex justify-between">
-                            <span className="text-muted-foreground">{n}×</span>
-                            <span className="font-medium">{formatCurrency(inst.perMonth)}</span>
-                          </div>
-                        );
-                      })}
-                      <p className="text-[10px] text-muted-foreground mt-1 italic">
-                        * Estimativa. Sujeito à aprovação de crédito.
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="space-y-1 text-xs max-h-48 overflow-y-auto">
-                      {Object.entries(card.cardInstallments)
-                        .sort(([a], [b]) => Number(b) - Number(a))
-                        .map(([n, v]) => (
-                        <div key={n} className="flex justify-between">
-                          <span className="text-muted-foreground">{n}×</span>
-                          <span className="font-medium">
-                            {formatCurrency((v as any).perMonth)}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* Internal cost breakdown - only for authenticated users */}
-                {isAuthenticated && (
-                  <div className="border-t border-border pt-3 space-y-2">
-                    <button onClick={() => setShowCostPanel(p => !p)}
-                      className="flex items-center gap-2 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors w-full">
-                      {showCostPanel ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                      {showCostPanel ? 'Ocultar custos internos' : 'Ver custos internos'}
-                    </button>
-                    {showCostPanel && (
-                      <div className="space-y-1.5 text-xs p-3 rounded-lg bg-muted/50 border border-border/50">
-                        <p className="font-semibold text-muted-foreground uppercase tracking-wide text-[10px] mb-2">Detalhamento interno</p>
-                        <div className="flex justify-between"><span className="text-muted-foreground">Equipamentos</span><span>{formatCurrency(card.costBreakdown.equipmentCost)}</span></div>
-                        <div className="flex justify-between"><span className="text-muted-foreground">Instalação ({card.panelCount}× R$100)</span><span>{formatCurrency(card.costBreakdown.installationCost)}</span></div>
-                        <div className="flex justify-between"><span className="text-muted-foreground">Homologação</span><span>{formatCurrency(card.costBreakdown.homologationCost)}</span></div>
-                        <div className="flex justify-between"><span className="text-muted-foreground">Material CA ({card.caInverterKw || card.inverter?.power || 0} kW)</span><span>{formatCurrency(card.costBreakdown.caMaterialCost)}</span></div>
-                        {card.costBreakdown.trunkCableCost > 0 && (
-                          <div className="flex justify-between"><span className="text-muted-foreground">Cabo tronco</span><span>{formatCurrency(card.costBreakdown.trunkCableCost)}</span></div>
-                        )}
-                        <div className="flex justify-between pt-1.5 border-t border-border font-semibold"><span>Custo total</span><span>{formatCurrency(card.costBreakdown.totalCost)}</span></div>
-                        <div className="flex justify-between"><span className="text-muted-foreground">Margem</span><span>{card.costBreakdown.profitMargin}%</span></div>
-                        <div className="flex justify-between font-bold text-primary"><span>Preço de venda</span><span>{formatCurrency(card.costBreakdown.salePrice)}</span></div>
-                        <div className="flex justify-between text-green-600 font-semibold"><span>Lucro bruto</span><span>{formatCurrency(card.costBreakdown.grossProfit)}</span></div>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {selectedLine === idx && (
-                  <div className="absolute top-3 right-3 w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center">
-                    <Check className="w-4 h-4" />
-                  </div>
-                )}
+      {/* Resultado: Card único */}
+      <section className="space-y-4 animate-fade-in-up" style={{ animationDelay: '550ms' }}>
+        <div className="solar-card p-6 space-y-4 max-w-2xl mx-auto">
+          <div className="space-y-2 text-sm">
+            {systemCard.microCount > 0 ? (
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Micro inversores</span>
+                <span className="font-medium">{systemCard.microCount}× {systemCard.inverterBrand} {systemCard.inverterModel}</span>
               </div>
-            );
-          })}
-        </div>
-        {/* Central Generate Proposal Button */}
-        <div className="text-center pt-4">
-          {selectedLine === null ? (
-            <p className="text-sm text-muted-foreground mb-3">Clique em uma das opções acima para selecionar</p>
-          ) : (
-            <p className="text-sm text-muted-foreground mb-3">
-              Selecionado: <span className="font-semibold text-primary">{LINE_NAMES[systemCards[selectedLine].line]}</span>
-            </p>
+            ) : (
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Inversor</span>
+                <span className="font-medium">{systemCard.inverterBrand} {systemCard.inverterModel}</span>
+              </div>
+            )}
+            <div className="flex justify-between"><span className="text-muted-foreground">Placas</span><span className="font-medium">{systemCard.panelCount}× {systemCard.panelBrand} ({systemCard.panelPowerLabel})</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">Potência</span><span className="font-medium">{formatNumber(systemCard.dimensioning.powerKwp)} kWp</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">Geração/mês</span><span className="font-medium">{formatNumber(systemCard.dimensioning.monthlyGeneration, 0)} kWh</span></div>
+          </div>
+
+          <div className="text-center py-3 border-y border-border">
+            <p className="text-xs text-muted-foreground mb-1">Investimento</p>
+            <p className="text-2xl font-bold text-primary">{formatCurrency(systemCard.totalPrice)}</p>
+          </div>
+
+          {/* Payment tabs */}
+          <div className="space-y-2">
+            <div className="flex gap-1">
+              <button onClick={() => setPaymentTab('financing')}
+                className={`flex-1 text-xs py-1.5 rounded font-medium transition-colors ${paymentTab === 'financing' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>
+                Financiamento
+              </button>
+              <button onClick={() => setPaymentTab('card')}
+                className={`flex-1 text-xs py-1.5 rounded font-medium transition-colors ${paymentTab === 'card' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>
+                <CreditCard className="w-3 h-3 inline mr-1" />Cartão
+              </button>
+            </div>
+            {paymentTab === 'financing' ? (
+              <div className="space-y-1 text-xs">
+                {Object.entries(systemCard.installments).map(([n, v]) => {
+                  const inst = typeof v === 'number' ? { perMonth: v, total: v * Number(n) } : v as { perMonth: number; total: number };
+                  return (
+                    <div key={n} className="flex justify-between">
+                      <span className="text-muted-foreground">{n}×</span>
+                      <span className="font-medium">{formatCurrency(inst.perMonth)}</span>
+                    </div>
+                  );
+                })}
+                <p className="text-[10px] text-muted-foreground mt-1 italic">
+                  * Estimativa. Sujeito à aprovação de crédito.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-1 text-xs max-h-48 overflow-y-auto">
+                {Object.entries(systemCard.cardInstallments)
+                  .sort(([a], [b]) => Number(b) - Number(a))
+                  .map(([n, v]) => (
+                  <div key={n} className="flex justify-between">
+                    <span className="text-muted-foreground">{n}×</span>
+                    <span className="font-medium">{formatCurrency((v as any).perMonth)}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Internal cost breakdown */}
+          {isAuthenticated && (
+            <div className="border-t border-border pt-3 space-y-2">
+              <button onClick={() => setShowCostPanel(p => !p)}
+                className="flex items-center gap-2 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors w-full">
+                {showCostPanel ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                {showCostPanel ? 'Ocultar custos internos' : 'Ver custos internos'}
+              </button>
+              {showCostPanel && (
+                <div className="space-y-1.5 text-xs p-3 rounded-lg bg-muted/50 border border-border/50">
+                  <div className="flex justify-between"><span className="text-muted-foreground">Custo do kit</span><span>{formatCurrency(systemCard.costBreakdown.equipmentCost)}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Instalação ({systemCard.panelCount}× R$100)</span><span>{formatCurrency(systemCard.costBreakdown.installationCost)}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Homologação</span><span>{formatCurrency(systemCard.costBreakdown.homologationCost)}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Material CA ({formatNumber(systemCard.caInverterKw)} kW)</span><span>{formatCurrency(systemCard.costBreakdown.caMaterialCost)}</span></div>
+                  {systemCard.costBreakdown.trunkCableCost > 0 && (
+                    <div className="flex justify-between"><span className="text-muted-foreground">Cabo tronco</span><span>{formatCurrency(systemCard.costBreakdown.trunkCableCost)}</span></div>
+                  )}
+                  <div className="flex justify-between pt-1.5 border-t border-border font-semibold"><span>Custo total</span><span>{formatCurrency(systemCard.costBreakdown.totalCost)}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Margem</span><span>{systemCard.costBreakdown.profitMargin}%</span></div>
+                  <div className="flex justify-between font-bold text-primary"><span>Preço de venda</span><span>{formatCurrency(systemCard.costBreakdown.salePrice)}</span></div>
+                  <div className={`flex justify-between font-semibold ${systemCard.costBreakdown.grossProfit >= 0 ? 'text-green-600' : 'text-destructive'}`}><span>Lucro bruto</span><span>{formatCurrency(systemCard.costBreakdown.grossProfit)}</span></div>
+                </div>
+              )}
+            </div>
           )}
+        </div>
+
+        {/* Generate Proposal Button */}
+        <div className="text-center pt-4">
           <button
-            onClick={() => {
-              if (selectedLine === null) {
-                toast.error('Selecione uma opção de sistema antes de gerar a proposta.');
-                return;
-              }
-              generateProposal(selectedLine);
-            }}
+            onClick={generateProposal}
             className="solar-btn-primary px-8 py-3 text-base flex items-center justify-center gap-2 mx-auto"
           >
             {editMode ? 'Atualizar Proposta' : 'Gerar Proposta'} <ArrowRight className="w-5 h-5" />
@@ -1087,24 +920,23 @@ export default function CalculatorPage() {
       </section>
 
       {/* Financial Summary */}
-      {selectedLine !== null && systemCards[selectedLine] && (
-        <section className="solar-card p-6 space-y-4 animate-fade-in-up" style={{ animationDelay: '600ms' }}>
-          <h2 className="text-xl font-bold text-primary">Viabilidade Financeira ({LINE_NAMES[systemCards[selectedLine].line]})</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {[
-              { label: 'Economia mensal', value: formatCurrency(systemCards[selectedLine].dimensioning.monthlySavings) },
-              { label: 'Payback', value: `${formatNumber(systemCards[selectedLine].dimensioning.paybackYears)} anos` },
-              { label: 'Retorno 10 anos', value: formatCurrency(systemCards[selectedLine].dimensioning.return10) },
-              { label: 'Retorno 25 anos', value: formatCurrency(systemCards[selectedLine].dimensioning.return25) },
-            ].map(item => (
-              <div key={item.label} className="text-center p-4 rounded-lg bg-muted/50">
-                <p className="text-xs text-muted-foreground mb-1">{item.label}</p>
-                <p className="text-lg font-bold text-primary">{item.value}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
+      <section className="solar-card p-6 space-y-4 animate-fade-in-up" style={{ animationDelay: '600ms' }}>
+        <h2 className="text-xl font-bold text-primary">Viabilidade Financeira</h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {[
+            { label: 'Economia mensal', value: formatCurrency(systemCard.dimensioning.monthlySavings) },
+            { label: 'Payback', value: `${formatNumber(systemCard.dimensioning.paybackYears)} anos` },
+            { label: 'Retorno 10 anos', value: formatCurrency(systemCard.dimensioning.return10) },
+            { label: 'Retorno 25 anos', value: formatCurrency(systemCard.dimensioning.return25) },
+          ].map(item => (
+            <div key={item.label} className="text-center p-4 rounded-lg bg-muted/50">
+              <p className="text-xs text-muted-foreground mb-1">{item.label}</p>
+              <p className="text-lg font-bold text-primary">{item.value}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
     </div>
   );
 }
