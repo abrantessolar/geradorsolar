@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      avaliacoes_clientes: {
+        Row: {
+          atualizado_em: string
+          comentario: string | null
+          criado_em: string
+          id: string
+          nota: number
+          projeto_id: string
+        }
+        Insert: {
+          atualizado_em?: string
+          comentario?: string | null
+          criado_em?: string
+          id?: string
+          nota: number
+          projeto_id: string
+        }
+        Update: {
+          atualizado_em?: string
+          comentario?: string | null
+          criado_em?: string
+          id?: string
+          nota?: number
+          projeto_id?: string
+        }
+        Relationships: []
+      }
       cabos_obra: {
         Row: {
           id: string
@@ -1348,6 +1375,7 @@ export type Database = {
           cep: string | null
           cidade: string | null
           cnpj: string | null
+          codigo_rastreamento: string | null
           complemento: string | null
           concessionaria: string
           congelado: boolean
@@ -1421,6 +1449,7 @@ export type Database = {
           cep?: string | null
           cidade?: string | null
           cnpj?: string | null
+          codigo_rastreamento?: string | null
           complemento?: string | null
           concessionaria?: string
           congelado?: boolean
@@ -1494,6 +1523,7 @@ export type Database = {
           cep?: string | null
           cidade?: string | null
           cnpj?: string | null
+          codigo_rastreamento?: string | null
           complemento?: string | null
           concessionaria?: string
           congelado?: boolean
@@ -1654,6 +1684,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      rastreamento_obras: {
+        Row: {
+          atualizado_em: string
+          campo_extra: Json | null
+          concluido: boolean
+          criado_em: string
+          data_conclusao: string | null
+          etapa: number
+          fluxo: number
+          id: string
+          observacao_interna: string | null
+          projeto_id: string
+          visivel_cliente: boolean
+        }
+        Insert: {
+          atualizado_em?: string
+          campo_extra?: Json | null
+          concluido?: boolean
+          criado_em?: string
+          data_conclusao?: string | null
+          etapa: number
+          fluxo: number
+          id?: string
+          observacao_interna?: string | null
+          projeto_id: string
+          visivel_cliente?: boolean
+        }
+        Update: {
+          atualizado_em?: string
+          campo_extra?: Json | null
+          concluido?: boolean
+          criado_em?: string
+          data_conclusao?: string | null
+          etapa?: number
+          fluxo?: number
+          id?: string
+          observacao_interna?: string | null
+          projeto_id?: string
+          visivel_cliente?: boolean
+        }
+        Relationships: []
       }
       unidades_consumidoras: {
         Row: {
