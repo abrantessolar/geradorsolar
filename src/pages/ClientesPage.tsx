@@ -3,17 +3,18 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { BarChart3, ClipboardList, Plus, RefreshCw } from 'lucide-react';
+import { BarChart3, ClipboardList, Plus, RefreshCw, Kanban } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 
 import ClientesDashboard from '@/components/gestor/ClientesDashboard';
 import ProjetosUnificados from '@/components/gestor/ProjetosUnificados';
 import ProjetoForm from '@/components/gestor/ProjetoForm';
 import DocumentosModal from '@/components/gestor/DocumentosModal';
+import KanbanAcompanhamento from '@/components/gestor/acompanhamento/KanbanAcompanhamento';
 import type { Projeto } from '@/pages/GestorPage';
 import type { ClienteBase } from '@/components/gestor/ClientesList';
 
-type MainTab = 'dashboard' | 'projetos';
+type MainTab = 'dashboard' | 'projetos' | 'acompanhamento';
 type InlineView = 'none' | 'novo_projeto' | 'editar_projeto';
 
 export default function ClientesPage() {
