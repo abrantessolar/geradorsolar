@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import type { Projeto } from '@/pages/GestorPage';
 import type { ClienteBase } from './ClientesList';
-import { Edit2, FileText, Snowflake, Image as ImageIcon, CheckCircle, Trash2, ClipboardList, Package, FileDown, Eye, Search, ArrowUpRight, GripVertical } from 'lucide-react';
+import { Edit2, FileText, Snowflake, Image as ImageIcon, CheckCircle, Trash2, ClipboardList, Package, FileDown, Eye, Search, ArrowUpRight, GripVertical, Link2 } from 'lucide-react';
 import WhatsAppLink from './WhatsAppLink';
 import { generateFichaInstalacao } from '@/lib/generateFichaInstalacao';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
