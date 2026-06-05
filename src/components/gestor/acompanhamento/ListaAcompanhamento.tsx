@@ -2,10 +2,11 @@ import { useEffect, useMemo, useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { Loader2, Search, AlertTriangle, ChevronDown, ChevronUp, Check, HardHat } from 'lucide-react';
+import { Loader2, Search, AlertTriangle, ChevronDown, ChevronUp, Check, HardHat, Link2 } from 'lucide-react';
 import { FLUXOS, colunaAtual, type RastreamentoRow, type EtapaDef } from '@/lib/rastreamentoEtapas';
 import { getConfigDB } from '@/data/supabaseStore';
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
+import LinkRastreamentoModal from './LinkRastreamentoModal';
 
 interface ProjetoLista {
   id: string;
@@ -13,6 +14,7 @@ interface ProjetoLista {
   telefone: string | null;
   instalador: string | null;
   numero_proposta: string | null;
+  codigo_rastreamento: string | null;
   criado_em: string;
 }
 
@@ -78,12 +80,13 @@ export default function ListaAcompanhamento() {
   const [busca, setBusca] = useState('');
   const [filtro, setFiltro] = useState<FiltroRapido>('todas');
   const [ordenacao, setOrdenacao] = useState<Ordenacao>('antigas');
+  const [linkProjeto, setLinkProjeto] = useState<ProjetoLista | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
     const { data: projs } = await supabase
       .from('projetos' as any)
-      .select('id, nome_completo, razao_social, telefone, instalador, proposta_id, criado_em')
+      .select('id, nome_completo, razao_social, telefone, instalador, proposta_id, codigo_rastreamento, criado_em')
       .not('status', 'eq', 'Instalado')
       .not('status', 'eq', 'Homologado')
       .order('criado_em', { ascending: false });
@@ -101,6 +104,7 @@ export default function ListaAcompanhamento() {
       telefone: p.telefone || null,
       instalador: p.instalador || null,
       numero_proposta: p.proposta_id ? (numeros[p.proposta_id] || null) : null,
+      codigo_rastreamento: p.codigo_rastreamento || null,
       criado_em: p.criado_em,
     }));
 
@@ -299,11 +303,11 @@ export default function ListaAcompanhamento() {
                 className={`rounded-xl border bg-card overflow-hidden ${atrasada ? 'border-destructive' : 'border-border'}`}
               >
                 {/* Cabeçalho */}
-                <button
-                  onClick={() => setExpandidos(prev => ({ ...prev, [p.id]: !aberto }))}
-                  className="w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-muted/40 transition-colors"
-                >
-                  <div className="min-w-0 flex-1">
+                <div className="w-full px-4 py-3 flex items-center gap-2 hover:bg-muted/40 transition-colors">
+                  <button
+                    onClick={() => setExpandidos(prev => ({ ...prev, [p.id]: !aberto }))}
+                    className="min-w-0 flex-1 text-left"
+                  >
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-semibold text-foreground truncate">{p.nome}</span>
                       {p.numero_proposta && <span className="text-xs text-muted-foreground">— {p.numero_proposta}</span>}
@@ -325,9 +329,21 @@ export default function ListaAcompanhamento() {
                       <span className="text-xs font-medium text-foreground">{prog.pct}%</span>
                       <span className="text-xs text-muted-foreground">• há {diasUltimo} dia{diasUltimo === 1 ? '' : 's'}</span>
                     </div>
-                  </div>
-                  {aberto ? <ChevronUp className="w-4 h-4 text-muted-foreground shrink-0" /> : <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />}
-                </button>
+                  </button>
+                  <button
+                    onClick={() => setLinkProjeto(p)}
+                    className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium shrink-0 transition-colors ${p.codigo_rastreamento ? 'bg-muted text-foreground hover:bg-muted/70' : 'bg-primary text-primary-foreground hover:bg-primary/90'}`}
+                  >
+                    <Link2 className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">{p.codigo_rastreamento ? 'Link' : 'Gerar link'}</span>
+                  </button>
+                  <button
+                    onClick={() => setExpandidos(prev => ({ ...prev, [p.id]: !aberto }))}
+                    className="shrink-0 text-muted-foreground"
+                  >
+                    {aberto ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                  </button>
+                </div>
 
                 {/* Fluxos */}
                 {aberto && (
@@ -373,6 +389,14 @@ export default function ListaAcompanhamento() {
             );
           })}
         </div>
+
+        {linkProjeto && (
+          <LinkRastreamentoModal
+            projeto={linkProjeto}
+            onClose={() => setLinkProjeto(null)}
+            onGenerated={load}
+          />
+        )}
       </div>
     </TooltipProvider>
   );
