@@ -77,6 +77,7 @@ export interface RastreamentoRow {
   visivel_cliente: boolean;
   observacao_interna: string | null;
   campo_extra: Record<string, any> | null;
+  usuario_id?: string | null;
 }
 
 export function getEtapaDef(fluxo: number, etapa: number): EtapaDef | undefined {
