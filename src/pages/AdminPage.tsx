@@ -10,7 +10,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import {
   saveSettingsDB, savePriceTableDB, saveSocialProofsDB,
   saveDistribuidorasDB, importCidadesIrradianciaDB, getPropostasDB,
-  syncPriceTableFromDB,
+  syncPriceTableFromDB, getConfigDB, saveConfigDB,
 } from '@/data/supabaseStore';
 import { formatCurrency } from '@/data/calculations';
 import { AdminSettings, IrradiationEntry, PriceTableEntry, SocialProof, BRAZILIAN_STATES, CA_MATERIAL_TABLE_DEFAULT, LINE_NAMES } from '@/data/types';
