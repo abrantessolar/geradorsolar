@@ -1,96 +1,92 @@
-## Reformular calculadora — kit manual + histórico
+# Sistema de Rastreamento de Obra
 
-### 1. Banco de dados (migração)
+Painel Kanban interno (aba em Clientes) + página pública de acompanhamento para o cliente, com avaliação pós-instalação e reaproveitamento do programa "Energia que Volta" para indicação.
 
-Nova tabela `historico_kits`:
-- `id` uuid PK
-- `tipo_inversor` text ('string' | 'micro')
-- `marca_inversor`, `modelo_inversor` text
-- `potencia_inversor_kw` numeric
-- `quantidade_inversores` int default 1
-- `marca_placa`, `modelo_placa` text
-- `potencia_placa_wp` numeric
-- `quantidade_placas` int
-- `custo_kit` numeric
-- `usado_em` timestamptz default now()
-- `vezes_usado` int default 1
-- `criador_user_id` uuid (para isolar por vendedor)
+## Decisões confirmadas
+- **Indicação**: reaproveita o programa existente (botão leva para `/energia`). Não cria tabela `indicacoes` nem rota `/indicacao/[codigo]`.
+- **Kanban**: 4 colunas macro — Homologação, Equipamentos, Instalação, Concluído.
+- **Local**: nova aba "Acompanhamento" dentro da página Clientes.
+- **Escopo**: todos os projetos ativos aparecem no Kanban; o link é gerado sob demanda.
 
-Índice único em `(tipo_inversor, marca_inversor, modelo_inversor, potencia_inversor_kw, quantidade_inversores, marca_placa, modelo_placa, potencia_placa_wp, quantidade_placas, custo_kit)` para detectar combinação idêntica e incrementar `vezes_usado` via upsert.
+## Banco de dados (migration)
 
-RLS:
-- SELECT/INSERT/UPDATE: autenticados com `acesso_painel_gestor=true` ou admin.
+**`rastreamento_obras`** (uma linha por etapa de cada projeto):
+- `projeto_id` (uuid), `fluxo` (int 1-3), `etapa` (int), `concluido` (bool, default false)
+- `data_conclusao` (timestamptz, null), `visivel_cliente` (bool, default true)
+- `observacao_interna` (text, null), `campo_extra` (jsonb, null) — para `local_entrega`, `numero_fila`, `data_agendamento`, `data_operacao`, e a flag da etapa condicional "aprovado com troca"
+- timestamps padrão + trigger `atualizado_em`
+- Índice em `projeto_id` e em `fluxo,etapa`.
 
-### 2. Remover (em `CalculatorPage.tsx` e arquivos auxiliares)
+**`projetos`**: adicionar coluna `codigo_rastreamento` (text, unique, null) — gerada ao clicar em "Gerar link".
 
-- Imports e uso de `findInverterForPanels`, `findPanel`, `findPriceTableEntry`, `priceTable`, `getPriceTable`, `syncKitsFromDB`, `syncPriceTableFromDB`, `LINES`, `LINE_NAMES`, `LINE_SUBS`, `selectedLine`, mapeamento por linha.
-- Loop `LINES.map(...)` em `systemCards` — passar a calcular **um único card**.
-- Cards de seleção (Plus / Prime Micro) e o toggle "Personalizar / Usar tabela".
-- Componente `CustomKitForm` (será substituído por bloco inline novo).
-- Lógica de `ptEntry`, `ptDetails`, `hasPriceTableCost`.
+**`avaliacoes_clientes`**:
+- `projeto_id` (uuid), `nota` (int 1-5), `comentario` (text, null), timestamps.
 
-### 3. Novo bloco "Dados do Kit" (substitui System Cards)
+**RLS / GRANTs**:
+- `rastreamento_obras` e `avaliacoes_clientes`: acesso de escrita/leitura para `authenticated` (equipe logada). `service_role` ALL (usado pela edge function pública). Sem acesso direto de `anon` — a página pública passa pela edge function.
 
-Estado único:
+## Acesso público (edge function `rastreamento`)
+Função pública (verify_jwt=false, service role) — mesmo padrão da função `energia`:
+- `get(codigo)` → retorna nome do cliente, etapas visíveis (apenas `visivel_cliente=true`), campos extras (fila, datas, local entrega), status de "sistema em operação" e se já existe avaliação.
+- `avaliar(codigo, nota, comentario)` → insere em `avaliacoes_clientes`.
+- `config()` → devolve link Google e texto do programa de indicação (lidos de `configuracoes`).
+
+Mantém a tabela `projetos` privada; o cliente só enxerga o mínimo necessário.
+
+## Rota pública `/acompanhar/:codigo`
+Nova página `src/pages/RastreamentoPage.tsx` (registrada em `App.tsx` envolta em `<div>` com `<SeoNoIndex/>`, seguindo o padrão de `/proposta/:id`).
+
+Layout:
+- Header: logo TLS, "Olá, [nome]! 👋" e subtítulo.
+- 3 timelines verticais (Homologação 📄 / Equipamentos 📦 / Instalação ⚡), cada etapa com status visual: ✅ concluído (verde), ⏳ em andamento (amarelo+spinner), 🔒 pendente (cinza). Só etapas `visivel_cliente`.
+- Campos especiais exibidos: local de entrega (Fluxo 2/4), posição na fila (Fluxo 3/1), data agendada (3/2), data de operação (3/4).
+- **Seção pós-instalação** (aparece após "Sistema em operação"):
+  - 5 estrelas clicáveis → grava avaliação.
+  - Nota 5: card verde + botão "Avaliar no Google ↗" (link do admin).
+  - Nota < 5: campo de texto "O que poderíamos ter feito melhor?" → grava comentário.
+  - Card "Conheça nosso programa de indicação" com texto configurável + botão "Quero indicar um amigo" → leva para `/energia`, e botão compartilhar no WhatsApp.
+
+Etapas fixas dos 3 fluxos (constante compartilhada `src/lib/rastreamentoEtapas.ts`):
+```text
+Fluxo 1 Homologação: Documentação recebida | Projeto protocolado | Projeto aprovado | Aprovado com troca (condicional)
+Fluxo 2 Equipamentos: Pedido de compra | Equipamento pago | Em transporte | Material entregue (+local)
+Fluxo 3 Instalação:  Aguardando instalação (+fila) | Instalação agendada (+data) | Instalação finalizada | Sistema em operação (+data)
 ```
-kit = {
-  tipoInversor: 'string' | 'micro',
-  marcaInversor, modeloInversor, potenciaInversorKw, qtdInversores,
-  marcaPlaca, modeloPlaca, potenciaPlacaWp, qtdPlacas,
-  custoKit,
-  precoVendaManual: number | null // null = usar calculado
-}
-```
 
-UI (em `solar-card`):
-1. **Toggle tipo de inversor** — Pills `[String] [Micro Inversor]` (destacado).
-2. **Dados do inversor** — grid: Marca / Modelo / Potência (kW) / Quantidade.
-3. **Dados das placas** — grid: Marca / Modelo / Potência (Wp) / Quantidade.
-4. **Validador sobrecarga em tempo real** (usar `getOverloadStatus`):
-   - String: kWp / `potencia_inversor_kw`
-   - Micro: kWp / (`qtd_inversores` × `potencia_inversor_kw`)
-   - Badges 🟢 ≤1.5 / 🟡 1.5–1.7 / 🔴 >1.7.
-5. **Custo do kit** — `MoneyInput` BRL.
-6. **Detalhamento calculado** (recalcula em tempo real):
-   - Custo do kit
-   - Instalação (`qtdPlacas × settings.installationPricePerPanel`)
-   - Homologação (`settings.homologationPrice`)
-   - Material CA (`getCaMaterialCost` — micro: usa `qtd × potencia`)
-   - Cabo tronco (`calcTrunkCableCost` se micro e qtd-1 > 0)
-   - Custo total + Margem (%) + Preço de venda calculado
-7. **Preço de venda editável** (`MoneyInput`):
-   - Pré-preenchido com calculado; ao editar manualmente → exibir "Margem resultante: X%".
-   - Botão pequeno "↺ Recalcular" para voltar ao calculado.
+## Kanban interno (aba "Acompanhamento" em Clientes)
+- `ClientesPage.tsx`: adicionar terceira `TabsTrigger` "Acompanhamento".
+- Novo `src/components/gestor/acompanhamento/KanbanAcompanhamento.tsx`:
+  - 4 colunas (Homologação, Equipamentos, Instalação, Concluído). A coluna de cada projeto é derivada do progresso das etapas (último fluxo com etapa concluída; "Concluído" quando Sistema em operação concluído).
+  - Cards: nome, número da proposta, instalador, dias na etapa atual, selo de atraso (> prazo configurado).
+  - Drag-and-drop entre colunas usando HTML5 nativo (mesmo estilo do `useDraggableColumns` já no projeto; sem nova dependência). Mover um card marca/desmarca as etapas-chave correspondentes.
+- Painel lateral (Sheet) por cliente: lista os 3 fluxos com, por etapa:
+  - toggle ✅ Concluído / ⏳ Pendente (+ data automática na conclusão)
+  - toggle 👁 Visível / 🔒 Oculto
+  - campo de observação interna
+  - campos especiais (radio local de entrega, número da fila, datas com date picker)
+  - toggle para ativar a etapa condicional "Aprovado com troca"
+  - Ao concluir uma etapa visível: prompt "Notificar cliente via WhatsApp?" → abre `wa.me` com mensagem pré-formatada e o link.
+- Seeding: ao abrir o painel/gerar link, se o projeto não tiver linhas em `rastreamento_obras`, criar as etapas padrão.
 
-### 4. Botão e painel "📋 Kits usados anteriormente"
+## Geração do link (ficha do projeto)
+- Em `ProjetosUnificados.tsx` (ações do projeto aguardando), adicionar ação "🔗 Gerar link de rastreamento":
+  - gera `codigo_rastreamento` (ex.: `TLS-XXXX-ABC`) se ainda não existir e grava em `projetos`.
+  - mostra o link, botão "Copiar" e "Enviar por WhatsApp" com a mensagem pré-formatada.
 
-- Botão ao lado do título do bloco.
-- Abre `Popover` (shadcn) com:
-  - Input de busca (filtra por marca/modelo inversor ou placa).
-  - Lista ordenada por `vezes_usado DESC, usado_em DESC` (limit 20).
-  - Cada item: linha-resumo (`SOFAR 4kW + ASTRONERGY 580Wp × 10`), custo, "há X dias", botão **Usar este kit**.
-- Ao clicar "Usar este kit": preencher todo `kit` (incluindo `custoKit`), resetar `precoVendaManual` para null (recalcular).
+## Configurações no Admin (aba Empresa)
+Em `CompanyTab` (AdminPage), nova seção salvando em `configuracoes` (via `getConfigDB`/`saveConfigDB`):
+- Link do Google Meu Negócio (avaliações).
+- Texto do programa de indicação.
+- Prazo máximo (dias) por macro-etapa antes de marcar "atrasado" no Kanban.
 
-### 5. Persistência ao gerar proposta
+## Detalhes técnicos
+- Datas BR via `fmtDateBR`; date pickers shadcn com `pointer-events-auto`.
+- WhatsApp via links `wa.me` (sem backend), padrão do `WhatsAppLink`.
+- Notificações ao admin de nota baixa: toast/realtime opcional reaproveitando o padrão de `LeadNotification` (escuta inserts em `avaliacoes_clientes` com nota < 5).
+- Cores semânticas do tema (verde/amarelo) — sem cores hardcoded.
 
-Em `generateProposal`:
-- Upsert em `historico_kits` (match pela combinação completa). Se existe → `vezes_usado += 1, usado_em = now()`. Se não → insert.
-- Adaptar `selectedKit` no objeto `Proposal`: sempre tratar como custom kit (atual `customKit` path). Manter retro-compatibilidade nas páginas que consomem `Proposal` (apenas o que importa: marca/modelo/potência/qtd dos dois lados, micro count, total).
-- Remover `selectedLine`/seleção de card — sempre gera direto.
-
-### 6. Manter sem alteração
-
-- Dados do cliente, distribuidora, UCs (média/mês a mês), equipamentos adicionais, gráfico, ajuste +/− placas (sincroniza `kit.qtdPlacas` com `finalPanels`), indicadores consumo/geração/excedente, financiamento (fórmulas fixas), parcelas cartão, retorno financeiro, edge function de envio, layout PDF.
-
-### 7. Ajuste do ajuste de placas
-
-O bloco "Ajustar Quantidade de Placas" continua usando `basePanelCount` calculado por consumo. Quando o usuário mexe nos +/−, atualiza `kit.qtdPlacas`. Se o usuário editar `kit.qtdPlacas` manualmente no bloco do kit, sincroniza de volta (single source of truth = `kit.qtdPlacas`, com botão de "alinhar com dimensionamento").
-
-### Detalhes técnicos
-
-- Novo componente: `src/components/calculator/KitManualForm.tsx` (bloco completo: toggle, dados, custo, detalhamento, preço editável, botão histórico).
-- Novo componente: `src/components/calculator/HistoricoKitsPopover.tsx`.
-- Helper `src/data/kitHistory.ts`: `listKitsHistory()`, `upsertKitHistory(kit)`, função que constrói chave de comparação.
-- Remover/depreciar: `CustomKitForm.tsx` (manter apagado), referências em `priceTable` permanecem usadas pelo Admin/outras telas (não tocar).
-- Tipos: estender `Proposal.customKit` para incluir `qtdInversores` e `tipoInversor` ('string'|'micro').
-- Card único renderiza no lugar do grid de 2 cards.
+## Arquivos
+- Migration: `rastreamento_obras`, `avaliacoes_clientes`, coluna `codigo_rastreamento`, RLS/GRANTs.
+- Edge function: `supabase/functions/rastreamento/index.ts`.
+- Novos: `src/pages/RastreamentoPage.tsx`, `src/lib/rastreamentoEtapas.ts`, `src/components/gestor/acompanhamento/KanbanAcompanhamento.tsx`, painel lateral de etapas, modal de gerar link.
+- Editados: `src/App.tsx`, `src/pages/ClientesPage.tsx`, `src/components/gestor/ProjetosUnificados.tsx`, `src/pages/AdminPage.tsx` (CompanyTab).
