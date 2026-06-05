@@ -128,7 +128,7 @@ export default function ListaAcompanhamento() {
   const refetchProjeto = useCallback(async (projetoId: string) => {
     const { data } = await supabase.from('rastreamento_obras' as any).select('*').eq('projeto_id', projetoId);
     setRowsByProjeto(prev => ({ ...prev, [projetoId]: (data || []) as any }));
-    return (data || []) as RastreamentoRow[];
+    return (data || []) as unknown as RastreamentoRow[];
   }, []);
 
   const getRow = (projetoId: string, fluxo: number, etapa: number) =>
