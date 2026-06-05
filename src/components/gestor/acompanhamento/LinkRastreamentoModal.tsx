@@ -41,7 +41,13 @@ export default function LinkRastreamentoModal({ projeto, onClose, onGenerated }:
 
     setCodigo(novoCodigo);
     setGenerating(false);
-    toast.success('Link gerado!');
+    // copia automaticamente ao gerar
+    try {
+      await navigator.clipboard.writeText(`${BASE_URL}/acompanhar/${novoCodigo}`);
+      toast.success('Link gerado e copiado!');
+    } catch {
+      toast.success('Link gerado!');
+    }
     onGenerated?.();
   };
 
