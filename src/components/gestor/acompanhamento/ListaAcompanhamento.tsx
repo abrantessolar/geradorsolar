@@ -80,6 +80,7 @@ export default function ListaAcompanhamento() {
   const [busca, setBusca] = useState('');
   const [filtro, setFiltro] = useState<FiltroRapido>('todas');
   const [ordenacao, setOrdenacao] = useState<Ordenacao>('antigas');
+  const [linkProjeto, setLinkProjeto] = useState<ProjetoLista | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
