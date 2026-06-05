@@ -118,6 +118,7 @@ const App = () => (
             <Route path="/unauthorized" element={<div><SeoNoIndex /><UnauthorizedPage /></div>} />
             <Route path="/proposta/:id" element={<div><SeoNoIndex /><ProposalPage /></div>} />
             <Route path="/reset-password" element={<div><SeoNoIndex /><ResetPasswordPage /></div>} />
+            <Route path="/acompanhar/:codigo" element={<div><SeoNoIndex /><RastreamentoPage /></div>} />
             <Route path="/orcamentos" element={
               <ProtectedRoute permissionKey="calculadora">
                 <SeoNoIndex /><Layout><CalculatorPage /></Layout>
