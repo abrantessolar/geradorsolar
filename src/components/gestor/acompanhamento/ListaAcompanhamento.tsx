@@ -85,7 +85,7 @@ export default function ListaAcompanhamento() {
     setLoading(true);
     const { data: projs } = await supabase
       .from('projetos' as any)
-      .select('id, nome_completo, razao_social, telefone, instalador, proposta_id, criado_em')
+      .select('id, nome_completo, razao_social, telefone, instalador, proposta_id, codigo_rastreamento, criado_em')
       .not('status', 'eq', 'Instalado')
       .not('status', 'eq', 'Homologado')
       .order('criado_em', { ascending: false });
@@ -103,6 +103,7 @@ export default function ListaAcompanhamento() {
       telefone: p.telefone || null,
       instalador: p.instalador || null,
       numero_proposta: p.proposta_id ? (numeros[p.proposta_id] || null) : null,
+      codigo_rastreamento: p.codigo_rastreamento || null,
       criado_em: p.criado_em,
     }));
 
