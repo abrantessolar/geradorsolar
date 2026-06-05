@@ -22,6 +22,7 @@ import AniversariantesTab from '@/components/gestor/AniversariantesTab';
 
 export type Projeto = {
   id: string;
+  codigo_rastreamento?: string | null;
   criado_em: string;
   atualizado_em: string;
   usuario_id: string;
