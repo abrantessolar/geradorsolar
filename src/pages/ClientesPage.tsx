@@ -10,7 +10,7 @@ import ClientesDashboard from '@/components/gestor/ClientesDashboard';
 import ProjetosUnificados from '@/components/gestor/ProjetosUnificados';
 import ProjetoForm from '@/components/gestor/ProjetoForm';
 import DocumentosModal from '@/components/gestor/DocumentosModal';
-import KanbanAcompanhamento from '@/components/gestor/acompanhamento/KanbanAcompanhamento';
+import ListaAcompanhamento from '@/components/gestor/acompanhamento/ListaAcompanhamento';
 import type { Projeto } from '@/pages/GestorPage';
 import type { ClienteBase } from '@/components/gestor/ClientesList';
 
