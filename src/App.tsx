@@ -16,6 +16,7 @@ import GestorPage from "@/pages/GestorPage";
 import EstoquePage from "@/pages/EstoquePage";
 import CustosPage from "@/pages/CustosPage";
 import ClientesPage from "@/pages/ClientesPage";
+import RastreamentoPage from "@/pages/RastreamentoPage";
 import UnauthorizedPage from "@/pages/UnauthorizedPage";
 import LeadNotification from "@/components/LeadNotification";
 import NotFound from "@/pages/NotFound";
