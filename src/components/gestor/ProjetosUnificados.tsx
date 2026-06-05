@@ -280,6 +280,7 @@ export default function ProjetosUnificados({
                       <button onClick={() => setMateriaisProjeto(p)} className="text-primary hover:text-primary/80 p-1"><ClipboardList className="w-4 h-4" /></button>
                       <button onClick={() => generateFichaInstalacao(p)} className="text-primary hover:text-primary/80 p-1"><FileDown className="w-4 h-4" /></button>
                       <button onClick={() => setRetirarProjeto(p)} className="text-primary hover:text-primary/80 p-1"><Package className="w-4 h-4" /></button>
+                      <button onClick={() => setLinkProjeto(p)} className={`${p.codigo_rastreamento ? 'text-accent-foreground' : 'text-primary'} hover:text-primary/80 p-1`}><Link2 className="w-4 h-4" /></button>
                       <button onClick={() => setConcluidaProjeto(p)} className="text-primary hover:text-primary/80 p-1"><CheckCircle className="w-4 h-4" /></button>
                       <button onClick={() => setDeleteProjeto(p)} className="text-destructive hover:text-destructive/80 p-1 ml-auto"><Trash2 className="w-4 h-4" /></button>
                     </div>
