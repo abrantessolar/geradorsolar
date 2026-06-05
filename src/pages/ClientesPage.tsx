@@ -239,7 +239,7 @@ export default function ClientesPage() {
         </TabsContent>
 
         <TabsContent value="acompanhamento" className="space-y-4">
-          <KanbanAcompanhamento />
+          <ListaAcompanhamento />
         </TabsContent>
       </Tabs>
 
