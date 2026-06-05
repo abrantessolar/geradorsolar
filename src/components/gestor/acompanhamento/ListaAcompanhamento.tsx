@@ -67,7 +67,7 @@ function ultimaDataCheck(rows: RastreamentoRow[], criadoEm: string): string {
 }
 
 export default function ListaAcompanhamento() {
-  const { session, profile } = useAuth();
+  const { session } = useAuth();
   const [projetos, setProjetos] = useState<ProjetoLista[]>([]);
   const [rowsByProjeto, setRowsByProjeto] = useState<Record<string, RastreamentoRow[]>>({});
   const [nomesUsuarios, setNomesUsuarios] = useState<Record<string, string>>({});
