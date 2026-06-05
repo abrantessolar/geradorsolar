@@ -3,17 +3,18 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { BarChart3, ClipboardList, Plus, RefreshCw } from 'lucide-react';
+import { BarChart3, ClipboardList, Plus, RefreshCw, Kanban } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 
 import ClientesDashboard from '@/components/gestor/ClientesDashboard';
 import ProjetosUnificados from '@/components/gestor/ProjetosUnificados';
 import ProjetoForm from '@/components/gestor/ProjetoForm';
 import DocumentosModal from '@/components/gestor/DocumentosModal';
+import KanbanAcompanhamento from '@/components/gestor/acompanhamento/KanbanAcompanhamento';
 import type { Projeto } from '@/pages/GestorPage';
 import type { ClienteBase } from '@/components/gestor/ClientesList';
 
-type MainTab = 'dashboard' | 'projetos';
+type MainTab = 'dashboard' | 'projetos' | 'acompanhamento';
 type InlineView = 'none' | 'novo_projeto' | 'editar_projeto';
 
 export default function ClientesPage() {
@@ -216,6 +217,9 @@ export default function ClientesPage() {
           <TabsTrigger value="projetos" className="flex items-center gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-3 sm:px-6 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm whitespace-nowrap">
             <ClipboardList className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Projetos
           </TabsTrigger>
+          <TabsTrigger value="acompanhamento" className="flex items-center gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-3 sm:px-6 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm whitespace-nowrap">
+            <Kanban className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Acompanhamento
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="dashboard" className="space-y-4">
@@ -232,6 +236,10 @@ export default function ClientesPage() {
             onPromover={handlePromoverParaObra}
             onRefresh={refreshAll}
           />
+        </TabsContent>
+
+        <TabsContent value="acompanhamento" className="space-y-4">
+          <KanbanAcompanhamento />
         </TabsContent>
       </Tabs>
 

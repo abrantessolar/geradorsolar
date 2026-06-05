@@ -10,7 +10,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import {
   saveSettingsDB, savePriceTableDB, saveSocialProofsDB,
   saveDistribuidorasDB, importCidadesIrradianciaDB, getPropostasDB,
-  syncPriceTableFromDB,
+  syncPriceTableFromDB, getConfigDB, saveConfigDB,
 } from '@/data/supabaseStore';
 import { formatCurrency } from '@/data/calculations';
 import { AdminSettings, IrradiationEntry, PriceTableEntry, SocialProof, BRAZILIAN_STATES, CA_MATERIAL_TABLE_DEFAULT, LINE_NAMES } from '@/data/types';
@@ -1084,6 +1084,60 @@ function CompanyTab() {
         </div>
         <button onClick={addDistributor} className="solar-btn-outline text-sm py-2 px-3 flex items-center gap-1"><Plus className="w-4 h-4" /> Nova distribuidora</button>
       </div>
+
+      <RastreamentoConfigSection />
+    </div>
+  );
+}
+
+/* ─── CONFIGURAÇÕES DE RASTREAMENTO ─── */
+function RastreamentoConfigSection() {
+  const [googleLink, setGoogleLink] = useState('');
+  const [indicacaoTexto, setIndicacaoTexto] = useState('');
+  const [prazoDias, setPrazoDias] = useState(7);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      const g = await getConfigDB('rastreamento_google_link');
+      const t = await getConfigDB('rastreamento_indicacao_texto');
+      const p = await getConfigDB('rastreamento_prazo_dias');
+      if (g) setGoogleLink(String(g));
+      if (t) setIndicacaoTexto(String(t));
+      if (p) setPrazoDias(Number(p) || 7);
+    })();
+  }, []);
+
+  const save = async () => {
+    setSaving(true);
+    await saveConfigDB('rastreamento_google_link', googleLink);
+    await saveConfigDB('rastreamento_indicacao_texto', indicacaoTexto);
+    await saveConfigDB('rastreamento_prazo_dias', prazoDias);
+    setSaving(false);
+    toast.success('Configurações de rastreamento salvas!');
+  };
+
+  return (
+    <div className="space-y-4 border-t border-border pt-6">
+      <h3 className="font-semibold text-primary">Rastreamento de Obra</h3>
+      <div className="grid grid-cols-1 gap-4">
+        <div>
+          <label className="block text-sm font-medium mb-1">Link do Google Meu Negócio (avaliações)</label>
+          <input className="solar-input" value={googleLink} onChange={e => setGoogleLink(e.target.value)} placeholder="https://g.page/r/..." />
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1">Texto do programa de indicação</label>
+          <textarea className="solar-input min-h-[70px]" value={indicacaoTexto} onChange={e => setIndicacaoTexto(e.target.value)}
+            placeholder="Indique um amigo e ganhe benefícios enquanto ele economiza na conta de luz." />
+        </div>
+        <div className="max-w-xs">
+          <label className="block text-sm font-medium mb-1">Prazo máximo por etapa (dias) — alerta de atraso</label>
+          <input className="solar-input" type="number" value={prazoDias} onChange={e => setPrazoDias(parseInt(e.target.value) || 0)} />
+        </div>
+      </div>
+      <button onClick={save} disabled={saving} className="solar-btn-primary text-sm py-2 px-3 flex items-center gap-1">
+        <Save className="w-4 h-4" /> {saving ? 'Salvando...' : 'Salvar rastreamento'}
+      </button>
     </div>
   );
 }

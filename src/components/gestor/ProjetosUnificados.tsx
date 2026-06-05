@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import type { Projeto } from '@/pages/GestorPage';
 import type { ClienteBase } from './ClientesList';
-import { Edit2, FileText, Snowflake, Image as ImageIcon, CheckCircle, Trash2, ClipboardList, Package, FileDown, Eye, Search, ArrowUpRight, GripVertical } from 'lucide-react';
+import { Edit2, FileText, Snowflake, Image as ImageIcon, CheckCircle, Trash2, ClipboardList, Package, FileDown, Eye, Search, ArrowUpRight, GripVertical, Link2 } from 'lucide-react';
 import WhatsAppLink from './WhatsAppLink';
 import { generateFichaInstalacao } from '@/lib/generateFichaInstalacao';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -15,6 +15,7 @@ import RetirarMaterialModal from './materiais/RetirarMaterialModal';
 import ClienteDadosModal from './ClienteDadosModal';
 import { fmtDateBR } from '@/lib/dateUtils';
 import ClienteEditModal from './ClienteEditModal';
+import LinkRastreamentoModal from './acompanhamento/LinkRastreamentoModal';
 import { useDraggableColumns, type ColumnDef } from '@/hooks/useDraggableColumns';
 
 function Tip({ label, children }: { label: string; children: React.ReactNode }) {
@@ -72,6 +73,7 @@ export default function ProjetosUnificados({
   const [materiaisProjeto, setMateriaisProjeto] = useState<Projeto | null>(null);
   const [retirarProjeto, setRetirarProjeto] = useState<Projeto | null>(null);
   const [dadosProjeto, setDadosProjeto] = useState<Projeto | null>(null);
+  const [linkProjeto, setLinkProjeto] = useState<Projeto | null>(null);
   // Modals for clientes
   const [dadosCliente, setDadosCliente] = useState<ClienteBase | null>(null);
   const [editCliente, setEditCliente] = useState<ClienteBase | null>(null);
@@ -181,6 +183,7 @@ export default function ProjetosUnificados({
           <Tip label="Materiais"><button onClick={() => setMateriaisProjeto(p)} className="text-primary hover:text-primary/80"><ClipboardList className="w-4 h-4" /></button></Tip>
           <Tip label="Ficha"><button onClick={() => generateFichaInstalacao(p)} className="text-primary hover:text-primary/80"><FileDown className="w-4 h-4" /></button></Tip>
           <Tip label="Retirar material"><button onClick={() => setRetirarProjeto(p)} className="text-primary hover:text-primary/80"><Package className="w-4 h-4" /></button></Tip>
+          <Tip label="Link de rastreamento"><button onClick={() => setLinkProjeto(p)} className={`${p.codigo_rastreamento ? 'text-accent-foreground' : 'text-primary'} hover:text-primary/80`}><Link2 className="w-4 h-4" /></button></Tip>
           <Tip label={p.congelado ? 'Congelada' : 'Congelar'}><button onClick={() => setCongelarId(p.congelado ? null : p.id)} className="text-primary hover:text-primary/80"><Snowflake className="w-4 h-4" /></button></Tip>
           <Tip label="Layout"><button onClick={() => setLayoutProjeto(p)} className={`${p.layout_url ? 'text-accent-foreground' : 'text-muted-foreground'} hover:text-primary`}><ImageIcon className="w-4 h-4" /></button></Tip>
           <Tip label="Concluída"><button onClick={() => setConcluidaProjeto(p)} className="text-primary hover:text-primary/80"><CheckCircle className="w-4 h-4" /></button></Tip>
@@ -277,6 +280,7 @@ export default function ProjetosUnificados({
                       <button onClick={() => setMateriaisProjeto(p)} className="text-primary hover:text-primary/80 p-1"><ClipboardList className="w-4 h-4" /></button>
                       <button onClick={() => generateFichaInstalacao(p)} className="text-primary hover:text-primary/80 p-1"><FileDown className="w-4 h-4" /></button>
                       <button onClick={() => setRetirarProjeto(p)} className="text-primary hover:text-primary/80 p-1"><Package className="w-4 h-4" /></button>
+                      <button onClick={() => setLinkProjeto(p)} className={`${p.codigo_rastreamento ? 'text-accent-foreground' : 'text-primary'} hover:text-primary/80 p-1`}><Link2 className="w-4 h-4" /></button>
                       <button onClick={() => setConcluidaProjeto(p)} className="text-primary hover:text-primary/80 p-1"><CheckCircle className="w-4 h-4" /></button>
                       <button onClick={() => setDeleteProjeto(p)} className="text-destructive hover:text-destructive/80 p-1 ml-auto"><Trash2 className="w-4 h-4" /></button>
                     </div>
@@ -426,6 +430,13 @@ export default function ProjetosUnificados({
       )}
       {materiaisProjeto && <ListaMateriaisObraModal projeto={materiaisProjeto} onClose={() => setMateriaisProjeto(null)} />}
       {retirarProjeto && <RetirarMaterialModal projeto={retirarProjeto} onClose={() => setRetirarProjeto(null)} onDone={onRefresh} />}
+      {linkProjeto && (
+        <LinkRastreamentoModal
+          projeto={{ id: linkProjeto.id, nome: linkProjeto.nome_completo || linkProjeto.razao_social || 'Cliente', telefone: linkProjeto.telefone, codigo_rastreamento: linkProjeto.codigo_rastreamento }}
+          onClose={() => setLinkProjeto(null)}
+          onGenerated={onRefresh}
+        />
+      )}
       {dadosProjeto && (
         <ClienteDadosModal
           cliente={mapProjetoToDados(dadosProjeto)}
