@@ -1685,6 +1685,36 @@ export type Database = {
           },
         ]
       }
+      rastreamento_historico: {
+        Row: {
+          acao: string
+          criado_em: string
+          etapa: number
+          fluxo: number
+          id: string
+          projeto_id: string
+          usuario_id: string | null
+        }
+        Insert: {
+          acao: string
+          criado_em?: string
+          etapa: number
+          fluxo: number
+          id?: string
+          projeto_id: string
+          usuario_id?: string | null
+        }
+        Update: {
+          acao?: string
+          criado_em?: string
+          etapa?: number
+          fluxo?: number
+          id?: string
+          projeto_id?: string
+          usuario_id?: string | null
+        }
+        Relationships: []
+      }
       rastreamento_obras: {
         Row: {
           atualizado_em: string
@@ -1697,6 +1727,7 @@ export type Database = {
           id: string
           observacao_interna: string | null
           projeto_id: string
+          usuario_id: string | null
           visivel_cliente: boolean
         }
         Insert: {
@@ -1710,6 +1741,7 @@ export type Database = {
           id?: string
           observacao_interna?: string | null
           projeto_id: string
+          usuario_id?: string | null
           visivel_cliente?: boolean
         }
         Update: {
@@ -1723,6 +1755,7 @@ export type Database = {
           id?: string
           observacao_interna?: string | null
           projeto_id?: string
+          usuario_id?: string | null
           visivel_cliente?: boolean
         }
         Relationships: []
