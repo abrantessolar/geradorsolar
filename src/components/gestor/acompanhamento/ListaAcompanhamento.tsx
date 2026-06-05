@@ -2,10 +2,11 @@ import { useEffect, useMemo, useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { Loader2, Search, AlertTriangle, ChevronDown, ChevronUp, Check, HardHat } from 'lucide-react';
+import { Loader2, Search, AlertTriangle, ChevronDown, ChevronUp, Check, HardHat, Link2 } from 'lucide-react';
 import { FLUXOS, colunaAtual, type RastreamentoRow, type EtapaDef } from '@/lib/rastreamentoEtapas';
 import { getConfigDB } from '@/data/supabaseStore';
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
+import LinkRastreamentoModal from './LinkRastreamentoModal';
 
 interface ProjetoLista {
   id: string;
@@ -13,6 +14,7 @@ interface ProjetoLista {
   telefone: string | null;
   instalador: string | null;
   numero_proposta: string | null;
+  codigo_rastreamento: string | null;
   criado_em: string;
 }
 
