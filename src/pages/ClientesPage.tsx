@@ -217,6 +217,9 @@ export default function ClientesPage() {
           <TabsTrigger value="projetos" className="flex items-center gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-3 sm:px-6 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm whitespace-nowrap">
             <ClipboardList className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Projetos
           </TabsTrigger>
+          <TabsTrigger value="acompanhamento" className="flex items-center gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-3 sm:px-6 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm whitespace-nowrap">
+            <Kanban className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Acompanhamento
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="dashboard" className="space-y-4">
@@ -233,6 +236,10 @@ export default function ClientesPage() {
             onPromover={handlePromoverParaObra}
             onRefresh={refreshAll}
           />
+        </TabsContent>
+
+        <TabsContent value="acompanhamento" className="space-y-4">
+          <KanbanAcompanhamento />
         </TabsContent>
       </Tabs>
 
