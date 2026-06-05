@@ -389,6 +389,14 @@ export default function ListaAcompanhamento() {
             );
           })}
         </div>
+
+        {linkProjeto && (
+          <LinkRastreamentoModal
+            projeto={linkProjeto}
+            onClose={() => setLinkProjeto(null)}
+            onGenerated={load}
+          />
+        )}
       </div>
     </TooltipProvider>
   );
