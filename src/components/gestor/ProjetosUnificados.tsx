@@ -15,6 +15,7 @@ import RetirarMaterialModal from './materiais/RetirarMaterialModal';
 import ClienteDadosModal from './ClienteDadosModal';
 import { fmtDateBR } from '@/lib/dateUtils';
 import ClienteEditModal from './ClienteEditModal';
+import LinkRastreamentoModal from './acompanhamento/LinkRastreamentoModal';
 import { useDraggableColumns, type ColumnDef } from '@/hooks/useDraggableColumns';
 
 function Tip({ label, children }: { label: string; children: React.ReactNode }) {
