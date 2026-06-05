@@ -183,6 +183,7 @@ export default function ProjetosUnificados({
           <Tip label="Materiais"><button onClick={() => setMateriaisProjeto(p)} className="text-primary hover:text-primary/80"><ClipboardList className="w-4 h-4" /></button></Tip>
           <Tip label="Ficha"><button onClick={() => generateFichaInstalacao(p)} className="text-primary hover:text-primary/80"><FileDown className="w-4 h-4" /></button></Tip>
           <Tip label="Retirar material"><button onClick={() => setRetirarProjeto(p)} className="text-primary hover:text-primary/80"><Package className="w-4 h-4" /></button></Tip>
+          <Tip label="Link de rastreamento"><button onClick={() => setLinkProjeto(p)} className={`${p.codigo_rastreamento ? 'text-accent-foreground' : 'text-primary'} hover:text-primary/80`}><Link2 className="w-4 h-4" /></button></Tip>
           <Tip label={p.congelado ? 'Congelada' : 'Congelar'}><button onClick={() => setCongelarId(p.congelado ? null : p.id)} className="text-primary hover:text-primary/80"><Snowflake className="w-4 h-4" /></button></Tip>
           <Tip label="Layout"><button onClick={() => setLayoutProjeto(p)} className={`${p.layout_url ? 'text-accent-foreground' : 'text-muted-foreground'} hover:text-primary`}><ImageIcon className="w-4 h-4" /></button></Tip>
           <Tip label="Concluída"><button onClick={() => setConcluidaProjeto(p)} className="text-primary hover:text-primary/80"><CheckCircle className="w-4 h-4" /></button></Tip>
