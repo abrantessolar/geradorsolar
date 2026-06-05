@@ -73,6 +73,7 @@ export default function ProjetosUnificados({
   const [materiaisProjeto, setMateriaisProjeto] = useState<Projeto | null>(null);
   const [retirarProjeto, setRetirarProjeto] = useState<Projeto | null>(null);
   const [dadosProjeto, setDadosProjeto] = useState<Projeto | null>(null);
+  const [linkProjeto, setLinkProjeto] = useState<Projeto | null>(null);
   // Modals for clientes
   const [dadosCliente, setDadosCliente] = useState<ClienteBase | null>(null);
   const [editCliente, setEditCliente] = useState<ClienteBase | null>(null);
