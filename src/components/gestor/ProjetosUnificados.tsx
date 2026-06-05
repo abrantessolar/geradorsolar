@@ -430,6 +430,13 @@ export default function ProjetosUnificados({
       )}
       {materiaisProjeto && <ListaMateriaisObraModal projeto={materiaisProjeto} onClose={() => setMateriaisProjeto(null)} />}
       {retirarProjeto && <RetirarMaterialModal projeto={retirarProjeto} onClose={() => setRetirarProjeto(null)} onDone={onRefresh} />}
+      {linkProjeto && (
+        <LinkRastreamentoModal
+          projeto={{ id: linkProjeto.id, nome: linkProjeto.nome_completo || linkProjeto.razao_social || 'Cliente', telefone: linkProjeto.telefone, codigo_rastreamento: linkProjeto.codigo_rastreamento }}
+          onClose={() => setLinkProjeto(null)}
+          onGenerated={onRefresh}
+        />
+      )}
       {dadosProjeto && (
         <ClienteDadosModal
           cliente={mapProjetoToDados(dadosProjeto)}
