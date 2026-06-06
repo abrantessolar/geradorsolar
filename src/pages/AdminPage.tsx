@@ -21,6 +21,7 @@ import { useNewLeadsCount } from '@/components/LeadNotification';
 import { toast } from 'sonner';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import SiteContentTab from '@/components/admin/SiteContentTab';
+import FaqTab from '@/components/admin/FaqTab';
 import EquipmentTab from '@/components/admin/EquipmentTab';
 import ModelosDocumentos from '@/components/gestor/ModelosDocumentos';
 import { useNavigate } from 'react-router-dom';
