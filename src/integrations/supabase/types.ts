@@ -944,6 +944,45 @@ export type Database = {
           },
         ]
       }
+      faq: {
+        Row: {
+          ativo: boolean
+          atualizado_em: string
+          criado_em: string
+          id: string
+          ordem: number
+          pergunta: string
+          resposta: string
+          setor: string
+          visivel_cliente: boolean
+          visivel_site: boolean
+        }
+        Insert: {
+          ativo?: boolean
+          atualizado_em?: string
+          criado_em?: string
+          id?: string
+          ordem?: number
+          pergunta: string
+          resposta: string
+          setor?: string
+          visivel_cliente?: boolean
+          visivel_site?: boolean
+        }
+        Update: {
+          ativo?: boolean
+          atualizado_em?: string
+          criado_em?: string
+          id?: string
+          ordem?: number
+          pergunta?: string
+          resposta?: string
+          setor?: string
+          visivel_cliente?: boolean
+          visivel_site?: boolean
+        }
+        Relationships: []
+      }
       fornecedores_materiais: {
         Row: {
           ativo: boolean
