@@ -120,6 +120,7 @@ export default function LandingPage() {
             <a href="#solucoes" className="text-foreground/80 hover:text-primary transition-colors">Soluções</a>
             <a href="#projetos" className="text-foreground/80 hover:text-primary transition-colors">Projetos</a>
             <button onClick={scrollToSimulator} className="text-foreground/80 hover:text-primary transition-colors">Simular</button>
+            <Link to="/faq" className="text-foreground/80 hover:text-primary transition-colors">❓ Dúvidas</Link>
           </nav>
           <div className="flex items-center gap-2">
             <Link
