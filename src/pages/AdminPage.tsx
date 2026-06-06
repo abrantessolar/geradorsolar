@@ -97,6 +97,7 @@ export default function AdminPage() {
       {tab === 'proposals' && <ProposalsTab />}
       {tab === 'social' && <SocialTab />}
       {tab === 'site_content' && <SiteContentTab />}
+      {tab === 'faq' && <FaqTab />}
     </div>
   );
 }
