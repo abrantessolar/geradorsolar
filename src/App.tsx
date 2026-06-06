@@ -115,6 +115,7 @@ const App = () => (
           <LeadNotification />
           <Routes>
             <Route path="/" element={<LandingPage />} />
+            <Route path="/faq" element={<FaqPage />} />
             <Route path="/login" element={<AuthRedirect />} />
             <Route path="/unauthorized" element={<div><SeoNoIndex /><UnauthorizedPage /></div>} />
             <Route path="/proposta/:id" element={<div><SeoNoIndex /><ProposalPage /></div>} />
