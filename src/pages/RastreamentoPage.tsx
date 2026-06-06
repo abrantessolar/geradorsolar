@@ -100,14 +100,37 @@ export default function RastreamentoPage() {
     );
   }
 
+  const { feitos, total } = data.fluxos.reduce(
+    (acc, f) => {
+      f.etapas.forEach((e) => {
+        acc.total++;
+        if (e.concluido) acc.feitos++;
+      });
+      return acc;
+    },
+    { feitos: 0, total: 0 },
+  );
+  const pct = total ? Math.round((feitos / total) * 100) : 0;
+
   return (
     <div className="min-h-screen bg-muted/30">
       {/* Header */}
       <header className="bg-primary text-primary-foreground">
         <div className="max-w-2xl mx-auto px-4 py-8 text-center">
           <img src={logoTls} alt="Três Lagoas Solar" className="h-14 mx-auto mb-4 bg-white/90 rounded-lg p-2" />
-          <h1 className="text-2xl font-bold">Olá, {data.nome}! 👋</h1>
-          <p className="text-primary-foreground/85 mt-1">Acompanhe aqui o seu projeto de energia solar.</p>
+          <h1 className="text-2xl font-bold">Olá, {data.nome}! 🌞</h1>
+          <p className="text-primary-foreground/85 mt-1">Veja como está o seu projeto de energia solar.</p>
+
+          {/* Barra de progresso geral */}
+          <div className="mt-5 max-w-md mx-auto">
+            <div className="h-3 rounded-full bg-primary-foreground/20 overflow-hidden">
+              <div
+                className="h-full rounded-full bg-secondary transition-all duration-700"
+                style={{ width: `${pct}%` }}
+              />
+            </div>
+            <p className="text-sm font-semibold mt-2">{pct}% concluído</p>
+          </div>
         </div>
       </header>
 
@@ -115,6 +138,16 @@ export default function RastreamentoPage() {
         {data.fluxos.map((f) => (
           <FluxoTimeline key={f.fluxo} fluxo={f} />
         ))}
+
+        {/* Dúvidas frequentes */}
+        <section className="rounded-2xl border border-border bg-card p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <HelpCircle className="w-5 h-5 text-primary" />
+            <h2 className="text-lg font-bold text-foreground">Dúvidas frequentes</h2>
+          </div>
+          <FaqSection contexto="cliente" />
+        </section>
+
 
         {/* Pós-instalação */}
         {data.sistema_operacao && (
