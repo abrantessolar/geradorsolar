@@ -17,6 +17,7 @@ import EstoquePage from "@/pages/EstoquePage";
 import CustosPage from "@/pages/CustosPage";
 import ClientesPage from "@/pages/ClientesPage";
 import RastreamentoPage from "@/pages/RastreamentoPage";
+import FaqPage from "@/pages/FaqPage";
 import UnauthorizedPage from "@/pages/UnauthorizedPage";
 import LeadNotification from "@/components/LeadNotification";
 import NotFound from "@/pages/NotFound";
@@ -114,6 +115,7 @@ const App = () => (
           <LeadNotification />
           <Routes>
             <Route path="/" element={<LandingPage />} />
+            <Route path="/faq" element={<FaqPage />} />
             <Route path="/login" element={<AuthRedirect />} />
             <Route path="/unauthorized" element={<div><SeoNoIndex /><UnauthorizedPage /></div>} />
             <Route path="/proposta/:id" element={<div><SeoNoIndex /><ProposalPage /></div>} />

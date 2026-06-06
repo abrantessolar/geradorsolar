@@ -120,6 +120,7 @@ export default function LandingPage() {
             <a href="#solucoes" className="text-foreground/80 hover:text-primary transition-colors">Soluções</a>
             <a href="#projetos" className="text-foreground/80 hover:text-primary transition-colors">Projetos</a>
             <button onClick={scrollToSimulator} className="text-foreground/80 hover:text-primary transition-colors">Simular</button>
+            <Link to="/faq" className="text-foreground/80 hover:text-primary transition-colors">❓ Dúvidas</Link>
           </nav>
           <div className="flex items-center gap-2">
             <Link
@@ -449,8 +450,10 @@ export default function LandingPage() {
               </div>
             </div>
           </div>
-          <div className="mt-12 pt-8 border-t border-background/10 text-center text-sm text-background/40">
-            © {new Date().getFullYear()} Três Lagoas Solar — Todos os direitos reservados
+          <div className="mt-12 pt-8 border-t border-background/10 flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-sm text-background/40">
+            <Link to="/faq" className="hover:text-secondary transition-colors">❓ Dúvidas Frequentes</Link>
+            <span className="hidden sm:inline">·</span>
+            <span>© {new Date().getFullYear()} Três Lagoas Solar — Todos os direitos reservados</span>
           </div>
         </div>
       </footer>
