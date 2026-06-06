@@ -2,9 +2,10 @@ import { useParams } from 'react-router-dom';
 import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import logoTls from '@/assets/logo.png';
-import { Check, Lock, Loader2, Star, MapPin, Calendar, Hash, Zap, ExternalLink, MessageCircle, Heart, Building2, Home } from 'lucide-react';
+import { Check, Lock, Loader2, Star, MapPin, Calendar, Hash, Zap, ExternalLink, MessageCircle, Heart, Building2, Home, HelpCircle } from 'lucide-react';
 import { fmtDateBR } from '@/lib/dateUtils';
 import { toast } from 'sonner';
+import FaqSection from '@/components/faq/FaqSection';
 
 interface EtapaCli {
   etapa: number;
