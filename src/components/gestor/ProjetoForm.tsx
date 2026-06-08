@@ -240,6 +240,7 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
       unidade_beneficiaria2_percentual: form.unidade_beneficiaria2_percentual ? parseFloat(form.unidade_beneficiaria2_percentual) : null,
       data_fechamento: form.data_fechamento || null,
       data_instalacao: form.data_instalacao || null,
+      dia_leitura: form.dia_leitura ? parseInt(form.dia_leitura) : null,
       objecoes: form.objecoes || null,
       distribuidor: form.distribuidor || null,
       instalador: form.instalador || null,
