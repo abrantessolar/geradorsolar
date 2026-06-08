@@ -111,6 +111,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       <footer className="no-print border-t border-border/50 py-6 text-center text-sm text-muted-foreground">
         <p>© {new Date().getFullYear()} Três Lagoas Solar — Energia Limpa</p>
       </footer>
+
+      <PosVendaReminder />
     </div>
   );
 }
