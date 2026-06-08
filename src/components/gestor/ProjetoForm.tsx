@@ -106,7 +106,7 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
         preco_venda: p.preco_venda?.toString() || '', forma_pagamento: p.forma_pagamento || '',
         data_fechamento: p.data_fechamento || '',
         objecoes: p.objecoes || '',
-        data_instalacao: p.data_instalacao || '',
+        data_instalacao: p.data_instalacao || '', dia_leitura: (p as any).dia_leitura?.toString() || '',
         distribuidor: p.distribuidor || '', instalador: p.instalador || '', pagamento_status: p.pagamento_status || 'Pendente',
       });
       if (p.outros_nomes && Array.isArray(p.outros_nomes)) {
