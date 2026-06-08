@@ -246,6 +246,10 @@ export default function ClientesPage() {
         <TabsContent value="acompanhamento" className="space-y-4">
           <ListaAcompanhamento />
         </TabsContent>
+
+        <TabsContent value="posvenda" className="space-y-4">
+          <PosVendaAgenda />
+        </TabsContent>
       </Tabs>
 
       {docProjeto && (
