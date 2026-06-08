@@ -74,7 +74,7 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
     unidade_beneficiaria2_cep: '', unidade_beneficiaria2_endereco: '', unidade_beneficiaria2_codigo_uc: '', unidade_beneficiaria2_percentual: '',
     preco_venda: '', forma_pagamento: '',
     data_fechamento: '', objecoes: '',
-    data_instalacao: '',
+    data_instalacao: '', dia_leitura: '',
     distribuidor: '', instalador: '', pagamento_status: 'Pendente',
   });
 
