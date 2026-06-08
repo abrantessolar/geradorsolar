@@ -433,6 +433,47 @@ export default function ListaAcompanhamento() {
                         </div>
                       );
                     })}
+
+                    {/* Fluxo 4 — Pós-venda */}
+                    {(() => {
+                      const tarefas = tarefasByProjeto[p.id] || [];
+                      const feitas = tarefas.filter(t => t.concluido).length;
+                      return (
+                        <div className="space-y-1.5 border-t border-border pt-3">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium text-foreground">🌟 Pós-venda (3 anos):</span>
+                            {tarefas.length > 0 && (
+                              <span className="text-[10px] text-muted-foreground">{feitas}/{tarefas.length} concluídas</span>
+                            )}
+                          </div>
+                          {tarefas.length === 0 ? (
+                            <p className="text-xs text-muted-foreground">
+                              Os lembretes de pós-venda serão criados automaticamente ao marcar "Instalação finalizada".
+                            </p>
+                          ) : (
+                            <div className="space-y-2">
+                              {tarefas
+                                .filter(t => !t.concluido)
+                                .slice(0, 4)
+                                .map(t => (
+                                  <TarefaPosVendaItem
+                                    key={t.id}
+                                    tarefa={t}
+                                    nome={p.nome}
+                                    telefone={p.telefone}
+                                    templateText={templates[t.template_key || ''] || ''}
+                                    googleLink={googleLink}
+                                    onChanged={() => refetchTarefas(p.id)}
+                                  />
+                                ))}
+                              <p className="text-[11px] text-muted-foreground">
+                                Veja todos os lembretes na aba <strong>Pós-venda</strong>.
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </div>
                 )}
               </div>
