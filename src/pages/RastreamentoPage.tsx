@@ -20,9 +20,16 @@ interface FluxoCli {
   icone: string;
   etapas: EtapaCli[];
 }
+interface PosVendaCli {
+  descricao: string;
+  tipo: string;
+  data_programada: string;
+  concluido: boolean;
+}
 interface RastreamentoData {
   nome: string;
   fluxos: FluxoCli[];
+  posvenda?: PosVendaCli[];
   sistema_operacao: boolean;
   avaliacao: { nota: number; comentario: string | null } | null;
 }
