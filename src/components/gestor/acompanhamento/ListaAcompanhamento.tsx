@@ -543,15 +543,8 @@ function EtapaCheck({
             onChange={ev => updateExtra(projetoId, fluxo, etapaDef.etapa, { data_agendamento: ev.target.value || null })}
           />
         )}
-        {/* Data operação (fluxo 3, etapa 4) */}
-        {fluxo === 3 && etapaDef.etapa === 4 && concluido && (
-          <input
-            type="date"
-            className="solar-input py-0.5 text-xs"
-            value={ce.data_operacao ?? ''}
-            onChange={ev => updateExtra(projetoId, fluxo, etapaDef.etapa, { data_operacao: ev.target.value || null })}
-          />
-        )}
+        {/* Data agendada exibida também no resumo (fluxo 3, etapa 2) */}
+
         {/* Local de entrega marcado (fluxo 2, etapa 4) */}
         {fluxo === 2 && etapaDef.etapa === 4 && concluido && ce.local_entrega && (
           <span className="text-[11px] text-muted-foreground">({ce.local_entrega === 'empresa' ? 'TLS Solar' : 'Cliente'})</span>
