@@ -7,6 +7,9 @@ import { FLUXOS, colunaAtual, type RastreamentoRow, type EtapaDef } from '@/lib/
 import { getConfigDB } from '@/data/supabaseStore';
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
 import LinkRastreamentoModal from './LinkRastreamentoModal';
+import { gerarTarefasPosVenda, type TarefaPosVenda } from '@/lib/posvendaTarefas';
+import { loadTemplatesMap } from '@/components/gestor/posvenda/PosVendaAgenda';
+import TarefaPosVendaItem from '@/components/gestor/posvenda/TarefaPosVendaItem';
 
 interface ProjetoLista {
   id: string;
@@ -15,6 +18,7 @@ interface ProjetoLista {
   instalador: string | null;
   numero_proposta: string | null;
   codigo_rastreamento: string | null;
+  dia_leitura: number | null;
   criado_em: string;
 }
 
