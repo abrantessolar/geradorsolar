@@ -146,6 +146,27 @@ export default function RastreamentoPage() {
           <FluxoTimeline key={f.fluxo} fluxo={f} />
         ))}
 
+        {/* Pós-venda visível ao cliente */}
+        {data.posvenda && data.posvenda.length > 0 && (
+          <section className="rounded-2xl border border-border bg-card p-5">
+            <div className="flex items-center gap-2 mb-4">
+              <span className="text-2xl">🌟</span>
+              <h2 className="text-lg font-bold text-foreground">Acompanhamento pós-venda</h2>
+            </div>
+            <ul className="space-y-2">
+              {data.posvenda.map((t, i) => (
+                <li key={i} className="flex items-center gap-3 text-sm">
+                  <span className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 ${t.concluido ? 'bg-green-500 text-white' : 'bg-muted text-muted-foreground'}`}>
+                    {t.concluido ? <Check className="w-4 h-4" /> : <Calendar className="w-4 h-4" />}
+                  </span>
+                  <span className="flex-1 text-foreground">{t.descricao}</span>
+                  <span className="text-xs text-muted-foreground">{fmtDateBR(t.data_programada)}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
         {/* Dúvidas frequentes */}
         <section className="rounded-2xl border border-border bg-card p-5">
           <div className="flex items-center gap-2 mb-4">
