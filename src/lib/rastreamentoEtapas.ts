@@ -48,14 +48,18 @@ export const FLUXOS: FluxoDef[] = [
   },
   {
     fluxo: 3,
-    titulo: 'Instalação e Pós-venda',
+    titulo: 'Instalação',
     icone: '⚡',
     coluna: 'instalacao',
     etapas: [
       { etapa: 1, titulo: 'Aguardando instalação', campo: 'numero_fila' },
       { etapa: 2, titulo: 'Instalação agendada', campo: 'data_agendamento' },
       { etapa: 3, titulo: 'Instalação finalizada' },
-      { etapa: 4, titulo: 'Sistema em operação', campo: 'data_operacao' },
+      { etapa: 4, titulo: 'Explicar funcionamento, chaves de segurança, DPS e afins' },
+      { etapa: 5, titulo: 'Conectar logger no WiFi' },
+      { etapa: 6, titulo: 'Criar planta no monitoramento' },
+      { etapa: 7, titulo: 'Adicionar datalogger' },
+      { etapa: 8, titulo: 'Apresentar app de monitoramento ao cliente' },
     ],
   },
 ];
