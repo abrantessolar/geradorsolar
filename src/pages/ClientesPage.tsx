@@ -222,6 +222,9 @@ export default function ClientesPage() {
           <TabsTrigger value="acompanhamento" className="flex items-center gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-3 sm:px-6 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm whitespace-nowrap">
             <Kanban className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Acompanhamento
           </TabsTrigger>
+          <TabsTrigger value="posvenda" className="flex items-center gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-3 sm:px-6 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm whitespace-nowrap">
+            <CalendarClock className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Pós-venda
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="dashboard" className="space-y-4">
