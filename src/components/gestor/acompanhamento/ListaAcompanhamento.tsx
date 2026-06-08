@@ -493,11 +493,6 @@ function EtapaCheck({
       await commitCheck(projetoId, fluxo, etapaDef.etapa, true, { data_agendamento: new Date().toISOString().slice(0, 10) });
       return;
     }
-    // Sistema em operação / Instalado (fluxo 3, etapa 4) → grava data de operação
-    if (fluxo === 3 && etapaDef.etapa === 4) {
-      await commitCheck(projetoId, fluxo, etapaDef.etapa, true, { data_operacao: new Date().toISOString().slice(0, 10) });
-      return;
-    }
     await commitCheck(projetoId, fluxo, etapaDef.etapa, true);
   };
 
