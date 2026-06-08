@@ -185,8 +185,38 @@ export default function ListaAcompanhamento() {
     });
 
     const novasRows = await refetchProjeto(projetoId);
+
+    // "Instalação finalizada" (fluxo 3, etapa 3) → grava data_instalacao e gera o pós-venda
+    if (concluido && fluxo === 3 && etapa === 3) {
+      const proj = projetos.find(p => p.id === projetoId);
+      const hoje = new Date();
+      await supabase.from('projetos' as any).update({ data_instalacao: hoje.toISOString().slice(0, 10) }).eq('id', projetoId);
+      try {
+        const criadas = await gerarTarefasPosVenda({
+          projetoId,
+          dataInstalacao: hoje,
+          diaLeitura: proj?.dia_leitura ?? null,
+          usuarioId: session?.user?.id,
+        });
+        if (criadas > 0) {
+          toast.success(`Pós-venda iniciado! ${criadas} lembretes criados para 3 anos.`);
+          const { data: tarefas } = await supabase.from('tarefas_posvenda' as any)
+            .select('*').eq('projeto_id', projetoId).order('data_programada', { ascending: true });
+          setTarefasByProjeto(prev => ({ ...prev, [projetoId]: (tarefas || []) as any }));
+        }
+      } catch (e: any) {
+        toast.error('Erro ao gerar pós-venda: ' + (e.message || e));
+      }
+    }
+
     if (concluido) await verificarConclusao(projetoId, novasRows);
   };
+
+  const refetchTarefas = useCallback(async (projetoId: string) => {
+    const { data } = await supabase.from('tarefas_posvenda' as any)
+      .select('*').eq('projeto_id', projetoId).order('data_programada', { ascending: true });
+    setTarefasByProjeto(prev => ({ ...prev, [projetoId]: (data || []) as any }));
+  }, []);
 
   // Atualiza apenas campo_extra (sem mexer no concluido) — para campos editáveis
   const updateExtra = async (projetoId: string, fluxo: number, etapa: number, extra: Record<string, any>) => {
