@@ -71,8 +71,23 @@ async function handleGet(codigo: string) {
   }).filter((fl) => fl.etapas.length > 0);
 
   const sistemaOperacao = (rows || []).some(
-    (r: any) => r.fluxo === 3 && r.etapa === 4 && r.concluido
+    (r: any) => r.fluxo === 3 && r.etapa === 3 && r.concluido
   );
+
+  // Tarefas de pós-venda visíveis ao cliente
+  const { data: posvendaRows } = await supabase
+    .from("tarefas_posvenda")
+    .select("descricao, tipo, data_programada, concluido")
+    .eq("projeto_id", projeto.id)
+    .eq("visivel_cliente", true)
+    .order("data_programada");
+
+  const posvenda = (posvendaRows || []).map((t: any) => ({
+    descricao: t.descricao,
+    tipo: t.tipo,
+    data_programada: t.data_programada,
+    concluido: t.concluido,
+  }));
 
   const { data: avaliacao } = await supabase
     .from("avaliacoes_clientes")
@@ -85,6 +100,7 @@ async function handleGet(codigo: string) {
   return json({
     nome: projeto.nome_completo || projeto.razao_social || "Cliente",
     fluxos,
+    posvenda,
     sistema_operacao: sistemaOperacao,
     avaliacao: avaliacao || null,
   });
