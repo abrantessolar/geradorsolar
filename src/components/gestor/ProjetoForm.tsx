@@ -74,7 +74,7 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
     unidade_beneficiaria2_cep: '', unidade_beneficiaria2_endereco: '', unidade_beneficiaria2_codigo_uc: '', unidade_beneficiaria2_percentual: '',
     preco_venda: '', forma_pagamento: '',
     data_fechamento: '', objecoes: '',
-    data_instalacao: '',
+    data_instalacao: '', dia_leitura: '',
     distribuidor: '', instalador: '', pagamento_status: 'Pendente',
   });
 
@@ -106,7 +106,7 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
         preco_venda: p.preco_venda?.toString() || '', forma_pagamento: p.forma_pagamento || '',
         data_fechamento: p.data_fechamento || '',
         objecoes: p.objecoes || '',
-        data_instalacao: p.data_instalacao || '',
+        data_instalacao: p.data_instalacao || '', dia_leitura: (p as any).dia_leitura?.toString() || '',
         distribuidor: p.distribuidor || '', instalador: p.instalador || '', pagamento_status: p.pagamento_status || 'Pendente',
       });
       if (p.outros_nomes && Array.isArray(p.outros_nomes)) {
@@ -240,6 +240,7 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
       unidade_beneficiaria2_percentual: form.unidade_beneficiaria2_percentual ? parseFloat(form.unidade_beneficiaria2_percentual) : null,
       data_fechamento: form.data_fechamento || null,
       data_instalacao: form.data_instalacao || null,
+      dia_leitura: form.dia_leitura ? parseInt(form.dia_leitura) : null,
       objecoes: form.objecoes || null,
       distribuidor: form.distribuidor || null,
       instalador: form.instalador || null,
@@ -606,6 +607,7 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
             </div>
             <div><label className={labelClass}>Data de Fechamento</label><input className={inputClass} type="date" value={form.data_fechamento} onChange={e => set('data_fechamento', e.target.value)} /></div>
             <div><label className={labelClass}>Data de Instalação</label><input className={inputClass} type="date" value={form.data_instalacao} onChange={e => set('data_instalacao', e.target.value)} /></div>
+            <div><label className={labelClass}>📅 Dia de leitura aproximado da conta de luz (1 a 31)</label><input className={inputClass} type="number" min={1} max={31} value={form.dia_leitura} onChange={e => set('dia_leitura', e.target.value)} placeholder="Ex.: 15" /></div>
           </div>
           <hr className="border-border" />
           <h3 className="text-sm font-semibold">Informações de Instalação</h3>

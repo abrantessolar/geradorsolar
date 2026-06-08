@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { BarChart3, ClipboardList, Plus, RefreshCw, Kanban } from 'lucide-react';
+import { BarChart3, ClipboardList, Plus, RefreshCw, Kanban, CalendarClock } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 
 import ClientesDashboard from '@/components/gestor/ClientesDashboard';
@@ -11,16 +11,18 @@ import ProjetosUnificados from '@/components/gestor/ProjetosUnificados';
 import ProjetoForm from '@/components/gestor/ProjetoForm';
 import DocumentosModal from '@/components/gestor/DocumentosModal';
 import ListaAcompanhamento from '@/components/gestor/acompanhamento/ListaAcompanhamento';
+import PosVendaAgenda from '@/components/gestor/posvenda/PosVendaAgenda';
 import type { Projeto } from '@/pages/GestorPage';
 import type { ClienteBase } from '@/components/gestor/ClientesList';
 
-type MainTab = 'dashboard' | 'projetos' | 'acompanhamento';
+type MainTab = 'dashboard' | 'projetos' | 'acompanhamento' | 'posvenda';
 type InlineView = 'none' | 'novo_projeto' | 'editar_projeto';
 
 export default function ClientesPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { session, isAdmin, permissions } = useAuth();
-  const [mainTab, setMainTab] = useState<MainTab>('projetos');
+  const [mainTab, setMainTab] = useState<MainTab>(((location.state as any)?.tab as MainTab) || 'projetos');
   const [inlineView, setInlineView] = useState<InlineView>('none');
   const [editId, setEditId] = useState<string | null>(null);
 
@@ -220,6 +222,9 @@ export default function ClientesPage() {
           <TabsTrigger value="acompanhamento" className="flex items-center gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-3 sm:px-6 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm whitespace-nowrap">
             <Kanban className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Acompanhamento
           </TabsTrigger>
+          <TabsTrigger value="posvenda" className="flex items-center gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-3 sm:px-6 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm whitespace-nowrap">
+            <CalendarClock className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Pós-venda
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="dashboard" className="space-y-4">
@@ -240,6 +245,10 @@ export default function ClientesPage() {
 
         <TabsContent value="acompanhamento" className="space-y-4">
           <ListaAcompanhamento />
+        </TabsContent>
+
+        <TabsContent value="posvenda" className="space-y-4">
+          <PosVendaAgenda />
         </TabsContent>
       </Tabs>
 

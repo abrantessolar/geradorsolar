@@ -7,6 +7,9 @@ import { FLUXOS, colunaAtual, type RastreamentoRow, type EtapaDef } from '@/lib/
 import { getConfigDB } from '@/data/supabaseStore';
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
 import LinkRastreamentoModal from './LinkRastreamentoModal';
+import { gerarTarefasPosVenda, type TarefaPosVenda } from '@/lib/posvendaTarefas';
+import { loadTemplatesMap } from '@/components/gestor/posvenda/PosVendaAgenda';
+import TarefaPosVendaItem from '@/components/gestor/posvenda/TarefaPosVendaItem';
 
 interface ProjetoLista {
   id: string;
@@ -15,6 +18,7 @@ interface ProjetoLista {
   instalador: string | null;
   numero_proposta: string | null;
   codigo_rastreamento: string | null;
+  dia_leitura: number | null;
   criado_em: string;
 }
 
@@ -81,12 +85,15 @@ export default function ListaAcompanhamento() {
   const [filtro, setFiltro] = useState<FiltroRapido>('todas');
   const [ordenacao, setOrdenacao] = useState<Ordenacao>('antigas');
   const [linkProjeto, setLinkProjeto] = useState<ProjetoLista | null>(null);
+  const [tarefasByProjeto, setTarefasByProjeto] = useState<Record<string, TarefaPosVenda[]>>({});
+  const [templates, setTemplates] = useState<Record<string, string>>({});
+  const [googleLink, setGoogleLink] = useState('');
 
   const load = useCallback(async () => {
     setLoading(true);
     const { data: projs } = await supabase
       .from('projetos' as any)
-      .select('id, nome_completo, razao_social, telefone, instalador, proposta_id, codigo_rastreamento, criado_em')
+      .select('id, nome_completo, razao_social, telefone, instalador, proposta_id, codigo_rastreamento, dia_leitura, criado_em')
       .not('status', 'eq', 'Instalado')
       .not('status', 'eq', 'Homologado')
       .order('criado_em', { ascending: false });
@@ -105,6 +112,7 @@ export default function ListaAcompanhamento() {
       instalador: p.instalador || null,
       numero_proposta: p.proposta_id ? (numeros[p.proposta_id] || null) : null,
       codigo_rastreamento: p.codigo_rastreamento || null,
+      dia_leitura: p.dia_leitura ?? null,
       criado_em: p.criado_em,
     }));
 
@@ -114,15 +122,27 @@ export default function ListaAcompanhamento() {
       (byProj[r.projeto_id] ||= []).push(r);
     }
 
+    const projIds = list.map(p => p.id);
+    const tByProj: Record<string, TarefaPosVenda[]> = {};
+    if (projIds.length) {
+      const { data: tarefas } = await supabase.from('tarefas_posvenda' as any)
+        .select('*').in('projeto_id', projIds).order('data_programada', { ascending: true });
+      for (const t of (tarefas || []) as any[]) (tByProj[t.projeto_id] ||= []).push(t);
+    }
+
     const { data: usuarios } = await supabase.from('user_profiles' as any).select('user_id, nome');
     const nomes: Record<string, string> = {};
     for (const u of (usuarios || []) as any[]) nomes[u.user_id] = u.nome;
 
     const cfg = await getConfigDB('rastreamento_prazo_dias');
     if (cfg) setPrazoDias(Number(cfg) || 7);
+    const g = await getConfigDB('rastreamento_google_link');
+    if (g) setGoogleLink(String(g));
+    setTemplates(await loadTemplatesMap());
 
     setProjetos(list);
     setRowsByProjeto(byProj);
+    setTarefasByProjeto(tByProj);
     setNomesUsuarios(nomes);
     setLoading(false);
   }, []);
@@ -165,8 +185,38 @@ export default function ListaAcompanhamento() {
     });
 
     const novasRows = await refetchProjeto(projetoId);
+
+    // "Instalação finalizada" (fluxo 3, etapa 3) → grava data_instalacao e gera o pós-venda
+    if (concluido && fluxo === 3 && etapa === 3) {
+      const proj = projetos.find(p => p.id === projetoId);
+      const hoje = new Date();
+      await supabase.from('projetos' as any).update({ data_instalacao: hoje.toISOString().slice(0, 10) }).eq('id', projetoId);
+      try {
+        const criadas = await gerarTarefasPosVenda({
+          projetoId,
+          dataInstalacao: hoje,
+          diaLeitura: proj?.dia_leitura ?? null,
+          usuarioId: session?.user?.id,
+        });
+        if (criadas > 0) {
+          toast.success(`Pós-venda iniciado! ${criadas} lembretes criados para 3 anos.`);
+          const { data: tarefas } = await supabase.from('tarefas_posvenda' as any)
+            .select('*').eq('projeto_id', projetoId).order('data_programada', { ascending: true });
+          setTarefasByProjeto(prev => ({ ...prev, [projetoId]: (tarefas || []) as any }));
+        }
+      } catch (e: any) {
+        toast.error('Erro ao gerar pós-venda: ' + (e.message || e));
+      }
+    }
+
     if (concluido) await verificarConclusao(projetoId, novasRows);
   };
+
+  const refetchTarefas = useCallback(async (projetoId: string) => {
+    const { data } = await supabase.from('tarefas_posvenda' as any)
+      .select('*').eq('projeto_id', projetoId).order('data_programada', { ascending: true });
+    setTarefasByProjeto(prev => ({ ...prev, [projetoId]: (data || []) as any }));
+  }, []);
 
   // Atualiza apenas campo_extra (sem mexer no concluido) — para campos editáveis
   const updateExtra = async (projetoId: string, fluxo: number, etapa: number, extra: Record<string, any>) => {
@@ -383,6 +433,47 @@ export default function ListaAcompanhamento() {
                         </div>
                       );
                     })}
+
+                    {/* Fluxo 4 — Pós-venda */}
+                    {(() => {
+                      const tarefas = tarefasByProjeto[p.id] || [];
+                      const feitas = tarefas.filter(t => t.concluido).length;
+                      return (
+                        <div className="space-y-1.5 border-t border-border pt-3">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium text-foreground">🌟 Pós-venda (3 anos):</span>
+                            {tarefas.length > 0 && (
+                              <span className="text-[10px] text-muted-foreground">{feitas}/{tarefas.length} concluídas</span>
+                            )}
+                          </div>
+                          {tarefas.length === 0 ? (
+                            <p className="text-xs text-muted-foreground">
+                              Os lembretes de pós-venda serão criados automaticamente ao marcar "Instalação finalizada".
+                            </p>
+                          ) : (
+                            <div className="space-y-2">
+                              {tarefas
+                                .filter(t => !t.concluido)
+                                .slice(0, 4)
+                                .map(t => (
+                                  <TarefaPosVendaItem
+                                    key={t.id}
+                                    tarefa={t}
+                                    nome={p.nome}
+                                    telefone={p.telefone}
+                                    templateText={templates[t.template_key || ''] || ''}
+                                    googleLink={googleLink}
+                                    onChanged={() => refetchTarefas(p.id)}
+                                  />
+                                ))}
+                              <p className="text-[11px] text-muted-foreground">
+                                Veja todos os lembretes na aba <strong>Pós-venda</strong>.
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </div>
                 )}
               </div>
@@ -443,11 +534,6 @@ function EtapaCheck({
       await commitCheck(projetoId, fluxo, etapaDef.etapa, true, { data_agendamento: new Date().toISOString().slice(0, 10) });
       return;
     }
-    // Sistema em operação / Instalado (fluxo 3, etapa 4) → grava data de operação
-    if (fluxo === 3 && etapaDef.etapa === 4) {
-      await commitCheck(projetoId, fluxo, etapaDef.etapa, true, { data_operacao: new Date().toISOString().slice(0, 10) });
-      return;
-    }
     await commitCheck(projetoId, fluxo, etapaDef.etapa, true);
   };
 
@@ -498,15 +584,8 @@ function EtapaCheck({
             onChange={ev => updateExtra(projetoId, fluxo, etapaDef.etapa, { data_agendamento: ev.target.value || null })}
           />
         )}
-        {/* Data operação (fluxo 3, etapa 4) */}
-        {fluxo === 3 && etapaDef.etapa === 4 && concluido && (
-          <input
-            type="date"
-            className="solar-input py-0.5 text-xs"
-            value={ce.data_operacao ?? ''}
-            onChange={ev => updateExtra(projetoId, fluxo, etapaDef.etapa, { data_operacao: ev.target.value || null })}
-          />
-        )}
+        {/* Data agendada exibida também no resumo (fluxo 3, etapa 2) */}
+
         {/* Local de entrega marcado (fluxo 2, etapa 4) */}
         {fluxo === 2 && etapaDef.etapa === 4 && concluido && ce.local_entrega && (
           <span className="text-[11px] text-muted-foreground">({ce.local_entrega === 'empresa' ? 'TLS Solar' : 'Cliente'})</span>

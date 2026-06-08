@@ -26,7 +26,7 @@ function err(message: string, status = 400) {
 const FLUXOS: Record<number, { titulo: string; icone: string; etapas: Record<number, string> }> = {
   1: { titulo: "Homologação", icone: "📄", etapas: { 1: "Documentação recebida", 2: "Projeto protocolado", 3: "Projeto aprovado", 4: "Projeto aprovado com troca" } },
   2: { titulo: "Equipamentos", icone: "📦", etapas: { 1: "Pedido de compra realizado", 2: "Equipamento pago", 3: "Em transporte", 4: "Material entregue" } },
-  3: { titulo: "Instalação e Pós-venda", icone: "⚡", etapas: { 1: "Aguardando instalação", 2: "Instalação agendada", 3: "Instalação finalizada", 4: "Sistema em operação" } },
+  3: { titulo: "Instalação", icone: "⚡", etapas: { 1: "Aguardando instalação", 2: "Instalação agendada", 3: "Instalação finalizada", 4: "Explicar funcionamento, chaves de segurança, DPS e afins", 5: "Conectar logger no WiFi", 6: "Criar planta no monitoramento", 7: "Adicionar datalogger", 8: "Apresentar app de monitoramento ao cliente" } },
 };
 
 async function getProjetoByCodigo(codigo: string) {
@@ -71,8 +71,23 @@ async function handleGet(codigo: string) {
   }).filter((fl) => fl.etapas.length > 0);
 
   const sistemaOperacao = (rows || []).some(
-    (r: any) => r.fluxo === 3 && r.etapa === 4 && r.concluido
+    (r: any) => r.fluxo === 3 && r.etapa === 3 && r.concluido
   );
+
+  // Tarefas de pós-venda visíveis ao cliente
+  const { data: posvendaRows } = await supabase
+    .from("tarefas_posvenda")
+    .select("descricao, tipo, data_programada, concluido")
+    .eq("projeto_id", projeto.id)
+    .eq("visivel_cliente", true)
+    .order("data_programada");
+
+  const posvenda = (posvendaRows || []).map((t: any) => ({
+    descricao: t.descricao,
+    tipo: t.tipo,
+    data_programada: t.data_programada,
+    concluido: t.concluido,
+  }));
 
   const { data: avaliacao } = await supabase
     .from("avaliacoes_clientes")
@@ -85,6 +100,7 @@ async function handleGet(codigo: string) {
   return json({
     nome: projeto.nome_completo || projeto.razao_social || "Cliente",
     fluxos,
+    posvenda,
     sistema_operacao: sistemaOperacao,
     avaliacao: avaliacao || null,
   });

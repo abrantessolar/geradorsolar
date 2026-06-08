@@ -3,6 +3,8 @@ import { Calculator, Settings, Menu, X, LogOut, Package, DollarSign, Users } fro
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNewLeadsCount } from '@/components/LeadNotification';
+import { usePosVendaHojeCount } from '@/components/gestor/posvenda/usePosVendaHoje';
+import PosVendaReminder from '@/components/gestor/posvenda/PosVendaReminder';
 import logoImg from '@/assets/logo.png';
 
 export default function Layout({ children }: { children: React.ReactNode }) {
@@ -11,6 +13,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const { profile, signOut, permissions } = useAuth();
   const isProposal = location.pathname.startsWith('/proposta/');
   const newLeadsCount = useNewLeadsCount();
+  const posVendaCount = usePosVendaHojeCount();
 
   if (isProposal) return <>{children}</>;
 
@@ -19,7 +22,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const navItems = [
     ...(permissions.estoque ? [{ path: '/estoque', label: 'Estoque', icon: Package, badge: 0 }] : []),
     ...(permissions.calculadora ? [{ path: '/orcamentos', label: 'Calculadora', icon: Calculator, badge: 0 }] : []),
-    ...(hasAnyGestor || permissions.gestor_clientes ? [{ path: '/clientes', label: 'Clientes', icon: Users, badge: 0 }] : []),
+    ...(hasAnyGestor || permissions.gestor_clientes ? [{ path: '/clientes', label: 'Clientes', icon: Users, badge: posVendaCount }] : []),
     ...(permissions.gestor_custos ? [{ path: '/custos', label: 'Custos', icon: DollarSign, badge: 0 }] : []),
     ...(permissions.admin ? [{ path: '/admin', label: 'Admin', icon: Settings, badge: newLeadsCount }] : []),
   ];
@@ -108,6 +111,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       <footer className="no-print border-t border-border/50 py-6 text-center text-sm text-muted-foreground">
         <p>© {new Date().getFullYear()} Três Lagoas Solar — Energia Limpa</p>
       </footer>
+
+      <PosVendaReminder />
     </div>
   );
 }

@@ -1425,6 +1425,7 @@ export type Database = {
           data_fechamento: string | null
           data_instalacao: string | null
           data_nascimento: string | null
+          dia_leitura: number | null
           distribuidor: string | null
           email: string | null
           endereco_completo: string | null
@@ -1499,6 +1500,7 @@ export type Database = {
           data_fechamento?: string | null
           data_instalacao?: string | null
           data_nascimento?: string | null
+          dia_leitura?: number | null
           distribuidor?: string | null
           email?: string | null
           endereco_completo?: string | null
@@ -1573,6 +1575,7 @@ export type Database = {
           data_fechamento?: string | null
           data_instalacao?: string | null
           data_nascimento?: string | null
+          dia_leitura?: number | null
           distribuidor?: string | null
           email?: string | null
           endereco_completo?: string | null
@@ -1799,6 +1802,65 @@ export type Database = {
         }
         Relationships: []
       }
+      tarefas_posvenda: {
+        Row: {
+          adiamentos: number
+          concluido: boolean
+          criado_em: string
+          data_conclusao: string | null
+          data_programada: string
+          descricao: string
+          fase: number
+          id: string
+          observacao: string | null
+          projeto_id: string
+          template_key: string | null
+          tipo: string
+          usuario_id: string | null
+          visivel_cliente: boolean
+        }
+        Insert: {
+          adiamentos?: number
+          concluido?: boolean
+          criado_em?: string
+          data_conclusao?: string | null
+          data_programada: string
+          descricao: string
+          fase: number
+          id?: string
+          observacao?: string | null
+          projeto_id: string
+          template_key?: string | null
+          tipo: string
+          usuario_id?: string | null
+          visivel_cliente?: boolean
+        }
+        Update: {
+          adiamentos?: number
+          concluido?: boolean
+          criado_em?: string
+          data_conclusao?: string | null
+          data_programada?: string
+          descricao?: string
+          fase?: number
+          id?: string
+          observacao?: string | null
+          projeto_id?: string
+          template_key?: string | null
+          tipo?: string
+          usuario_id?: string | null
+          visivel_cliente?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tarefas_posvenda_projeto_id_fkey"
+            columns: ["projeto_id"]
+            isOneToOne: false
+            referencedRelation: "projetos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       unidades_consumidoras: {
         Row: {
           cep: string | null
@@ -1969,6 +2031,33 @@ export type Database = {
           id?: string
           nome?: string
           telefone?: string | null
+        }
+        Relationships: []
+      }
+      whatsapp_templates: {
+        Row: {
+          criado_em: string
+          editavel: boolean
+          id: string
+          texto: string
+          tipo: string
+          titulo: string | null
+        }
+        Insert: {
+          criado_em?: string
+          editavel?: boolean
+          id?: string
+          texto: string
+          tipo: string
+          titulo?: string | null
+        }
+        Update: {
+          criado_em?: string
+          editavel?: boolean
+          id?: string
+          texto?: string
+          tipo?: string
+          titulo?: string | null
         }
         Relationships: []
       }

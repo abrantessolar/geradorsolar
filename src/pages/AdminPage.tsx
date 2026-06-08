@@ -1089,6 +1089,7 @@ function CompanyTab() {
       </div>
 
       <RastreamentoConfigSection />
+      <WhatsAppTemplatesSection />
     </div>
   );
 }
@@ -1145,7 +1146,60 @@ function RastreamentoConfigSection() {
   );
 }
 
-/* ─── PROPOSTAS ─── */
+/* ─── TEMPLATES DE MENSAGEM (WHATSAPP) ─── */
+function WhatsAppTemplatesSection() {
+  const [templates, setTemplates] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [savingId, setSavingId] = useState<string | null>(null);
+
+  const load = async () => {
+    setLoading(true);
+    const { data } = await supabase.from('whatsapp_templates' as any).select('*').order('criado_em', { ascending: true });
+    setTemplates((data || []) as any[]);
+    setLoading(false);
+  };
+  useEffect(() => { load(); }, []);
+
+  const updateLocal = (id: string, texto: string) => {
+    setTemplates(prev => prev.map(t => t.id === id ? { ...t, texto } : t));
+  };
+
+  const salvar = async (t: any) => {
+    setSavingId(t.id);
+    const { error } = await supabase.from('whatsapp_templates' as any).update({ texto: t.texto }).eq('id', t.id);
+    setSavingId(null);
+    if (error) { toast.error(error.message); return; }
+    toast.success('Template salvo!');
+  };
+
+  return (
+    <div className="space-y-4 border-t border-border pt-6">
+      <div>
+        <h3 className="font-semibold text-primary">Templates de mensagem (WhatsApp)</h3>
+        <p className="text-xs text-muted-foreground mt-1">
+          Use <code>[nome]</code> para o nome do cliente e <code>[link avaliação]</code> para o link do Google.
+        </p>
+      </div>
+      {loading ? (
+        <div className="flex justify-center py-6"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div></div>
+      ) : (
+        <div className="space-y-3">
+          {templates.map(t => (
+            <div key={t.id} className="rounded-lg border border-border p-3 space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-sm font-medium text-foreground">{t.titulo || t.tipo}</span>
+                <button onClick={() => salvar(t)} disabled={savingId === t.id} className="solar-btn-primary text-xs py-1 px-2 flex items-center gap-1">
+                  <Save className="w-3.5 h-3.5" /> {savingId === t.id ? 'Salvando...' : 'Salvar'}
+                </button>
+              </div>
+              <textarea className="solar-input min-h-[70px] text-sm" value={t.texto} onChange={e => updateLocal(t.id, e.target.value)} />
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 function ProposalsTab() {
   const [proposals, setProposals] = useState<any[]>([]);
   const [loadingProposals, setLoadingProposals] = useState(true);
