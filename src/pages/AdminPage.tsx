@@ -1089,6 +1089,7 @@ function CompanyTab() {
       </div>
 
       <RastreamentoConfigSection />
+      <WhatsAppTemplatesSection />
     </div>
   );
 }
