@@ -85,12 +85,15 @@ export default function ListaAcompanhamento() {
   const [filtro, setFiltro] = useState<FiltroRapido>('todas');
   const [ordenacao, setOrdenacao] = useState<Ordenacao>('antigas');
   const [linkProjeto, setLinkProjeto] = useState<ProjetoLista | null>(null);
+  const [tarefasByProjeto, setTarefasByProjeto] = useState<Record<string, TarefaPosVenda[]>>({});
+  const [templates, setTemplates] = useState<Record<string, string>>({});
+  const [googleLink, setGoogleLink] = useState('');
 
   const load = useCallback(async () => {
     setLoading(true);
     const { data: projs } = await supabase
       .from('projetos' as any)
-      .select('id, nome_completo, razao_social, telefone, instalador, proposta_id, codigo_rastreamento, criado_em')
+      .select('id, nome_completo, razao_social, telefone, instalador, proposta_id, codigo_rastreamento, dia_leitura, criado_em')
       .not('status', 'eq', 'Instalado')
       .not('status', 'eq', 'Homologado')
       .order('criado_em', { ascending: false });
@@ -109,6 +112,7 @@ export default function ListaAcompanhamento() {
       instalador: p.instalador || null,
       numero_proposta: p.proposta_id ? (numeros[p.proposta_id] || null) : null,
       codigo_rastreamento: p.codigo_rastreamento || null,
+      dia_leitura: p.dia_leitura ?? null,
       criado_em: p.criado_em,
     }));
 
@@ -118,15 +122,27 @@ export default function ListaAcompanhamento() {
       (byProj[r.projeto_id] ||= []).push(r);
     }
 
+    const projIds = list.map(p => p.id);
+    const tByProj: Record<string, TarefaPosVenda[]> = {};
+    if (projIds.length) {
+      const { data: tarefas } = await supabase.from('tarefas_posvenda' as any)
+        .select('*').in('projeto_id', projIds).order('data_programada', { ascending: true });
+      for (const t of (tarefas || []) as any[]) (tByProj[t.projeto_id] ||= []).push(t);
+    }
+
     const { data: usuarios } = await supabase.from('user_profiles' as any).select('user_id, nome');
     const nomes: Record<string, string> = {};
     for (const u of (usuarios || []) as any[]) nomes[u.user_id] = u.nome;
 
     const cfg = await getConfigDB('rastreamento_prazo_dias');
     if (cfg) setPrazoDias(Number(cfg) || 7);
+    const g = await getConfigDB('rastreamento_google_link');
+    if (g) setGoogleLink(String(g));
+    setTemplates(await loadTemplatesMap());
 
     setProjetos(list);
     setRowsByProjeto(byProj);
+    setTarefasByProjeto(tByProj);
     setNomesUsuarios(nomes);
     setLoading(false);
   }, []);
