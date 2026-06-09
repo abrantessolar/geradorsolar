@@ -19,6 +19,7 @@ interface ProjetoLista {
   numero_proposta: string | null;
   codigo_rastreamento: string | null;
   dia_leitura: number | null;
+  nome_planta: string | null;
   criado_em: string;
 }
 
