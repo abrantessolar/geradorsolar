@@ -191,6 +191,12 @@ export default function ClienteDadosModal({ cliente, onClose }: { cliente: Clien
     add('NOME', fmt(c.nome_completo));
     add('CPF', fmt(c.cpf));
     add('DATA NASCIMENTO', fmtDate(c.data_nascimento));
+    if (isPJ) {
+      add('RAZÃO SOCIAL', fmt(c.razao_social));
+      add('CNPJ', fmt(c.cnpj));
+      add('REPRESENTANTE', fmt(c.nome_representante));
+      add('CPF REPRESENTANTE', fmt(c.cpf_representante));
+    }
     add('TELEFONE', fmt(c.telefone));
     if (c.telefone_2) add('TELEFONE 2', c.telefone_2);
     if (c.telefone_3) add('TELEFONE 3', c.telefone_3);
@@ -204,13 +210,21 @@ export default function ClienteDadosModal({ cliente, onClose }: { cliente: Clien
     add('UC', fmt(c.uc));
     add('CONCESSIONÁRIA', fmt(c.concessionaria));
     add('NOME PLANTA', fmt(c.nome_planta));
+    add('DIA DE LEITURA', fmt(c.dia_leitura));
+    add('WIFI REDE', fmt(c.wifi_nome));
+    add('WIFI SENHA', fmt(c.wifi_senha));
+    add('ESTRUTURA', fmt(c.estrutura));
     const sys = sistemaStr(c);
     if (sys) add('SISTEMA', sys);
+    add('GERAÇÃO ESTIMADA (kWh)', fmt(c.geracao_estimada_kwh));
     add('DATA INSTALAÇÃO', fmtDate(c.instalado_em));
     add('INSTALADOR', fmt(c.instalador));
     add('DATA VISTORIA', fmtDate(c.vistoriado_em));
     add('VALOR', fmtMoney(c.valor));
     add('FORMA PAGAMENTO', fmt(c.forma_pagamento));
+    add('DISTRIBUIDOR', fmt(c.distribuidor));
+    add('STATUS PAGAMENTO', fmt(c.pagamento_status));
+    add('DATA FECHAMENTO', fmtDate(c.data_fechamento));
     return lines.join('\n');
   };
 
