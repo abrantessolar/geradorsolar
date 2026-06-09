@@ -109,6 +109,8 @@ export default function ClienteDadosModal({ cliente, onClose }: { cliente: Clien
     return parts.length > 0 ? parts.join(', ') : '';
   })();
 
+  const isPJ = (c.tipo_pessoa === 'PJ') || (!!c.razao_social && !c.nome_completo) || !!c.cnpj;
+
   const blocks: { title: string; fields: FieldDef[] }[] = [
     {
       title: 'Identificação',
@@ -116,6 +118,12 @@ export default function ClienteDadosModal({ cliente, onClose }: { cliente: Clien
         { label: 'Nome completo', value: fmt(c.nome_completo) },
         { label: 'CPF', value: fmt(c.cpf) },
         { label: 'Data de nascimento', value: fmtDate(c.data_nascimento) },
+        ...(isPJ ? [
+          { label: 'Razão Social', value: fmt(c.razao_social) },
+          { label: 'CNPJ', value: fmt(c.cnpj) },
+          { label: 'Representante', value: fmt(c.nome_representante) },
+          { label: 'CPF do representante', value: fmt(c.cpf_representante) },
+        ] : []),
       ],
     },
     {
@@ -146,6 +154,10 @@ export default function ClienteDadosModal({ cliente, onClose }: { cliente: Clien
         { label: 'Concessionária', value: fmt(c.concessionaria) },
         { label: 'UC (Unidade Consumidora)', value: fmt(c.uc) },
         { label: 'Nome da Planta', value: fmt(c.nome_planta) },
+        { label: '📅 Dia de leitura da conta', value: fmt((c as any).dia_leitura) },
+        { label: 'WiFi — Rede', value: fmt((c as any).wifi_nome) },
+        { label: 'WiFi — Senha', value: fmt((c as any).wifi_senha) },
+        { label: 'Estrutura', value: fmt((c as any).estrutura) },
         { label: 'Data de instalação', value: fmtDate(c.instalado_em) },
         { label: 'Instalador responsável', value: fmt(c.instalador) },
         { label: 'Data de vistoria', value: fmtDate(c.vistoriado_em) },
@@ -157,6 +169,7 @@ export default function ClienteDadosModal({ cliente, onClose }: { cliente: Clien
         { label: 'Placas', value: c.qtd_placas && c.marca_placa && c.potencia_placa ? `${c.qtd_placas}x ${c.marca_placa} ${c.potencia_placa}W` : '' },
         { label: 'Inversor', value: c.marca_inversor && c.potencia_inversor ? `${c.qtd_inversores || 1}x ${c.marca_inversor} ${c.potencia_inversor}kW` : '' },
         { label: 'KWp total', value: calcKwp(c) ? `${calcKwp(c)} kWp` : '' },
+        { label: 'Geração estimada (kWh)', value: fmt((c as any).geracao_estimada_kwh) },
         { label: 'Sistema', value: fmt(c.sistema) },
       ],
     },
@@ -165,6 +178,9 @@ export default function ClienteDadosModal({ cliente, onClose }: { cliente: Clien
       fields: [
         { label: 'Valor do sistema', value: fmtMoney(c.valor) },
         { label: 'Forma de pagamento', value: fmt(c.forma_pagamento) },
+        { label: 'Distribuidor', value: fmt((c as any).distribuidor) },
+        { label: 'Status de pagamento', value: fmt((c as any).pagamento_status) },
+        { label: 'Data de fechamento', value: fmtDate((c as any).data_fechamento) },
       ],
     },
   ];
@@ -175,6 +191,12 @@ export default function ClienteDadosModal({ cliente, onClose }: { cliente: Clien
     add('NOME', fmt(c.nome_completo));
     add('CPF', fmt(c.cpf));
     add('DATA NASCIMENTO', fmtDate(c.data_nascimento));
+    if (isPJ) {
+      add('RAZÃO SOCIAL', fmt(c.razao_social));
+      add('CNPJ', fmt(c.cnpj));
+      add('REPRESENTANTE', fmt(c.nome_representante));
+      add('CPF REPRESENTANTE', fmt(c.cpf_representante));
+    }
     add('TELEFONE', fmt(c.telefone));
     if (c.telefone_2) add('TELEFONE 2', c.telefone_2);
     if (c.telefone_3) add('TELEFONE 3', c.telefone_3);
@@ -188,13 +210,21 @@ export default function ClienteDadosModal({ cliente, onClose }: { cliente: Clien
     add('UC', fmt(c.uc));
     add('CONCESSIONÁRIA', fmt(c.concessionaria));
     add('NOME PLANTA', fmt(c.nome_planta));
+    add('DIA DE LEITURA', fmt(c.dia_leitura));
+    add('WIFI REDE', fmt(c.wifi_nome));
+    add('WIFI SENHA', fmt(c.wifi_senha));
+    add('ESTRUTURA', fmt(c.estrutura));
     const sys = sistemaStr(c);
     if (sys) add('SISTEMA', sys);
+    add('GERAÇÃO ESTIMADA (kWh)', fmt(c.geracao_estimada_kwh));
     add('DATA INSTALAÇÃO', fmtDate(c.instalado_em));
     add('INSTALADOR', fmt(c.instalador));
     add('DATA VISTORIA', fmtDate(c.vistoriado_em));
     add('VALOR', fmtMoney(c.valor));
     add('FORMA PAGAMENTO', fmt(c.forma_pagamento));
+    add('DISTRIBUIDOR', fmt(c.distribuidor));
+    add('STATUS PAGAMENTO', fmt(c.pagamento_status));
+    add('DATA FECHAMENTO', fmtDate(c.data_fechamento));
     return lines.join('\n');
   };
 
