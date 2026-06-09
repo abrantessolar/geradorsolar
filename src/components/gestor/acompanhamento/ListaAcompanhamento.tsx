@@ -550,8 +550,21 @@ function EtapaCheck({
       await commitCheck(projetoId, fluxo, etapaDef.etapa, true, { data_agendamento: new Date().toISOString().slice(0, 10) });
       return;
     }
+    // Nome da planta (fluxo 3, etapa 6) → mini modal inline
+    if (fluxo === 3 && etapaDef.etapa === 6) {
+      setPlantaInput(nomePlanta || ce.nome_planta || '');
+      setPedindoPlanta(true);
+      return;
+    }
     await commitCheck(projetoId, fluxo, etapaDef.etapa, true);
   };
+
+  const confirmarPlanta = async () => {
+    setPedindoPlanta(false);
+    await updateNomePlanta(projetoId, plantaInput);
+    await commitCheck(projetoId, fluxo, etapaDef.etapa, true, { nome_planta: plantaInput.trim() || null });
+  };
+
 
   const tooltipTxt = concluido
     ? `✅ Concluído em ${fmtDataHora(row?.data_conclusao)}${row?.usuario_id && nomesUsuarios[row.usuario_id] ? ` por ${nomesUsuarios[row.usuario_id]}` : ''}`
