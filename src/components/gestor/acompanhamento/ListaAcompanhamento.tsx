@@ -233,6 +233,14 @@ export default function ListaAcompanhamento() {
     }));
   };
 
+  // Atualiza o nome da planta no projeto (sincroniza com o Novo Projeto)
+  const updateNomePlanta = async (projetoId: string, nome: string) => {
+    const valor = nome.trim() || null;
+    const { error } = await supabase.from('projetos' as any).update({ nome_planta: valor }).eq('id', projetoId);
+    if (error) { toast.error(error.message); return; }
+    setProjetos(prev => prev.map(p => p.id === projetoId ? { ...p, nome_planta: valor } : p));
+  };
+
   const verificarConclusao = async (projetoId: string, rows: RastreamentoRow[]) => {
     const { done, total } = progresso(rows);
     if (total > 0 && done === total) {
