@@ -10,7 +10,12 @@ import TarefaPosVendaItem from './TarefaPosVendaItem';
 interface TarefaComProjeto extends TarefaPosVenda {
   _nome: string;
   _telefone: string | null;
+  _marca_inversor: string | null;
+  _nome_planta: string | null;
 }
+
+function montarRotulo(t: TarefaComProjeto): string {
+  return [t._nome, t._marca_inversor, t._nome_planta].filter(Boolean).join(' — ');
 
 type FiltroData = 'pendentes' | 'hoje' | 'atrasadas' | 'futuras' | 'concluidas' | 'todas';
 
