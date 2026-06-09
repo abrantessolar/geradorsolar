@@ -16,6 +16,7 @@ interface TarefaComProjeto extends TarefaPosVenda {
 
 function montarRotulo(t: TarefaComProjeto): string {
   return [t._nome, t._marca_inversor, t._nome_planta].filter(Boolean).join(' — ');
+}
 
 type FiltroData = 'pendentes' | 'hoje' | 'atrasadas' | 'futuras' | 'concluidas' | 'todas';
 
