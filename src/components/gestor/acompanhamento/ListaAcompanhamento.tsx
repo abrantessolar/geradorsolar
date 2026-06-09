@@ -437,6 +437,8 @@ export default function ListaAcompanhamento() {
                                 getRow={getRow}
                                 commitCheck={commitCheck}
                                 updateExtra={updateExtra}
+                                nomePlanta={p.nome_planta}
+                                updateNomePlanta={updateNomePlanta}
                               />
                             ))}
                           </div>
