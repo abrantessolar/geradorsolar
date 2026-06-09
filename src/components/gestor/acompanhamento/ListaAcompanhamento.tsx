@@ -619,7 +619,30 @@ function EtapaCheck({
         {fluxo === 2 && etapaDef.etapa === 4 && concluido && ce.local_entrega && (
           <span className="text-[11px] text-muted-foreground">({ce.local_entrega === 'empresa' ? 'TLS Solar' : 'Cliente'})</span>
         )}
+        {/* Nome da planta marcado (fluxo 3, etapa 6) */}
+        {fluxo === 3 && etapaDef.etapa === 6 && concluido && (nomePlanta || ce.nome_planta) && (
+          <span className="text-[11px] text-muted-foreground">🌱 {nomePlanta || ce.nome_planta}</span>
+        )}
       </span>
+
+      {/* Mini modal inline de nome da planta */}
+      {pedindoPlanta && (
+        <span className="flex flex-col gap-1 bg-muted/50 rounded-lg p-2 text-xs">
+          <span className="font-medium text-foreground">Nome da planta de monitoramento:</span>
+          <input
+            autoFocus
+            value={plantaInput}
+            onChange={e => setPlantaInput(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter') confirmarPlanta(); }}
+            placeholder="Ex.: Cleiton Silva - TLS"
+            className="solar-input py-1 text-xs"
+          />
+          <span className="flex items-center gap-1">
+            <button onClick={confirmarPlanta} className="px-2 py-1 rounded bg-primary text-primary-foreground hover:bg-primary/90">Salvar</button>
+            <button onClick={() => setPedindoPlanta(false)} className="px-2 py-1 text-muted-foreground hover:text-foreground">Cancelar</button>
+          </span>
+        </span>
+      )}
 
       {/* Mini modal inline de entrega */}
       {pedindoEntrega && (
