@@ -124,7 +124,7 @@ export default function PosVendaAgenda() {
       <div className="space-y-2">
         {filtradas.map(t => (
           <div key={t.id}>
-            <div className="text-xs font-medium text-muted-foreground mb-1">{t._nome}</div>
+            <div className="text-xs font-medium text-muted-foreground mb-1">{montarRotulo(t)}</div>
             <TarefaPosVendaItem
               tarefa={t}
               nome={t._nome}
