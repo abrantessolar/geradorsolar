@@ -581,15 +581,21 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
 
       {/* Step 3 - Unidades Consumidoras */}
       {step === 3 && (
-        <UnidadesConsumidorasStep
-          ucs={ucs}
-          setUcs={setUcs}
-          modo={modoDistribuicao}
-          setModo={setModoDistribuicao}
-          clienteCep={form.cep}
-          clienteEndereco={[form.logradouro, form.bairro, form.cidade && form.estado ? `${form.cidade}/${form.estado}` : form.cidade || form.estado].filter(Boolean).join(', ')}
-          clienteConcessionaria={form.concessionaria}
-        />
+        <div className="space-y-4">
+          <UnidadesConsumidorasStep
+            ucs={ucs}
+            setUcs={setUcs}
+            modo={modoDistribuicao}
+            setModo={setModoDistribuicao}
+            clienteCep={form.cep}
+            clienteEndereco={[form.logradouro, form.bairro, form.cidade && form.estado ? `${form.cidade}/${form.estado}` : form.cidade || form.estado].filter(Boolean).join(', ')}
+            clienteConcessionaria={form.concessionaria}
+          />
+          <hr className="border-border" />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div><label className={labelClass}>📅 Dia de leitura aproximado da conta de luz (1 a 31)</label><input className={inputClass} type="number" min={1} max={31} value={form.dia_leitura} onChange={e => set('dia_leitura', e.target.value)} placeholder="Ex.: 15" /></div>
+          </div>
+        </div>
       )}
 
       {/* Step 4 - Comercial */}
@@ -607,7 +613,6 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
             </div>
             <div><label className={labelClass}>Data de Fechamento</label><input className={inputClass} type="date" value={form.data_fechamento} onChange={e => set('data_fechamento', e.target.value)} /></div>
             <div><label className={labelClass}>Data de Instalação</label><input className={inputClass} type="date" value={form.data_instalacao} onChange={e => set('data_instalacao', e.target.value)} /></div>
-            <div><label className={labelClass}>📅 Dia de leitura aproximado da conta de luz (1 a 31)</label><input className={inputClass} type="number" min={1} max={31} value={form.dia_leitura} onChange={e => set('dia_leitura', e.target.value)} placeholder="Ex.: 15" /></div>
           </div>
           <hr className="border-border" />
           <h3 className="text-sm font-semibold">Informações de Instalação</h3>

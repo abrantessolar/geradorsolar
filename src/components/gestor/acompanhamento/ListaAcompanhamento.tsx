@@ -19,6 +19,7 @@ interface ProjetoLista {
   numero_proposta: string | null;
   codigo_rastreamento: string | null;
   dia_leitura: number | null;
+  nome_planta: string | null;
   criado_em: string;
 }
 
@@ -93,7 +94,7 @@ export default function ListaAcompanhamento() {
     setLoading(true);
     const { data: projs } = await supabase
       .from('projetos' as any)
-      .select('id, nome_completo, razao_social, telefone, instalador, proposta_id, codigo_rastreamento, dia_leitura, criado_em')
+      .select('id, nome_completo, razao_social, telefone, instalador, proposta_id, codigo_rastreamento, dia_leitura, nome_planta, criado_em')
       .not('status', 'eq', 'Instalado')
       .not('status', 'eq', 'Homologado')
       .order('criado_em', { ascending: false });
@@ -113,6 +114,7 @@ export default function ListaAcompanhamento() {
       numero_proposta: p.proposta_id ? (numeros[p.proposta_id] || null) : null,
       codigo_rastreamento: p.codigo_rastreamento || null,
       dia_leitura: p.dia_leitura ?? null,
+      nome_planta: p.nome_planta || null,
       criado_em: p.criado_em,
     }));
 
@@ -229,6 +231,14 @@ export default function ListaAcompanhamento() {
       ...prev,
       [projetoId]: (prev[projetoId] || []).map(r => r.id === row.id ? { ...r, campo_extra } : r),
     }));
+  };
+
+  // Atualiza o nome da planta no projeto (sincroniza com o Novo Projeto)
+  const updateNomePlanta = async (projetoId: string, nome: string) => {
+    const valor = nome.trim() || null;
+    const { error } = await supabase.from('projetos' as any).update({ nome_planta: valor }).eq('id', projetoId);
+    if (error) { toast.error(error.message); return; }
+    setProjetos(prev => prev.map(p => p.id === projetoId ? { ...p, nome_planta: valor } : p));
   };
 
   const verificarConclusao = async (projetoId: string, rows: RastreamentoRow[]) => {
@@ -427,6 +437,8 @@ export default function ListaAcompanhamento() {
                                 getRow={getRow}
                                 commitCheck={commitCheck}
                                 updateExtra={updateExtra}
+                                nomePlanta={p.nome_planta}
+                                updateNomePlanta={updateNomePlanta}
                               />
                             ))}
                           </div>
@@ -495,7 +507,7 @@ export default function ListaAcompanhamento() {
 
 // ============ Checkbox individual de uma etapa ============
 function EtapaCheck({
-  projetoId, fluxo, etapaDef, rows, nomesUsuarios, getRow, commitCheck, updateExtra,
+  projetoId, fluxo, etapaDef, rows, nomesUsuarios, getRow, commitCheck, updateExtra, nomePlanta, updateNomePlanta,
 }: {
   projetoId: string;
   fluxo: number;
@@ -505,8 +517,12 @@ function EtapaCheck({
   getRow: (p: string, f: number, e: number) => RastreamentoRow | undefined;
   commitCheck: (p: string, f: number, e: number, concluido: boolean, extra?: Record<string, any>) => Promise<void>;
   updateExtra: (p: string, f: number, e: number, extra: Record<string, any>) => Promise<void>;
+  nomePlanta: string | null;
+  updateNomePlanta: (p: string, nome: string) => Promise<void>;
 }) {
   const [pedindoEntrega, setPedindoEntrega] = useState(false);
+  const [pedindoPlanta, setPedindoPlanta] = useState(false);
+  const [plantaInput, setPlantaInput] = useState('');
   const row = getRow(projetoId, fluxo, etapaDef.etapa);
   const concluido = !!row?.concluido;
   const ce = row?.campo_extra || {};
@@ -534,8 +550,21 @@ function EtapaCheck({
       await commitCheck(projetoId, fluxo, etapaDef.etapa, true, { data_agendamento: new Date().toISOString().slice(0, 10) });
       return;
     }
+    // Nome da planta (fluxo 3, etapa 6) → mini modal inline
+    if (fluxo === 3 && etapaDef.etapa === 6) {
+      setPlantaInput(nomePlanta || ce.nome_planta || '');
+      setPedindoPlanta(true);
+      return;
+    }
     await commitCheck(projetoId, fluxo, etapaDef.etapa, true);
   };
+
+  const confirmarPlanta = async () => {
+    setPedindoPlanta(false);
+    await updateNomePlanta(projetoId, plantaInput);
+    await commitCheck(projetoId, fluxo, etapaDef.etapa, true, { nome_planta: plantaInput.trim() || null });
+  };
+
 
   const tooltipTxt = concluido
     ? `✅ Concluído em ${fmtDataHora(row?.data_conclusao)}${row?.usuario_id && nomesUsuarios[row.usuario_id] ? ` por ${nomesUsuarios[row.usuario_id]}` : ''}`
@@ -590,7 +619,30 @@ function EtapaCheck({
         {fluxo === 2 && etapaDef.etapa === 4 && concluido && ce.local_entrega && (
           <span className="text-[11px] text-muted-foreground">({ce.local_entrega === 'empresa' ? 'TLS Solar' : 'Cliente'})</span>
         )}
+        {/* Nome da planta marcado (fluxo 3, etapa 6) */}
+        {fluxo === 3 && etapaDef.etapa === 6 && concluido && (nomePlanta || ce.nome_planta) && (
+          <span className="text-[11px] text-muted-foreground">🌱 {nomePlanta || ce.nome_planta}</span>
+        )}
       </span>
+
+      {/* Mini modal inline de nome da planta */}
+      {pedindoPlanta && (
+        <span className="flex flex-col gap-1 bg-muted/50 rounded-lg p-2 text-xs">
+          <span className="font-medium text-foreground">Nome da planta de monitoramento:</span>
+          <input
+            autoFocus
+            value={plantaInput}
+            onChange={e => setPlantaInput(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter') confirmarPlanta(); }}
+            placeholder="Ex.: Cleiton Silva - TLS"
+            className="solar-input py-1 text-xs"
+          />
+          <span className="flex items-center gap-1">
+            <button onClick={confirmarPlanta} className="px-2 py-1 rounded bg-primary text-primary-foreground hover:bg-primary/90">Salvar</button>
+            <button onClick={() => setPedindoPlanta(false)} className="px-2 py-1 text-muted-foreground hover:text-foreground">Cancelar</button>
+          </span>
+        </span>
+      )}
 
       {/* Mini modal inline de entrega */}
       {pedindoEntrega && (

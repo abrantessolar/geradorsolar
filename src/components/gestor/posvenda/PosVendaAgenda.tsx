@@ -10,6 +10,12 @@ import TarefaPosVendaItem from './TarefaPosVendaItem';
 interface TarefaComProjeto extends TarefaPosVenda {
   _nome: string;
   _telefone: string | null;
+  _marca_inversor: string | null;
+  _nome_planta: string | null;
+}
+
+function montarRotulo(t: TarefaComProjeto): string {
+  return [t._nome, t._marca_inversor, t._nome_planta].filter(Boolean).join(' — ');
 }
 
 type FiltroData = 'pendentes' | 'hoje' | 'atrasadas' | 'futuras' | 'concluidas' | 'todas';
@@ -34,13 +40,15 @@ export default function PosVendaAgenda() {
     setLoading(true);
     const { data } = await supabase
       .from('tarefas_posvenda' as any)
-      .select('*, projetos!tarefas_posvenda_projeto_id_fkey(nome_completo, razao_social, telefone)')
+      .select('*, projetos!tarefas_posvenda_projeto_id_fkey(nome_completo, razao_social, telefone, marca_inversor, nome_planta)')
       .order('data_programada', { ascending: true });
 
     const list: TarefaComProjeto[] = (data || []).map((t: any) => ({
       ...t,
       _nome: t.projetos?.nome_completo || t.projetos?.razao_social || 'Cliente',
       _telefone: t.projetos?.telefone || null,
+      _marca_inversor: t.projetos?.marca_inversor || null,
+      _nome_planta: t.projetos?.nome_planta || null,
     }));
     setTarefas(list);
 
@@ -116,7 +124,7 @@ export default function PosVendaAgenda() {
       <div className="space-y-2">
         {filtradas.map(t => (
           <div key={t.id}>
-            <div className="text-xs font-medium text-muted-foreground mb-1">{t._nome}</div>
+            <div className="text-xs font-medium text-muted-foreground mb-1">{montarRotulo(t)}</div>
             <TarefaPosVendaItem
               tarefa={t}
               nome={t._nome}
