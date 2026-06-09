@@ -507,7 +507,7 @@ export default function ListaAcompanhamento() {
 
 // ============ Checkbox individual de uma etapa ============
 function EtapaCheck({
-  projetoId, fluxo, etapaDef, rows, nomesUsuarios, getRow, commitCheck, updateExtra,
+  projetoId, fluxo, etapaDef, rows, nomesUsuarios, getRow, commitCheck, updateExtra, nomePlanta, updateNomePlanta,
 }: {
   projetoId: string;
   fluxo: number;
@@ -517,8 +517,12 @@ function EtapaCheck({
   getRow: (p: string, f: number, e: number) => RastreamentoRow | undefined;
   commitCheck: (p: string, f: number, e: number, concluido: boolean, extra?: Record<string, any>) => Promise<void>;
   updateExtra: (p: string, f: number, e: number, extra: Record<string, any>) => Promise<void>;
+  nomePlanta: string | null;
+  updateNomePlanta: (p: string, nome: string) => Promise<void>;
 }) {
   const [pedindoEntrega, setPedindoEntrega] = useState(false);
+  const [pedindoPlanta, setPedindoPlanta] = useState(false);
+  const [plantaInput, setPlantaInput] = useState('');
   const row = getRow(projetoId, fluxo, etapaDef.etapa);
   const concluido = !!row?.concluido;
   const ce = row?.campo_extra || {};
