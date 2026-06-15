@@ -61,6 +61,7 @@ export default function AdminPage() {
     { key: 'social' as const, label: 'Provas Sociais', icon: Image, roles: ['admin'] },
     { key: 'site_content' as const, label: 'Conteúdo do Site', icon: Globe, roles: ['admin'] },
     { key: 'faq' as const, label: 'FAQ', icon: HelpCircle, roles: ['admin'] },
+    { key: 'ativar_posvenda' as const, label: 'Ativar Pós-venda', icon: Zap, roles: ['admin'] },
   ];
 
   const visibleTabs = adminTabs.filter(t => t.roles.includes(profile?.role || ''));
