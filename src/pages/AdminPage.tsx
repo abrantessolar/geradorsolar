@@ -15,8 +15,9 @@ import {
 import { formatCurrency } from '@/data/calculations';
 import { AdminSettings, IrradiationEntry, PriceTableEntry, SocialProof, BRAZILIAN_STATES, CA_MATERIAL_TABLE_DEFAULT, LINE_NAMES } from '@/data/types';
 import type { Distributor, PriceTableLineDetails } from '@/data/types';
-import { Users, DollarSign, Settings, MapPin, Building2, FileText, Image, Plus, Trash2, Save, Eye, Wand2, AlertCircle, Upload, Check, ChevronDown, UserPlus, Edit2, X, Globe, CheckCircle, AlertTriangle, Share2, Megaphone, Cpu, HelpCircle } from 'lucide-react';
+import { Users, DollarSign, Settings, MapPin, Building2, FileText, Image, Plus, Trash2, Save, Eye, Wand2, AlertCircle, Upload, Check, ChevronDown, UserPlus, Edit2, X, Globe, CheckCircle, AlertTriangle, Share2, Megaphone, Cpu, HelpCircle, Zap } from 'lucide-react';
 import LeadsTab from '@/components/admin/LeadsTab';
+import AtivarPosVendaTab from '@/components/admin/AtivarPosVendaTab';
 import { useNewLeadsCount } from '@/components/LeadNotification';
 import { toast } from 'sonner';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
