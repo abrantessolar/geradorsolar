@@ -102,6 +102,51 @@ function dataConta(instalacao: Date, diaLeitura: number, contaN: number): Date {
   return addDays(leitura, 5);
 }
 
+export interface TarefaRow {
+  fase: number;
+  tipo: TarefaTipo;
+  template_key: string;
+  descricao: string;
+  data_programada: string;
+  visivel_cliente: boolean;
+  concluido: boolean;
+  adiamentos: number;
+}
+
+/**
+ * Constrói as linhas de tarefas do plano de pós-venda para uma data de
+ * instalação. Se `onlyFuture` for true, ignora as datas que já passaram.
+ */
+export function construirTarefas(opts: {
+  dataInstalacao: Date;
+  diaLeitura: number | null;
+  onlyFuture?: boolean;
+}): TarefaRow[] {
+  const { dataInstalacao, diaLeitura, onlyFuture } = opts;
+  const dia = diaLeitura ?? dataInstalacao.getDate();
+  const hojeISO = toISODate(new Date());
+
+  let rows: TarefaRow[] = PLANO.map((p) => {
+    let data: Date;
+    if (p.conta) data = dataConta(dataInstalacao, dia, p.conta);
+    else if (p.meses != null) data = addMonths(dataInstalacao, p.meses);
+    else data = addDays(dataInstalacao, p.dias || 0);
+    return {
+      fase: p.fase,
+      tipo: p.tipo,
+      template_key: p.template_key,
+      descricao: p.descricao,
+      data_programada: toISODate(data),
+      visivel_cliente: p.visivel_cliente,
+      concluido: false,
+      adiamentos: 0,
+    };
+  });
+
+  if (onlyFuture) rows = rows.filter((r) => r.data_programada >= hojeISO);
+  return rows;
+}
+
 /**
  * Gera (se ainda não existirem) todas as tarefas de pós-venda para um projeto.
  * Retorna a quantidade criada.
@@ -121,28 +166,54 @@ export async function gerarTarefasPosVenda(opts: {
     .eq('projeto_id', projetoId);
   if ((count || 0) > 0) return 0;
 
-  const dia = diaLeitura ?? dataInstalacao.getDate();
-  const rows = PLANO.map((p) => {
-    let data: Date;
-    if (p.conta) data = dataConta(dataInstalacao, dia, p.conta);
-    else if (p.meses != null) data = addMonths(dataInstalacao, p.meses);
-    else data = addDays(dataInstalacao, p.dias || 0);
-    return {
-      projeto_id: projetoId,
-      fase: p.fase,
-      tipo: p.tipo,
-      template_key: p.template_key,
-      descricao: p.descricao,
-      data_programada: toISODate(data),
-      visivel_cliente: p.visivel_cliente,
-      concluido: false,
-      adiamentos: 0,
-    };
-  });
+  const rows = construirTarefas({ dataInstalacao, diaLeitura }).map((r) => ({
+    ...r,
+    projeto_id: projetoId,
+  }));
 
   const { error } = await supabase.from('tarefas_posvenda' as any).insert(rows);
   if (error) throw error;
   return rows.length;
+}
+
+export interface AtivacaoResultado {
+  created: number;
+  proximo: { data: string; descricao: string } | null;
+}
+
+/**
+ * Ativa o pós-venda para um cliente da base histórica (clientes_base),
+ * criando apenas os lembretes futuros a partir da data de instalação.
+ */
+export async function ativarPosVendaCliente(opts: {
+  clienteBaseId: string;
+  dataInstalacao: Date;
+  diaLeitura: number | null;
+}): Promise<AtivacaoResultado> {
+  const { clienteBaseId, dataInstalacao, diaLeitura } = opts;
+
+  // Evita duplicar
+  const { count } = await supabase
+    .from('tarefas_posvenda' as any)
+    .select('id', { count: 'exact', head: true })
+    .eq('cliente_base_id', clienteBaseId);
+  if ((count || 0) > 0) return { created: 0, proximo: null };
+
+  const base = construirTarefas({ dataInstalacao, diaLeitura, onlyFuture: true });
+  if (base.length === 0) return { created: 0, proximo: null };
+
+  const rows = base.map((r) => ({ ...r, cliente_base_id: clienteBaseId }));
+  const { error } = await supabase.from('tarefas_posvenda' as any).insert(rows);
+  if (error) throw error;
+
+  const ordenadas = [...base].sort((a, b) =>
+    a.data_programada < b.data_programada ? -1 : 1
+  );
+  const prox = ordenadas[0];
+  return {
+    created: rows.length,
+    proximo: prox ? { data: prox.data_programada, descricao: prox.descricao } : null,
+  };
 }
 
 /** Substitui variáveis [nome] e [link avaliação] no texto */
