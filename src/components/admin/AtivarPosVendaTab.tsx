@@ -58,19 +58,22 @@ export default function AtivarPosVendaTab() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const [{ data: cli, count }, { data: tar }] = await Promise.all([
+    const [{ data: cli }, { data: tar }, { count: totalCount }] = await Promise.all([
       supabase
         .from('clientes_base' as any)
-        .select('id, nome_completo, instalado_em, dia_leitura, marca_inversor, nome_planta', { count: 'exact' })
+        .select('id, nome_completo, instalado_em, dia_leitura, marca_inversor, nome_planta')
         .not('instalado_em', 'is', null)
         .order('instalado_em', { ascending: false }),
       supabase
         .from('tarefas_posvenda' as any)
         .select('cliente_base_id')
         .not('cliente_base_id', 'is', null),
+      supabase
+        .from('clientes_base' as any)
+        .select('id', { count: 'exact', head: true }),
     ]);
 
-    setTotalClientes(count || 0);
+    setTotalClientes(totalCount || 0);
     const comTarefas = new Set((tar || []).map((t: any) => t.cliente_base_id));
     const rows: ClienteRow[] = (cli || []).map((c: any) => ({
       id: c.id,
