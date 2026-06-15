@@ -100,6 +100,7 @@ export default function AdminPage() {
       {tab === 'social' && <SocialTab />}
       {tab === 'site_content' && <SiteContentTab />}
       {tab === 'faq' && <FaqTab />}
+      {tab === 'ativar_posvenda' && isAdmin && <AtivarPosVendaTab />}
     </div>
   );
 }
