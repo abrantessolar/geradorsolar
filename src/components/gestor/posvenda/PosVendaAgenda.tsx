@@ -40,16 +40,20 @@ export default function PosVendaAgenda() {
     setLoading(true);
     const { data } = await supabase
       .from('tarefas_posvenda' as any)
-      .select('*, projetos!tarefas_posvenda_projeto_id_fkey(nome_completo, razao_social, telefone, marca_inversor, nome_planta)')
+      .select('*, projetos!tarefas_posvenda_projeto_id_fkey(nome_completo, razao_social, telefone, marca_inversor, nome_planta), clientes_base!tarefas_posvenda_cliente_base_id_fkey(nome_completo, telefone, marca_inversor, nome_planta)')
       .order('data_programada', { ascending: true });
 
-    const list: TarefaComProjeto[] = (data || []).map((t: any) => ({
-      ...t,
-      _nome: t.projetos?.nome_completo || t.projetos?.razao_social || 'Cliente',
-      _telefone: t.projetos?.telefone || null,
-      _marca_inversor: t.projetos?.marca_inversor || null,
-      _nome_planta: t.projetos?.nome_planta || null,
-    }));
+    const list: TarefaComProjeto[] = (data || []).map((t: any) => {
+      const p = t.projetos;
+      const c = t.clientes_base;
+      return {
+        ...t,
+        _nome: p?.nome_completo || p?.razao_social || c?.nome_completo || 'Cliente',
+        _telefone: p?.telefone || c?.telefone || null,
+        _marca_inversor: p?.marca_inversor || c?.marca_inversor || null,
+        _nome_planta: p?.nome_planta || c?.nome_planta || null,
+      };
+    });
     setTarefas(list);
 
     setTemplates(await loadTemplatesMap());
