@@ -162,6 +162,7 @@ export type Database = {
           dados_inversor: string | null
           dados_paineis: string | null
           data_nascimento: string | null
+          dia_leitura: number | null
           email: string | null
           endereco: string | null
           estado: string | null
@@ -216,6 +217,7 @@ export type Database = {
           dados_inversor?: string | null
           dados_paineis?: string | null
           data_nascimento?: string | null
+          dia_leitura?: number | null
           email?: string | null
           endereco?: string | null
           estado?: string | null
@@ -270,6 +272,7 @@ export type Database = {
           dados_inversor?: string | null
           dados_paineis?: string | null
           data_nascimento?: string | null
+          dia_leitura?: number | null
           email?: string | null
           endereco?: string | null
           estado?: string | null
@@ -1805,6 +1808,7 @@ export type Database = {
       tarefas_posvenda: {
         Row: {
           adiamentos: number
+          cliente_base_id: string | null
           concluido: boolean
           criado_em: string
           data_conclusao: string | null
@@ -1813,7 +1817,7 @@ export type Database = {
           fase: number
           id: string
           observacao: string | null
-          projeto_id: string
+          projeto_id: string | null
           template_key: string | null
           tipo: string
           usuario_id: string | null
@@ -1821,6 +1825,7 @@ export type Database = {
         }
         Insert: {
           adiamentos?: number
+          cliente_base_id?: string | null
           concluido?: boolean
           criado_em?: string
           data_conclusao?: string | null
@@ -1829,7 +1834,7 @@ export type Database = {
           fase: number
           id?: string
           observacao?: string | null
-          projeto_id: string
+          projeto_id?: string | null
           template_key?: string | null
           tipo: string
           usuario_id?: string | null
@@ -1837,6 +1842,7 @@ export type Database = {
         }
         Update: {
           adiamentos?: number
+          cliente_base_id?: string | null
           concluido?: boolean
           criado_em?: string
           data_conclusao?: string | null
@@ -1845,13 +1851,20 @@ export type Database = {
           fase?: number
           id?: string
           observacao?: string | null
-          projeto_id?: string
+          projeto_id?: string | null
           template_key?: string | null
           tipo?: string
           usuario_id?: string | null
           visivel_cliente?: boolean
         }
         Relationships: [
+          {
+            foreignKeyName: "tarefas_posvenda_cliente_base_id_fkey"
+            columns: ["cliente_base_id"]
+            isOneToOne: false
+            referencedRelation: "clientes_base"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "tarefas_posvenda_projeto_id_fkey"
             columns: ["projeto_id"]
