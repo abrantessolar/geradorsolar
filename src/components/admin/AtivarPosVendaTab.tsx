@@ -233,12 +233,8 @@ export default function AtivarPosVendaTab() {
               <option value="com">Com dia definido</option>
               <option value="sem">Sem dia definido</option>
             </select>
-            <button onClick={ativarTodos} disabled={!!massa}
-              className="ml-auto inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium bg-yellow-500 text-black hover:bg-yellow-400 disabled:opacity-50">
-              <Zap className="w-4 h-4" />
-              {massa ? `Ativando... ${massa.done}/${massa.total}` : 'Ativar todos com dia de leitura'}
-            </button>
           </div>
+
 
           {fila.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-10">Nenhum cliente aguardando ativação.</p>
