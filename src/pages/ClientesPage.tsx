@@ -25,6 +25,8 @@ export default function ClientesPage() {
   const [mainTab, setMainTab] = useState<MainTab>(((location.state as any)?.tab as MainTab) || 'projetos');
   const [inlineView, setInlineView] = useState<InlineView>('none');
   const [editId, setEditId] = useState<string | null>(null);
+  const [prefillProjeto, setPrefillProjeto] = useState<Record<string, any> | null>(null);
+  const [prefillPropostaId, setPrefillPropostaId] = useState<string | null>(null);
 
   const [projetos, setProjetos] = useState<Projeto[]>([]);
   const [clientes, setClientes] = useState<ClienteBase[]>([]);
