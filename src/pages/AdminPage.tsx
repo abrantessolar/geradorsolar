@@ -1365,6 +1365,10 @@ function ProposalsTab() {
                       <button onClick={() => handleCopyLink(p.id)} className="text-green-600 hover:text-green-500" title="Copiar link">
                         <Share2 className="w-4 h-4" />
                       </button>
+                      <button onClick={() => handleCriarObra(p)} className="text-emerald-600 hover:text-emerald-500" title="Criar obra a partir da proposta">
+                        <Building2 className="w-4 h-4" />
+                      </button>
+
                       <button onClick={() => handleArchive(p.id)} className="text-muted-foreground hover:text-destructive" title="Arquivar">
                         <Trash2 className="w-4 h-4" />
                       </button>
