@@ -102,6 +102,7 @@ export default function ClienteEditModal({ cliente, onClose, onSaved }: {
       const { error } = await supabase.from('projetos' as any).update({
         nome_completo: form.nome_completo || null,
         cpf: form.cpf || null,
+        email: form.email || null,
         endereco_completo: enderecoFull || form.endereco || null,
         telefone: form.telefone || null,
         unidade_geradora_codigo_uc: form.uc || null,
@@ -121,6 +122,7 @@ export default function ClienteEditModal({ cliente, onClose, onSaved }: {
         wifi_nome: form.wifi_nome || null,
         wifi_senha: form.wifi_senha || null,
         cabo_usado: form.cabo_usado || null,
+        satisfacao: form.satisfacao || null,
         projeto_enviado_em: form.projeto_enviado_em || null,
         projeto_aprovado: form.projeto_aprovado || null,
         vistoriado_em: form.vistoriado_em || null,
