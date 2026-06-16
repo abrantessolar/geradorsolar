@@ -54,7 +54,7 @@ export default function AtivarPosVendaTab() {
   const [promptCliente, setPromptCliente] = useState<ClienteRow | null>(null);
   const [promptDia, setPromptDia] = useState('');
   const [ativando, setAtivando] = useState<string | null>(null);
-  const [massa, setMassa] = useState<{ done: number; total: number } | null>(null);
+  
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -173,33 +173,8 @@ export default function AtivarPosVendaTab() {
     await ativar(cli, dia);
   };
 
-  const ativarTodos = async () => {
-    const alvos = categorias.aguardando.filter((c) => c.dia_leitura != null);
-    if (alvos.length === 0) {
-      toast.info('Nenhum cliente com dia de leitura preenchido para ativar.');
-      return;
-    }
-    setMassa({ done: 0, total: alvos.length });
-    let totalLembretes = 0;
-    let ativados = 0;
-    for (let i = 0; i < alvos.length; i++) {
-      const c = alvos[i];
-      try {
-        const res = await ativarPosVendaCliente({
-          clienteBaseId: c.id,
-          dataInstalacao: parseDate(c.instalado_em),
-          diaLeitura: c.dia_leitura,
-        });
-        if (res.created > 0) { ativados++; totalLembretes += res.created; }
-        setClientes((prev) => prev.map((x) => (x.id === c.id ? { ...x, temTarefas: true } : x)));
-      } catch { /* continua */ }
-      setMassa({ done: i + 1, total: alvos.length });
-    }
-    setMassa(null);
-    toast.success(`✅ ${ativados} clientes ativados com sucesso! ${totalLembretes} lembretes futuros criados.`);
-  };
-
   if (loading) return <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
+
 
   const resumo = [
     { icon: CheckCircle2, label: 'Com pós-venda ativo', value: categorias.ativo.length, color: 'text-green-600' },
@@ -258,12 +233,8 @@ export default function AtivarPosVendaTab() {
               <option value="com">Com dia definido</option>
               <option value="sem">Sem dia definido</option>
             </select>
-            <button onClick={ativarTodos} disabled={!!massa}
-              className="ml-auto inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium bg-yellow-500 text-black hover:bg-yellow-400 disabled:opacity-50">
-              <Zap className="w-4 h-4" />
-              {massa ? `Ativando... ${massa.done}/${massa.total}` : 'Ativar todos com dia de leitura'}
-            </button>
           </div>
+
 
           {fila.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-10">Nenhum cliente aguardando ativação.</p>
@@ -302,7 +273,7 @@ export default function AtivarPosVendaTab() {
                         />
                       </td>
                       <td className="py-2 pr-3 text-right">
-                        <button onClick={() => handleAtivarClick(c)} disabled={ativando === c.id || !!massa}
+                        <button onClick={() => handleAtivarClick(c)} disabled={ativando === c.id}
                           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-green-600 text-white hover:bg-green-700 disabled:opacity-50">
                           {ativando === c.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Zap className="w-3.5 h-3.5" />}
                           Ativar pós-venda

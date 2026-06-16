@@ -110,6 +110,7 @@ export default function ClientesPage() {
       outros_nomes: p.outros_nomes || [],
       observacoes_historico: p.observacoes_historico || [],
       instalador: p.instalador || null,
+      dia_leitura: p.dia_leitura ?? null,
     }));
 
     setClientes([...fromBase, ...fromProjetos]);

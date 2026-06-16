@@ -1,7 +1,10 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import type { Projeto } from '@/pages/GestorPage';
 import type { ClienteBase } from './ClientesList';
-import { Edit2, FileText, Snowflake, Image as ImageIcon, CheckCircle, Trash2, ClipboardList, Package, FileDown, Eye, Search, ArrowUpRight, GripVertical, Link2 } from 'lucide-react';
+import { Edit2, FileText, Snowflake, Image as ImageIcon, CheckCircle, Trash2, ClipboardList, Package, FileDown, Eye, Search, ArrowUpRight, GripVertical, Link2, Zap, Loader2, CheckCircle2, X } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import { ativarPosVendaCliente, ativarPosVendaProjeto } from '@/lib/posvendaTarefas';
 import WhatsAppLink from './WhatsAppLink';
 import { generateFichaInstalacao } from '@/lib/generateFichaInstalacao';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -79,6 +82,126 @@ export default function ProjetosUnificados({
   const [editCliente, setEditCliente] = useState<ClienteBase | null>(null);
   const [deleteCliente, setDeleteCliente] = useState<ClienteBase | null>(null);
   const [promoverCliente, setPromoverCliente] = useState<ClienteBase | null>(null);
+
+  // Pós-venda (Instalados)
+  const [posvendaAtivos, setPosvendaAtivos] = useState<Set<string>>(new Set());
+  const [diasLeitura, setDiasLeitura] = useState<Record<string, number | null>>({});
+  const [ativandoPosVenda, setAtivandoPosVenda] = useState<string | null>(null);
+  const [promptPosVenda, setPromptPosVenda] = useState<ClienteBase | null>(null);
+  const [promptDia, setPromptDia] = useState('');
+
+  const loadPosVendaStatus = useCallback(async () => {
+    const [{ data: porCliente }, { data: porProjeto }] = await Promise.all([
+      supabase.from('tarefas_posvenda' as any).select('cliente_base_id').not('cliente_base_id', 'is', null),
+      supabase.from('tarefas_posvenda' as any).select('projeto_id').not('projeto_id', 'is', null),
+    ]);
+    const set = new Set<string>();
+    (porCliente || []).forEach((t: any) => set.add(`cb:${t.cliente_base_id}`));
+    (porProjeto || []).forEach((t: any) => set.add(`pj:${t.projeto_id}`));
+    setPosvendaAtivos(set);
+  }, []);
+
+  useEffect(() => { loadPosVendaStatus(); }, [loadPosVendaStatus]);
+
+  // Chave de status de pós-venda + id real para um cliente da lista Instalados
+  const posvendaKey = (c: ClienteBase): string =>
+    c.id.startsWith('proj-') ? `pj:${c.id.replace('proj-', '')}` : `cb:${c.id}`;
+  const isPosVendaAtivo = (c: ClienteBase): boolean => posvendaAtivos.has(posvendaKey(c));
+  const getDiaLeitura = (c: ClienteBase): number | null =>
+    c.id in diasLeitura ? diasLeitura[c.id] : (c.dia_leitura ?? null);
+
+  const salvarDiaLeitura = async (c: ClienteBase, valor: number | null) => {
+    setDiasLeitura(prev => ({ ...prev, [c.id]: valor }));
+    const ehProjeto = c.id.startsWith('proj-');
+    const realId = ehProjeto ? c.id.replace('proj-', '') : c.id;
+    const { error } = await supabase
+      .from((ehProjeto ? 'projetos' : 'clientes_base') as any)
+      .update({ dia_leitura: valor })
+      .eq('id', realId);
+    if (error) toast.error('Erro ao salvar dia de leitura: ' + error.message);
+  };
+
+  const executarAtivacao = async (c: ClienteBase, diaLeitura: number | null) => {
+    if (!c.instalado_em) { toast.error('Cliente sem data de instalação.'); return; }
+    setAtivandoPosVenda(c.id);
+    try {
+      const dataInstalacao = new Date(c.instalado_em + 'T00:00:00');
+      const ehProjeto = c.id.startsWith('proj-');
+      const res = ehProjeto
+        ? await ativarPosVendaProjeto({ projetoId: c.id.replace('proj-', ''), dataInstalacao, diaLeitura })
+        : await ativarPosVendaCliente({ clienteBaseId: c.id, dataInstalacao, diaLeitura });
+      if (res.created === 0) {
+        toast.info('Nenhum lembrete futuro a criar para este cliente.');
+      } else {
+        const prox = res.proximo ? `\nPróximo lembrete: ${fmtDateBR(res.proximo.data)} — ${res.proximo.descricao}` : '';
+        toast.success(`✅ Pós-venda ativado! ${res.created} lembretes futuros criados.${prox}`);
+      }
+      setPosvendaAtivos(prev => new Set(prev).add(posvendaKey(c)));
+    } catch (e: any) {
+      toast.error('Erro ao ativar pós-venda: ' + (e?.message || e));
+    } finally {
+      setAtivandoPosVenda(null);
+    }
+  };
+
+  const handleAtivarPosVenda = (c: ClienteBase) => {
+    const dia = getDiaLeitura(c);
+    if (dia == null) {
+      setPromptPosVenda(c);
+      setPromptDia('');
+    } else {
+      executarAtivacao(c, dia);
+    }
+  };
+
+  const confirmarPromptPosVenda = async () => {
+    if (!promptPosVenda) return;
+    const dia = parseInt(promptDia, 10);
+    if (!Number.isInteger(dia) || dia < 1 || dia > 31) {
+      toast.error('Informe um dia válido (1 a 31).');
+      return;
+    }
+    await salvarDiaLeitura(promptPosVenda, dia);
+    const c = promptPosVenda;
+    setPromptPosVenda(null);
+    await executarAtivacao(c, dia);
+  };
+
+  const renderPosVendaAcao = (c: ClienteBase) => {
+    if (isPosVendaAtivo(c)) {
+      return (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 text-[10px] font-medium whitespace-nowrap">
+          <CheckCircle2 className="w-3 h-3" /> Ativo
+        </span>
+      );
+    }
+    const dia = getDiaLeitura(c);
+    return (
+      <span className="inline-flex items-center gap-1">
+        <input
+          type="number" min={1} max={31}
+          value={dia ?? ''}
+          placeholder="dia"
+          title="Dia de leitura da conta"
+          onChange={(e) => {
+            const v = e.target.value === '' ? null : Math.max(1, Math.min(31, parseInt(e.target.value, 10) || 0));
+            setDiasLeitura(prev => ({ ...prev, [c.id]: v }));
+          }}
+          onBlur={(e) => {
+            const v = e.target.value === '' ? null : Math.max(1, Math.min(31, parseInt(e.target.value, 10) || 0));
+            salvarDiaLeitura(c, v);
+          }}
+          className="solar-input w-12 py-0.5 px-1 text-center text-xs"
+        />
+        <Tip label="Ativar pós-venda">
+          <button onClick={() => handleAtivarPosVenda(c)} disabled={ativandoPosVenda === c.id}
+            className="text-green-600 hover:text-green-700 disabled:opacity-50">
+            {ativandoPosVenda === c.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
+          </button>
+        </Tip>
+      </span>
+    );
+  };
 
   const q = search.toLowerCase();
 
@@ -222,6 +345,7 @@ export default function ProjetosUnificados({
           <Tip label="Ver dados"><button onClick={() => setDadosCliente(c)} className="text-primary hover:text-primary/80"><Eye className="w-4 h-4" /></button></Tip>
           <Tip label="Editar"><button onClick={() => setEditCliente(c)} className="text-primary hover:text-primary/80"><Edit2 className="w-4 h-4" /></button></Tip>
           <Tip label="Promover para obra"><button onClick={() => setPromoverCliente(c)} className="text-primary hover:text-primary/80"><ArrowUpRight className="w-4 h-4" /></button></Tip>
+          {renderPosVendaAcao(c)}
           <Tip label="Excluir"><button onClick={() => setDeleteCliente(c)} className="text-destructive hover:text-destructive/80"><Trash2 className="w-4 h-4" /></button></Tip>
         </TooltipProvider>
       </div>
@@ -376,6 +500,7 @@ export default function ProjetosUnificados({
                      <button onClick={() => setDadosCliente(c)} className="text-primary hover:text-primary/80 p-1"><Eye className="w-4 h-4" /></button>
                      <button onClick={() => setEditCliente(c)} className="text-primary hover:text-primary/80 p-1"><Edit2 className="w-4 h-4" /></button>
                      <button onClick={() => setPromoverCliente(c)} className="text-primary hover:text-primary/80 p-1"><ArrowUpRight className="w-4 h-4" /></button>
+                     <span className="px-1"><TooltipProvider>{renderPosVendaAcao(c)}</TooltipProvider></span>
                      <button onClick={() => setDeleteCliente(c)} className="text-destructive hover:text-destructive/80 p-1 ml-auto"><Trash2 className="w-4 h-4" /></button>
                    </div>
                 </div>
@@ -502,6 +627,34 @@ export default function ProjetosUnificados({
           </div>
         </div>
       )}
+
+      {/* Prompt dia de leitura para ativar pós-venda */}
+      {promptPosVenda && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setPromptPosVenda(null)}>
+          <div className="bg-background rounded-xl shadow-xl max-w-sm w-full p-6 space-y-4" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <h3 className="font-bold">Dia de leitura da conta</h3>
+              <button onClick={() => setPromptPosVenda(null)}><X className="w-4 h-4 text-muted-foreground" /></button>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Qual o dia aproximado de leitura da conta de luz de <strong>{displayClienteName(promptPosVenda)}</strong>? (1 a 31)
+            </p>
+            <input
+              type="number" min={1} max={31} autoFocus
+              value={promptDia}
+              onChange={e => setPromptDia(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') confirmarPromptPosVenda(); }}
+              className="solar-input w-full"
+              placeholder="Ex.: 15"
+            />
+            <div className="flex justify-end gap-2">
+              <button onClick={() => setPromptPosVenda(null)} className="px-4 py-2 rounded-lg text-sm font-medium bg-muted text-muted-foreground">Cancelar</button>
+              <button onClick={confirmarPromptPosVenda} className="px-4 py-2 rounded-lg text-sm font-medium bg-green-600 text-white hover:bg-green-700">Ativar pós-venda</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
+
   );
 }
