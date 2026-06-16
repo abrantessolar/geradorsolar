@@ -216,6 +216,41 @@ export async function ativarPosVendaCliente(opts: {
   };
 }
 
+/**
+ * Ativa o pós-venda para um projeto já instalado (ainda sem registro em
+ * clientes_base), criando apenas os lembretes futuros a partir da instalação.
+ */
+export async function ativarPosVendaProjeto(opts: {
+  projetoId: string;
+  dataInstalacao: Date;
+  diaLeitura: number | null;
+}): Promise<AtivacaoResultado> {
+  const { projetoId, dataInstalacao, diaLeitura } = opts;
+
+  // Evita duplicar
+  const { count } = await supabase
+    .from('tarefas_posvenda' as any)
+    .select('id', { count: 'exact', head: true })
+    .eq('projeto_id', projetoId);
+  if ((count || 0) > 0) return { created: 0, proximo: null };
+
+  const base = construirTarefas({ dataInstalacao, diaLeitura, onlyFuture: true });
+  if (base.length === 0) return { created: 0, proximo: null };
+
+  const rows = base.map((r) => ({ ...r, projeto_id: projetoId }));
+  const { error } = await supabase.from('tarefas_posvenda' as any).insert(rows);
+  if (error) throw error;
+
+  const ordenadas = [...base].sort((a, b) =>
+    a.data_programada < b.data_programada ? -1 : 1
+  );
+  const prox = ordenadas[0];
+  return {
+    created: rows.length,
+    proximo: prox ? { data: prox.data_programada, descricao: prox.descricao } : null,
+  };
+}
+
 /** Substitui variáveis [nome] e [link avaliação] no texto */
 export function aplicarVariaveis(texto: string, nome: string, googleLink: string): string {
   return (texto || '')
