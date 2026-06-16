@@ -260,14 +260,14 @@ export default function ClienteEditModal({ cliente, onClose, onSaved }: {
 
           <TabsContent value="equipamentos" className="space-y-4 pt-2">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div><label className={lb}>Tipo de Inversor</label>
-                <select className={ic} value={form.tipo_inversor} onChange={e => set('tipo_inversor', e.target.value)}>
+              <div><label className={lb}>Tipo de Inversor {isFromProjeto && <span className="text-[10px] text-muted-foreground">(salvo só na base)</span>}</label>
+                <select className={ic} value={form.tipo_inversor} onChange={e => set('tipo_inversor', e.target.value)} disabled={isFromProjeto}>
                   <option value="String">String</option>
                   <option value="Micro">Micro</option>
                 </select>
               </div>
               <div><label className={lb}>Marca do Inversor</label><input className={ic} value={form.marca_inversor} onChange={e => set('marca_inversor', e.target.value)} /></div>
-              <div><label className={lb}>Modelo do Inversor</label><input className={ic} value={form.modelo_inversor} onChange={e => set('modelo_inversor', e.target.value)} /></div>
+              <div><label className={lb}>Modelo do Inversor {isFromProjeto && <span className="text-[10px] text-muted-foreground">(salvo só na base)</span>}</label><input className={ic} value={form.modelo_inversor} onChange={e => set('modelo_inversor', e.target.value)} disabled={isFromProjeto} /></div>
               <div><label className={lb}>Potência Inversor (kW)</label><input className={ic} value={form.potencia_inversor} onChange={e => set('potencia_inversor', e.target.value)} /></div>
               <div><label className={lb}>Qtd Inversores</label><input className={ic} type="number" min="1" value={form.qtd_inversores} onChange={e => set('qtd_inversores', e.target.value)} /></div>
               <div className="border-t pt-4 md:col-span-2"><h3 className="text-sm font-semibold text-primary">Placas</h3></div>
