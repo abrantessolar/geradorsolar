@@ -508,6 +508,14 @@ export default function ListaAcompanhamento() {
             onGenerated={load}
           />
         )}
+
+        {kitProjeto && (
+          <KitPrecoModal
+            projetoId={kitProjeto.id}
+            nomeCliente={kitProjeto.nome}
+            onClose={() => setKitProjeto(null)}
+          />
+        )}
       </div>
     </TooltipProvider>
   );
