@@ -627,6 +627,34 @@ export default function ProjetosUnificados({
           </div>
         </div>
       )}
+
+      {/* Prompt dia de leitura para ativar pós-venda */}
+      {promptPosVenda && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setPromptPosVenda(null)}>
+          <div className="bg-background rounded-xl shadow-xl max-w-sm w-full p-6 space-y-4" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <h3 className="font-bold">Dia de leitura da conta</h3>
+              <button onClick={() => setPromptPosVenda(null)}><X className="w-4 h-4 text-muted-foreground" /></button>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Qual o dia aproximado de leitura da conta de luz de <strong>{displayClienteName(promptPosVenda)}</strong>? (1 a 31)
+            </p>
+            <input
+              type="number" min={1} max={31} autoFocus
+              value={promptDia}
+              onChange={e => setPromptDia(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') confirmarPromptPosVenda(); }}
+              className="solar-input w-full"
+              placeholder="Ex.: 15"
+            />
+            <div className="flex justify-end gap-2">
+              <button onClick={() => setPromptPosVenda(null)} className="px-4 py-2 rounded-lg text-sm font-medium bg-muted text-muted-foreground">Cancelar</button>
+              <button onClick={confirmarPromptPosVenda} className="px-4 py-2 rounded-lg text-sm font-medium bg-green-600 text-white hover:bg-green-700">Ativar pós-venda</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
+
   );
 }
