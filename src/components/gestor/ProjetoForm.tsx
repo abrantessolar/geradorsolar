@@ -32,10 +32,12 @@ type PlacaOption = { id: string; marca: string; modelo: string; potencia_wp: num
 type InversorOption = { id: string; marca: string; modelo: string; potencia_kw: number; tipo: string };
 type PessoaRelacionada = { nome: string; relacao: string; cpf: string; telefone: string };
 
-export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
+export default function ProjetoForm({ projetoId, onSaved, onCancel, prefill, propostaId }: {
   projetoId?: string;
   onSaved: () => void;
   onCancel?: () => void;
+  prefill?: Record<string, any>;
+  propostaId?: string | null;
 }) {
   const { session } = useAuth();
   const [step, setStep] = useState(1);
