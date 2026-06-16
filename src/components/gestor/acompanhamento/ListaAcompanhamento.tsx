@@ -7,6 +7,7 @@ import { FLUXOS, colunaAtual, type RastreamentoRow, type EtapaDef } from '@/lib/
 import { getConfigDB } from '@/data/supabaseStore';
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
 import LinkRastreamentoModal from './LinkRastreamentoModal';
+import KitPrecoModal from './KitPrecoModal';
 import { gerarTarefasPosVenda, type TarefaPosVenda } from '@/lib/posvendaTarefas';
 import { loadTemplatesMap } from '@/components/gestor/posvenda/PosVendaAgenda';
 import TarefaPosVendaItem from '@/components/gestor/posvenda/TarefaPosVendaItem';
@@ -86,6 +87,7 @@ export default function ListaAcompanhamento() {
   const [filtro, setFiltro] = useState<FiltroRapido>('todas');
   const [ordenacao, setOrdenacao] = useState<Ordenacao>('antigas');
   const [linkProjeto, setLinkProjeto] = useState<ProjetoLista | null>(null);
+  const [kitProjeto, setKitProjeto] = useState<ProjetoLista | null>(null);
   const [tarefasByProjeto, setTarefasByProjeto] = useState<Record<string, TarefaPosVenda[]>>({});
   const [templates, setTemplates] = useState<Record<string, string>>({});
   const [googleLink, setGoogleLink] = useState('');
@@ -187,6 +189,12 @@ export default function ListaAcompanhamento() {
     });
 
     const novasRows = await refetchProjeto(projetoId);
+
+    // "Equipamento pago" (fluxo 2, etapa 2) → pede o preço do kit para ir aos Custos
+    if (concluido && fluxo === 2 && etapa === 2) {
+      const proj = projetos.find(p => p.id === projetoId);
+      if (proj) setKitProjeto(proj);
+    }
 
     // "Instalação finalizada" (fluxo 3, etapa 3) → grava data_instalacao e gera o pós-venda
     if (concluido && fluxo === 3 && etapa === 3) {
@@ -498,6 +506,14 @@ export default function ListaAcompanhamento() {
             projeto={linkProjeto}
             onClose={() => setLinkProjeto(null)}
             onGenerated={load}
+          />
+        )}
+
+        {kitProjeto && (
+          <KitPrecoModal
+            projetoId={kitProjeto.id}
+            nomeCliente={kitProjeto.nome}
+            onClose={() => setKitProjeto(null)}
           />
         )}
       </div>

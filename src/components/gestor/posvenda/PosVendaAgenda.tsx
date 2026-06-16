@@ -10,12 +10,19 @@ import TarefaPosVendaItem from './TarefaPosVendaItem';
 interface TarefaComProjeto extends TarefaPosVenda {
   _nome: string;
   _telefone: string | null;
+  _email: string | null;
   _marca_inversor: string | null;
   _nome_planta: string | null;
+  _avaliacao: { nota: number; comentario: string | null } | null;
 }
 
 function montarRotulo(t: TarefaComProjeto): string {
   return [t._nome, t._marca_inversor, t._nome_planta].filter(Boolean).join(' — ');
+}
+
+function estrelas(n: number): string {
+  const v = Math.max(0, Math.min(5, Math.round(n)));
+  return '★'.repeat(v) + '☆'.repeat(5 - v);
 }
 
 type FiltroData = 'pendentes' | 'hoje' | 'atrasadas' | 'futuras' | 'concluidas' | 'todas';
@@ -40,8 +47,22 @@ export default function PosVendaAgenda() {
     setLoading(true);
     const { data } = await supabase
       .from('tarefas_posvenda' as any)
-      .select('*, projetos!tarefas_posvenda_projeto_id_fkey(nome_completo, razao_social, telefone, marca_inversor, nome_planta), clientes_base!tarefas_posvenda_cliente_base_id_fkey(nome_completo, telefone, marca_inversor, nome_planta)')
+      .select('*, projetos!tarefas_posvenda_projeto_id_fkey(nome_completo, razao_social, telefone, email, marca_inversor, nome_planta), clientes_base!tarefas_posvenda_cliente_base_id_fkey(nome_completo, telefone, email, marca_inversor, nome_planta)')
       .order('data_programada', { ascending: true });
+
+    // Avaliações por projeto
+    const projIds = [...new Set(((data || []) as any[]).map((t: any) => t.projeto_id).filter(Boolean))];
+    const avMap: Record<string, { nota: number; comentario: string | null }> = {};
+    if (projIds.length) {
+      const { data: avs } = await supabase
+        .from('avaliacoes_clientes' as any)
+        .select('projeto_id, nota, comentario, criado_em')
+        .in('projeto_id', projIds)
+        .order('criado_em', { ascending: false });
+      for (const a of (avs || []) as any[]) {
+        if (!avMap[a.projeto_id]) avMap[a.projeto_id] = { nota: a.nota, comentario: a.comentario };
+      }
+    }
 
     const list: TarefaComProjeto[] = (data || []).map((t: any) => {
       const p = t.projetos;
@@ -50,8 +71,10 @@ export default function PosVendaAgenda() {
         ...t,
         _nome: p?.nome_completo || p?.razao_social || c?.nome_completo || 'Cliente',
         _telefone: p?.telefone || c?.telefone || null,
+        _email: p?.email || c?.email || null,
         _marca_inversor: p?.marca_inversor || c?.marca_inversor || null,
         _nome_planta: p?.nome_planta || c?.nome_planta || null,
+        _avaliacao: t.projeto_id ? (avMap[t.projeto_id] || null) : null,
       };
     });
     setTarefas(list);
@@ -128,7 +151,15 @@ export default function PosVendaAgenda() {
       <div className="space-y-2">
         {filtradas.map(t => (
           <div key={t.id}>
-            <div className="text-xs font-medium text-muted-foreground mb-1">{montarRotulo(t)}</div>
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mb-1">
+              <span className="text-xs font-medium text-muted-foreground">{montarRotulo(t)}</span>
+              {t._email && <span className="text-[11px] text-muted-foreground">✉️ {t._email}</span>}
+              {t._avaliacao && (
+                <span className="inline-flex items-center gap-1 text-[11px] text-yellow-600" title={t._avaliacao.comentario || ''}>
+                  <span className="text-yellow-500">{estrelas(t._avaliacao.nota)}</span> {t._avaliacao.nota}/5
+                </span>
+              )}
+            </div>
             <TarefaPosVendaItem
               tarefa={t}
               nome={t._nome}

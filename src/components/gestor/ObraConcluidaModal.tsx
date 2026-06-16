@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { CheckCircle } from 'lucide-react';
+import { gerarTarefasPosVenda } from '@/lib/posvendaTarefas';
 
 type Instalador = { id: string; nome: string };
 
@@ -34,6 +35,31 @@ export default function ObraConcluidaModal({ projetoId, currentInstalador, onClo
 
     const { error } = await supabase.from('projetos' as any).update(update).eq('id', projetoId);
     if (error) { toast.error('Erro: ' + error.message); setSaving(false); return; }
+
+    // Descobre o dia de leitura do projeto para programar o pós-venda
+    const { data: proj } = await supabase
+      .from('projetos' as any)
+      .select('dia_leitura')
+      .eq('id', projetoId)
+      .maybeSingle();
+    const diaLeitura = (proj as any)?.dia_leitura ?? null;
+
+    // Ativa o pós-venda (3 anos) automaticamente — idempotente, não duplica
+    try {
+      const criadas = await gerarTarefasPosVenda({
+        projetoId,
+        dataInstalacao: new Date(dataInstalacao + 'T00:00:00'),
+        diaLeitura,
+      });
+      if (criadas > 0) toast.success(`Pós-venda iniciado! ${criadas} lembretes criados para 3 anos.`);
+    } catch (e: any) {
+      toast.error('Obra concluída, mas houve erro ao gerar o pós-venda: ' + (e?.message || e));
+    }
+
+    // Propaga o dia de leitura para o cliente da base, se já existir vínculo
+    if (diaLeitura != null) {
+      await supabase.from('clientes_base' as any).update({ dia_leitura: diaLeitura }).eq('projeto_id', projetoId);
+    }
 
     // Sync to Sheets
     supabase.functions.invoke('sync-to-sheets', { body: { project_id: projetoId, sync_all: false } }).catch(() => {});

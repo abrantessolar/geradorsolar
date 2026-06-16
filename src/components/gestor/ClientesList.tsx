@@ -50,6 +50,19 @@ export type ClienteBase = {
   outros_nomes?: any;
   instalador?: string | null;
   dia_leitura?: number | null;
+  email?: string | null;
+  cabo_usado?: string | null;
+  estrutura?: string | null;
+  geracao_estimada_kwh?: number | null;
+  modelo_placa?: string | null;
+  modelo_inversor?: string | null;
+  status?: string | null;
+  congelado?: boolean | null;
+  congelado_ate?: string | null;
+  motivo_congelamento?: string | null;
+  codigo_rastreamento?: string | null;
+  layout_url?: string | null;
+  local_entrega?: string | null;
 };
 
 function calcKwp(qtd?: number | null, potW?: string | null): string {

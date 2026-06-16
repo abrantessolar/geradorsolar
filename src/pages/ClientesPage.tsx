@@ -58,7 +58,8 @@ export default function ClientesPage() {
   const loadClientes = useCallback(async () => {
     setLoadingClientes(true);
     const { data: cb } = await supabase.from('clientes_base' as any).select('*').order('criado_em', { ascending: false });
-    const { data: installed } = await supabase.from('projetos' as any).select('*')
+    const { data: installed } = await supabase.from('projetos' as any)
+      .select('*, equipamentos_inversores!projetos_inversor_id_fkey(tipo)')
       .in('status', ['Instalado', 'Homologado'])
       .order('criado_em', { ascending: false });
 
@@ -71,6 +72,7 @@ export default function ClientesPage() {
       nome_completo: p.nome_completo || p.razao_social,
       razao_social: p.razao_social || null,
       cpf: p.cpf || p.cnpj,
+      email: p.email || null,
       endereco: p.endereco_completo,
       telefone: p.telefone,
       uc: p.unidade_geradora_codigo_uc,
@@ -84,7 +86,10 @@ export default function ClientesPage() {
       qtd_inversores: p.qtd_inversores,
       marca_inversor: p.marca_inversor,
       potencia_inversor: p.potencia_inversor,
-      tipo_inversor: null,
+      tipo_inversor: p.equipamentos_inversores?.tipo || null,
+      cabo_usado: p.cabo_usado || null,
+      estrutura: p.estrutura || null,
+      geracao_estimada_kwh: p.geracao_estimada_kwh ?? null,
       fornecedor: p.distribuidor,
       valor: p.preco_venda,
       forma_pagamento: p.forma_pagamento,
@@ -93,7 +98,14 @@ export default function ClientesPage() {
       instalado_em: p.data_instalacao,
       vistoriado_em: p.vistoriado_em,
       nome_planta: p.nome_planta || null,
-      satisfacao: null,
+      satisfacao: p.satisfacao ?? null,
+      status: p.status || null,
+      congelado: p.congelado ?? null,
+      congelado_ate: p.congelado_ate || null,
+      motivo_congelamento: p.motivo_congelamento || null,
+      codigo_rastreamento: p.codigo_rastreamento || null,
+      layout_url: p.layout_url || null,
+      local_entrega: p.local_entrega || null,
       origem: 'promovido_de_obra',
       projeto_id: p.id,
       telefone_2: null,
@@ -152,6 +164,7 @@ export default function ClientesPage() {
       potencia_inversor: cliente.potencia_inversor,
       preco_venda: cliente.valor,
       forma_pagamento: cliente.forma_pagamento,
+      dia_leitura: cliente.dia_leitura ?? null,
       status: 'Vendido',
     };
     const { data, error } = await supabase.from('projetos' as any).insert(projeto).select('id').single();

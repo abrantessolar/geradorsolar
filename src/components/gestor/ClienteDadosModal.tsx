@@ -44,6 +44,12 @@ interface FieldDef {
   label: string;
   value: string;
   isPhone?: boolean;
+  href?: string;
+}
+
+function estrelas(n: number): string {
+  const v = Math.max(0, Math.min(5, Math.round(n)));
+  return '★'.repeat(v) + '☆'.repeat(5 - v);
 }
 
 function CopyButton({ text }: { text: string }) {
@@ -58,7 +64,7 @@ function CopyButton({ text }: { text: string }) {
   );
 }
 
-function FieldRow({ label, value, isPhone }: FieldDef) {
+function FieldRow({ label, value, isPhone, href }: FieldDef) {
   if (!value) {
     return (
       <div className="flex items-center justify-between py-1.5 px-2">
@@ -72,7 +78,13 @@ function FieldRow({ label, value, isPhone }: FieldDef) {
       <div className="min-w-0 flex-1">
         <span className="text-xs text-muted-foreground">{label}</span>
         <div className="text-sm font-medium flex items-center gap-2">
-          {isPhone ? <WhatsAppLink phone={value} /> : <span>{value}</span>}
+          {isPhone ? (
+            <WhatsAppLink phone={value} />
+          ) : href ? (
+            <a href={href} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline break-all">{value}</a>
+          ) : (
+            <span>{value}</span>
+          )}
         </div>
       </div>
       <CopyButton text={value} />
@@ -94,11 +106,15 @@ export default function ClienteDadosModal({ cliente, onClose }: { cliente: Clien
 
   // Load UCs from new table
   const [ucsData, setUcsData] = useState<any[]>([]);
+  const [avaliacao, setAvaliacao] = useState<{ nota: number; comentario: string | null; criado_em: string } | null>(null);
   useEffect(() => {
     const projetoId = c.projeto_id || (c.id?.startsWith?.('proj-') ? c.id.replace('proj-', '') : null) || c.id;
     if (!projetoId) return;
     supabase.from('unidades_consumidoras' as any).select('*').eq('projeto_id', projetoId).order('prioridade', { ascending: true }).then(({ data }) => {
       if (data && data.length > 0) setUcsData(data as any[]);
+    });
+    supabase.from('avaliacoes_clientes' as any).select('nota, comentario, criado_em').eq('projeto_id', projetoId).order('criado_em', { ascending: false }).limit(1).maybeSingle().then(({ data }) => {
+      if (data) setAvaliacao(data as any);
     });
   }, [c]);
 
@@ -167,7 +183,11 @@ export default function ClienteDadosModal({ cliente, onClose }: { cliente: Clien
       title: 'Equipamentos',
       fields: [
         { label: 'Placas', value: c.qtd_placas && c.marca_placa && c.potencia_placa ? `${c.qtd_placas}x ${c.marca_placa} ${c.potencia_placa}W` : '' },
+        { label: 'Modelo da placa', value: fmt((c as any).modelo_placa) },
         { label: 'Inversor', value: c.marca_inversor && c.potencia_inversor ? `${c.qtd_inversores || 1}x ${c.marca_inversor} ${c.potencia_inversor}kW` : '' },
+        { label: 'Modelo do inversor', value: fmt((c as any).modelo_inversor) },
+        { label: 'Tipo de inversor', value: (c as any).tipo_inversor ? (String((c as any).tipo_inversor).toLowerCase() === 'micro' ? 'Microinversor' : 'String') : '' },
+        { label: 'Cabo usado', value: fmt((c as any).cabo_usado) },
         { label: 'KWp total', value: calcKwp(c) ? `${calcKwp(c)} kWp` : '' },
         { label: 'Geração estimada (kWh)', value: fmt((c as any).geracao_estimada_kwh) },
         { label: 'Sistema', value: fmt(c.sistema) },
@@ -181,6 +201,31 @@ export default function ClienteDadosModal({ cliente, onClose }: { cliente: Clien
         { label: 'Distribuidor', value: fmt((c as any).distribuidor) },
         { label: 'Status de pagamento', value: fmt((c as any).pagamento_status) },
         { label: 'Data de fechamento', value: fmtDate((c as any).data_fechamento) },
+      ],
+    },
+    {
+      title: 'Workflow do Projeto',
+      fields: [
+        { label: 'Status do projeto', value: fmt((c as any).status) },
+        { label: 'Projeto enviado em', value: fmtDate((c as any).projeto_enviado_em) },
+        { label: 'Projeto aprovado em', value: fmtDate((c as any).projeto_aprovado) },
+        { label: 'Data de fechamento', value: fmtDate((c as any).data_fechamento) },
+        { label: 'Congelado', value: (c as any).congelado ? 'Sim' : '' },
+        { label: 'Congelado até', value: fmtDate((c as any).congelado_ate) },
+        { label: 'Motivo do congelamento', value: fmt((c as any).motivo_congelamento) },
+      ],
+    },
+    {
+      title: 'Logística e Monitoramento',
+      fields: [
+        { label: 'Local de entrega', value: (c as any).local_entrega ? (String((c as any).local_entrega) === 'empresa' ? 'TLS Solar' : 'Cliente') : '' },
+        {
+          label: 'Código de rastreamento',
+          value: fmt((c as any).codigo_rastreamento),
+          href: (c as any).codigo_rastreamento ? `${window.location.origin}/acompanhar/${(c as any).codigo_rastreamento}` : undefined,
+        },
+        { label: 'Layout da obra', value: (c as any).layout_url ? 'Abrir arquivo' : '', href: (c as any).layout_url || undefined },
+        { label: 'Satisfação (registro)', value: fmt((c as any).satisfacao) },
       ],
     },
   ];
@@ -253,6 +298,33 @@ export default function ClienteDadosModal({ cliente, onClose }: { cliente: Clien
 
         <div className="p-4 space-y-5">
           {blocks.map(b => <Block key={b.title} title={b.title} fields={b.fields} />)}
+
+          {/* Avaliação do cliente (página pública de rastreamento) */}
+          {avaliacao && (
+            <div className="space-y-1">
+              <h3 className="text-sm font-semibold text-primary border-b border-border pb-1 mb-1">Avaliação do Cliente</h3>
+              <div className="px-2 py-1.5 space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-lg text-yellow-500 tracking-wide">{estrelas(avaliacao.nota)}</span>
+                  <span className="text-sm font-medium">{avaliacao.nota}/5</span>
+                  <span className="text-xs text-muted-foreground ml-auto">{new Date(avaliacao.criado_em).toLocaleDateString('pt-BR')}</span>
+                </div>
+                {avaliacao.comentario && (
+                  <p className="text-sm whitespace-pre-wrap text-foreground/90">"{avaliacao.comentario}"</p>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Dados legados (texto bruto importado) */}
+          {(c.dados_paineis || c.dados_inversor) && (
+            <div className="space-y-1">
+              <h3 className="text-sm font-semibold text-primary border-b border-border pb-1 mb-1">Dados Legados</h3>
+              {c.dados_paineis && <FieldRow label="Painéis (texto)" value={fmt(c.dados_paineis)} />}
+              {c.dados_inversor && <FieldRow label="Inversor (texto)" value={fmt(c.dados_inversor)} />}
+            </div>
+          )}
+
 
           {/* Unidades Consumidoras */}
           {ucsData.length > 0 && (() => {

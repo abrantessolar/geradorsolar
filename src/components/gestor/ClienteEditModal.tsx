@@ -102,6 +102,7 @@ export default function ClienteEditModal({ cliente, onClose, onSaved }: {
       const { error } = await supabase.from('projetos' as any).update({
         nome_completo: form.nome_completo || null,
         cpf: form.cpf || null,
+        email: form.email || null,
         endereco_completo: enderecoFull || form.endereco || null,
         telefone: form.telefone || null,
         unidade_geradora_codigo_uc: form.uc || null,
@@ -121,6 +122,7 @@ export default function ClienteEditModal({ cliente, onClose, onSaved }: {
         wifi_nome: form.wifi_nome || null,
         wifi_senha: form.wifi_senha || null,
         cabo_usado: form.cabo_usado || null,
+        satisfacao: form.satisfacao || null,
         projeto_enviado_em: form.projeto_enviado_em || null,
         projeto_aprovado: form.projeto_aprovado || null,
         vistoriado_em: form.vistoriado_em || null,
@@ -222,8 +224,8 @@ export default function ClienteEditModal({ cliente, onClose, onSaved }: {
                   {form.telefone && <WhatsAppLink phone={form.telefone} />}
                 </div>
               </div>
-              <div><label className={lb}>Telefone 2</label><input className={ic} value={form.telefone_2} onChange={e => set('telefone_2', e.target.value)} /></div>
-              <div><label className={lb}>Telefone 3</label><input className={ic} value={form.telefone_3} onChange={e => set('telefone_3', e.target.value)} /></div>
+              <div><label className={lb}>Telefone 2 {isFromProjeto && <span className="text-[10px] text-muted-foreground">(salvo só na base)</span>}</label><input className={ic} value={form.telefone_2} onChange={e => set('telefone_2', e.target.value)} disabled={isFromProjeto} /></div>
+              <div><label className={lb}>Telefone 3 {isFromProjeto && <span className="text-[10px] text-muted-foreground">(salvo só na base)</span>}</label><input className={ic} value={form.telefone_3} onChange={e => set('telefone_3', e.target.value)} disabled={isFromProjeto} /></div>
               <div className="md:col-span-2">
                 <label className={lb}>Observações</label>
                 <textarea className={`${ic} min-h-[80px]`} value={form.observacoes} onChange={e => set('observacoes', e.target.value)} />
@@ -243,7 +245,7 @@ export default function ClienteEditModal({ cliente, onClose, onSaved }: {
                 </div>
               </div>
               <div><label className={lb}>Logradouro</label><input className={ic} value={form.logradouro} onChange={e => set('logradouro', e.target.value)} /></div>
-              <div><label className={lb}>Número</label><input className={ic} value={form.numero} onChange={e => set('numero', e.target.value)} /></div>
+              <div><label className={lb}>Número {isFromProjeto && <span className="text-[10px] text-muted-foreground">(salvo só na base)</span>}</label><input className={ic} value={form.numero} onChange={e => set('numero', e.target.value)} disabled={isFromProjeto} /></div>
               <div><label className={lb}>Complemento</label><input className={ic} value={form.complemento} onChange={e => set('complemento', e.target.value)} /></div>
               <div><label className={lb}>Bairro</label><input className={ic} value={form.bairro} onChange={e => set('bairro', e.target.value)} /></div>
               <div><label className={lb}>Cidade</label><input className={ic} value={form.cidade} onChange={e => set('cidade', e.target.value)} /></div>
@@ -258,19 +260,19 @@ export default function ClienteEditModal({ cliente, onClose, onSaved }: {
 
           <TabsContent value="equipamentos" className="space-y-4 pt-2">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div><label className={lb}>Tipo de Inversor</label>
-                <select className={ic} value={form.tipo_inversor} onChange={e => set('tipo_inversor', e.target.value)}>
+              <div><label className={lb}>Tipo de Inversor {isFromProjeto && <span className="text-[10px] text-muted-foreground">(salvo só na base)</span>}</label>
+                <select className={ic} value={form.tipo_inversor} onChange={e => set('tipo_inversor', e.target.value)} disabled={isFromProjeto}>
                   <option value="String">String</option>
                   <option value="Micro">Micro</option>
                 </select>
               </div>
               <div><label className={lb}>Marca do Inversor</label><input className={ic} value={form.marca_inversor} onChange={e => set('marca_inversor', e.target.value)} /></div>
-              <div><label className={lb}>Modelo do Inversor</label><input className={ic} value={form.modelo_inversor} onChange={e => set('modelo_inversor', e.target.value)} /></div>
+              <div><label className={lb}>Modelo do Inversor {isFromProjeto && <span className="text-[10px] text-muted-foreground">(salvo só na base)</span>}</label><input className={ic} value={form.modelo_inversor} onChange={e => set('modelo_inversor', e.target.value)} disabled={isFromProjeto} /></div>
               <div><label className={lb}>Potência Inversor (kW)</label><input className={ic} value={form.potencia_inversor} onChange={e => set('potencia_inversor', e.target.value)} /></div>
               <div><label className={lb}>Qtd Inversores</label><input className={ic} type="number" min="1" value={form.qtd_inversores} onChange={e => set('qtd_inversores', e.target.value)} /></div>
               <div className="border-t pt-4 md:col-span-2"><h3 className="text-sm font-semibold text-primary">Placas</h3></div>
               <div><label className={lb}>Marca da Placa</label><input className={ic} value={form.marca_placa} onChange={e => set('marca_placa', e.target.value)} /></div>
-              <div><label className={lb}>Modelo da Placa</label><input className={ic} value={form.modelo_placa} onChange={e => set('modelo_placa', e.target.value)} /></div>
+              <div><label className={lb}>Modelo da Placa {isFromProjeto && <span className="text-[10px] text-muted-foreground">(salvo só na base)</span>}</label><input className={ic} value={form.modelo_placa} onChange={e => set('modelo_placa', e.target.value)} disabled={isFromProjeto} /></div>
               <div><label className={lb}>Potência da Placa (W)</label><input className={ic} value={form.potencia_placa} onChange={e => set('potencia_placa', e.target.value)} /></div>
               <div><label className={lb}>Qtd Placas</label><input className={ic} type="number" min="1" value={form.qtd_placas} onChange={e => set('qtd_placas', e.target.value)} /></div>
               <div>
@@ -278,8 +280,8 @@ export default function ClienteEditModal({ cliente, onClose, onSaved }: {
                 <div className="solar-input bg-muted/50 cursor-not-allowed">{kwp}</div>
               </div>
               <div><label className={lb}>Sistema</label><input className={ic} value={form.sistema} onChange={e => set('sistema', e.target.value)} placeholder="Ex: 5,75KWp" /></div>
-              <div className="md:col-span-2"><label className={lb}>Dados Painéis (original)</label><textarea className={`${ic} min-h-[60px]`} value={form.dados_paineis} onChange={e => set('dados_paineis', e.target.value)} /></div>
-              <div className="md:col-span-2"><label className={lb}>Dados Inversor (original)</label><textarea className={`${ic} min-h-[60px]`} value={form.dados_inversor} onChange={e => set('dados_inversor', e.target.value)} /></div>
+              <div className="md:col-span-2"><label className={lb}>Dados Painéis (original) {isFromProjeto && <span className="text-[10px] text-muted-foreground">(salvo só na base)</span>}</label><textarea className={`${ic} min-h-[60px]`} value={form.dados_paineis} onChange={e => set('dados_paineis', e.target.value)} disabled={isFromProjeto} /></div>
+              <div className="md:col-span-2"><label className={lb}>Dados Inversor (original) {isFromProjeto && <span className="text-[10px] text-muted-foreground">(salvo só na base)</span>}</label><textarea className={`${ic} min-h-[60px]`} value={form.dados_inversor} onChange={e => set('dados_inversor', e.target.value)} disabled={isFromProjeto} /></div>
             </div>
           </TabsContent>
 
