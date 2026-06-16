@@ -245,7 +245,7 @@ export default function ClienteEditModal({ cliente, onClose, onSaved }: {
                 </div>
               </div>
               <div><label className={lb}>Logradouro</label><input className={ic} value={form.logradouro} onChange={e => set('logradouro', e.target.value)} /></div>
-              <div><label className={lb}>Número</label><input className={ic} value={form.numero} onChange={e => set('numero', e.target.value)} /></div>
+              <div><label className={lb}>Número {isFromProjeto && <span className="text-[10px] text-muted-foreground">(salvo só na base)</span>}</label><input className={ic} value={form.numero} onChange={e => set('numero', e.target.value)} disabled={isFromProjeto} /></div>
               <div><label className={lb}>Complemento</label><input className={ic} value={form.complemento} onChange={e => set('complemento', e.target.value)} /></div>
               <div><label className={lb}>Bairro</label><input className={ic} value={form.bairro} onChange={e => set('bairro', e.target.value)} /></div>
               <div><label className={lb}>Cidade</label><input className={ic} value={form.cidade} onChange={e => set('cidade', e.target.value)} /></div>
