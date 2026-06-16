@@ -152,6 +152,7 @@ export default function ClientesPage() {
       potencia_inversor: cliente.potencia_inversor,
       preco_venda: cliente.valor,
       forma_pagamento: cliente.forma_pagamento,
+      dia_leitura: cliente.dia_leitura ?? null,
       status: 'Vendido',
     };
     const { data, error } = await supabase.from('projetos' as any).insert(projeto).select('id').single();
