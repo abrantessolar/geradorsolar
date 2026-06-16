@@ -1292,6 +1292,10 @@ function ProposalsTab() {
     navigate('/orcamentos', { state: { editProposal: p } });
   };
 
+  const handleCriarObra = (p: any) => {
+    navigate('/clientes', { state: { tab: 'projetos', prefillProjeto: propostaToProjetoPrefill(p), propostaId: p.id } });
+  };
+
 
   return (
     <div className="solar-card p-6 space-y-4">
