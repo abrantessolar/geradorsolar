@@ -278,6 +278,24 @@ export default function EstoqueTab() {
       {showEntradaLote && (
         <EntradaLoteModal onClose={() => setShowEntradaLote(false)} onDone={load} />
       )}
+
+      {/* Modal de confirmação para zerar estoque */}
+      {showZerar && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowZerar(false)}>
+          <div className="bg-background rounded-xl shadow-xl max-w-md w-full p-6 space-y-4" onClick={e => e.stopPropagation()}>
+            <h3 className="text-lg font-bold text-destructive">⚠️ Zerar estoque</h3>
+            <p className="text-sm text-muted-foreground">
+              Isso vai definir a quantidade de <strong>todos os itens</strong> do estoque como 0. Esta ação não pode ser desfeita. Deseja continuar?
+            </p>
+            <div className="flex gap-2 justify-end">
+              <button onClick={() => setShowZerar(false)} className="px-4 py-2 rounded-lg text-sm bg-muted text-muted-foreground">Cancelar</button>
+              <button onClick={handleZerarEstoque} disabled={zerando} className="px-4 py-2 rounded-lg text-sm font-medium bg-destructive text-destructive-foreground disabled:opacity-50">
+                {zerando ? 'Zerando...' : 'Zerar tudo'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
