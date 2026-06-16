@@ -87,6 +87,7 @@ export default function ListaAcompanhamento() {
   const [filtro, setFiltro] = useState<FiltroRapido>('todas');
   const [ordenacao, setOrdenacao] = useState<Ordenacao>('antigas');
   const [linkProjeto, setLinkProjeto] = useState<ProjetoLista | null>(null);
+  const [kitProjeto, setKitProjeto] = useState<ProjetoLista | null>(null);
   const [tarefasByProjeto, setTarefasByProjeto] = useState<Record<string, TarefaPosVenda[]>>({});
   const [templates, setTemplates] = useState<Record<string, string>>({});
   const [googleLink, setGoogleLink] = useState('');
