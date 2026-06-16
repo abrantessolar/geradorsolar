@@ -39,6 +39,8 @@ export default function EstoqueTab() {
   const [showHistorico, setShowHistorico] = useState(false);
   const [historico, setHistorico] = useState<MovRow[]>([]);
   const [loadingHist, setLoadingHist] = useState(false);
+  const [showZerar, setShowZerar] = useState(false);
+  const [zerando, setZerando] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -108,6 +110,19 @@ export default function EstoqueTab() {
     load();
   };
 
+  const handleZerarEstoque = async () => {
+    setZerando(true);
+    const { error } = await supabase
+      .from('estoque' as any)
+      .update({ quantidade_atual: 0, atualizado_em: new Date().toISOString() })
+      .neq('quantidade_atual', 0);
+    setZerando(false);
+    if (error) { toast.error('Erro ao zerar estoque'); return; }
+    toast.success('Estoque zerado!');
+    setShowZerar(false);
+    load();
+  };
+
   const filtered = items.filter(i => !catFilter || i.material_categoria === catFilter);
   const totalValor = filtered.reduce((sum, i) => sum + (i.quantidade_atual * (i.preco_unitario || 0)), 0);
   const categorias = [...new Set(items.map(i => i.material_categoria))].sort();
@@ -129,6 +144,12 @@ export default function EstoqueTab() {
           className="px-4 py-2 rounded-lg text-sm bg-muted hover:bg-muted/70 flex items-center gap-2"
         >
           📋 {showHistorico ? 'Ocultar' : 'Ver'} Histórico
+        </button>
+        <button
+          onClick={() => setShowZerar(true)}
+          className="px-4 py-2 rounded-lg text-sm font-medium bg-destructive/10 text-destructive hover:bg-destructive/20 flex items-center gap-2"
+        >
+          <RotateCcw className="w-4 h-4" /> Zerar estoque
         </button>
         <div className="ml-auto solar-card px-4 py-2">
           <span className="text-sm text-muted-foreground">Valor total em estoque: </span>
@@ -256,6 +277,24 @@ export default function EstoqueTab() {
       {/* Modal de entrada em lote */}
       {showEntradaLote && (
         <EntradaLoteModal onClose={() => setShowEntradaLote(false)} onDone={load} />
+      )}
+
+      {/* Modal de confirmação para zerar estoque */}
+      {showZerar && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowZerar(false)}>
+          <div className="bg-background rounded-xl shadow-xl max-w-md w-full p-6 space-y-4" onClick={e => e.stopPropagation()}>
+            <h3 className="text-lg font-bold text-destructive">⚠️ Zerar estoque</h3>
+            <p className="text-sm text-muted-foreground">
+              Isso vai definir a quantidade de <strong>todos os itens</strong> do estoque como 0. Esta ação não pode ser desfeita. Deseja continuar?
+            </p>
+            <div className="flex gap-2 justify-end">
+              <button onClick={() => setShowZerar(false)} className="px-4 py-2 rounded-lg text-sm bg-muted text-muted-foreground">Cancelar</button>
+              <button onClick={handleZerarEstoque} disabled={zerando} className="px-4 py-2 rounded-lg text-sm font-medium bg-destructive text-destructive-foreground disabled:opacity-50">
+                {zerando ? 'Zerando...' : 'Zerar tudo'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
