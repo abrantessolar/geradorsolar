@@ -273,7 +273,7 @@ export default function AtivarPosVendaTab() {
                         />
                       </td>
                       <td className="py-2 pr-3 text-right">
-                        <button onClick={() => handleAtivarClick(c)} disabled={ativando === c.id || !!massa}
+                        <button onClick={() => handleAtivarClick(c)} disabled={ativando === c.id}
                           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-green-600 text-white hover:bg-green-700 disabled:opacity-50">
                           {ativando === c.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Zap className="w-3.5 h-3.5" />}
                           Ativar pós-venda
