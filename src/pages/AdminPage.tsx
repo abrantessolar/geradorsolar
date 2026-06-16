@@ -26,6 +26,7 @@ import FaqTab from '@/components/admin/FaqTab';
 import EquipmentTab from '@/components/admin/EquipmentTab';
 import ModelosDocumentos from '@/components/gestor/ModelosDocumentos';
 import { useNavigate } from 'react-router-dom';
+import { propostaToProjetoPrefill } from '@/lib/propostaToProjeto';
 
 function ModelosDocumentosWrapper() {
   return (
