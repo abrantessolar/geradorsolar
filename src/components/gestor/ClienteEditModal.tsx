@@ -224,8 +224,8 @@ export default function ClienteEditModal({ cliente, onClose, onSaved }: {
                   {form.telefone && <WhatsAppLink phone={form.telefone} />}
                 </div>
               </div>
-              <div><label className={lb}>Telefone 2</label><input className={ic} value={form.telefone_2} onChange={e => set('telefone_2', e.target.value)} /></div>
-              <div><label className={lb}>Telefone 3</label><input className={ic} value={form.telefone_3} onChange={e => set('telefone_3', e.target.value)} /></div>
+              <div><label className={lb}>Telefone 2 {isFromProjeto && <span className="text-[10px] text-muted-foreground">(salvo só na base)</span>}</label><input className={ic} value={form.telefone_2} onChange={e => set('telefone_2', e.target.value)} disabled={isFromProjeto} /></div>
+              <div><label className={lb}>Telefone 3 {isFromProjeto && <span className="text-[10px] text-muted-foreground">(salvo só na base)</span>}</label><input className={ic} value={form.telefone_3} onChange={e => set('telefone_3', e.target.value)} disabled={isFromProjeto} /></div>
               <div className="md:col-span-2">
                 <label className={lb}>Observações</label>
                 <textarea className={`${ic} min-h-[80px]`} value={form.observacoes} onChange={e => set('observacoes', e.target.value)} />
