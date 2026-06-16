@@ -151,7 +151,15 @@ export default function PosVendaAgenda() {
       <div className="space-y-2">
         {filtradas.map(t => (
           <div key={t.id}>
-            <div className="text-xs font-medium text-muted-foreground mb-1">{montarRotulo(t)}</div>
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mb-1">
+              <span className="text-xs font-medium text-muted-foreground">{montarRotulo(t)}</span>
+              {t._email && <span className="text-[11px] text-muted-foreground">✉️ {t._email}</span>}
+              {t._avaliacao && (
+                <span className="inline-flex items-center gap-1 text-[11px] text-yellow-600" title={t._avaliacao.comentario || ''}>
+                  <span className="text-yellow-500">{estrelas(t._avaliacao.nota)}</span> {t._avaliacao.nota}/5
+                </span>
+              )}
+            </div>
             <TarefaPosVendaItem
               tarefa={t}
               nome={t._nome}
