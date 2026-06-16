@@ -25,6 +25,8 @@ export default function ClientesPage() {
   const [mainTab, setMainTab] = useState<MainTab>(((location.state as any)?.tab as MainTab) || 'projetos');
   const [inlineView, setInlineView] = useState<InlineView>('none');
   const [editId, setEditId] = useState<string | null>(null);
+  const [prefillProjeto, setPrefillProjeto] = useState<Record<string, any> | null>(null);
+  const [prefillPropostaId, setPrefillPropostaId] = useState<string | null>(null);
 
   const [projetos, setProjetos] = useState<Projeto[]>([]);
   const [clientes, setClientes] = useState<ClienteBase[]>([]);
@@ -131,6 +133,17 @@ export default function ClientesPage() {
 
   useEffect(() => { loadProjetos(); loadClientes(); }, [loadProjetos, loadClientes]);
 
+  // Open the project form prefilled from a proposta (venda → projeto)
+  useEffect(() => {
+    const st = location.state as any;
+    if (st?.prefillProjeto) {
+      setPrefillProjeto(st.prefillProjeto);
+      setPrefillPropostaId(st.propostaId || null);
+      setInlineView('novo_projeto');
+      navigate(location.pathname, { replace: true, state: { tab: 'projetos' } });
+    }
+  }, [location.state, location.pathname, navigate]);
+
   const refreshAll = useCallback(() => { loadProjetos(); loadClientes(); }, [loadProjetos, loadClientes]);
 
   const handleEdit = (id: string) => {
@@ -142,6 +155,8 @@ export default function ClientesPage() {
     refreshAll();
     setInlineView('none');
     setEditId(null);
+    setPrefillProjeto(null);
+    setPrefillPropostaId(null);
   };
 
   const handlePromoverParaObra = async (cliente: ClienteBase) => {
@@ -191,8 +206,13 @@ export default function ClientesPage() {
   if (inlineView === 'novo_projeto') {
     return (
       <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6 px-2 sm:px-0">
-        <button onClick={() => setInlineView('none')} className="text-xs text-primary hover:underline">← Voltar para lista</button>
-        <ProjetoForm onSaved={handleSaved} />
+        <button onClick={() => { setInlineView('none'); setPrefillProjeto(null); setPrefillPropostaId(null); }} className="text-xs text-primary hover:underline">← Voltar para lista</button>
+        {prefillProjeto && (
+          <div className="rounded-lg bg-primary/10 text-primary text-xs px-3 py-2">
+            Dados pré-preenchidos a partir da proposta. Revise e complete antes de salvar.
+          </div>
+        )}
+        <ProjetoForm onSaved={handleSaved} prefill={prefillProjeto || undefined} propostaId={prefillPropostaId} />
       </div>
     );
   }

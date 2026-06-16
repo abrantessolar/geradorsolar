@@ -32,10 +32,12 @@ type PlacaOption = { id: string; marca: string; modelo: string; potencia_wp: num
 type InversorOption = { id: string; marca: string; modelo: string; potencia_kw: number; tipo: string };
 type PessoaRelacionada = { nome: string; relacao: string; cpf: string; telefone: string };
 
-export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
+export default function ProjetoForm({ projetoId, onSaved, onCancel, prefill, propostaId }: {
   projetoId?: string;
   onSaved: () => void;
   onCancel?: () => void;
+  prefill?: Record<string, any>;
+  propostaId?: string | null;
 }) {
   const { session } = useAuth();
   const [step, setStep] = useState(1);
@@ -82,6 +84,41 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
     supabase.from('equipamentos_placas' as any).select('*').eq('ativo', true).then(({ data }) => setPlacas((data || []) as any));
     supabase.from('equipamentos_inversores' as any).select('*').eq('ativo', true).then(({ data }) => setInversores((data || []) as any));
   }, []);
+
+  // Prefill text/number fields when creating from a proposta
+  useEffect(() => {
+    if (projetoId || !prefill) return;
+    setForm(f => {
+      const next = { ...f };
+      for (const k of Object.keys(prefill)) {
+        if (k.startsWith('_')) continue;
+        const v = prefill[k];
+        if (v !== undefined && v !== null && v !== '') (next as any)[k] = String(v);
+      }
+      return next;
+    });
+  }, [projetoId, prefill]);
+
+  // Auto-match placa / inversor from prefill hints once catalogs are loaded
+  useEffect(() => {
+    if (projetoId || !prefill) return;
+    if (placas.length && !form.placa_id && (prefill._placaMarca || prefill._placaPotenciaWp)) {
+      const norm = (s: string) => (s || '').toLowerCase().trim();
+      const match = placas.find(p =>
+        (!prefill._placaMarca || norm(p.marca).includes(norm(prefill._placaMarca)) || norm(prefill._placaMarca).includes(norm(p.marca))) &&
+        (!prefill._placaPotenciaWp || Math.abs(p.potencia_wp - prefill._placaPotenciaWp) <= 15)
+      );
+      if (match) setForm(f => ({ ...f, placa_id: match.id }));
+    }
+    if (inversores.length && !form.inversor_id && (prefill._inversorMarca || prefill._inversorPotenciaKw)) {
+      const norm = (s: string) => (s || '').toLowerCase().trim();
+      const match = inversores.find(i =>
+        (!prefill._inversorMarca || norm(i.marca).includes(norm(prefill._inversorMarca)) || norm(prefill._inversorMarca).includes(norm(i.marca))) &&
+        (!prefill._inversorPotenciaKw || Math.abs(i.potencia_kw - prefill._inversorPotenciaKw) <= 0.5)
+      );
+      if (match) setForm(f => ({ ...f, inversor_id: match.id }));
+    }
+  }, [projetoId, prefill, placas, inversores]);
 
   useEffect(() => {
     if (!projetoId) return;
@@ -254,6 +291,7 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel }: {
       const { usuario_id, ...updateRow } = row;
       ({ error } = await supabase.from('projetos' as any).update(updateRow).eq('id', projetoId));
     } else {
+      if (propostaId) row.proposta_id = propostaId;
       const result = await supabase.from('projetos' as any).insert(row).select('id').single();
       error = result.error;
       if (result.data) savedId = (result.data as any).id;
