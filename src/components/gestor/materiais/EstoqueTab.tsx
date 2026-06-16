@@ -110,6 +110,19 @@ export default function EstoqueTab() {
     load();
   };
 
+  const handleZerarEstoque = async () => {
+    setZerando(true);
+    const { error } = await supabase
+      .from('estoque' as any)
+      .update({ quantidade_atual: 0, atualizado_em: new Date().toISOString() })
+      .neq('quantidade_atual', 0);
+    setZerando(false);
+    if (error) { toast.error('Erro ao zerar estoque'); return; }
+    toast.success('Estoque zerado!');
+    setShowZerar(false);
+    load();
+  };
+
   const filtered = items.filter(i => !catFilter || i.material_categoria === catFilter);
   const totalValor = filtered.reduce((sum, i) => sum + (i.quantidade_atual * (i.preco_unitario || 0)), 0);
   const categorias = [...new Set(items.map(i => i.material_categoria))].sort();
