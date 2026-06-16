@@ -10,12 +10,19 @@ import TarefaPosVendaItem from './TarefaPosVendaItem';
 interface TarefaComProjeto extends TarefaPosVenda {
   _nome: string;
   _telefone: string | null;
+  _email: string | null;
   _marca_inversor: string | null;
   _nome_planta: string | null;
+  _avaliacao: { nota: number; comentario: string | null } | null;
 }
 
 function montarRotulo(t: TarefaComProjeto): string {
   return [t._nome, t._marca_inversor, t._nome_planta].filter(Boolean).join(' — ');
+}
+
+function estrelas(n: number): string {
+  const v = Math.max(0, Math.min(5, Math.round(n)));
+  return '★'.repeat(v) + '☆'.repeat(5 - v);
 }
 
 type FiltroData = 'pendentes' | 'hoje' | 'atrasadas' | 'futuras' | 'concluidas' | 'todas';
