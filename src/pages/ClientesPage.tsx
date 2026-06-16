@@ -133,6 +133,17 @@ export default function ClientesPage() {
 
   useEffect(() => { loadProjetos(); loadClientes(); }, [loadProjetos, loadClientes]);
 
+  // Open the project form prefilled from a proposta (venda → projeto)
+  useEffect(() => {
+    const st = location.state as any;
+    if (st?.prefillProjeto) {
+      setPrefillProjeto(st.prefillProjeto);
+      setPrefillPropostaId(st.propostaId || null);
+      setInlineView('novo_projeto');
+      navigate(location.pathname, { replace: true, state: { tab: 'projetos' } });
+    }
+  }, [location.state, location.pathname, navigate]);
+
   const refreshAll = useCallback(() => { loadProjetos(); loadClientes(); }, [loadProjetos, loadClientes]);
 
   const handleEdit = (id: string) => {
@@ -144,6 +155,8 @@ export default function ClientesPage() {
     refreshAll();
     setInlineView('none');
     setEditId(null);
+    setPrefillProjeto(null);
+    setPrefillPropostaId(null);
   };
 
   const handlePromoverParaObra = async (cliente: ClienteBase) => {
