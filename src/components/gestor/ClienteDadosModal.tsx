@@ -106,11 +106,15 @@ export default function ClienteDadosModal({ cliente, onClose }: { cliente: Clien
 
   // Load UCs from new table
   const [ucsData, setUcsData] = useState<any[]>([]);
+  const [avaliacao, setAvaliacao] = useState<{ nota: number; comentario: string | null; criado_em: string } | null>(null);
   useEffect(() => {
     const projetoId = c.projeto_id || (c.id?.startsWith?.('proj-') ? c.id.replace('proj-', '') : null) || c.id;
     if (!projetoId) return;
     supabase.from('unidades_consumidoras' as any).select('*').eq('projeto_id', projetoId).order('prioridade', { ascending: true }).then(({ data }) => {
       if (data && data.length > 0) setUcsData(data as any[]);
+    });
+    supabase.from('avaliacoes_clientes' as any).select('nota, comentario, criado_em').eq('projeto_id', projetoId).order('criado_em', { ascending: false }).limit(1).maybeSingle().then(({ data }) => {
+      if (data) setAvaliacao(data as any);
     });
   }, [c]);
 
