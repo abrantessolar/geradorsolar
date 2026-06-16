@@ -145,6 +145,12 @@ export default function EstoqueTab() {
         >
           📋 {showHistorico ? 'Ocultar' : 'Ver'} Histórico
         </button>
+        <button
+          onClick={() => setShowZerar(true)}
+          className="px-4 py-2 rounded-lg text-sm font-medium bg-destructive/10 text-destructive hover:bg-destructive/20 flex items-center gap-2"
+        >
+          <RotateCcw className="w-4 h-4" /> Zerar estoque
+        </button>
         <div className="ml-auto solar-card px-4 py-2">
           <span className="text-sm text-muted-foreground">Valor total em estoque: </span>
           <span className="font-bold text-primary">R$ {totalValor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
