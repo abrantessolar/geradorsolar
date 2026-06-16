@@ -280,8 +280,8 @@ export default function ClienteEditModal({ cliente, onClose, onSaved }: {
                 <div className="solar-input bg-muted/50 cursor-not-allowed">{kwp}</div>
               </div>
               <div><label className={lb}>Sistema</label><input className={ic} value={form.sistema} onChange={e => set('sistema', e.target.value)} placeholder="Ex: 5,75KWp" /></div>
-              <div className="md:col-span-2"><label className={lb}>Dados Painéis (original)</label><textarea className={`${ic} min-h-[60px]`} value={form.dados_paineis} onChange={e => set('dados_paineis', e.target.value)} /></div>
-              <div className="md:col-span-2"><label className={lb}>Dados Inversor (original)</label><textarea className={`${ic} min-h-[60px]`} value={form.dados_inversor} onChange={e => set('dados_inversor', e.target.value)} /></div>
+              <div className="md:col-span-2"><label className={lb}>Dados Painéis (original) {isFromProjeto && <span className="text-[10px] text-muted-foreground">(salvo só na base)</span>}</label><textarea className={`${ic} min-h-[60px]`} value={form.dados_paineis} onChange={e => set('dados_paineis', e.target.value)} disabled={isFromProjeto} /></div>
+              <div className="md:col-span-2"><label className={lb}>Dados Inversor (original) {isFromProjeto && <span className="text-[10px] text-muted-foreground">(salvo só na base)</span>}</label><textarea className={`${ic} min-h-[60px]`} value={form.dados_inversor} onChange={e => set('dados_inversor', e.target.value)} disabled={isFromProjeto} /></div>
             </div>
           </TabsContent>
 
