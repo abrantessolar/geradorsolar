@@ -272,7 +272,7 @@ export default function ClienteEditModal({ cliente, onClose, onSaved }: {
               <div><label className={lb}>Qtd Inversores</label><input className={ic} type="number" min="1" value={form.qtd_inversores} onChange={e => set('qtd_inversores', e.target.value)} /></div>
               <div className="border-t pt-4 md:col-span-2"><h3 className="text-sm font-semibold text-primary">Placas</h3></div>
               <div><label className={lb}>Marca da Placa</label><input className={ic} value={form.marca_placa} onChange={e => set('marca_placa', e.target.value)} /></div>
-              <div><label className={lb}>Modelo da Placa</label><input className={ic} value={form.modelo_placa} onChange={e => set('modelo_placa', e.target.value)} /></div>
+              <div><label className={lb}>Modelo da Placa {isFromProjeto && <span className="text-[10px] text-muted-foreground">(salvo só na base)</span>}</label><input className={ic} value={form.modelo_placa} onChange={e => set('modelo_placa', e.target.value)} disabled={isFromProjeto} /></div>
               <div><label className={lb}>Potência da Placa (W)</label><input className={ic} value={form.potencia_placa} onChange={e => set('potencia_placa', e.target.value)} /></div>
               <div><label className={lb}>Qtd Placas</label><input className={ic} type="number" min="1" value={form.qtd_placas} onChange={e => set('qtd_placas', e.target.value)} /></div>
               <div>
