@@ -44,6 +44,12 @@ interface FieldDef {
   label: string;
   value: string;
   isPhone?: boolean;
+  href?: string;
+}
+
+function estrelas(n: number): string {
+  const v = Math.max(0, Math.min(5, Math.round(n)));
+  return '★'.repeat(v) + '☆'.repeat(5 - v);
 }
 
 function CopyButton({ text }: { text: string }) {
@@ -58,7 +64,7 @@ function CopyButton({ text }: { text: string }) {
   );
 }
 
-function FieldRow({ label, value, isPhone }: FieldDef) {
+function FieldRow({ label, value, isPhone, href }: FieldDef) {
   if (!value) {
     return (
       <div className="flex items-center justify-between py-1.5 px-2">
@@ -72,7 +78,13 @@ function FieldRow({ label, value, isPhone }: FieldDef) {
       <div className="min-w-0 flex-1">
         <span className="text-xs text-muted-foreground">{label}</span>
         <div className="text-sm font-medium flex items-center gap-2">
-          {isPhone ? <WhatsAppLink phone={value} /> : <span>{value}</span>}
+          {isPhone ? (
+            <WhatsAppLink phone={value} />
+          ) : href ? (
+            <a href={href} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline break-all">{value}</a>
+          ) : (
+            <span>{value}</span>
+          )}
         </div>
       </div>
       <CopyButton text={value} />
