@@ -173,33 +173,8 @@ export default function AtivarPosVendaTab() {
     await ativar(cli, dia);
   };
 
-  const ativarTodos = async () => {
-    const alvos = categorias.aguardando.filter((c) => c.dia_leitura != null);
-    if (alvos.length === 0) {
-      toast.info('Nenhum cliente com dia de leitura preenchido para ativar.');
-      return;
-    }
-    setMassa({ done: 0, total: alvos.length });
-    let totalLembretes = 0;
-    let ativados = 0;
-    for (let i = 0; i < alvos.length; i++) {
-      const c = alvos[i];
-      try {
-        const res = await ativarPosVendaCliente({
-          clienteBaseId: c.id,
-          dataInstalacao: parseDate(c.instalado_em),
-          diaLeitura: c.dia_leitura,
-        });
-        if (res.created > 0) { ativados++; totalLembretes += res.created; }
-        setClientes((prev) => prev.map((x) => (x.id === c.id ? { ...x, temTarefas: true } : x)));
-      } catch { /* continua */ }
-      setMassa({ done: i + 1, total: alvos.length });
-    }
-    setMassa(null);
-    toast.success(`✅ ${ativados} clientes ativados com sucesso! ${totalLembretes} lembretes futuros criados.`);
-  };
-
   if (loading) return <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
+
 
   const resumo = [
     { icon: CheckCircle2, label: 'Com pós-venda ativo', value: categorias.ativo.length, color: 'text-green-600' },
