@@ -291,6 +291,7 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel, prefill, pro
       const { usuario_id, ...updateRow } = row;
       ({ error } = await supabase.from('projetos' as any).update(updateRow).eq('id', projetoId));
     } else {
+      if (propostaId) row.proposta_id = propostaId;
       const result = await supabase.from('projetos' as any).insert(row).select('id').single();
       error = result.error;
       if (result.data) savedId = (result.data as any).id;
