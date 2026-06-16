@@ -183,7 +183,11 @@ export default function ClienteDadosModal({ cliente, onClose }: { cliente: Clien
       title: 'Equipamentos',
       fields: [
         { label: 'Placas', value: c.qtd_placas && c.marca_placa && c.potencia_placa ? `${c.qtd_placas}x ${c.marca_placa} ${c.potencia_placa}W` : '' },
+        { label: 'Modelo da placa', value: fmt((c as any).modelo_placa) },
         { label: 'Inversor', value: c.marca_inversor && c.potencia_inversor ? `${c.qtd_inversores || 1}x ${c.marca_inversor} ${c.potencia_inversor}kW` : '' },
+        { label: 'Modelo do inversor', value: fmt((c as any).modelo_inversor) },
+        { label: 'Tipo de inversor', value: (c as any).tipo_inversor ? (String((c as any).tipo_inversor).toLowerCase() === 'micro' ? 'Microinversor' : 'String') : '' },
+        { label: 'Cabo usado', value: fmt((c as any).cabo_usado) },
         { label: 'KWp total', value: calcKwp(c) ? `${calcKwp(c)} kWp` : '' },
         { label: 'Geração estimada (kWh)', value: fmt((c as any).geracao_estimada_kwh) },
         { label: 'Sistema', value: fmt(c.sistema) },
@@ -197,6 +201,31 @@ export default function ClienteDadosModal({ cliente, onClose }: { cliente: Clien
         { label: 'Distribuidor', value: fmt((c as any).distribuidor) },
         { label: 'Status de pagamento', value: fmt((c as any).pagamento_status) },
         { label: 'Data de fechamento', value: fmtDate((c as any).data_fechamento) },
+      ],
+    },
+    {
+      title: 'Workflow do Projeto',
+      fields: [
+        { label: 'Status do projeto', value: fmt((c as any).status) },
+        { label: 'Projeto enviado em', value: fmtDate((c as any).projeto_enviado_em) },
+        { label: 'Projeto aprovado em', value: fmtDate((c as any).projeto_aprovado) },
+        { label: 'Data de fechamento', value: fmtDate((c as any).data_fechamento) },
+        { label: 'Congelado', value: (c as any).congelado ? 'Sim' : '' },
+        { label: 'Congelado até', value: fmtDate((c as any).congelado_ate) },
+        { label: 'Motivo do congelamento', value: fmt((c as any).motivo_congelamento) },
+      ],
+    },
+    {
+      title: 'Logística e Monitoramento',
+      fields: [
+        { label: 'Local de entrega', value: (c as any).local_entrega ? (String((c as any).local_entrega) === 'empresa' ? 'TLS Solar' : 'Cliente') : '' },
+        {
+          label: 'Código de rastreamento',
+          value: fmt((c as any).codigo_rastreamento),
+          href: (c as any).codigo_rastreamento ? `${window.location.origin}/acompanhar/${(c as any).codigo_rastreamento}` : undefined,
+        },
+        { label: 'Layout da obra', value: (c as any).layout_url ? 'Abrir arquivo' : '', href: (c as any).layout_url || undefined },
+        { label: 'Satisfação (registro)', value: fmt((c as any).satisfacao) },
       ],
     },
   ];
