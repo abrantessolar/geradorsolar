@@ -1,40 +1,37 @@
-## Objetivo
+## Plano: Ativar pós-venda em Clientes → Instalados
 
-Fazer o modal **"Ver dados"** (em Clientes → Projetos) exibir **todos os campos do cadastro de Novo Projeto**, incluindo o Dia de leitura. É só ajuste de exibição — os dados já estão salvos no banco; nada de migração.
+### Confirmação (item 1)
+Verificado: as tarefas de pós-venda (`tarefas_posvenda`) têm `ON DELETE CASCADE` nas duas chaves (`clientes_base` e `projetos`). Ao apagar um cliente/projeto, o pós-venda dele é apagado automaticamente. Nenhuma mudança necessária.
 
-## Causa
+---
 
-Dois pontos limitam o que aparece:
+### O que será construído (item 2)
 
-1. `mapProjetoToDados` (em `ProjetosUnificados.tsx`) converte o projeto para o formato do modal, mas deixa de fora vários campos (`email` vira `null`, e não passa `dia_leitura`, `wifi_*`, `distribuidor`, `pagamento_status`, `estrutura`, `geracao_estimada_kwh`, dados de PJ).
-2. `ClienteDadosModal.tsx` não tem linhas para esses campos, então mesmo quando existem não são mostrados.
+**1. Nova função de ativação por projeto** — `src/lib/posvendaTarefas.ts`
+- Adicionar `ativarPosVendaProjeto({ projetoId, dataInstalacao, diaLeitura })`, espelhando `ativarPosVendaCliente`:
+  - Checa duplicação por `projeto_id`.
+  - Gera apenas lembretes futuros (`construirTarefas({ ..., onlyFuture: true })`).
+  - Insere linhas com `projeto_id`.
+  - Retorna o mesmo `AtivacaoResultado` (`created` + `proximo`).
 
-## Mudanças
+**2. Botão "Ativar pós-venda" + input inline na lista Instalados** — `src/components/gestor/ProjetosUnificados.tsx`
+- Carregar estado de pós-venda dos instalados: consultar `tarefas_posvenda` (por `cliente_base_id` e por `projeto_id`) e montar um `Set` de "ativos".
+- Na coluna **Ações** da seção Instalados (desktop e mobile):
+  - Se **já ativo** → badge verde `✓ Ativo` (sem ação).
+  - Se **não ativo** → input numérico inline de **dia de leitura** (1–31, salva no `onBlur`) + botão `Zap` "Ativar pós-venda".
+- Roteamento conforme origem:
+  - id sem prefixo (cliente da base) → `ativarPosVendaCliente` + salvar `clientes_base.dia_leitura`.
+  - id com prefixo `proj-` → `ativarPosVendaProjeto` + salvar `projetos.dia_leitura`.
+- Mesmo fluxo do Admin: se `dia_leitura` vazio ao clicar Ativar, abrir prompt pedindo o dia, salvar e ativar.
+- Toast de sucesso com quantidade de lembretes e próximo lembrete.
+- Após ativar, marcar item como "Ativo" localmente.
 
-### 1. `ProjetosUnificados.tsx` — `mapProjetoToDados`
-Passar todos os campos do projeto para o objeto do modal:
-- `email: p.email`
-- `dia_leitura: p.dia_leitura`
-- `wifi_nome: p.wifi_nome`, `wifi_senha: p.wifi_senha`
-- `distribuidor: p.distribuidor`
-- `pagamento_status: p.pagamento_status`
-- `estrutura: p.estrutura`
-- `geracao_estimada_kwh: p.geracao_estimada_kwh`
-- Dados de PJ quando houver: `tipo_pessoa`, `razao_social`, `cnpj`, `nome_representante`, `cpf_representante`
+**3. Remover "Ativar todos com dia de leitura"** — `src/components/admin/AtivarPosVendaTab.tsx`
+- Remover o botão, a função `ativarTodos` e o estado `massa`. Mantém ativação individual e o resto da aba intactos.
 
-### 2. `ClienteDadosModal.tsx` — exibir os novos campos
-- **Identificação**: quando PJ, mostrar Razão Social, CNPJ, Representante e CPF do representante.
-- **Dados da Instalação**: adicionar `📅 Dia de leitura da conta`, `WiFi — Rede`, `WiFi — Senha`, `Estrutura`.
-- **Equipamentos**: adicionar `Geração estimada (kWh)`.
-- **Financeiro**: adicionar `Distribuidor` e `Status de pagamento`.
-- Incluir os mesmos campos no "Copiar tudo" (`buildCopyAll`).
-- Campos vazios continuam exibindo "—" (comportamento atual do `FieldRow`).
+---
 
-## Observações
-
-- Para clientes vindos de `clientes_base` (não promovidos de obra), alguns desses campos podem não existir e aparecerão como "—" — comportamento esperado.
-- Nenhuma alteração de banco de dados ou lógica de negócio.
-
-## Arquivos
-- `src/components/gestor/ProjetosUnificados.tsx`
-- `src/components/gestor/ClienteDadosModal.tsx`
+### Detalhes técnicos
+- `dataInstalacao` a partir de `c.instalado_em` usando `parseDate(s + 'T00:00:00')` (evita fuso).
+- Status carregado uma vez em `ProjetosUnificados` (dois selects em `tarefas_posvenda`).
+- Sem mudanças de banco: colunas (`clientes_base.dia_leitura`, `projetos.dia_leitura`, `tarefas_posvenda.projeto_id/cliente_base_id`) já existem.
