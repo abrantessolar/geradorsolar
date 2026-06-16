@@ -206,8 +206,13 @@ export default function ClientesPage() {
   if (inlineView === 'novo_projeto') {
     return (
       <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6 px-2 sm:px-0">
-        <button onClick={() => setInlineView('none')} className="text-xs text-primary hover:underline">← Voltar para lista</button>
-        <ProjetoForm onSaved={handleSaved} />
+        <button onClick={() => { setInlineView('none'); setPrefillProjeto(null); setPrefillPropostaId(null); }} className="text-xs text-primary hover:underline">← Voltar para lista</button>
+        {prefillProjeto && (
+          <div className="rounded-lg bg-primary/10 text-primary text-xs px-3 py-2">
+            Dados pré-preenchidos a partir da proposta. Revise e complete antes de salvar.
+          </div>
+        )}
+        <ProjetoForm onSaved={handleSaved} prefill={prefillProjeto || undefined} propostaId={prefillPropostaId} />
       </div>
     );
   }
