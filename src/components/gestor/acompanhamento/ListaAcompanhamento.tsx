@@ -190,6 +190,12 @@ export default function ListaAcompanhamento() {
 
     const novasRows = await refetchProjeto(projetoId);
 
+    // "Equipamento pago" (fluxo 2, etapa 2) → pede o preço do kit para ir aos Custos
+    if (concluido && fluxo === 2 && etapa === 2) {
+      const proj = projetos.find(p => p.id === projetoId);
+      if (proj) setKitProjeto(proj);
+    }
+
     // "Instalação finalizada" (fluxo 3, etapa 3) → grava data_instalacao e gera o pós-venda
     if (concluido && fluxo === 3 && etapa === 3) {
       const proj = projetos.find(p => p.id === projetoId);
