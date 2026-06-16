@@ -39,6 +39,8 @@ export default function EstoqueTab() {
   const [showHistorico, setShowHistorico] = useState(false);
   const [historico, setHistorico] = useState<MovRow[]>([]);
   const [loadingHist, setLoadingHist] = useState(false);
+  const [showZerar, setShowZerar] = useState(false);
+  const [zerando, setZerando] = useState(false);
 
   const load = async () => {
     setLoading(true);
