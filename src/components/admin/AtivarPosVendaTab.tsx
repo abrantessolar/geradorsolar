@@ -54,7 +54,7 @@ export default function AtivarPosVendaTab() {
   const [promptCliente, setPromptCliente] = useState<ClienteRow | null>(null);
   const [promptDia, setPromptDia] = useState('');
   const [ativando, setAtivando] = useState<string | null>(null);
-  const [massa, setMassa] = useState<{ done: number; total: number } | null>(null);
+  
 
   const load = useCallback(async () => {
     setLoading(true);
