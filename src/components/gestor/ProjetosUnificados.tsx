@@ -500,6 +500,7 @@ export default function ProjetosUnificados({
                      <button onClick={() => setDadosCliente(c)} className="text-primary hover:text-primary/80 p-1"><Eye className="w-4 h-4" /></button>
                      <button onClick={() => setEditCliente(c)} className="text-primary hover:text-primary/80 p-1"><Edit2 className="w-4 h-4" /></button>
                      <button onClick={() => setPromoverCliente(c)} className="text-primary hover:text-primary/80 p-1"><ArrowUpRight className="w-4 h-4" /></button>
+                     <span className="px-1"><TooltipProvider>{renderPosVendaAcao(c)}</TooltipProvider></span>
                      <button onClick={() => setDeleteCliente(c)} className="text-destructive hover:text-destructive/80 p-1 ml-auto"><Trash2 className="w-4 h-4" /></button>
                    </div>
                 </div>
