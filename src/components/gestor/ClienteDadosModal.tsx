@@ -299,6 +299,33 @@ export default function ClienteDadosModal({ cliente, onClose }: { cliente: Clien
         <div className="p-4 space-y-5">
           {blocks.map(b => <Block key={b.title} title={b.title} fields={b.fields} />)}
 
+          {/* Avaliação do cliente (página pública de rastreamento) */}
+          {avaliacao && (
+            <div className="space-y-1">
+              <h3 className="text-sm font-semibold text-primary border-b border-border pb-1 mb-1">Avaliação do Cliente</h3>
+              <div className="px-2 py-1.5 space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-lg text-yellow-500 tracking-wide">{estrelas(avaliacao.nota)}</span>
+                  <span className="text-sm font-medium">{avaliacao.nota}/5</span>
+                  <span className="text-xs text-muted-foreground ml-auto">{new Date(avaliacao.criado_em).toLocaleDateString('pt-BR')}</span>
+                </div>
+                {avaliacao.comentario && (
+                  <p className="text-sm whitespace-pre-wrap text-foreground/90">"{avaliacao.comentario}"</p>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Dados legados (texto bruto importado) */}
+          {(c.dados_paineis || c.dados_inversor) && (
+            <div className="space-y-1">
+              <h3 className="text-sm font-semibold text-primary border-b border-border pb-1 mb-1">Dados Legados</h3>
+              {c.dados_paineis && <FieldRow label="Painéis (texto)" value={fmt(c.dados_paineis)} />}
+              {c.dados_inversor && <FieldRow label="Inversor (texto)" value={fmt(c.dados_inversor)} />}
+            </div>
+          )}
+
+
           {/* Unidades Consumidoras */}
           {ucsData.length > 0 && (() => {
             const modo = ucsData[0]?.modo_distribuicao || 'percentual';
