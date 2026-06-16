@@ -47,8 +47,22 @@ export default function PosVendaAgenda() {
     setLoading(true);
     const { data } = await supabase
       .from('tarefas_posvenda' as any)
-      .select('*, projetos!tarefas_posvenda_projeto_id_fkey(nome_completo, razao_social, telefone, marca_inversor, nome_planta), clientes_base!tarefas_posvenda_cliente_base_id_fkey(nome_completo, telefone, marca_inversor, nome_planta)')
+      .select('*, projetos!tarefas_posvenda_projeto_id_fkey(nome_completo, razao_social, telefone, email, marca_inversor, nome_planta), clientes_base!tarefas_posvenda_cliente_base_id_fkey(nome_completo, telefone, email, marca_inversor, nome_planta)')
       .order('data_programada', { ascending: true });
+
+    // Avaliações por projeto
+    const projIds = [...new Set(((data || []) as any[]).map((t: any) => t.projeto_id).filter(Boolean))];
+    const avMap: Record<string, { nota: number; comentario: string | null }> = {};
+    if (projIds.length) {
+      const { data: avs } = await supabase
+        .from('avaliacoes_clientes' as any)
+        .select('projeto_id, nota, comentario, criado_em')
+        .in('projeto_id', projIds)
+        .order('criado_em', { ascending: false });
+      for (const a of (avs || []) as any[]) {
+        if (!avMap[a.projeto_id]) avMap[a.projeto_id] = { nota: a.nota, comentario: a.comentario };
+      }
+    }
 
     const list: TarefaComProjeto[] = (data || []).map((t: any) => {
       const p = t.projetos;
@@ -57,8 +71,10 @@ export default function PosVendaAgenda() {
         ...t,
         _nome: p?.nome_completo || p?.razao_social || c?.nome_completo || 'Cliente',
         _telefone: p?.telefone || c?.telefone || null,
+        _email: p?.email || c?.email || null,
         _marca_inversor: p?.marca_inversor || c?.marca_inversor || null,
         _nome_planta: p?.nome_planta || c?.nome_planta || null,
+        _avaliacao: t.projeto_id ? (avMap[t.projeto_id] || null) : null,
       };
     });
     setTarefas(list);
