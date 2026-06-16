@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { CheckCircle } from 'lucide-react';
+import { gerarTarefasPosVenda } from '@/lib/posvendaTarefas';
 
 type Instalador = { id: string; nome: string };
 
