@@ -174,6 +174,7 @@ export default function ClienteEditModal({ cliente, onClose, onSaved }: {
         uc: form.uc || null,
         nome_planta: form.nome_planta || null,
         instalado_em: form.instalado_em || null,
+        dia_leitura: form.dia_leitura ? parseInt(form.dia_leitura) : null,
         vistoriado_em: form.vistoriado_em || null,
         projeto_enviado_em: form.projeto_enviado_em || null,
         projeto_aprovado: form.projeto_aprovado || null,
