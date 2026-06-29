@@ -104,7 +104,7 @@ export default function ListaAcompanhamento() {
     setLoading(true);
     const { data: projs } = await supabase
       .from('projetos' as any)
-      .select('id, nome_completo, razao_social, telefone, instalador, proposta_id, codigo_rastreamento, dia_leitura, nome_planta, data_nascimento, distribuidor, wifi_nome, wifi_senha, status, criado_em')
+      .select('id, nome_completo, razao_social, telefone, instalador, proposta_id, codigo_rastreamento, dia_leitura, nome_planta, data_nascimento, distribuidor, wifi_nome, wifi_senha, numero_fila, data_agendamento, local_entrega, status, criado_em')
       .order('criado_em', { ascending: false });
 
     const propIds = (projs || []).map((p: any) => p.proposta_id).filter(Boolean);
@@ -127,6 +127,9 @@ export default function ListaAcompanhamento() {
       distribuidor: p.distribuidor || null,
       wifi_nome: p.wifi_nome || null,
       wifi_senha: p.wifi_senha || null,
+      numero_fila: p.numero_fila ?? null,
+      data_agendamento: p.data_agendamento || null,
+      local_entrega: p.local_entrega || null,
       status: p.status || null,
       criado_em: p.criado_em,
     }));
