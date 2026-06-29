@@ -588,6 +588,7 @@ export default function ListaAcompanhamento() {
 function EtapaCheck({
   projetoId, fluxo, etapaDef, rows, nomesUsuarios, getRow, commitCheck, updateExtra, nomePlanta, updateNomePlanta,
   fornecedor, updateFornecedor, wifiNome, wifiSenha, updateWifi,
+  numeroFila, dataAgendamento, localEntrega, updateProjetoCampo,
 }: {
   projetoId: string;
   fluxo: number;
@@ -604,6 +605,10 @@ function EtapaCheck({
   wifiNome: string | null;
   wifiSenha: string | null;
   updateWifi: (p: string, nome: string, senha: string) => Promise<void>;
+  numeroFila: number | null;
+  dataAgendamento: string | null;
+  localEntrega: string | null;
+  updateProjetoCampo: (p: string, patch: Record<string, any>) => Promise<void>;
 }) {
   const [pedindoEntrega, setPedindoEntrega] = useState(false);
   const [pedindoPlanta, setPedindoPlanta] = useState(false);
