@@ -204,6 +204,14 @@ export default function ListaAcompanhamento() {
 
     const novasRows = await refetchProjeto(projetoId);
 
+    // Sincroniza as datas canônicas das etapas de homologação (fonte única de verdade)
+    if (fluxo === 1 && (etapa === 2 || etapa === 3)) {
+      const col = etapa === 2 ? 'projeto_enviado_em' : 'projeto_aprovado';
+      const dia = concluido ? (patch.data_conclusao || now).slice(0, 10) : null;
+      await supabase.from('projetos' as any).update({ [col]: dia }).eq('id', projetoId);
+    }
+
+
     // "Equipamento pago" (fluxo 2, etapa 2) → pede o preço do kit para ir aos Custos
     if (concluido && fluxo === 2 && etapa === 2) {
       const proj = projetos.find(p => p.id === projetoId);
