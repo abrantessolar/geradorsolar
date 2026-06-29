@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import WhatsAppLink, { formatWhatsAppUrl } from './WhatsAppLink';
 import type { ClienteBase } from './ClientesList';
+import { FLUXOS, getEtapaDef } from '@/lib/rastreamentoEtapas';
 
 function fmt(val: string | number | null | undefined): string {
   if (val === null || val === undefined || val === '') return '';
