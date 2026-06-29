@@ -21,10 +21,15 @@ interface ProjetoLista {
   codigo_rastreamento: string | null;
   dia_leitura: number | null;
   nome_planta: string | null;
+  data_nascimento: string | null;
+  distribuidor: string | null;
+  wifi_nome: string | null;
+  wifi_senha: string | null;
+  status: string | null;
   criado_em: string;
 }
 
-type FiltroRapido = 'todas' | 'atrasadas' | 'homologacao' | 'equipamentos' | 'instalacao';
+type FiltroRapido = 'todas' | 'atrasadas' | 'homologacao' | 'equipamentos' | 'instalacao' | 'concluidas';
 type Ordenacao = 'antigas' | 'recentes' | 'progresso' | 'nome';
 
 function daysSince(dateStr?: string | null): number {
