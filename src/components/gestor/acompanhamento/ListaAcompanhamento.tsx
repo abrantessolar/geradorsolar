@@ -214,6 +214,7 @@ export default function ListaAcompanhamento() {
           projetoId,
           dataInstalacao: hoje,
           diaLeitura: proj?.dia_leitura ?? null,
+          dataNascimento: proj?.data_nascimento ? new Date(proj.data_nascimento + 'T00:00:00') : null,
           usuarioId: session?.user?.id,
         });
         if (criadas > 0) {
