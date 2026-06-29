@@ -33,6 +33,7 @@ export const TIPO_LABEL: Record<TarefaTipo, string> = {
   solicitar_conta: 'Solicitar conta de luz',
   avaliacao_google: 'Avaliação Google',
   indicacao: 'Indicação',
+  aniversario: 'Aniversário',
   encerramento: 'Encerramento',
 };
 
@@ -41,6 +42,7 @@ export const TIPO_ICONE: Record<TarefaTipo, string> = {
   solicitar_conta: '📄',
   avaliacao_google: '⭐',
   indicacao: '🤝',
+  aniversario: '🎂',
   encerramento: '🎉',
 };
 
