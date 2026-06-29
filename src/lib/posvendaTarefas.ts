@@ -8,6 +8,7 @@ export type TarefaTipo =
   | 'solicitar_conta'
   | 'avaliacao_google'
   | 'indicacao'
+  | 'aniversario'
   | 'encerramento';
 
 export interface TarefaPosVenda {
