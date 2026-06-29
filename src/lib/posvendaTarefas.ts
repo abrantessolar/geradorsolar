@@ -224,8 +224,9 @@ export async function ativarPosVendaCliente(opts: {
   clienteBaseId: string;
   dataInstalacao: Date;
   diaLeitura: number | null;
+  dataNascimento?: Date | null;
 }): Promise<AtivacaoResultado> {
-  const { clienteBaseId, dataInstalacao, diaLeitura } = opts;
+  const { clienteBaseId, dataInstalacao, diaLeitura, dataNascimento } = opts;
 
   // Evita duplicar
   const { count } = await supabase
@@ -234,7 +235,7 @@ export async function ativarPosVendaCliente(opts: {
     .eq('cliente_base_id', clienteBaseId);
   if ((count || 0) > 0) return { created: 0, proximo: null };
 
-  const base = construirTarefas({ dataInstalacao, diaLeitura, onlyFuture: true });
+  const base = construirTarefas({ dataInstalacao, diaLeitura, dataNascimento, onlyFuture: true });
   if (base.length === 0) return { created: 0, proximo: null };
 
   const rows = base.map((r) => ({ ...r, cliente_base_id: clienteBaseId }));
