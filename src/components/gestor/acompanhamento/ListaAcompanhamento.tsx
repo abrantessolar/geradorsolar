@@ -25,6 +25,9 @@ interface ProjetoLista {
   distribuidor: string | null;
   wifi_nome: string | null;
   wifi_senha: string | null;
+  numero_fila: number | null;
+  data_agendamento: string | null;
+  local_entrega: string | null;
   status: string | null;
   criado_em: string;
 }
@@ -101,7 +104,7 @@ export default function ListaAcompanhamento() {
     setLoading(true);
     const { data: projs } = await supabase
       .from('projetos' as any)
-      .select('id, nome_completo, razao_social, telefone, instalador, proposta_id, codigo_rastreamento, dia_leitura, nome_planta, data_nascimento, distribuidor, wifi_nome, wifi_senha, status, criado_em')
+      .select('id, nome_completo, razao_social, telefone, instalador, proposta_id, codigo_rastreamento, dia_leitura, nome_planta, data_nascimento, distribuidor, wifi_nome, wifi_senha, numero_fila, data_agendamento, local_entrega, status, criado_em')
       .order('criado_em', { ascending: false });
 
     const propIds = (projs || []).map((p: any) => p.proposta_id).filter(Boolean);
@@ -124,6 +127,9 @@ export default function ListaAcompanhamento() {
       distribuidor: p.distribuidor || null,
       wifi_nome: p.wifi_nome || null,
       wifi_senha: p.wifi_senha || null,
+      numero_fila: p.numero_fila ?? null,
+      data_agendamento: p.data_agendamento || null,
+      local_entrega: p.local_entrega || null,
       status: p.status || null,
       criado_em: p.criado_em,
     }));
@@ -197,6 +203,14 @@ export default function ListaAcompanhamento() {
     });
 
     const novasRows = await refetchProjeto(projetoId);
+
+    // Sincroniza as datas canônicas das etapas de homologação (fonte única de verdade)
+    if (fluxo === 1 && (etapa === 2 || etapa === 3)) {
+      const col = etapa === 2 ? 'projeto_enviado_em' : 'projeto_aprovado';
+      const dia = concluido ? (patch.data_conclusao || now).slice(0, 10) : null;
+      await supabase.from('projetos' as any).update({ [col]: dia }).eq('id', projetoId);
+    }
+
 
     // "Equipamento pago" (fluxo 2, etapa 2) → pede o preço do kit para ir aos Custos
     if (concluido && fluxo === 2 && etapa === 2) {
@@ -273,6 +287,13 @@ export default function ListaAcompanhamento() {
     const { error } = await supabase.from('projetos' as any).update({ wifi_nome, wifi_senha }).eq('id', projetoId);
     if (error) { toast.error(error.message); return; }
     setProjetos(prev => prev.map(p => p.id === projetoId ? { ...p, wifi_nome, wifi_senha } : p));
+  };
+
+  // Atualiza colunas canônicas do projeto (nº fila, data agendamento, local de entrega…)
+  const updateProjetoCampo = async (projetoId: string, patch: Partial<ProjetoLista>) => {
+    const { error } = await supabase.from('projetos' as any).update(patch).eq('id', projetoId);
+    if (error) { toast.error(error.message); return; }
+    setProjetos(prev => prev.map(p => p.id === projetoId ? { ...p, ...patch } : p));
   };
 
   const verificarConclusao = async (projetoId: string, rows: RastreamentoRow[]) => {
@@ -485,6 +506,10 @@ export default function ListaAcompanhamento() {
                                 wifiNome={p.wifi_nome}
                                 wifiSenha={p.wifi_senha}
                                 updateWifi={updateWifi}
+                                numeroFila={p.numero_fila}
+                                dataAgendamento={p.data_agendamento}
+                                localEntrega={p.local_entrega}
+                                updateProjetoCampo={updateProjetoCampo}
                               />
                             ))}
                           </div>
@@ -563,6 +588,7 @@ export default function ListaAcompanhamento() {
 function EtapaCheck({
   projetoId, fluxo, etapaDef, rows, nomesUsuarios, getRow, commitCheck, updateExtra, nomePlanta, updateNomePlanta,
   fornecedor, updateFornecedor, wifiNome, wifiSenha, updateWifi,
+  numeroFila, dataAgendamento, localEntrega, updateProjetoCampo,
 }: {
   projetoId: string;
   fluxo: number;
@@ -579,6 +605,10 @@ function EtapaCheck({
   wifiNome: string | null;
   wifiSenha: string | null;
   updateWifi: (p: string, nome: string, senha: string) => Promise<void>;
+  numeroFila: number | null;
+  dataAgendamento: string | null;
+  localEntrega: string | null;
+  updateProjetoCampo: (p: string, patch: Record<string, any>) => Promise<void>;
 }) {
   const [pedindoEntrega, setPedindoEntrega] = useState(false);
   const [pedindoPlanta, setPedindoPlanta] = useState(false);
@@ -616,9 +646,10 @@ function EtapaCheck({
     }
     // Campo de entrega (fluxo 2, etapa 4) → mini modal inline
     if (fluxo === 2 && etapaDef.etapa === 4) { setPedindoEntrega(true); return; }
-    // Agendamento (fluxo 3, etapa 2) → grava data de hoje como padrão
+    // Agendamento (fluxo 3, etapa 2) → grava data de hoje como padrão na coluna canônica
     if (fluxo === 3 && etapaDef.etapa === 2) {
-      await commitCheck(projetoId, fluxo, etapaDef.etapa, true, { data_agendamento: new Date().toISOString().slice(0, 10) });
+      await commitCheck(projetoId, fluxo, etapaDef.etapa, true);
+      await updateProjetoCampo(projetoId, { data_agendamento: new Date().toISOString().slice(0, 10) });
       return;
     }
     // WiFi do logger (fluxo 3, etapa 5) → mini modal inline
@@ -640,21 +671,21 @@ function EtapaCheck({
   const confirmarPlanta = async () => {
     setPedindoPlanta(false);
     await updateNomePlanta(projetoId, plantaInput);
-    await commitCheck(projetoId, fluxo, etapaDef.etapa, true, { nome_planta: plantaInput.trim() || null });
+    await commitCheck(projetoId, fluxo, etapaDef.etapa, true);
   };
 
   const confirmarFornecedor = async () => {
     if (!fornecedorInput.trim()) { toast.error('Informe o fornecedor.'); return; }
     setPedindoFornecedor(false);
     await updateFornecedor(projetoId, fornecedorInput);
-    await commitCheck(projetoId, fluxo, etapaDef.etapa, true, { fornecedor: fornecedorInput.trim() });
+    await commitCheck(projetoId, fluxo, etapaDef.etapa, true);
   };
 
   const confirmarWifi = async () => {
     if (!wifiNomeInput.trim()) { toast.error('Informe o nome da rede WiFi.'); return; }
     setPedindoWifi(false);
     await updateWifi(projetoId, wifiNomeInput, wifiSenhaInput);
-    await commitCheck(projetoId, fluxo, etapaDef.etapa, true, { wifi_nome: wifiNomeInput.trim(), wifi_senha: wifiSenhaInput.trim() || null });
+    await commitCheck(projetoId, fluxo, etapaDef.etapa, true);
   };
 
 
@@ -691,8 +722,8 @@ function EtapaCheck({
             <input
               type="number"
               className="solar-input py-0.5 w-16 text-xs"
-              defaultValue={ce.numero_fila ?? ''}
-              onBlur={ev => updateExtra(projetoId, fluxo, etapaDef.etapa, { numero_fila: ev.target.value ? Number(ev.target.value) : null })}
+              defaultValue={numeroFila ?? ce.numero_fila ?? ''}
+              onBlur={ev => updateProjetoCampo(projetoId, { numero_fila: ev.target.value ? Number(ev.target.value) : null })}
             />
           </span>
         )}
@@ -701,15 +732,15 @@ function EtapaCheck({
           <input
             type="date"
             className="solar-input py-0.5 text-xs"
-            value={ce.data_agendamento ?? ''}
-            onChange={ev => updateExtra(projetoId, fluxo, etapaDef.etapa, { data_agendamento: ev.target.value || null })}
+            value={dataAgendamento ?? ce.data_agendamento ?? ''}
+            onChange={ev => updateProjetoCampo(projetoId, { data_agendamento: ev.target.value || null })}
           />
         )}
         {/* Data agendada exibida também no resumo (fluxo 3, etapa 2) */}
 
         {/* Local de entrega marcado (fluxo 2, etapa 4) */}
-        {fluxo === 2 && etapaDef.etapa === 4 && concluido && ce.local_entrega && (
-          <span className="text-[11px] text-muted-foreground">({ce.local_entrega === 'empresa' ? 'TLS Solar' : 'Cliente'})</span>
+        {fluxo === 2 && etapaDef.etapa === 4 && concluido && (localEntrega || ce.local_entrega) && (
+          <span className="text-[11px] text-muted-foreground">({(localEntrega || ce.local_entrega) === 'empresa' ? 'TLS Solar' : 'Cliente'})</span>
         )}
         {/* Fornecedor marcado (fluxo 2, etapa 1) */}
         {fluxo === 2 && etapaDef.etapa === 1 && concluido && (fornecedor || ce.fornecedor) && (
@@ -795,7 +826,7 @@ function EtapaCheck({
           {[['empresa', 'Na empresa TLS Solar'], ['cliente', 'No endereço do cliente']].map(([val, label]) => (
             <button
               key={val}
-              onClick={async () => { setPedindoEntrega(false); await commitCheck(projetoId, fluxo, etapaDef.etapa, true, { local_entrega: val }); }}
+              onClick={async () => { setPedindoEntrega(false); await commitCheck(projetoId, fluxo, etapaDef.etapa, true); await updateProjetoCampo(projetoId, { local_entrega: val }); }}
               className="text-left px-2 py-1 rounded hover:bg-background"
             >
               {label}

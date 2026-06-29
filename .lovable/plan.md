@@ -1,51 +1,89 @@
-## Visão geral
+# Unificar os campos da obra (fonte única de verdade)
 
-Cinco ajustes no módulo de Clientes / Acompanhamento / Pós-venda. Nenhuma tabela nova; uso de colunas que já existem (`projetos.distribuidor`, `projetos.wifi_nome`, `projetos.wifi_senha`, `data_nascimento`).
+## O problema hoje
 
----
+Os mesmos dados vivem em dois lugares e nem sempre conversam:
 
-### 1. Lembrete de aniversário no pós-venda (1 por ano, 3 anos)
+- **Etapas da Obra (Acompanhamento)** grava em `rastreamento_obras.campo_extra` (um "saco" de JSON por etapa).
+- **Workflow / Logística / Monitoramento / Financeiro / Instalação** usa colunas próprias da tabela de projetos (ex.: data de aprovação, distribuidor, WiFi, nome da planta, data de instalação).
 
-- Adicionar o tipo `aniversario` à lógica de pós-venda (rótulo "🎂 Aniversário").
-- Ao gerar as tarefas de pós-venda, se houver data de nascimento do cliente, criar **uma tarefa de aniversário para cada ano** dentro da janela de 3 anos (próximo aniversário após a instalação + 2 anos seguintes).
-- Cada tarefa traz uma mensagem de WhatsApp pronta (novo modelo editável no Admin → WhatsApp).
-- A data de nascimento passará a ser lida na geração de tarefas (tanto ao concluir a instalação no Acompanhamento quanto ao ativar pós-venda em Instalados / Admin).
-- As tarefas aparecem normalmente na Agenda de Pós-venda, com filtros e botões existentes (Concluído, WhatsApp, Adiar).
+Resultado atual, etapa por etapa:
 
-### 2. Acesso ao checklist e link após a obra concluída (nos dois lugares)
+```text
+Etapa marcada no Acompanhamento     → onde grava hoje                 → problema
+Projeto protocolado (Homolog.)      → só marca o check               → NÃO grava "Projeto enviado em"
+Projeto aprovado (Homolog.)         → só marca o check               → NÃO grava "Projeto aprovado em"
+Pedido de compra / Fornecedor       → campo_extra + Distribuidor      → duplicado (pode divergir)
+Material entregue (local)           → só campo_extra                  → NÃO grava "Local de entrega" do projeto
+Aguardando instalação (Nº fila)     → só campo_extra                  → sem campo fixo, some na edição
+Instalação agendada (Data)          → só campo_extra                  → sem campo fixo, some na edição
+WiFi (rede/senha)                   → campo_extra + colunas WiFi      → duplicado
+Criar planta (nome)                 → campo_extra + Nome da Planta    → duplicado
+```
 
-- **Aba Acompanhamento**: adicionar um filtro "Concluídas" que também lista as obras já instaladas, mostrando o checklist completo das etapas (continua editável) e o botão de link de rastreamento. Hoje a lista esconde tudo que está "Instalado".
-- **Lista de Instalados** (Clientes → Projetos): adicionar nas ações de cada cliente instalado um botão de **link de rastreamento** (gerar/copiar/WhatsApp) e um botão para abrir o **checklist de etapas** da obra.
+Ou seja: alguns dados se perdem (não chegam às colunas usadas pela edição e pelo "Ver dados") e outros ficam gravados em dobro, podendo divergir.
 
-### 3. Fornecedor obrigatório ao marcar "Pedido de compra realizado"
+## A solução
 
-- No Acompanhamento, ao marcar a etapa "Pedido de compra realizado" (Equipamentos), abrir um mini-campo inline pedindo o **fornecedor**. Só conclui a etapa após informar.
-- O valor é salvo no campo **Distribuidor** do projeto (e registrado também na etapa para histórico). Reabrir o campo mostra o valor atual.
+Definir as **colunas do projeto como fonte única de verdade** de todo dado que também é exibido/editado em outro lugar. O `rastreamento_obras` continua sendo o registro das **etapas** (concluído sim/não, data, hora e usuário — para o histórico e a tooltip), mas **o valor em si** (fornecedor, fila, datas, WiFi, planta, entrega) passa a morar só na coluna canônica.
 
-### 4. Captura de WiFi ao marcar "Conectar logger no WiFi"
+Assim:
+- Preencher no Acompanhamento atualiza o campo "antigo" automaticamente (e vice-versa).
+- Editar em Projetos/Instalados reflete no Acompanhamento.
+- Nada é gravado em dobro nem se perde ao mudar de status.
 
-- No Acompanhamento, ao marcar a etapa "Conectar logger no WiFi" (Instalação), abrir um mini-formulário pedindo **Nome da Rede WiFi** e **Senha**.
-- Esses valores **atualizam os campos `wifi_nome` e `wifi_senha` do projeto** (que já existem e aparecem na edição). Vêm pré-preenchidos se já houver algo salvo.
+### Mapa final (cada etapa ↔ um campo do projeto)
 
-### 5. Conciliar os campos de edição (Aguardando × Instalados)
+```text
+Projeto protocolado        → projeto_enviado_em (data)
+Projeto aprovado           → projeto_aprovado (data)
+Pedido de compra           → distribuidor (Fornecedor)
+Material entregue          → local_entrega (TLS Solar / Cliente)
+Aguardando instalação      → numero_fila (NOVO campo)
+Instalação agendada        → data_agendamento (NOVO campo)
+Instalação finalizada      → data_instalacao
+Conectar logger no WiFi    → wifi_nome / wifi_senha
+Criar planta               → nome_planta
+```
 
-Problema relatado: os dois editores não têm os mesmos campos e dados "somem" ao mudar de status.
+Etapas sem dado associado (ex.: "Documentação recebida", "Explicar funcionamento") continuam apenas com o check + data/usuário, como já é.
 
-- Alinhar o conjunto de campos entre o **Editar Projeto** (obras Aguardando) e o **Editar Cliente** (Instalados), adicionando os que faltam em cada um:
-  - Garantir nos dois: dia de leitura, estrutura de fixação, cabo usado, fornecedor/distribuidor, WiFi (nome/senha), nome da planta, satisfação.
-- Revisar o mapeamento usado quando um projeto vira "Instalado" para que **nenhum campo preenchido seja descartado** na conversão (ex.: dia de leitura, estrutura, geração estimada, e-mail, datas de workflow).
-- Padronizar o nome do campo de fornecedor entre as telas (projeto usa "Distribuidor"; cliente usa "Fornecedor" → mesma coluna), deixando claro que é o mesmo dado.
+## O que muda na prática
+
+1. **Acompanhamento preenche os campos antigos.** Ao marcar "Projeto protocolado" / "Projeto aprovado", grava a data no campo do projeto (e limpa ao desmarcar). Entrega, fila, agendamento, fornecedor, WiFi e planta passam a gravar direto na coluna canônica.
+2. **Nº da fila e Data de agendamento ganham campo fixo** no projeto — passam a aparecer também na edição e no "Ver dados", sem mais ficar só no Acompanhamento.
+3. **Fim da duplicação.** Fornecedor, WiFi e Nome da planta deixam de ser gravados em dois lugares; passa a existir um só valor.
+4. **Editores alinhados.** "Editar Projeto" (Aguardando) e "Editar Cliente" (Instalados) ficam com o mesmo conjunto de campos (incluindo Nº fila, Data agendada e Local de entrega), deixando claro que "Distribuidor" e "Fornecedor" são o mesmo dado.
+5. **Dados atuais preservados.** Tudo que já está em `campo_extra` (e as datas das etapas de homologação já concluídas) é copiado para as colunas canônicas na migração — nada some.
 
 ---
 
 ## Detalhes técnicos
 
-- `src/lib/posvendaTarefas.ts`: novo tipo `aniversario`; `construirTarefas` passa a aceitar `dataNascimento` e gera linhas anuais de aniversário dentro da janela de 3 anos; `gerarTarefasPosVenda`, `ativarPosVendaCliente` e `ativarPosVendaProjeto` recebem/repasse de `dataNascimento`.
-- Novo modelo em `whatsapp_templates` (tipo aniversário) via insert de dados.
-- `ListaAcompanhamento.tsx`: buscar `data_nascimento`; filtro "Concluídas" (carrega também status Instalado/Homologado em modo leitura+link); mini-modais de fornecedor (etapa Equipamentos 1 → `distribuidor`) e WiFi (etapa Instalação 5 → `wifi_nome`/`wifi_senha`).
-- `ProjetosUnificados.tsx`: botões de link de rastreamento e checklist na linha de Instalados; mapear `data_nascimento` em `fromProjetos`.
-- `ClientesPage.tsx`: incluir `data_nascimento` no objeto mapeado dos instalados.
-- `ProjetoForm.tsx` e `ClienteEditModal.tsx`: adicionar os campos faltantes para igualar os dois editores.
-- `src/components/gestor/posvenda/PosVendaAgenda.tsx` / `TarefaPosVendaItem.tsx`: suporte ao ícone/rótulo do tipo aniversário (a estrutura genérica já cobre a renderização).
+**Schema (migração)**
+- Adicionar a `projetos`: `numero_fila` (integer) e `data_agendamento` (date).
+- Backfill a partir do existente:
+  - `numero_fila` ← `campo_extra->numero_fila` (fluxo 3, etapa 1).
+  - `data_agendamento` ← `campo_extra->data_agendamento` (fluxo 3, etapa 2).
+  - `local_entrega` ← `campo_extra->local_entrega` (fluxo 2, etapa 4) quando vazio.
+  - `distribuidor` ← `campo_extra->fornecedor` (fluxo 2, etapa 1) quando vazio.
+  - `projeto_enviado_em` ← `data_conclusao` da etapa 1.2 concluída quando vazio.
+  - `projeto_aprovado` ← `data_conclusao` da etapa 1.3 concluída quando vazio.
 
-Sem mudanças de schema (todas as colunas necessárias já existem); apenas inserção do novo modelo de WhatsApp.
+**`src/lib/rastreamentoEtapas.ts`**
+- Acrescentar a cada `EtapaDef` que tenha dado um `campoProjeto` (nome da coluna canônica) e o tipo (`date`/`text`/`int`/`local`).
+- Helper `setCanonico(projetoId, etapa, valor)` e leitura canônica para a UI usar.
+
+**`ListaAcompanhamento.tsx`**
+- No `commitCheck`: para etapas só-data (protocolado, aprovado), gravar/limpar a coluna canônica conforme marca/desmarca.
+- Mini-modais (fornecedor, WiFi, planta, entrega, fila, agendamento) passam a ler/gravar a coluna canônica; remover a escrita redundante em `campo_extra` (mantendo apenas `campo_extra.ativada` da troca do fluxo 1).
+- A lista carrega `numero_fila`, `data_agendamento`, `local_entrega` do projeto e exibe a partir deles (com fallback de leitura do `campo_extra` legado para registros antigos que ainda não passaram pelo backfill).
+
+**`ProjetoForm.tsx` e `ClienteEditModal.tsx`**
+- Igualar o conjunto de campos: adicionar Nº da fila, Data de agendamento e seletor de Local de entrega onde faltar; garantir `dia_leitura`, `estrutura`, `cabo_usado`, WiFi, nome da planta nos dois.
+- Confirmar que ambos salvam em `distribuidor` (rótulo "Fornecedor/Distribuidor").
+
+**`ClienteDadosModal.tsx`**
+- Ler tudo das colunas canônicas (Nº fila, agendamento, entrega, fornecedor, WiFi, planta, datas de homologação); manter `extraDe()` apenas como fallback legado.
+
+Sem novas tabelas; apenas duas colunas novas e realinhamento das telas para uma fonte única de verdade.

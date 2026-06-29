@@ -123,12 +123,12 @@ export default function ClienteDadosModal({ cliente, onClose }: { cliente: Clien
     });
   }, [c]);
 
-  // Valores preenchidos no Acompanhamento (guardados em campo_extra)
+  // Fonte única de verdade: colunas canônicas do projeto, com fallback ao legado (campo_extra)
   const extraDe = (fluxo: number, etapa: number) =>
     (rastreio.find(r => r.fluxo === fluxo && r.etapa === etapa)?.campo_extra) || {};
-  const numeroFila = extraDe(3, 1).numero_fila;
-  const dataAgendamento = extraDe(3, 2).data_agendamento;
-  const localEntregaExtra = extraDe(2, 4).local_entrega || (c as any).local_entrega;
+  const numeroFila = (c as any).numero_fila ?? extraDe(3, 1).numero_fila;
+  const dataAgendamento = (c as any).data_agendamento || extraDe(3, 2).data_agendamento;
+  const localEntregaExtra = (c as any).local_entrega || extraDe(2, 4).local_entrega;
 
   // Build full address from parts if endereco is empty
   const enderecoCompleto = (() => {

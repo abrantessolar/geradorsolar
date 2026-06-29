@@ -1425,6 +1425,7 @@ export type Database = {
           cpf: string | null
           cpf_representante: string | null
           criado_em: string
+          data_agendamento: string | null
           data_fechamento: string | null
           data_instalacao: string | null
           data_nascimento: string | null
@@ -1448,6 +1449,7 @@ export type Database = {
           nome_completo: string | null
           nome_planta: string | null
           nome_representante: string | null
+          numero_fila: number | null
           objecoes: string | null
           observacoes_historico: Json | null
           outros_nomes: Json | null
@@ -1500,6 +1502,7 @@ export type Database = {
           cpf?: string | null
           cpf_representante?: string | null
           criado_em?: string
+          data_agendamento?: string | null
           data_fechamento?: string | null
           data_instalacao?: string | null
           data_nascimento?: string | null
@@ -1523,6 +1526,7 @@ export type Database = {
           nome_completo?: string | null
           nome_planta?: string | null
           nome_representante?: string | null
+          numero_fila?: number | null
           objecoes?: string | null
           observacoes_historico?: Json | null
           outros_nomes?: Json | null
@@ -1575,6 +1579,7 @@ export type Database = {
           cpf?: string | null
           cpf_representante?: string | null
           criado_em?: string
+          data_agendamento?: string | null
           data_fechamento?: string | null
           data_instalacao?: string | null
           data_nascimento?: string | null
@@ -1598,6 +1603,7 @@ export type Database = {
           nome_completo?: string | null
           nome_planta?: string | null
           nome_representante?: string | null
+          numero_fila?: number | null
           objecoes?: string | null
           observacoes_historico?: Json | null
           outros_nomes?: Json | null

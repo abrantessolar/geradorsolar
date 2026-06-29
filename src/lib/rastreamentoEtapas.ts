@@ -64,6 +64,37 @@ export const FLUXOS: FluxoDef[] = [
   },
 ];
 
+/**
+ * Mapeamento etapa → coluna canônica na tabela `projetos`.
+ * Fonte única de verdade: o valor preenchido no Acompanhamento mora aqui
+ * (e não mais em rastreamento_obras.campo_extra), refletindo automaticamente
+ * na edição do projeto/cliente e no "Ver dados".
+ */
+export interface CampoCanonicoDef {
+  fluxo: number;
+  etapa: number;
+  /** comportamento do campo */
+  tipo: 'data_auto' | 'int' | 'date' | 'local' | 'wifi' | 'planta' | 'fornecedor';
+  /** coluna principal em projetos */
+  coluna: string;
+}
+
+export const CAMPOS_CANONICOS: CampoCanonicoDef[] = [
+  { fluxo: 1, etapa: 2, tipo: 'data_auto', coluna: 'projeto_enviado_em' },
+  { fluxo: 1, etapa: 3, tipo: 'data_auto', coluna: 'projeto_aprovado' },
+  { fluxo: 2, etapa: 1, tipo: 'fornecedor', coluna: 'distribuidor' },
+  { fluxo: 2, etapa: 4, tipo: 'local', coluna: 'local_entrega' },
+  { fluxo: 3, etapa: 1, tipo: 'int', coluna: 'numero_fila' },
+  { fluxo: 3, etapa: 2, tipo: 'date', coluna: 'data_agendamento' },
+  { fluxo: 3, etapa: 3, tipo: 'data_auto', coluna: 'data_instalacao' },
+  { fluxo: 3, etapa: 5, tipo: 'wifi', coluna: 'wifi_nome' },
+  { fluxo: 3, etapa: 6, tipo: 'planta', coluna: 'nome_planta' },
+];
+
+export function getCampoCanonico(fluxo: number, etapa: number): CampoCanonicoDef | undefined {
+  return CAMPOS_CANONICOS.find(c => c.fluxo === fluxo && c.etapa === etapa);
+}
+
 export const KANBAN_COLUNAS: { key: string; titulo: string }[] = [
   { key: 'homologacao', titulo: 'Homologação' },
   { key: 'equipamentos', titulo: 'Equipamentos' },
