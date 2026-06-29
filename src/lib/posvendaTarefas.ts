@@ -189,9 +189,10 @@ export async function gerarTarefasPosVenda(opts: {
   projetoId: string;
   dataInstalacao: Date;
   diaLeitura: number | null;
+  dataNascimento?: Date | null;
   usuarioId?: string | null;
 }): Promise<number> {
-  const { projetoId, dataInstalacao, diaLeitura } = opts;
+  const { projetoId, dataInstalacao, diaLeitura, dataNascimento } = opts;
 
   // Evita duplicar
   const { count } = await supabase
@@ -200,7 +201,7 @@ export async function gerarTarefasPosVenda(opts: {
     .eq('projeto_id', projetoId);
   if ((count || 0) > 0) return 0;
 
-  const rows = construirTarefas({ dataInstalacao, diaLeitura }).map((r) => ({
+  const rows = construirTarefas({ dataInstalacao, diaLeitura, dataNascimento }).map((r) => ({
     ...r,
     projeto_id: projetoId,
   }));
