@@ -289,6 +289,13 @@ export default function ListaAcompanhamento() {
     setProjetos(prev => prev.map(p => p.id === projetoId ? { ...p, wifi_nome, wifi_senha } : p));
   };
 
+  // Atualiza colunas canônicas do projeto (nº fila, data agendamento, local de entrega…)
+  const updateProjetoCampo = async (projetoId: string, patch: Partial<ProjetoLista>) => {
+    const { error } = await supabase.from('projetos' as any).update(patch).eq('id', projetoId);
+    if (error) { toast.error(error.message); return; }
+    setProjetos(prev => prev.map(p => p.id === projetoId ? { ...p, ...patch } : p));
+  };
+
   const verificarConclusao = async (projetoId: string, rows: RastreamentoRow[]) => {
     const { done, total } = progresso(rows);
     if (total > 0 && done === total) {
