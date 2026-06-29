@@ -313,6 +313,51 @@ export default function ClienteDadosModal({ cliente, onClose }: { cliente: Clien
         <div className="p-4 space-y-5">
           {blocks.map(b => <Block key={b.title} title={b.title} fields={b.fields} />)}
 
+          {/* Etapas da obra (Acompanhamento) */}
+          {rastreio.length > 0 && (
+            <div className="space-y-3">
+              <h3 className="text-sm font-semibold text-primary border-b border-border pb-1 mb-1">Etapas da Obra (Acompanhamento)</h3>
+              {FLUXOS.map(f => {
+                const etapas = f.etapas.filter(e => {
+                  if (!e.condicional) return true;
+                  const r = rastreio.find(x => x.fluxo === f.fluxo && x.etapa === e.etapa);
+                  return !!r;
+                });
+                return (
+                  <div key={f.fluxo} className="space-y-0.5">
+                    <div className="text-xs font-semibold text-foreground/80 px-2">{f.icone} {f.titulo}</div>
+                    {etapas.map(e => {
+                      const r = rastreio.find(x => x.fluxo === f.fluxo && x.etapa === e.etapa);
+                      const ce = r?.campo_extra || {};
+                      const extras: string[] = [];
+                      if (ce.numero_fila !== null && ce.numero_fila !== undefined && ce.numero_fila !== '') extras.push(`Fila ${ce.numero_fila}`);
+                      if (ce.data_agendamento) extras.push(`Agendada ${fmtDate(ce.data_agendamento)}`);
+                      if (ce.local_entrega) extras.push(ce.local_entrega === 'empresa' ? 'TLS Solar' : 'Cliente');
+                      if (ce.fornecedor) extras.push(ce.fornecedor);
+                      if (ce.nome_planta) extras.push(ce.nome_planta);
+                      if (ce.wifi_nome) extras.push(`WiFi ${ce.wifi_nome}${ce.wifi_senha ? ` / ${ce.wifi_senha}` : ''}`);
+                      const done = !!r?.concluido;
+                      return (
+                        <div key={e.etapa} className="flex items-center justify-between py-1 px-2 text-sm">
+                          <span className="flex items-center gap-2 min-w-0">
+                            <span className={done ? 'text-green-600' : 'text-muted-foreground'}>{done ? '✓' : '○'}</span>
+                            <span className={done ? 'text-foreground' : 'text-muted-foreground'}>{e.titulo}</span>
+                            {extras.length > 0 && <span className="text-xs text-muted-foreground truncate">— {extras.join(' · ')}</span>}
+                          </span>
+                          {done && r?.data_conclusao && (
+                            <span className="text-xs text-muted-foreground whitespace-nowrap ml-2">{new Date(r.data_conclusao).toLocaleDateString('pt-BR')}</span>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+
+
           {/* Avaliação do cliente (página pública de rastreamento) */}
           {avaliacao && (
             <div className="space-y-1">
