@@ -276,7 +276,10 @@ export default function ClienteDadosModal({ cliente, onClose }: { cliente: Clien
     const sys = sistemaStr(c);
     if (sys) add('SISTEMA', sys);
     add('GERAÇÃO ESTIMADA (kWh)', fmt(c.geracao_estimada_kwh));
-    add('DATA INSTALAÇÃO', fmtDate(c.instalado_em));
+    if (numeroFila !== null && numeroFila !== undefined && numeroFila !== '') add('Nº FILA INSTALAÇÃO', String(numeroFila));
+    add('DATA AGENDADA INSTALAÇÃO', fmtDate(dataAgendamento));
+    add('DATA INSTALAÇÃO', fmtDate(c.instalado_em || (c as any).data_instalacao));
+    if (localEntregaExtra) add('LOCAL ENTREGA', String(localEntregaExtra) === 'empresa' ? 'TLS Solar' : 'Cliente');
     add('INSTALADOR', fmt(c.instalador));
     add('DATA VISTORIA', fmtDate(c.vistoriado_em));
     add('VALOR', fmtMoney(c.valor));
