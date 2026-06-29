@@ -260,8 +260,9 @@ export async function ativarPosVendaProjeto(opts: {
   projetoId: string;
   dataInstalacao: Date;
   diaLeitura: number | null;
+  dataNascimento?: Date | null;
 }): Promise<AtivacaoResultado> {
-  const { projetoId, dataInstalacao, diaLeitura } = opts;
+  const { projetoId, dataInstalacao, diaLeitura, dataNascimento } = opts;
 
   // Evita duplicar
   const { count } = await supabase
@@ -270,7 +271,7 @@ export async function ativarPosVendaProjeto(opts: {
     .eq('projeto_id', projetoId);
   if ((count || 0) > 0) return { created: 0, proximo: null };
 
-  const base = construirTarefas({ dataInstalacao, diaLeitura, onlyFuture: true });
+  const base = construirTarefas({ dataInstalacao, diaLeitura, dataNascimento, onlyFuture: true });
   if (base.length === 0) return { created: 0, proximo: null };
 
   const rows = base.map((r) => ({ ...r, projeto_id: projetoId }));
