@@ -480,6 +480,11 @@ export default function ListaAcompanhamento() {
                                 updateExtra={updateExtra}
                                 nomePlanta={p.nome_planta}
                                 updateNomePlanta={updateNomePlanta}
+                                fornecedor={p.distribuidor}
+                                updateFornecedor={updateFornecedor}
+                                wifiNome={p.wifi_nome}
+                                wifiSenha={p.wifi_senha}
+                                updateWifi={updateWifi}
                               />
                             ))}
                           </div>
