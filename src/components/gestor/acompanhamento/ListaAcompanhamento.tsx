@@ -562,6 +562,7 @@ export default function ListaAcompanhamento() {
 // ============ Checkbox individual de uma etapa ============
 function EtapaCheck({
   projetoId, fluxo, etapaDef, rows, nomesUsuarios, getRow, commitCheck, updateExtra, nomePlanta, updateNomePlanta,
+  fornecedor, updateFornecedor, wifiNome, wifiSenha, updateWifi,
 }: {
   projetoId: string;
   fluxo: number;
@@ -573,10 +574,20 @@ function EtapaCheck({
   updateExtra: (p: string, f: number, e: number, extra: Record<string, any>) => Promise<void>;
   nomePlanta: string | null;
   updateNomePlanta: (p: string, nome: string) => Promise<void>;
+  fornecedor: string | null;
+  updateFornecedor: (p: string, fornecedor: string) => Promise<void>;
+  wifiNome: string | null;
+  wifiSenha: string | null;
+  updateWifi: (p: string, nome: string, senha: string) => Promise<void>;
 }) {
   const [pedindoEntrega, setPedindoEntrega] = useState(false);
   const [pedindoPlanta, setPedindoPlanta] = useState(false);
   const [plantaInput, setPlantaInput] = useState('');
+  const [pedindoFornecedor, setPedindoFornecedor] = useState(false);
+  const [fornecedorInput, setFornecedorInput] = useState('');
+  const [pedindoWifi, setPedindoWifi] = useState(false);
+  const [wifiNomeInput, setWifiNomeInput] = useState('');
+  const [wifiSenhaInput, setWifiSenhaInput] = useState('');
   const row = getRow(projetoId, fluxo, etapaDef.etapa);
   const concluido = !!row?.concluido;
   const ce = row?.campo_extra || {};
