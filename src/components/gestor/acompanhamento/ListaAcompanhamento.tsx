@@ -25,6 +25,9 @@ interface ProjetoLista {
   distribuidor: string | null;
   wifi_nome: string | null;
   wifi_senha: string | null;
+  numero_fila: number | null;
+  data_agendamento: string | null;
+  local_entrega: string | null;
   status: string | null;
   criado_em: string;
 }
