@@ -506,6 +506,10 @@ export default function ListaAcompanhamento() {
                                 wifiNome={p.wifi_nome}
                                 wifiSenha={p.wifi_senha}
                                 updateWifi={updateWifi}
+                                numeroFila={p.numero_fila}
+                                dataAgendamento={p.data_agendamento}
+                                localEntrega={p.local_entrega}
+                                updateProjetoCampo={updateProjetoCampo}
                               />
                             ))}
                           </div>
