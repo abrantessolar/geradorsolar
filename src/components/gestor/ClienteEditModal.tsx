@@ -48,6 +48,7 @@ export default function ClienteEditModal({ cliente, onClose, onSaved }: {
     uc: cliente.uc || '',
     nome_planta: (cliente as any).nome_planta || '',
     instalado_em: cliente.instalado_em || '',
+    dia_leitura: (cliente as any).dia_leitura?.toString() || '',
     vistoriado_em: cliente.vistoriado_em || '',
     projeto_enviado_em: (cliente as any).projeto_enviado_em || '',
     projeto_aprovado: (cliente as any).projeto_aprovado || '',
