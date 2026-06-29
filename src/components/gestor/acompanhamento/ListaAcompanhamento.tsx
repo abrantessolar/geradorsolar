@@ -21,10 +21,15 @@ interface ProjetoLista {
   codigo_rastreamento: string | null;
   dia_leitura: number | null;
   nome_planta: string | null;
+  data_nascimento: string | null;
+  distribuidor: string | null;
+  wifi_nome: string | null;
+  wifi_senha: string | null;
+  status: string | null;
   criado_em: string;
 }
 
-type FiltroRapido = 'todas' | 'atrasadas' | 'homologacao' | 'equipamentos' | 'instalacao';
+type FiltroRapido = 'todas' | 'atrasadas' | 'homologacao' | 'equipamentos' | 'instalacao' | 'concluidas';
 type Ordenacao = 'antigas' | 'recentes' | 'progresso' | 'nome';
 
 function daysSince(dateStr?: string | null): number {
@@ -96,9 +101,7 @@ export default function ListaAcompanhamento() {
     setLoading(true);
     const { data: projs } = await supabase
       .from('projetos' as any)
-      .select('id, nome_completo, razao_social, telefone, instalador, proposta_id, codigo_rastreamento, dia_leitura, nome_planta, criado_em')
-      .not('status', 'eq', 'Instalado')
-      .not('status', 'eq', 'Homologado')
+      .select('id, nome_completo, razao_social, telefone, instalador, proposta_id, codigo_rastreamento, dia_leitura, nome_planta, data_nascimento, distribuidor, wifi_nome, wifi_senha, status, criado_em')
       .order('criado_em', { ascending: false });
 
     const propIds = (projs || []).map((p: any) => p.proposta_id).filter(Boolean);
@@ -117,6 +120,11 @@ export default function ListaAcompanhamento() {
       codigo_rastreamento: p.codigo_rastreamento || null,
       dia_leitura: p.dia_leitura ?? null,
       nome_planta: p.nome_planta || null,
+      data_nascimento: p.data_nascimento || null,
+      distribuidor: p.distribuidor || null,
+      wifi_nome: p.wifi_nome || null,
+      wifi_senha: p.wifi_senha || null,
+      status: p.status || null,
       criado_em: p.criado_em,
     }));
 
@@ -206,6 +214,7 @@ export default function ListaAcompanhamento() {
           projetoId,
           dataInstalacao: hoje,
           diaLeitura: proj?.dia_leitura ?? null,
+          dataNascimento: proj?.data_nascimento ? new Date(proj.data_nascimento + 'T00:00:00') : null,
           usuarioId: session?.user?.id,
         });
         if (criadas > 0) {
@@ -249,6 +258,23 @@ export default function ListaAcompanhamento() {
     setProjetos(prev => prev.map(p => p.id === projetoId ? { ...p, nome_planta: valor } : p));
   };
 
+  // Atualiza o fornecedor/distribuidor no projeto
+  const updateFornecedor = async (projetoId: string, fornecedor: string) => {
+    const valor = fornecedor.trim() || null;
+    const { error } = await supabase.from('projetos' as any).update({ distribuidor: valor }).eq('id', projetoId);
+    if (error) { toast.error(error.message); return; }
+    setProjetos(prev => prev.map(p => p.id === projetoId ? { ...p, distribuidor: valor } : p));
+  };
+
+  // Atualiza os dados de WiFi no projeto
+  const updateWifi = async (projetoId: string, nome: string, senha: string) => {
+    const wifi_nome = nome.trim() || null;
+    const wifi_senha = senha.trim() || null;
+    const { error } = await supabase.from('projetos' as any).update({ wifi_nome, wifi_senha }).eq('id', projetoId);
+    if (error) { toast.error(error.message); return; }
+    setProjetos(prev => prev.map(p => p.id === projetoId ? { ...p, wifi_nome, wifi_senha } : p));
+  };
+
   const verificarConclusao = async (projetoId: string, rows: RastreamentoRow[]) => {
     const { done, total } = progresso(rows);
     if (total > 0 && done === total) {
@@ -256,8 +282,8 @@ export default function ListaAcompanhamento() {
         status: 'Instalado',
         data_instalacao: new Date().toISOString().slice(0, 10),
       }).eq('id', projetoId);
-      toast.success('Obra concluída! Movida para Instalados.');
-      setProjetos(prev => prev.filter(p => p.id !== projetoId));
+      toast.success('Obra concluída! Disponível no filtro "Concluídas".');
+      setProjetos(prev => prev.map(p => p.id === projetoId ? { ...p, status: 'Instalado' } : p));
     }
   };
 
@@ -280,6 +306,12 @@ export default function ListaAcompanhamento() {
       const rows = rowsByProjeto[p.id] || [];
       const termo = busca.trim().toLowerCase();
       if (termo && !(p.nome.toLowerCase().includes(termo) || (p.numero_proposta || '').toLowerCase().includes(termo))) return false;
+
+      const concluida = p.status === 'Instalado' || p.status === 'Homologado';
+      if (filtro === 'concluidas') return concluida;
+      // Nos demais filtros, ocultar as obras já concluídas
+      if (concluida) return false;
+
       if (filtro === 'atrasadas') {
         return daysSince(ultimaDataCheck(rows, p.criado_em)) > prazoDias;
       }
@@ -311,6 +343,7 @@ export default function ListaAcompanhamento() {
     { key: 'homologacao', label: 'Homologação' },
     { key: 'equipamentos', label: 'Equipamentos' },
     { key: 'instalacao', label: 'Instalação' },
+    { key: 'concluidas', label: 'Concluídas' },
   ];
 
   return (
@@ -447,6 +480,11 @@ export default function ListaAcompanhamento() {
                                 updateExtra={updateExtra}
                                 nomePlanta={p.nome_planta}
                                 updateNomePlanta={updateNomePlanta}
+                                fornecedor={p.distribuidor}
+                                updateFornecedor={updateFornecedor}
+                                wifiNome={p.wifi_nome}
+                                wifiSenha={p.wifi_senha}
+                                updateWifi={updateWifi}
                               />
                             ))}
                           </div>
@@ -524,6 +562,7 @@ export default function ListaAcompanhamento() {
 // ============ Checkbox individual de uma etapa ============
 function EtapaCheck({
   projetoId, fluxo, etapaDef, rows, nomesUsuarios, getRow, commitCheck, updateExtra, nomePlanta, updateNomePlanta,
+  fornecedor, updateFornecedor, wifiNome, wifiSenha, updateWifi,
 }: {
   projetoId: string;
   fluxo: number;
@@ -535,10 +574,20 @@ function EtapaCheck({
   updateExtra: (p: string, f: number, e: number, extra: Record<string, any>) => Promise<void>;
   nomePlanta: string | null;
   updateNomePlanta: (p: string, nome: string) => Promise<void>;
+  fornecedor: string | null;
+  updateFornecedor: (p: string, fornecedor: string) => Promise<void>;
+  wifiNome: string | null;
+  wifiSenha: string | null;
+  updateWifi: (p: string, nome: string, senha: string) => Promise<void>;
 }) {
   const [pedindoEntrega, setPedindoEntrega] = useState(false);
   const [pedindoPlanta, setPedindoPlanta] = useState(false);
   const [plantaInput, setPlantaInput] = useState('');
+  const [pedindoFornecedor, setPedindoFornecedor] = useState(false);
+  const [fornecedorInput, setFornecedorInput] = useState('');
+  const [pedindoWifi, setPedindoWifi] = useState(false);
+  const [wifiNomeInput, setWifiNomeInput] = useState('');
+  const [wifiSenhaInput, setWifiSenhaInput] = useState('');
   const row = getRow(projetoId, fluxo, etapaDef.etapa);
   const concluido = !!row?.concluido;
   const ce = row?.campo_extra || {};
@@ -559,11 +608,24 @@ function EtapaCheck({
     }
     if (!anteriorOk) { toast.error('Conclua a etapa anterior primeiro.'); return; }
 
+    // Fornecedor obrigatório (fluxo 2, etapa 1) → mini modal inline
+    if (fluxo === 2 && etapaDef.etapa === 1) {
+      setFornecedorInput(fornecedor || ce.fornecedor || '');
+      setPedindoFornecedor(true);
+      return;
+    }
     // Campo de entrega (fluxo 2, etapa 4) → mini modal inline
     if (fluxo === 2 && etapaDef.etapa === 4) { setPedindoEntrega(true); return; }
     // Agendamento (fluxo 3, etapa 2) → grava data de hoje como padrão
     if (fluxo === 3 && etapaDef.etapa === 2) {
       await commitCheck(projetoId, fluxo, etapaDef.etapa, true, { data_agendamento: new Date().toISOString().slice(0, 10) });
+      return;
+    }
+    // WiFi do logger (fluxo 3, etapa 5) → mini modal inline
+    if (fluxo === 3 && etapaDef.etapa === 5) {
+      setWifiNomeInput(wifiNome || '');
+      setWifiSenhaInput(wifiSenha || '');
+      setPedindoWifi(true);
       return;
     }
     // Nome da planta (fluxo 3, etapa 6) → mini modal inline
@@ -579,6 +641,20 @@ function EtapaCheck({
     setPedindoPlanta(false);
     await updateNomePlanta(projetoId, plantaInput);
     await commitCheck(projetoId, fluxo, etapaDef.etapa, true, { nome_planta: plantaInput.trim() || null });
+  };
+
+  const confirmarFornecedor = async () => {
+    if (!fornecedorInput.trim()) { toast.error('Informe o fornecedor.'); return; }
+    setPedindoFornecedor(false);
+    await updateFornecedor(projetoId, fornecedorInput);
+    await commitCheck(projetoId, fluxo, etapaDef.etapa, true, { fornecedor: fornecedorInput.trim() });
+  };
+
+  const confirmarWifi = async () => {
+    if (!wifiNomeInput.trim()) { toast.error('Informe o nome da rede WiFi.'); return; }
+    setPedindoWifi(false);
+    await updateWifi(projetoId, wifiNomeInput, wifiSenhaInput);
+    await commitCheck(projetoId, fluxo, etapaDef.etapa, true, { wifi_nome: wifiNomeInput.trim(), wifi_senha: wifiSenhaInput.trim() || null });
   };
 
 
@@ -635,11 +711,63 @@ function EtapaCheck({
         {fluxo === 2 && etapaDef.etapa === 4 && concluido && ce.local_entrega && (
           <span className="text-[11px] text-muted-foreground">({ce.local_entrega === 'empresa' ? 'TLS Solar' : 'Cliente'})</span>
         )}
+        {/* Fornecedor marcado (fluxo 2, etapa 1) */}
+        {fluxo === 2 && etapaDef.etapa === 1 && concluido && (fornecedor || ce.fornecedor) && (
+          <span className="text-[11px] text-muted-foreground">🏭 {fornecedor || ce.fornecedor}</span>
+        )}
+        {/* WiFi marcado (fluxo 3, etapa 5) */}
+        {fluxo === 3 && etapaDef.etapa === 5 && concluido && (wifiNome || ce.wifi_nome) && (
+          <span className="text-[11px] text-muted-foreground">📶 {wifiNome || ce.wifi_nome}</span>
+        )}
         {/* Nome da planta marcado (fluxo 3, etapa 6) */}
         {fluxo === 3 && etapaDef.etapa === 6 && concluido && (nomePlanta || ce.nome_planta) && (
           <span className="text-[11px] text-muted-foreground">🌱 {nomePlanta || ce.nome_planta}</span>
         )}
       </span>
+
+      {/* Mini modal inline de fornecedor */}
+      {pedindoFornecedor && (
+        <span className="flex flex-col gap-1 bg-muted/50 rounded-lg p-2 text-xs">
+          <span className="font-medium text-foreground">Fornecedor / distribuidor (obrigatório):</span>
+          <input
+            autoFocus
+            value={fornecedorInput}
+            onChange={e => setFornecedorInput(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter') confirmarFornecedor(); }}
+            placeholder="Ex.: Aldo Solar, Edeltec…"
+            className="solar-input py-1 text-xs"
+          />
+          <span className="flex items-center gap-1">
+            <button onClick={confirmarFornecedor} className="px-2 py-1 rounded bg-primary text-primary-foreground hover:bg-primary/90">Salvar</button>
+            <button onClick={() => setPedindoFornecedor(false)} className="px-2 py-1 text-muted-foreground hover:text-foreground">Cancelar</button>
+          </span>
+        </span>
+      )}
+
+      {/* Mini modal inline de WiFi */}
+      {pedindoWifi && (
+        <span className="flex flex-col gap-1 bg-muted/50 rounded-lg p-2 text-xs">
+          <span className="font-medium text-foreground">Dados do WiFi do logger:</span>
+          <input
+            autoFocus
+            value={wifiNomeInput}
+            onChange={e => setWifiNomeInput(e.target.value)}
+            placeholder="Nome da rede WiFi"
+            className="solar-input py-1 text-xs"
+          />
+          <input
+            value={wifiSenhaInput}
+            onChange={e => setWifiSenhaInput(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter') confirmarWifi(); }}
+            placeholder="Senha do WiFi"
+            className="solar-input py-1 text-xs"
+          />
+          <span className="flex items-center gap-1">
+            <button onClick={confirmarWifi} className="px-2 py-1 rounded bg-primary text-primary-foreground hover:bg-primary/90">Salvar</button>
+            <button onClick={() => setPedindoWifi(false)} className="px-2 py-1 text-muted-foreground hover:text-foreground">Cancelar</button>
+          </span>
+        </span>
+      )}
 
       {/* Mini modal inline de nome da planta */}
       {pedindoPlanta && (

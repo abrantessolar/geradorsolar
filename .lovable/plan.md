@@ -1,76 +1,51 @@
-## Objetivo
+## Visão geral
 
-Garantir que cada dado armazenado apareça onde deveria, eliminar pontos onde a informação se perde entre módulos, e fazer venda → projeto → acompanhamento → pós-venda → custos funcionarem como um fluxo único. Inclui o pedido do preço do kit na etapa "Equipamento pago", indo direto para Custos.
-
----
-
-## 1. "Ver dados" do cliente — mostrar TUDO que é salvo
-
-`ClienteDadosModal.tsx` hoje esconde vários campos já gravados no banco. Adicionar blocos/linhas para:
-
-- **Datas de workflow**: `projeto_enviado_em`, `projeto_aprovado`, `data_fechamento`.
-- **Equipamento detalhado**: `modelo_placa`, `modelo_inversor`, `tipo_inversor` (String/Micro), `cabo_usado`.
-- **Status e operação**: `status` do projeto, congelamento (`congelado`, `congelado_ate`, `motivo_congelamento`), `satisfacao` (estrelas), `geracao_estimada_kwh`, `estrutura`.
-- **Logística**: `codigo_rastreamento` (com link para `/acompanhar/:codigo`), `layout_url` (link para o arquivo), `local_entrega`.
-- **Legado**: `dados_paineis`, `dados_inversor` (exibir só quando preenchidos).
-- **Avaliação do cliente** (ver seção 5).
-
-Campos exibidos só quando têm valor, para não poluir.
-
-## 2. Corrigir mapeamentos quebrados (clientes instalados via projeto)
-
-Em `ClientesPage.tsx`, a função que converte projetos `Instalado/Homologado` em `ClienteBase` (`fromProjetos`, linhas ~68–114) descarta campos que o `projetos` possui. Incluir no mapeamento:
-
-- `email`, `estrutura`, `geracao_estimada_kwh`, `tipo_inversor`, `satisfacao`, `status`, `congelado*`, `codigo_rastreamento`, `layout_url`, `local_entrega`, `data_fechamento`.
-
-Alinhar `mapProjetoToDados` em `ProjetosUnificados.tsx` com os mesmos campos (já mapeia parte). Resultado: badge MICRO, e-mail, estrutura e geração deixam de sumir para clientes instalados-via-obra.
-
-Atualizar a interface `ClienteBase` (`ClientesList.tsx`) com os campos novos.
-
-## 3. Pedido do preço do kit em "Equipamento pago" → Custos
-
-No Acompanhamento (`ListaAcompanhamento.tsx`), ao marcar **Fluxo 2 / Etapa 2 ("Equipamento pago")** como concluída:
-
-- Abrir um modal pedindo o **valor do kit** (usar `MoneyInput`, BRL).
-- Fazer **upsert em `custos_obra`** daquele `projeto_id` preenchendo `custo_kit` (cria o registro se não existir; atualiza se já existir).
-- Pré-preencher o campo com o `custo_kit` já existente, se houver, ou com a sugestão da tabela de preços (mesma lógica do `CustoModal`).
-- Após salvar, toast confirmando que o valor foi enviado para Custos.
-
-Assim o custo do kit nasce no momento da compra e aparece automaticamente no módulo de Custos, sem redigitação.
-
-## 4. Unificar conclusão de obra e pós-venda
-
-- **`ObraConcluidaModal.tsx`**: ao confirmar, além de `status='Instalado'`, `data_instalacao`, `instalador`, `objecoes`, passar a:
-  - chamar `gerarTarefasPosVenda` (ativa pós-venda automaticamente, sem duplicar se já existir);
-  - gravar `dia_leitura` de volta em `clientes_base` quando houver registro correspondente.
-- **`handlePromoverParaObra`** (`ClientesPage.tsx`): incluir `dia_leitura` no projeto criado (hoje é descartado).
-- Remover o código morto `ativarPosVendaProjeto` OU usá-lo como base da função unificada (consolidar em uma só rota de ativação para evitar redundância).
-- Proteção contra duplicidade: antes de gerar tarefas, checar se já existem tarefas para aquele projeto/cliente.
-
-## 5. Avaliações dos clientes visíveis para a equipe (dois lugares)
-
-`avaliacoes_clientes` é preenchida pelos clientes mas nunca exibida. Adicionar leitura em:
-
-- **Agenda de Pós-venda** (`PosVendaAgenda.tsx`): mostrar nota (estrelas) + comentário do cliente junto de cada obra/cliente.
-- **Ver dados** (`ClienteDadosModal.tsx`): bloco "Avaliação do cliente" com estrelas e comentário.
-
-Buscar por `projeto_id`. Incluir `email` (e telefones secundários quando existirem) nas consultas de pós-venda/acompanhamento, que hoje só trazem `telefone`.
-
-## 6. Consistência de contato e revisão final
-
-- Trazer `email` nas joins de `PosVendaAgenda.tsx` e `ListaAcompanhamento.tsx` e exibi-lo nos cartões.
-- Conferir que `ClienteEditModal` (caminho `proj-*`) não "engole" silenciosamente campos: para campos que `projetos` não possui (telefone_2/3, numero, modelo_*), ocultar ou desabilitar o input nesse modo, evitando a impressão de que foram salvos.
+Cinco ajustes no módulo de Clientes / Acompanhamento / Pós-venda. Nenhuma tabela nova; uso de colunas que já existem (`projetos.distribuidor`, `projetos.wifi_nome`, `projetos.wifi_senha`, `data_nascimento`).
 
 ---
 
-## Notas técnicas
+### 1. Lembrete de aniversário no pós-venda (1 por ano, 3 anos)
 
-- **Banco**: nenhuma mudança de schema é estritamente necessária — todas as colunas já existem (`custo_kit`, `dia_leitura`, `avaliacoes_clientes`, etc.). A escrita em `custos_obra` segue o padrão de upsert por `projeto_id` (relação 1:1 já existente).
-- **RLS**: `tarefas_posvenda`, `rastreamento_obras`, `custos_obra` e `avaliacoes_clientes` já têm políticas para equipe/admin; as novas leituras/escritas usam o mesmo cliente autenticado.
-- **Padrões**: valores monetários sempre via `MoneyInput` e formato BRL; canais realtime com `crypto.randomUUID()`; manter tema verde/amarelo.
-- **Sem regressão**: exibições novas são condicionais (só quando há valor) e a geração de pós-venda é idempotente (não duplica tarefas existentes).
+- Adicionar o tipo `aniversario` à lógica de pós-venda (rótulo "🎂 Aniversário").
+- Ao gerar as tarefas de pós-venda, se houver data de nascimento do cliente, criar **uma tarefa de aniversário para cada ano** dentro da janela de 3 anos (próximo aniversário após a instalação + 2 anos seguintes).
+- Cada tarefa traz uma mensagem de WhatsApp pronta (novo modelo editável no Admin → WhatsApp).
+- A data de nascimento passará a ser lida na geração de tarefas (tanto ao concluir a instalação no Acompanhamento quanto ao ativar pós-venda em Instalados / Admin).
+- As tarefas aparecem normalmente na Agenda de Pós-venda, com filtros e botões existentes (Concluído, WhatsApp, Adiar).
 
-## Fora do escopo (sinalizado, não incluído)
+### 2. Acesso ao checklist e link após a obra concluída (nos dois lugares)
 
-- Assistente "Criar projeto a partir da proposta" (G1) — hoje o projeto é criado manualmente; posso fazer numa etapa seguinte se quiser.
-- Vincular indicações do `/energia` ao projeto de origem (G10).
+- **Aba Acompanhamento**: adicionar um filtro "Concluídas" que também lista as obras já instaladas, mostrando o checklist completo das etapas (continua editável) e o botão de link de rastreamento. Hoje a lista esconde tudo que está "Instalado".
+- **Lista de Instalados** (Clientes → Projetos): adicionar nas ações de cada cliente instalado um botão de **link de rastreamento** (gerar/copiar/WhatsApp) e um botão para abrir o **checklist de etapas** da obra.
+
+### 3. Fornecedor obrigatório ao marcar "Pedido de compra realizado"
+
+- No Acompanhamento, ao marcar a etapa "Pedido de compra realizado" (Equipamentos), abrir um mini-campo inline pedindo o **fornecedor**. Só conclui a etapa após informar.
+- O valor é salvo no campo **Distribuidor** do projeto (e registrado também na etapa para histórico). Reabrir o campo mostra o valor atual.
+
+### 4. Captura de WiFi ao marcar "Conectar logger no WiFi"
+
+- No Acompanhamento, ao marcar a etapa "Conectar logger no WiFi" (Instalação), abrir um mini-formulário pedindo **Nome da Rede WiFi** e **Senha**.
+- Esses valores **atualizam os campos `wifi_nome` e `wifi_senha` do projeto** (que já existem e aparecem na edição). Vêm pré-preenchidos se já houver algo salvo.
+
+### 5. Conciliar os campos de edição (Aguardando × Instalados)
+
+Problema relatado: os dois editores não têm os mesmos campos e dados "somem" ao mudar de status.
+
+- Alinhar o conjunto de campos entre o **Editar Projeto** (obras Aguardando) e o **Editar Cliente** (Instalados), adicionando os que faltam em cada um:
+  - Garantir nos dois: dia de leitura, estrutura de fixação, cabo usado, fornecedor/distribuidor, WiFi (nome/senha), nome da planta, satisfação.
+- Revisar o mapeamento usado quando um projeto vira "Instalado" para que **nenhum campo preenchido seja descartado** na conversão (ex.: dia de leitura, estrutura, geração estimada, e-mail, datas de workflow).
+- Padronizar o nome do campo de fornecedor entre as telas (projeto usa "Distribuidor"; cliente usa "Fornecedor" → mesma coluna), deixando claro que é o mesmo dado.
+
+---
+
+## Detalhes técnicos
+
+- `src/lib/posvendaTarefas.ts`: novo tipo `aniversario`; `construirTarefas` passa a aceitar `dataNascimento` e gera linhas anuais de aniversário dentro da janela de 3 anos; `gerarTarefasPosVenda`, `ativarPosVendaCliente` e `ativarPosVendaProjeto` recebem/repasse de `dataNascimento`.
+- Novo modelo em `whatsapp_templates` (tipo aniversário) via insert de dados.
+- `ListaAcompanhamento.tsx`: buscar `data_nascimento`; filtro "Concluídas" (carrega também status Instalado/Homologado em modo leitura+link); mini-modais de fornecedor (etapa Equipamentos 1 → `distribuidor`) e WiFi (etapa Instalação 5 → `wifi_nome`/`wifi_senha`).
+- `ProjetosUnificados.tsx`: botões de link de rastreamento e checklist na linha de Instalados; mapear `data_nascimento` em `fromProjetos`.
+- `ClientesPage.tsx`: incluir `data_nascimento` no objeto mapeado dos instalados.
+- `ProjetoForm.tsx` e `ClienteEditModal.tsx`: adicionar os campos faltantes para igualar os dois editores.
+- `src/components/gestor/posvenda/PosVendaAgenda.tsx` / `TarefaPosVendaItem.tsx`: suporte ao ícone/rótulo do tipo aniversário (a estrutura genérica já cobre a renderização).
+
+Sem mudanças de schema (todas as colunas necessárias já existem); apenas inserção do novo modelo de WhatsApp.

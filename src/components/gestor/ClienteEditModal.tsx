@@ -48,6 +48,7 @@ export default function ClienteEditModal({ cliente, onClose, onSaved }: {
     uc: cliente.uc || '',
     nome_planta: (cliente as any).nome_planta || '',
     instalado_em: cliente.instalado_em || '',
+    dia_leitura: (cliente as any).dia_leitura?.toString() || '',
     vistoriado_em: cliente.vistoriado_em || '',
     projeto_enviado_em: (cliente as any).projeto_enviado_em || '',
     projeto_aprovado: (cliente as any).projeto_aprovado || '',
@@ -110,6 +111,7 @@ export default function ClienteEditModal({ cliente, onClose, onSaved }: {
         preco_venda: form.valor ? parseFloat(form.valor) : null,
         forma_pagamento: form.forma_pagamento || null,
         data_instalacao: form.instalado_em || null,
+        dia_leitura: form.dia_leitura ? parseInt(form.dia_leitura) : null,
         objecoes: form.observacoes || null,
         marca_inversor: form.marca_inversor || null,
         potencia_inversor: form.potencia_inversor || null,
@@ -172,6 +174,7 @@ export default function ClienteEditModal({ cliente, onClose, onSaved }: {
         uc: form.uc || null,
         nome_planta: form.nome_planta || null,
         instalado_em: form.instalado_em || null,
+        dia_leitura: form.dia_leitura ? parseInt(form.dia_leitura) : null,
         vistoriado_em: form.vistoriado_em || null,
         projeto_enviado_em: form.projeto_enviado_em || null,
         projeto_aprovado: form.projeto_aprovado || null,
@@ -295,6 +298,7 @@ export default function ClienteEditModal({ cliente, onClose, onSaved }: {
               <div><label className={lb}>UC (Unidade Consumidora)</label><input className={ic} value={form.uc} onChange={e => set('uc', e.target.value)} /></div>
               <div><label className={lb}>Nome da Planta</label><input className={ic} value={form.nome_planta} onChange={e => set('nome_planta', e.target.value)} /></div>
               <div><label className={lb}>Instalado em</label><input className={ic} type="date" value={form.instalado_em} onChange={e => set('instalado_em', e.target.value)} /></div>
+              <div><label className={lb}>📅 Dia de leitura aproximado da conta (1 a 31)</label><input className={ic} type="number" min={1} max={31} value={form.dia_leitura} onChange={e => set('dia_leitura', e.target.value)} placeholder="Ex.: 15" /></div>
               <div><label className={lb}>Vistoriado em</label><input className={ic} type="date" value={form.vistoriado_em} onChange={e => set('vistoriado_em', e.target.value)} /></div>
               <div><label className={lb}>Projeto enviado em</label><input className={ic} type="date" value={form.projeto_enviado_em} onChange={e => set('projeto_enviado_em', e.target.value)} /></div>
               <div><label className={lb}>Projeto aprovado em</label><input className={ic} type="date" value={form.projeto_aprovado} onChange={e => set('projeto_aprovado', e.target.value)} /></div>

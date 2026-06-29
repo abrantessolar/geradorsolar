@@ -8,6 +8,7 @@ export type TarefaTipo =
   | 'solicitar_conta'
   | 'avaliacao_google'
   | 'indicacao'
+  | 'aniversario'
   | 'encerramento';
 
 export interface TarefaPosVenda {
@@ -32,6 +33,7 @@ export const TIPO_LABEL: Record<TarefaTipo, string> = {
   solicitar_conta: 'Solicitar conta de luz',
   avaliacao_google: 'Avaliação Google',
   indicacao: 'Indicação',
+  aniversario: 'Aniversário',
   encerramento: 'Encerramento',
 };
 
@@ -40,6 +42,7 @@ export const TIPO_ICONE: Record<TarefaTipo, string> = {
   solicitar_conta: '📄',
   avaliacao_google: '⭐',
   indicacao: '🤝',
+  aniversario: '🎂',
   encerramento: '🎉',
 };
 
@@ -113,16 +116,26 @@ export interface TarefaRow {
   adiamentos: number;
 }
 
+/** Próximo aniversário (mês/dia da data de nascimento) a partir de uma data de referência. */
+function proximoAniversario(ref: Date, nascimento: Date): Date {
+  let d = new Date(ref.getFullYear(), nascimento.getMonth(), nascimento.getDate());
+  if (d.getTime() < ref.getTime()) d = new Date(ref.getFullYear() + 1, nascimento.getMonth(), nascimento.getDate());
+  return d;
+}
+
 /**
  * Constrói as linhas de tarefas do plano de pós-venda para uma data de
  * instalação. Se `onlyFuture` for true, ignora as datas que já passaram.
+ * Se `dataNascimento` for informada, adiciona 1 lembrete de aniversário por
+ * ano dentro da janela de 3 anos.
  */
 export function construirTarefas(opts: {
   dataInstalacao: Date;
   diaLeitura: number | null;
+  dataNascimento?: Date | null;
   onlyFuture?: boolean;
 }): TarefaRow[] {
-  const { dataInstalacao, diaLeitura, onlyFuture } = opts;
+  const { dataInstalacao, diaLeitura, dataNascimento, onlyFuture } = opts;
   const dia = diaLeitura ?? dataInstalacao.getDate();
   const hojeISO = toISODate(new Date());
 
@@ -143,6 +156,27 @@ export function construirTarefas(opts: {
     };
   });
 
+  // Lembretes de aniversário (1 por ano dentro dos 3 anos de pós-venda)
+  if (dataNascimento && !isNaN(dataNascimento.getTime())) {
+    const limite = addMonths(dataInstalacao, 36);
+    let aniv = proximoAniversario(dataInstalacao, dataNascimento);
+    let ano = 1;
+    while (aniv.getTime() < limite.getTime() && ano <= 3) {
+      rows.push({
+        fase: 3,
+        tipo: 'aniversario',
+        template_key: 'aniversario',
+        descricao: `Aniversário do cliente (${ano}º ano)`,
+        data_programada: toISODate(aniv),
+        visivel_cliente: false,
+        concluido: false,
+        adiamentos: 0,
+      });
+      aniv = new Date(aniv.getFullYear() + 1, aniv.getMonth(), aniv.getDate());
+      ano++;
+    }
+  }
+
   if (onlyFuture) rows = rows.filter((r) => r.data_programada >= hojeISO);
   return rows;
 }
@@ -155,9 +189,10 @@ export async function gerarTarefasPosVenda(opts: {
   projetoId: string;
   dataInstalacao: Date;
   diaLeitura: number | null;
+  dataNascimento?: Date | null;
   usuarioId?: string | null;
 }): Promise<number> {
-  const { projetoId, dataInstalacao, diaLeitura } = opts;
+  const { projetoId, dataInstalacao, diaLeitura, dataNascimento } = opts;
 
   // Evita duplicar
   const { count } = await supabase
@@ -166,7 +201,7 @@ export async function gerarTarefasPosVenda(opts: {
     .eq('projeto_id', projetoId);
   if ((count || 0) > 0) return 0;
 
-  const rows = construirTarefas({ dataInstalacao, diaLeitura }).map((r) => ({
+  const rows = construirTarefas({ dataInstalacao, diaLeitura, dataNascimento }).map((r) => ({
     ...r,
     projeto_id: projetoId,
   }));
@@ -189,8 +224,9 @@ export async function ativarPosVendaCliente(opts: {
   clienteBaseId: string;
   dataInstalacao: Date;
   diaLeitura: number | null;
+  dataNascimento?: Date | null;
 }): Promise<AtivacaoResultado> {
-  const { clienteBaseId, dataInstalacao, diaLeitura } = opts;
+  const { clienteBaseId, dataInstalacao, diaLeitura, dataNascimento } = opts;
 
   // Evita duplicar
   const { count } = await supabase
@@ -199,7 +235,7 @@ export async function ativarPosVendaCliente(opts: {
     .eq('cliente_base_id', clienteBaseId);
   if ((count || 0) > 0) return { created: 0, proximo: null };
 
-  const base = construirTarefas({ dataInstalacao, diaLeitura, onlyFuture: true });
+  const base = construirTarefas({ dataInstalacao, diaLeitura, dataNascimento, onlyFuture: true });
   if (base.length === 0) return { created: 0, proximo: null };
 
   const rows = base.map((r) => ({ ...r, cliente_base_id: clienteBaseId }));
@@ -224,8 +260,9 @@ export async function ativarPosVendaProjeto(opts: {
   projetoId: string;
   dataInstalacao: Date;
   diaLeitura: number | null;
+  dataNascimento?: Date | null;
 }): Promise<AtivacaoResultado> {
-  const { projetoId, dataInstalacao, diaLeitura } = opts;
+  const { projetoId, dataInstalacao, diaLeitura, dataNascimento } = opts;
 
   // Evita duplicar
   const { count } = await supabase
@@ -234,7 +271,7 @@ export async function ativarPosVendaProjeto(opts: {
     .eq('projeto_id', projetoId);
   if ((count || 0) > 0) return { created: 0, proximo: null };
 
-  const base = construirTarefas({ dataInstalacao, diaLeitura, onlyFuture: true });
+  const base = construirTarefas({ dataInstalacao, diaLeitura, dataNascimento, onlyFuture: true });
   if (base.length === 0) return { created: 0, proximo: null };
 
   const rows = base.map((r) => ({ ...r, projeto_id: projetoId }));
