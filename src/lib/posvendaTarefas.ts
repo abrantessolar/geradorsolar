@@ -116,16 +116,26 @@ export interface TarefaRow {
   adiamentos: number;
 }
 
+/** Próximo aniversário (mês/dia da data de nascimento) a partir de uma data de referência. */
+function proximoAniversario(ref: Date, nascimento: Date): Date {
+  let d = new Date(ref.getFullYear(), nascimento.getMonth(), nascimento.getDate());
+  if (d.getTime() < ref.getTime()) d = new Date(ref.getFullYear() + 1, nascimento.getMonth(), nascimento.getDate());
+  return d;
+}
+
 /**
  * Constrói as linhas de tarefas do plano de pós-venda para uma data de
  * instalação. Se `onlyFuture` for true, ignora as datas que já passaram.
+ * Se `dataNascimento` for informada, adiciona 1 lembrete de aniversário por
+ * ano dentro da janela de 3 anos.
  */
 export function construirTarefas(opts: {
   dataInstalacao: Date;
   diaLeitura: number | null;
+  dataNascimento?: Date | null;
   onlyFuture?: boolean;
 }): TarefaRow[] {
-  const { dataInstalacao, diaLeitura, onlyFuture } = opts;
+  const { dataInstalacao, diaLeitura, dataNascimento, onlyFuture } = opts;
   const dia = diaLeitura ?? dataInstalacao.getDate();
   const hojeISO = toISODate(new Date());
 
@@ -145,6 +155,27 @@ export function construirTarefas(opts: {
       adiamentos: 0,
     };
   });
+
+  // Lembretes de aniversário (1 por ano dentro dos 3 anos de pós-venda)
+  if (dataNascimento && !isNaN(dataNascimento.getTime())) {
+    const limite = addMonths(dataInstalacao, 36);
+    let aniv = proximoAniversario(dataInstalacao, dataNascimento);
+    let ano = 1;
+    while (aniv.getTime() < limite.getTime() && ano <= 3) {
+      rows.push({
+        fase: 3,
+        tipo: 'aniversario',
+        template_key: 'aniversario',
+        descricao: `Aniversário do cliente (${ano}º ano)`,
+        data_programada: toISODate(aniv),
+        visivel_cliente: false,
+        concluido: false,
+        adiamentos: 0,
+      });
+      aniv = new Date(aniv.getFullYear() + 1, aniv.getMonth(), aniv.getDate());
+      ano++;
+    }
+  }
 
   if (onlyFuture) rows = rows.filter((r) => r.data_programada >= hojeISO);
   return rows;
