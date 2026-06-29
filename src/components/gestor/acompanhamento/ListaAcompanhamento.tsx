@@ -265,8 +265,8 @@ export default function ListaAcompanhamento() {
         status: 'Instalado',
         data_instalacao: new Date().toISOString().slice(0, 10),
       }).eq('id', projetoId);
-      toast.success('Obra concluída! Movida para Instalados.');
-      setProjetos(prev => prev.filter(p => p.id !== projetoId));
+      toast.success('Obra concluída! Disponível no filtro "Concluídas".');
+      setProjetos(prev => prev.map(p => p.id === projetoId ? { ...p, status: 'Instalado' } : p));
     }
   };
 
