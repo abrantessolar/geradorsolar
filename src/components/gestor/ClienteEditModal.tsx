@@ -111,6 +111,7 @@ export default function ClienteEditModal({ cliente, onClose, onSaved }: {
         preco_venda: form.valor ? parseFloat(form.valor) : null,
         forma_pagamento: form.forma_pagamento || null,
         data_instalacao: form.instalado_em || null,
+        dia_leitura: form.dia_leitura ? parseInt(form.dia_leitura) : null,
         objecoes: form.observacoes || null,
         marca_inversor: form.marca_inversor || null,
         potencia_inversor: form.potencia_inversor || null,
