@@ -646,9 +646,10 @@ function EtapaCheck({
     }
     // Campo de entrega (fluxo 2, etapa 4) → mini modal inline
     if (fluxo === 2 && etapaDef.etapa === 4) { setPedindoEntrega(true); return; }
-    // Agendamento (fluxo 3, etapa 2) → grava data de hoje como padrão
+    // Agendamento (fluxo 3, etapa 2) → grava data de hoje como padrão na coluna canônica
     if (fluxo === 3 && etapaDef.etapa === 2) {
-      await commitCheck(projetoId, fluxo, etapaDef.etapa, true, { data_agendamento: new Date().toISOString().slice(0, 10) });
+      await commitCheck(projetoId, fluxo, etapaDef.etapa, true);
+      await updateProjetoCampo(projetoId, { data_agendamento: new Date().toISOString().slice(0, 10) });
       return;
     }
     // WiFi do logger (fluxo 3, etapa 5) → mini modal inline
