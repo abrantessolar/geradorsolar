@@ -722,8 +722,8 @@ function EtapaCheck({
             <input
               type="number"
               className="solar-input py-0.5 w-16 text-xs"
-              defaultValue={ce.numero_fila ?? ''}
-              onBlur={ev => updateExtra(projetoId, fluxo, etapaDef.etapa, { numero_fila: ev.target.value ? Number(ev.target.value) : null })}
+              defaultValue={numeroFila ?? ce.numero_fila ?? ''}
+              onBlur={ev => updateProjetoCampo(projetoId, { numero_fila: ev.target.value ? Number(ev.target.value) : null })}
             />
           </span>
         )}
@@ -732,15 +732,15 @@ function EtapaCheck({
           <input
             type="date"
             className="solar-input py-0.5 text-xs"
-            value={ce.data_agendamento ?? ''}
-            onChange={ev => updateExtra(projetoId, fluxo, etapaDef.etapa, { data_agendamento: ev.target.value || null })}
+            value={dataAgendamento ?? ce.data_agendamento ?? ''}
+            onChange={ev => updateProjetoCampo(projetoId, { data_agendamento: ev.target.value || null })}
           />
         )}
         {/* Data agendada exibida também no resumo (fluxo 3, etapa 2) */}
 
         {/* Local de entrega marcado (fluxo 2, etapa 4) */}
-        {fluxo === 2 && etapaDef.etapa === 4 && concluido && ce.local_entrega && (
-          <span className="text-[11px] text-muted-foreground">({ce.local_entrega === 'empresa' ? 'TLS Solar' : 'Cliente'})</span>
+        {fluxo === 2 && etapaDef.etapa === 4 && concluido && (localEntrega || ce.local_entrega) && (
+          <span className="text-[11px] text-muted-foreground">({(localEntrega || ce.local_entrega) === 'empresa' ? 'TLS Solar' : 'Cliente'})</span>
         )}
         {/* Fornecedor marcado (fluxo 2, etapa 1) */}
         {fluxo === 2 && etapaDef.etapa === 1 && concluido && (fornecedor || ce.fornecedor) && (
