@@ -258,6 +258,23 @@ export default function ListaAcompanhamento() {
     setProjetos(prev => prev.map(p => p.id === projetoId ? { ...p, nome_planta: valor } : p));
   };
 
+  // Atualiza o fornecedor/distribuidor no projeto
+  const updateFornecedor = async (projetoId: string, fornecedor: string) => {
+    const valor = fornecedor.trim() || null;
+    const { error } = await supabase.from('projetos' as any).update({ distribuidor: valor }).eq('id', projetoId);
+    if (error) { toast.error(error.message); return; }
+    setProjetos(prev => prev.map(p => p.id === projetoId ? { ...p, distribuidor: valor } : p));
+  };
+
+  // Atualiza os dados de WiFi no projeto
+  const updateWifi = async (projetoId: string, nome: string, senha: string) => {
+    const wifi_nome = nome.trim() || null;
+    const wifi_senha = senha.trim() || null;
+    const { error } = await supabase.from('projetos' as any).update({ wifi_nome, wifi_senha }).eq('id', projetoId);
+    if (error) { toast.error(error.message); return; }
+    setProjetos(prev => prev.map(p => p.id === projetoId ? { ...p, wifi_nome, wifi_senha } : p));
+  };
+
   const verificarConclusao = async (projetoId: string, rows: RastreamentoRow[]) => {
     const { done, total } = progresso(rows);
     if (total > 0 && done === total) {
