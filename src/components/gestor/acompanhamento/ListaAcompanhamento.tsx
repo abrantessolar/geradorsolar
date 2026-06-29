@@ -326,6 +326,7 @@ export default function ListaAcompanhamento() {
     { key: 'homologacao', label: 'Homologação' },
     { key: 'equipamentos', label: 'Equipamentos' },
     { key: 'instalacao', label: 'Instalação' },
+    { key: 'concluidas', label: 'Concluídas' },
   ];
 
   return (
