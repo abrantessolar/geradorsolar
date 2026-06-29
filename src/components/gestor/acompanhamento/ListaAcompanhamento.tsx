@@ -826,7 +826,7 @@ function EtapaCheck({
           {[['empresa', 'Na empresa TLS Solar'], ['cliente', 'No endereço do cliente']].map(([val, label]) => (
             <button
               key={val}
-              onClick={async () => { setPedindoEntrega(false); await commitCheck(projetoId, fluxo, etapaDef.etapa, true, { local_entrega: val }); }}
+              onClick={async () => { setPedindoEntrega(false); await commitCheck(projetoId, fluxo, etapaDef.etapa, true); await updateProjetoCampo(projetoId, { local_entrega: val }); }}
               className="text-left px-2 py-1 rounded hover:bg-background"
             >
               {label}
