@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import WhatsAppLink, { formatWhatsAppUrl } from './WhatsAppLink';
 import type { ClienteBase } from './ClientesList';
+import { FLUXOS } from '@/lib/rastreamentoEtapas';
 
 function fmt(val: string | number | null | undefined): string {
   if (val === null || val === undefined || val === '') return '';
@@ -107,6 +108,7 @@ export default function ClienteDadosModal({ cliente, onClose }: { cliente: Clien
   // Load UCs from new table
   const [ucsData, setUcsData] = useState<any[]>([]);
   const [avaliacao, setAvaliacao] = useState<{ nota: number; comentario: string | null; criado_em: string } | null>(null);
+  const [rastreio, setRastreio] = useState<any[]>([]);
   useEffect(() => {
     const projetoId = c.projeto_id || (c.id?.startsWith?.('proj-') ? c.id.replace('proj-', '') : null) || c.id;
     if (!projetoId) return;
@@ -116,7 +118,17 @@ export default function ClienteDadosModal({ cliente, onClose }: { cliente: Clien
     supabase.from('avaliacoes_clientes' as any).select('nota, comentario, criado_em').eq('projeto_id', projetoId).order('criado_em', { ascending: false }).limit(1).maybeSingle().then(({ data }) => {
       if (data) setAvaliacao(data as any);
     });
+    supabase.from('rastreamento_obras' as any).select('fluxo, etapa, concluido, data_conclusao, campo_extra').eq('projeto_id', projetoId).then(({ data }) => {
+      if (data) setRastreio(data as any[]);
+    });
   }, [c]);
+
+  // Valores preenchidos no Acompanhamento (guardados em campo_extra)
+  const extraDe = (fluxo: number, etapa: number) =>
+    (rastreio.find(r => r.fluxo === fluxo && r.etapa === etapa)?.campo_extra) || {};
+  const numeroFila = extraDe(3, 1).numero_fila;
+  const dataAgendamento = extraDe(3, 2).data_agendamento;
+  const localEntregaExtra = extraDe(2, 4).local_entrega || (c as any).local_entrega;
 
   // Build full address from parts if endereco is empty
   const enderecoCompleto = (() => {
@@ -174,7 +186,9 @@ export default function ClienteDadosModal({ cliente, onClose }: { cliente: Clien
         { label: 'WiFi — Rede', value: fmt((c as any).wifi_nome) },
         { label: 'WiFi — Senha', value: fmt((c as any).wifi_senha) },
         { label: 'Estrutura', value: fmt((c as any).estrutura) },
-        { label: 'Data de instalação', value: fmtDate(c.instalado_em) },
+        { label: 'Nº da fila de instalação', value: (numeroFila !== null && numeroFila !== undefined && numeroFila !== '') ? String(numeroFila) : '' },
+        { label: 'Data agendada da instalação', value: fmtDate(dataAgendamento) },
+        { label: 'Data de instalação', value: fmtDate(c.instalado_em || (c as any).data_instalacao) },
         { label: 'Instalador responsável', value: fmt(c.instalador) },
         { label: 'Data de vistoria', value: fmtDate(c.vistoriado_em) },
       ],
@@ -218,7 +232,7 @@ export default function ClienteDadosModal({ cliente, onClose }: { cliente: Clien
     {
       title: 'Logística e Monitoramento',
       fields: [
-        { label: 'Local de entrega', value: (c as any).local_entrega ? (String((c as any).local_entrega) === 'empresa' ? 'TLS Solar' : 'Cliente') : '' },
+        { label: 'Local de entrega', value: localEntregaExtra ? (String(localEntregaExtra) === 'empresa' ? 'TLS Solar' : 'Cliente') : '' },
         {
           label: 'Código de rastreamento',
           value: fmt((c as any).codigo_rastreamento),
@@ -262,7 +276,10 @@ export default function ClienteDadosModal({ cliente, onClose }: { cliente: Clien
     const sys = sistemaStr(c);
     if (sys) add('SISTEMA', sys);
     add('GERAÇÃO ESTIMADA (kWh)', fmt(c.geracao_estimada_kwh));
-    add('DATA INSTALAÇÃO', fmtDate(c.instalado_em));
+    if (numeroFila !== null && numeroFila !== undefined && numeroFila !== '') add('Nº FILA INSTALAÇÃO', String(numeroFila));
+    add('DATA AGENDADA INSTALAÇÃO', fmtDate(dataAgendamento));
+    add('DATA INSTALAÇÃO', fmtDate(c.instalado_em || (c as any).data_instalacao));
+    if (localEntregaExtra) add('LOCAL ENTREGA', String(localEntregaExtra) === 'empresa' ? 'TLS Solar' : 'Cliente');
     add('INSTALADOR', fmt(c.instalador));
     add('DATA VISTORIA', fmtDate(c.vistoriado_em));
     add('VALOR', fmtMoney(c.valor));
@@ -298,6 +315,51 @@ export default function ClienteDadosModal({ cliente, onClose }: { cliente: Clien
 
         <div className="p-4 space-y-5">
           {blocks.map(b => <Block key={b.title} title={b.title} fields={b.fields} />)}
+
+          {/* Etapas da obra (Acompanhamento) */}
+          {rastreio.length > 0 && (
+            <div className="space-y-3">
+              <h3 className="text-sm font-semibold text-primary border-b border-border pb-1 mb-1">Etapas da Obra (Acompanhamento)</h3>
+              {FLUXOS.map(f => {
+                const etapas = f.etapas.filter(e => {
+                  if (!e.condicional) return true;
+                  const r = rastreio.find(x => x.fluxo === f.fluxo && x.etapa === e.etapa);
+                  return !!r;
+                });
+                return (
+                  <div key={f.fluxo} className="space-y-0.5">
+                    <div className="text-xs font-semibold text-foreground/80 px-2">{f.icone} {f.titulo}</div>
+                    {etapas.map(e => {
+                      const r = rastreio.find(x => x.fluxo === f.fluxo && x.etapa === e.etapa);
+                      const ce = r?.campo_extra || {};
+                      const extras: string[] = [];
+                      if (ce.numero_fila !== null && ce.numero_fila !== undefined && ce.numero_fila !== '') extras.push(`Fila ${ce.numero_fila}`);
+                      if (ce.data_agendamento) extras.push(`Agendada ${fmtDate(ce.data_agendamento)}`);
+                      if (ce.local_entrega) extras.push(ce.local_entrega === 'empresa' ? 'TLS Solar' : 'Cliente');
+                      if (ce.fornecedor) extras.push(ce.fornecedor);
+                      if (ce.nome_planta) extras.push(ce.nome_planta);
+                      if (ce.wifi_nome) extras.push(`WiFi ${ce.wifi_nome}${ce.wifi_senha ? ` / ${ce.wifi_senha}` : ''}`);
+                      const done = !!r?.concluido;
+                      return (
+                        <div key={e.etapa} className="flex items-center justify-between py-1 px-2 text-sm">
+                          <span className="flex items-center gap-2 min-w-0">
+                            <span className={done ? 'text-green-600' : 'text-muted-foreground'}>{done ? '✓' : '○'}</span>
+                            <span className={done ? 'text-foreground' : 'text-muted-foreground'}>{e.titulo}</span>
+                            {extras.length > 0 && <span className="text-xs text-muted-foreground truncate">— {extras.join(' · ')}</span>}
+                          </span>
+                          {done && r?.data_conclusao && (
+                            <span className="text-xs text-muted-foreground whitespace-nowrap ml-2">{new Date(r.data_conclusao).toLocaleDateString('pt-BR')}</span>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+
 
           {/* Avaliação do cliente (página pública de rastreamento) */}
           {avaliacao && (
