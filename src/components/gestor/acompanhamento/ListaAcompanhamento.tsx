@@ -608,11 +608,24 @@ function EtapaCheck({
     }
     if (!anteriorOk) { toast.error('Conclua a etapa anterior primeiro.'); return; }
 
+    // Fornecedor obrigatório (fluxo 2, etapa 1) → mini modal inline
+    if (fluxo === 2 && etapaDef.etapa === 1) {
+      setFornecedorInput(fornecedor || ce.fornecedor || '');
+      setPedindoFornecedor(true);
+      return;
+    }
     // Campo de entrega (fluxo 2, etapa 4) → mini modal inline
     if (fluxo === 2 && etapaDef.etapa === 4) { setPedindoEntrega(true); return; }
     // Agendamento (fluxo 3, etapa 2) → grava data de hoje como padrão
     if (fluxo === 3 && etapaDef.etapa === 2) {
       await commitCheck(projetoId, fluxo, etapaDef.etapa, true, { data_agendamento: new Date().toISOString().slice(0, 10) });
+      return;
+    }
+    // WiFi do logger (fluxo 3, etapa 5) → mini modal inline
+    if (fluxo === 3 && etapaDef.etapa === 5) {
+      setWifiNomeInput(wifiNome || '');
+      setWifiSenhaInput(wifiSenha || '');
+      setPedindoWifi(true);
       return;
     }
     // Nome da planta (fluxo 3, etapa 6) → mini modal inline
@@ -628,6 +641,20 @@ function EtapaCheck({
     setPedindoPlanta(false);
     await updateNomePlanta(projetoId, plantaInput);
     await commitCheck(projetoId, fluxo, etapaDef.etapa, true, { nome_planta: plantaInput.trim() || null });
+  };
+
+  const confirmarFornecedor = async () => {
+    if (!fornecedorInput.trim()) { toast.error('Informe o fornecedor.'); return; }
+    setPedindoFornecedor(false);
+    await updateFornecedor(projetoId, fornecedorInput);
+    await commitCheck(projetoId, fluxo, etapaDef.etapa, true, { fornecedor: fornecedorInput.trim() });
+  };
+
+  const confirmarWifi = async () => {
+    if (!wifiNomeInput.trim()) { toast.error('Informe o nome da rede WiFi.'); return; }
+    setPedindoWifi(false);
+    await updateWifi(projetoId, wifiNomeInput, wifiSenhaInput);
+    await commitCheck(projetoId, fluxo, etapaDef.etapa, true, { wifi_nome: wifiNomeInput.trim(), wifi_senha: wifiSenhaInput.trim() || null });
   };
 
 
