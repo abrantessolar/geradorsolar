@@ -108,6 +108,7 @@ export default function ClienteDadosModal({ cliente, onClose }: { cliente: Clien
   // Load UCs from new table
   const [ucsData, setUcsData] = useState<any[]>([]);
   const [avaliacao, setAvaliacao] = useState<{ nota: number; comentario: string | null; criado_em: string } | null>(null);
+  const [rastreio, setRastreio] = useState<any[]>([]);
   useEffect(() => {
     const projetoId = c.projeto_id || (c.id?.startsWith?.('proj-') ? c.id.replace('proj-', '') : null) || c.id;
     if (!projetoId) return;
@@ -117,7 +118,17 @@ export default function ClienteDadosModal({ cliente, onClose }: { cliente: Clien
     supabase.from('avaliacoes_clientes' as any).select('nota, comentario, criado_em').eq('projeto_id', projetoId).order('criado_em', { ascending: false }).limit(1).maybeSingle().then(({ data }) => {
       if (data) setAvaliacao(data as any);
     });
+    supabase.from('rastreamento_obras' as any).select('fluxo, etapa, concluido, data_conclusao, campo_extra').eq('projeto_id', projetoId).then(({ data }) => {
+      if (data) setRastreio(data as any[]);
+    });
   }, [c]);
+
+  // Valores preenchidos no Acompanhamento (guardados em campo_extra)
+  const extraDe = (fluxo: number, etapa: number) =>
+    (rastreio.find(r => r.fluxo === fluxo && r.etapa === etapa)?.campo_extra) || {};
+  const numeroFila = extraDe(3, 1).numero_fila;
+  const dataAgendamento = extraDe(3, 2).data_agendamento;
+  const localEntregaExtra = extraDe(2, 4).local_entrega || (c as any).local_entrega;
 
   // Build full address from parts if endereco is empty
   const enderecoCompleto = (() => {
