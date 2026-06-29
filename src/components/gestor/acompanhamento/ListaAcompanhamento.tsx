@@ -289,6 +289,12 @@ export default function ListaAcompanhamento() {
       const rows = rowsByProjeto[p.id] || [];
       const termo = busca.trim().toLowerCase();
       if (termo && !(p.nome.toLowerCase().includes(termo) || (p.numero_proposta || '').toLowerCase().includes(termo))) return false;
+
+      const concluida = p.status === 'Instalado' || p.status === 'Homologado';
+      if (filtro === 'concluidas') return concluida;
+      // Nos demais filtros, ocultar as obras já concluídas
+      if (concluida) return false;
+
       if (filtro === 'atrasadas') {
         return daysSince(ultimaDataCheck(rows, p.criado_em)) > prazoDias;
       }
