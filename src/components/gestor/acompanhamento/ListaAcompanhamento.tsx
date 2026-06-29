@@ -671,21 +671,21 @@ function EtapaCheck({
   const confirmarPlanta = async () => {
     setPedindoPlanta(false);
     await updateNomePlanta(projetoId, plantaInput);
-    await commitCheck(projetoId, fluxo, etapaDef.etapa, true, { nome_planta: plantaInput.trim() || null });
+    await commitCheck(projetoId, fluxo, etapaDef.etapa, true);
   };
 
   const confirmarFornecedor = async () => {
     if (!fornecedorInput.trim()) { toast.error('Informe o fornecedor.'); return; }
     setPedindoFornecedor(false);
     await updateFornecedor(projetoId, fornecedorInput);
-    await commitCheck(projetoId, fluxo, etapaDef.etapa, true, { fornecedor: fornecedorInput.trim() });
+    await commitCheck(projetoId, fluxo, etapaDef.etapa, true);
   };
 
   const confirmarWifi = async () => {
     if (!wifiNomeInput.trim()) { toast.error('Informe o nome da rede WiFi.'); return; }
     setPedindoWifi(false);
     await updateWifi(projetoId, wifiNomeInput, wifiSenhaInput);
-    await commitCheck(projetoId, fluxo, etapaDef.etapa, true, { wifi_nome: wifiNomeInput.trim(), wifi_senha: wifiSenhaInput.trim() || null });
+    await commitCheck(projetoId, fluxo, etapaDef.etapa, true);
   };
 
 
