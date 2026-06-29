@@ -232,7 +232,7 @@ export default function ClienteDadosModal({ cliente, onClose }: { cliente: Clien
     {
       title: 'Logística e Monitoramento',
       fields: [
-        { label: 'Local de entrega', value: (c as any).local_entrega ? (String((c as any).local_entrega) === 'empresa' ? 'TLS Solar' : 'Cliente') : '' },
+        { label: 'Local de entrega', value: localEntregaExtra ? (String(localEntregaExtra) === 'empresa' ? 'TLS Solar' : 'Cliente') : '' },
         {
           label: 'Código de rastreamento',
           value: fmt((c as any).codigo_rastreamento),
