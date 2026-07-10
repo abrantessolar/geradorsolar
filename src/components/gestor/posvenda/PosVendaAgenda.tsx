@@ -170,6 +170,8 @@ export default function PosVendaAgenda() {
               telefone={t._telefone}
               templateText={templates[t.template_key || ''] || ''}
               googleLink={googleLink}
+              instaladoEm={t._instalado_em}
+              diaLeitura={t._dia_leitura}
               onChanged={load}
             />
           </div>
