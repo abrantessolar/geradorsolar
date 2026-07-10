@@ -340,7 +340,7 @@ export async function sincronizarDiaLeitura(opts: {
 
   const { data, error } = await query;
   if (error) throw error;
-  const tarefas = (data || []) as { id: string; template_key: string | null }[];
+  const tarefas = (data || []) as unknown as { id: string; template_key: string | null }[];
   if (tarefas.length === 0) return 0;
 
   await Promise.all(
