@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { Plus, RotateCcw, Package } from 'lucide-react';
+import { Plus, RotateCcw, Package, Scissors } from 'lucide-react';
 import { CATEGORIA_ICONS } from './types';
 import EntradaLoteModal from './EntradaLoteModal';
+import SaidaManualModal from './SaidaManualModal';
 
 type EstoqueRow = {
   id: string;
