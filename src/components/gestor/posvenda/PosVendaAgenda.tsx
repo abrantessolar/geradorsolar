@@ -49,7 +49,7 @@ export default function PosVendaAgenda() {
     setLoading(true);
     const { data } = await supabase
       .from('tarefas_posvenda' as any)
-      .select('*, projetos!tarefas_posvenda_projeto_id_fkey(nome_completo, razao_social, telefone, email, marca_inversor, nome_planta), clientes_base!tarefas_posvenda_cliente_base_id_fkey(nome_completo, telefone, email, marca_inversor, nome_planta)')
+      .select('*, projetos!tarefas_posvenda_projeto_id_fkey(nome_completo, razao_social, telefone, email, marca_inversor, nome_planta, data_instalacao, dia_leitura), clientes_base!tarefas_posvenda_cliente_base_id_fkey(nome_completo, telefone, email, marca_inversor, nome_planta, instalado_em, dia_leitura)')
       .order('data_programada', { ascending: true });
 
     // Avaliações por projeto
