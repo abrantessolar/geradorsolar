@@ -15,6 +15,8 @@ import ResetPasswordPage from "@/pages/ResetPasswordPage";
 import GestorPage from "@/pages/GestorPage";
 import EstoquePage from "@/pages/EstoquePage";
 import CustosPage from "@/pages/CustosPage";
+import FerramentasPage from "@/pages/FerramentasPage";
+import Ren1000Page from "@/pages/Ren1000Page";
 import ClientesPage from "@/pages/ClientesPage";
 import RastreamentoPage from "@/pages/RastreamentoPage";
 import FaqPage from "@/pages/FaqPage";
