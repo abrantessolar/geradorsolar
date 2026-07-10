@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Loader2, Search, Zap, CheckCircle2, Clock, Flag, Users, X } from 'lucide-react';
-import { ativarPosVendaCliente } from '@/lib/posvendaTarefas';
+import { ativarPosVendaCliente, sincronizarDiaLeitura } from '@/lib/posvendaTarefas';
 
 interface ClienteRow {
   id: string;
