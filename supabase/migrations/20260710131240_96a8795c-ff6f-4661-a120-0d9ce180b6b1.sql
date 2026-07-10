@@ -1,0 +1,1 @@
+ALTER TABLE public.tarefas_posvenda ADD COLUMN IF NOT EXISTS aguardando_leitura boolean NOT NULL DEFAULT false;

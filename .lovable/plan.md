@@ -1,89 +1,79 @@
-# Unificar os campos da obra (fonte única de verdade)
+# Sincronizar lembretes de pós-venda com a conta de luz
 
-## O problema hoje
+Hoje os lembretes de "verificar geração" usam prazos fixos (+30, +60, +90 dias, etc.) que ficam dessincronizados da chegada da conta de luz. Vamos ancorar tudo no `dia_leitura` do cliente, de forma que cada verificação de geração caia 3 dias antes da respectiva solicitação de conta.
 
-Os mesmos dados vivem em dois lugares e nem sempre conversam:
+## 1. Nova lógica de datas (`src/lib/posvendaTarefas.ts`)
 
-- **Etapas da Obra (Acompanhamento)** grava em `rastreamento_obras.campo_extra` (um "saco" de JSON por etapa).
-- **Workflow / Logística / Monitoramento / Financeiro / Instalação** usa colunas próprias da tabela de projetos (ex.: data de aprovação, distribuidor, WiFi, nome da planta, data de instalação).
+A função `dataConta(instalacao, dia_leitura, N)` já existe e produz exatamente as datas do exemplo (instalação 01/04 + leitura 15 → 1ª conta 20/05, 2ª 20/06, 3ª 20/07). Vamos reestruturar o `PLANO` para que **todos** os lembretes mensais derivem dessa âncora:
 
-Resultado atual, etapa por etapa:
+- `data_conta_N` = 1ª leitura após instalação + (N−1) meses + 5 dias (fatura chega)
+- `data_geracao_N` = `data_conta_N` − 3 dias
+- `data_avaliacao` = `data_conta_3` + 3 dias
 
-```text
-Etapa marcada no Acompanhamento     → onde grava hoje                 → problema
-Projeto protocolado (Homolog.)      → só marca o check               → NÃO grava "Projeto enviado em"
-Projeto aprovado (Homolog.)         → só marca o check               → NÃO grava "Projeto aprovado em"
-Pedido de compra / Fornecedor       → campo_extra + Distribuidor      → duplicado (pode divergir)
-Material entregue (local)           → só campo_extra                  → NÃO grava "Local de entrega" do projeto
-Aguardando instalação (Nº fila)     → só campo_extra                  → sem campo fixo, some na edição
-Instalação agendada (Data)          → só campo_extra                  → sem campo fixo, some na edição
-WiFi (rede/senha)                   → campo_extra + colunas WiFi      → duplicado
-Criar planta (nome)                 → campo_extra + Nome da Planta    → duplicado
-```
-
-Ou seja: alguns dados se perdem (não chegam às colunas usadas pela edição e pelo "Ver dados") e outros ficam gravados em dobro, podendo divergir.
-
-## A solução
-
-Definir as **colunas do projeto como fonte única de verdade** de todo dado que também é exibido/editado em outro lugar. O `rastreamento_obras` continua sendo o registro das **etapas** (concluído sim/não, data, hora e usuário — para o histórico e a tooltip), mas **o valor em si** (fornecedor, fila, datas, WiFi, planta, entrega) passa a morar só na coluna canônica.
-
-Assim:
-- Preencher no Acompanhamento atualiza o campo "antigo" automaticamente (e vice-versa).
-- Editar em Projetos/Instalados reflete no Acompanhamento.
-- Nada é gravado em dobro nem se perde ao mudar de status.
-
-### Mapa final (cada etapa ↔ um campo do projeto)
+`PlanoItem` ganha dois campos: `conta` (nº da conta âncora) e `offsetDias` (deslocamento em dias em relação à `data_conta`). O `PLANO` passa a ser:
 
 ```text
-Projeto protocolado        → projeto_enviado_em (data)
-Projeto aprovado           → projeto_aprovado (data)
-Pedido de compra           → distribuidor (Fornecedor)
-Material entregue          → local_entrega (TLS Solar / Cliente)
-Aguardando instalação      → numero_fila (NOVO campo)
-Instalação agendada        → data_agendamento (NOVO campo)
-Instalação finalizada      → data_instalacao
-Conectar logger no WiFi    → wifi_nome / wifi_senha
-Criar planta               → nome_planta
+FASE 2
+  Verificar geração +2 dias      dias:2   (fixo — confirma que ligou)
+  Verificar geração +7 dias      dias:7   (fixo — 1ª semana)
+  Verificar geração — mês 1      conta:1  offset:-3
+  Solicitar 1ª conta             conta:1  offset:0
+  Verificar geração — mês 2      conta:2  offset:-3
+  Solicitar 2ª conta             conta:2  offset:0
+  Verificar geração — mês 3      conta:3  offset:-3
+  Solicitar 3ª conta             conta:3  offset:0
+  Avaliação Google               conta:3  offset:+3
+FASE 3
+  Verificar geração 6 meses      conta:6  offset:-3
+  Verificar geração 1 ano + Ind. conta:12 offset:-3
+FASE 4 (trimestral)
+  15/18/21/24/27/30/33/36 meses  conta:N  offset:-3
 ```
 
-Etapas sem dado associado (ex.: "Documentação recebida", "Explicar funcionamento") continuam apenas com o check + data/usuário, como já é.
+Os `+2 dias` e `+7 dias` continuam fixos a partir da instalação. Os campos `dias`/`meses` antigos são substituídos por `conta`/`offsetDias` nos itens mensais.
 
-## O que muda na prática
+## 2. Caso `dia_leitura` não preenchido
 
-1. **Acompanhamento preenche os campos antigos.** Ao marcar "Projeto protocolado" / "Projeto aprovado", grava a data no campo do projeto (e limpa ao desmarcar). Entrega, fila, agendamento, fornecedor, WiFi e planta passam a gravar direto na coluna canônica.
-2. **Nº da fila e Data de agendamento ganham campo fixo** no projeto — passam a aparecer também na edição e no "Ver dados", sem mais ficar só no Acompanhamento.
-3. **Fim da duplicação.** Fornecedor, WiFi e Nome da planta deixam de ser gravados em dois lugares; passa a existir um só valor.
-4. **Editores alinhados.** "Editar Projeto" (Aguardando) e "Editar Cliente" (Instalados) ficam com o mesmo conjunto de campos (incluindo Nº fila, Data agendada e Local de entrega), deixando claro que "Distribuidor" e "Fornecedor" são o mesmo dado.
-5. **Dados atuais preservados.** Tudo que já está em `campo_extra` (e as datas das etapas de homologação já concluídas) é copiado para as colunas canônicas na migração — nada some.
+Hoje, sem `dia_leitura`, o código usa o dia da instalação como fallback silencioso — o que gera datas erradas. Novo comportamento:
 
----
+- Adicionar coluna `aguardando_leitura boolean not null default false` em `tarefas_posvenda` (migração).
+- Ao gerar tarefas sem `dia_leitura`: criar `+2 dias` e `+7 dias` normalmente e criar os lembretes mensais com `aguardando_leitura = true` e uma data provisória (dia da instalação) apenas para satisfazer o `NOT NULL`.
+- Criar `sincronizarDiaLeitura({ ownerFilter, dataInstalacao, diaLeitura })` que recalcula `data_programada` e zera `aguardando_leitura` de todas as tarefas mensais pendentes daquele cliente/projeto (identificadas pelo `template_key`).
+- Chamar essa sincronização sempre que o `dia_leitura` for salvo em: `ClienteEditModal.tsx`, `ProjetoForm.tsx`, `ProjetosUnificados.tsx` (`salvarDiaLeitura`) e `AtivarPosVendaTab.tsx` (`saveDiaLeitura`/`confirmarPrompt`).
+
+## 3. Exibição do lembrete (`TarefaPosVendaItem.tsx` + `PosVendaAgenda.tsx`)
+
+- `PosVendaAgenda` passa a selecionar `instalado_em`/`data_instalacao` e `dia_leitura` do projeto/cliente e repassa ao item.
+- Para tarefas com `aguardando_leitura = true`: exibir badge `⚠️ Aguardando dia de leitura` no lugar da data/contagem, e desabilitar "Adiar".
+- Para verificações de geração ancoradas na conta (todas menos `+2 dias`/`+7 dias`), mostrar bloco de contexto:
+
+```text
+📊 Verificar geração — Mês 3
+Instalado em: 01/04/2026
+Leitura prevista: dia 15
+Solicitar conta em: 20/07/2026 (daqui 3 dias)
+```
+
+A data "Solicitar conta em" = `data_programada + 3 dias`; "(daqui X dias)" é calculado em relação a hoje.
+
+- `usePosVendaHoje.ts`: contar apenas tarefas com `aguardando_leitura = false` (não contabilizar as pendentes de leitura).
+
+## 4. Textos de WhatsApp (dados)
+
+Atualizar/garantir os templates em `whatsapp_templates` com os textos sugeridos (verificação mês 1/2/3 e solicitações de conta 1/2/3). Será necessário um novo `template_key` `geracao_3meses` para a verificação do 3º mês (o `geracao_3meses_google` existente passa a ser exclusivo da tarefa de Avaliação Google). Feito via ferramenta de dados (upsert), preservando a possibilidade de o usuário editar depois.
 
 ## Detalhes técnicos
 
-**Schema (migração)**
-- Adicionar a `projetos`: `numero_fila` (integer) e `data_agendamento` (date).
-- Backfill a partir do existente:
-  - `numero_fila` ← `campo_extra->numero_fila` (fluxo 3, etapa 1).
-  - `data_agendamento` ← `campo_extra->data_agendamento` (fluxo 3, etapa 2).
-  - `local_entrega` ← `campo_extra->local_entrega` (fluxo 2, etapa 4) quando vazio.
-  - `distribuidor` ← `campo_extra->fornecedor` (fluxo 2, etapa 1) quando vazio.
-  - `projeto_enviado_em` ← `data_conclusao` da etapa 1.2 concluída quando vazio.
-  - `projeto_aprovado` ← `data_conclusao` da etapa 1.3 concluída quando vazio.
+- Migração: `ALTER TABLE public.tarefas_posvenda ADD COLUMN aguardando_leitura boolean NOT NULL DEFAULT false;` (sem novos GRANT/policy — a tabela já os possui).
+- `construirTarefas` retorna `aguardando_leitura` por linha; `TarefaRow` e a interface `TarefaPosVenda` ganham o campo.
+- Mapa `template_key → { conta, offsetDias }` exportado do `posvendaTarefas.ts` para reuso na sincronização e na exibição.
+- Sem alteração de regra de negócio fora do pós-venda; mudanças concentradas em `posvendaTarefas.ts`, componentes de pós-venda e um upsert de templates.
 
-**`src/lib/rastreamentoEtapas.ts`**
-- Acrescentar a cada `EtapaDef` que tenha dado um `campoProjeto` (nome da coluna canônica) e o tipo (`date`/`text`/`int`/`local`).
-- Helper `setCanonico(projetoId, etapa, valor)` e leitura canônica para a UI usar.
+## Arquivos afetados
 
-**`ListaAcompanhamento.tsx`**
-- No `commitCheck`: para etapas só-data (protocolado, aprovado), gravar/limpar a coluna canônica conforme marca/desmarca.
-- Mini-modais (fornecedor, WiFi, planta, entrega, fila, agendamento) passam a ler/gravar a coluna canônica; remover a escrita redundante em `campo_extra` (mantendo apenas `campo_extra.ativada` da troca do fluxo 1).
-- A lista carrega `numero_fila`, `data_agendamento`, `local_entrega` do projeto e exibe a partir deles (com fallback de leitura do `campo_extra` legado para registros antigos que ainda não passaram pelo backfill).
-
-**`ProjetoForm.tsx` e `ClienteEditModal.tsx`**
-- Igualar o conjunto de campos: adicionar Nº da fila, Data de agendamento e seletor de Local de entrega onde faltar; garantir `dia_leitura`, `estrutura`, `cabo_usado`, WiFi, nome da planta nos dois.
-- Confirmar que ambos salvam em `distribuidor` (rótulo "Fornecedor/Distribuidor").
-
-**`ClienteDadosModal.tsx`**
-- Ler tudo das colunas canônicas (Nº fila, agendamento, entrega, fornecedor, WiFi, planta, datas de homologação); manter `extraDe()` apenas como fallback legado.
-
-Sem novas tabelas; apenas duas colunas novas e realinhamento das telas para uma fonte única de verdade.
+- `src/lib/posvendaTarefas.ts` (lógica central)
+- `src/components/gestor/posvenda/TarefaPosVendaItem.tsx`
+- `src/components/gestor/posvenda/PosVendaAgenda.tsx`
+- `src/components/gestor/posvenda/usePosVendaHoje.ts`
+- `src/components/gestor/ClienteEditModal.tsx`, `ProjetoForm.tsx`, `ProjetosUnificados.tsx`, `src/components/admin/AtivarPosVendaTab.tsx` (gatilho de sincronização)
+- Migração para `aguardando_leitura` + upsert de `whatsapp_templates`

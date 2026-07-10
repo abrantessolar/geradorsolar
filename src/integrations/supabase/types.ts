@@ -1814,6 +1814,7 @@ export type Database = {
       tarefas_posvenda: {
         Row: {
           adiamentos: number
+          aguardando_leitura: boolean
           cliente_base_id: string | null
           concluido: boolean
           criado_em: string
@@ -1831,6 +1832,7 @@ export type Database = {
         }
         Insert: {
           adiamentos?: number
+          aguardando_leitura?: boolean
           cliente_base_id?: string | null
           concluido?: boolean
           criado_em?: string
@@ -1848,6 +1850,7 @@ export type Database = {
         }
         Update: {
           adiamentos?: number
+          aguardando_leitura?: boolean
           cliente_base_id?: string | null
           concluido?: boolean
           criado_em?: string
