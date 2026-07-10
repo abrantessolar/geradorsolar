@@ -124,7 +124,21 @@ export default function AtivarPosVendaTab() {
   const saveDiaLeitura = async (id: string, valor: number | null) => {
     setClientes((prev) => prev.map((c) => (c.id === id ? { ...c, dia_leitura: valor } : c)));
     const { error } = await supabase.from('clientes_base' as any).update({ dia_leitura: valor }).eq('id', id);
-    if (error) toast.error('Erro ao salvar dia de leitura: ' + error.message);
+    if (error) { toast.error('Erro ao salvar dia de leitura: ' + error.message); return; }
+    // Recalcula lembretes que estavam aguardando o dia de leitura
+    if (valor != null) {
+      const cli = clientes.find((c) => c.id === id);
+      if (cli?.instalado_em) {
+        try {
+          const n = await sincronizarDiaLeitura({
+            clienteBaseId: id,
+            dataInstalacao: parseDate(cli.instalado_em),
+            diaLeitura: valor,
+          });
+          if (n > 0) toast.success(`${n} lembrete(s) reagendado(s) com o dia de leitura.`);
+        } catch { /* silencioso */ }
+      }
+    }
   };
 
   const ativar = async (cliente: ClienteRow, diaLeitura: number | null) => {
