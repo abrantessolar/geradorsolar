@@ -155,6 +155,9 @@ export default function EstoqueTab() {
         <button onClick={() => setShowEntradaLote(true)} className="px-4 py-2 rounded-lg text-sm font-medium bg-primary text-primary-foreground flex items-center gap-2">
           <Package className="w-4 h-4" /> Entrada em Lote
         </button>
+        <button onClick={() => setShowSaidaManual(true)} className="px-4 py-2 rounded-lg text-sm font-medium bg-secondary text-secondary-foreground hover:bg-secondary/90 flex items-center gap-2">
+          <Scissors className="w-4 h-4" /> Saída Manual
+        </button>
         <button
           onClick={() => { setShowHistorico(!showHistorico); if (!showHistorico) loadHistorico(); }}
           className="px-4 py-2 rounded-lg text-sm bg-muted hover:bg-muted/70 flex items-center gap-2"
