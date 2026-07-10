@@ -1370,6 +1370,7 @@ export type Database = {
           observacao: string | null
           quantidade: number
           tipo: string
+          tipo_saida: string | null
           usuario_id: string
         }
         Insert: {
@@ -1380,6 +1381,7 @@ export type Database = {
           observacao?: string | null
           quantidade: number
           tipo: string
+          tipo_saida?: string | null
           usuario_id: string
         }
         Update: {
@@ -1390,6 +1392,7 @@ export type Database = {
           observacao?: string | null
           quantidade?: number
           tipo?: string
+          tipo_saida?: string | null
           usuario_id?: string
         }
         Relationships: [
