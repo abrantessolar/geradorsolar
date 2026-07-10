@@ -4,7 +4,7 @@ import type { ClienteBase } from './ClientesList';
 import { Edit2, FileText, Snowflake, Image as ImageIcon, CheckCircle, Trash2, ClipboardList, Package, FileDown, Eye, Search, ArrowUpRight, GripVertical, Link2, Zap, Loader2, CheckCircle2, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { ativarPosVendaCliente, ativarPosVendaProjeto } from '@/lib/posvendaTarefas';
+import { ativarPosVendaCliente, ativarPosVendaProjeto, sincronizarDiaLeitura } from '@/lib/posvendaTarefas';
 import WhatsAppLink from './WhatsAppLink';
 import { generateFichaInstalacao } from '@/lib/generateFichaInstalacao';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
