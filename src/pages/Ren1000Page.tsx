@@ -158,8 +158,13 @@ export default function Ren1000Page() {
                 ({fmt(consumoMedio)} ÷ (0,16 × 24 × 30)) × {Math.round(faObj.fa * 100)}% = <strong className="text-foreground">{fmt(resultadoExato)} kW</strong>
               </p>
               <p className="text-muted-foreground">
-                Arredondado para cima (conforme REN 1000): <strong className="text-foreground">{fmt(resultado)} kW</strong>
+                Arredondado para cima (conforme REN 1000): <strong className="text-foreground">{fmt(resultadoBruto)} kW</strong>
               </p>
+              {limitadoPeloTeto && (
+                <p className="text-amber-700 dark:text-amber-400">
+                  Limitado ao teto de 50 kW da REN 1000: <strong>{fmt(resultado)} kW</strong>
+                </p>
+              )}
             </div>
           )}
 
