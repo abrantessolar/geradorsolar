@@ -77,6 +77,8 @@ export default function PosVendaAgenda() {
         _marca_inversor: p?.marca_inversor || c?.marca_inversor || null,
         _nome_planta: p?.nome_planta || c?.nome_planta || null,
         _avaliacao: t.projeto_id ? (avMap[t.projeto_id] || null) : null,
+        _instalado_em: p?.data_instalacao || c?.instalado_em || null,
+        _dia_leitura: p?.dia_leitura ?? c?.dia_leitura ?? null,
       };
     });
     setTarefas(list);
