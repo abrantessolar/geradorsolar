@@ -25,6 +25,7 @@ export interface TarefaPosVenda {
   usuario_id: string | null;
   observacao: string | null;
   adiamentos: number;
+  aguardando_leitura: boolean;
   criado_em: string;
 }
 
@@ -52,40 +53,56 @@ interface PlanoItem {
   template_key: string;
   descricao: string;
   visivel_cliente: boolean;
-  /** dias após a instalação OU null se usar conta de luz */
+  /** dias fixos após a instalação (usado nos lembretes +2 e +7 dias) */
   dias?: number;
-  /** meses após a instalação (usado nos checkpoints trimestrais) */
-  meses?: number;
-  /** nº da conta de luz (1, 2, 3) — calcula com base no dia_leitura */
+  /** nº da conta de luz âncora (1, 2, 3, 6, 12, 15…36) */
   conta?: number;
+  /** deslocamento em dias em relação à data da conta (ex.: -3 = geração, +3 = avaliação) */
+  offsetDias?: number;
 }
 
 const PLANO: PlanoItem[] = [
   // FASE 2 — Primeiros contatos
   { fase: 2, tipo: 'verificar_geracao', template_key: 'geracao_2dias', descricao: 'Verificar geração (+2 dias)', visivel_cliente: false, dias: 2 },
   { fase: 2, tipo: 'verificar_geracao', template_key: 'geracao_7dias', descricao: 'Verificar geração (+7 dias)', visivel_cliente: false, dias: 7 },
-  { fase: 2, tipo: 'solicitar_conta', template_key: 'conta_1', descricao: 'Solicitar 1ª conta de luz', visivel_cliente: true, conta: 1 },
-  { fase: 2, tipo: 'verificar_geracao', template_key: 'geracao_1mes', descricao: 'Verificar geração 1 mês', visivel_cliente: false, dias: 30 },
-  { fase: 2, tipo: 'solicitar_conta', template_key: 'conta_2', descricao: 'Solicitar 2ª conta de luz', visivel_cliente: true, conta: 2 },
-  { fase: 2, tipo: 'verificar_geracao', template_key: 'geracao_2meses', descricao: 'Verificar geração 2 meses', visivel_cliente: false, dias: 60 },
-  { fase: 2, tipo: 'solicitar_conta', template_key: 'conta_3', descricao: 'Solicitar 3ª conta de luz', visivel_cliente: true, conta: 3 },
-  { fase: 2, tipo: 'avaliacao_google', template_key: 'geracao_3meses_google', descricao: 'Verificar geração 3 meses + Avaliação Google', visivel_cliente: false, dias: 90 },
+  { fase: 2, tipo: 'verificar_geracao', template_key: 'geracao_1mes', descricao: 'Verificar geração — mês 1', visivel_cliente: false, conta: 1, offsetDias: -3 },
+  { fase: 2, tipo: 'solicitar_conta', template_key: 'conta_1', descricao: 'Solicitar 1ª conta de luz', visivel_cliente: true, conta: 1, offsetDias: 0 },
+  { fase: 2, tipo: 'verificar_geracao', template_key: 'geracao_2meses', descricao: 'Verificar geração — mês 2', visivel_cliente: false, conta: 2, offsetDias: -3 },
+  { fase: 2, tipo: 'solicitar_conta', template_key: 'conta_2', descricao: 'Solicitar 2ª conta de luz', visivel_cliente: true, conta: 2, offsetDias: 0 },
+  { fase: 2, tipo: 'verificar_geracao', template_key: 'geracao_3meses', descricao: 'Verificar geração — mês 3', visivel_cliente: false, conta: 3, offsetDias: -3 },
+  { fase: 2, tipo: 'solicitar_conta', template_key: 'conta_3', descricao: 'Solicitar 3ª conta de luz', visivel_cliente: true, conta: 3, offsetDias: 0 },
+  { fase: 2, tipo: 'avaliacao_google', template_key: 'geracao_3meses_google', descricao: 'Avaliação Google', visivel_cliente: false, conta: 3, offsetDias: 3 },
   // FASE 3 — Acompanhamento
-  { fase: 3, tipo: 'verificar_geracao', template_key: 'geracao_6meses', descricao: 'Verificar geração 6 meses', visivel_cliente: false, dias: 180 },
-  { fase: 3, tipo: 'indicacao', template_key: 'aniversario_1ano', descricao: 'Verificar geração 1 ano + Indicação', visivel_cliente: false, dias: 365 },
+  { fase: 3, tipo: 'verificar_geracao', template_key: 'geracao_6meses', descricao: 'Verificar geração 6 meses', visivel_cliente: false, conta: 6, offsetDias: -3 },
+  { fase: 3, tipo: 'indicacao', template_key: 'aniversario_1ano', descricao: 'Verificar geração 1 ano + Indicação', visivel_cliente: false, conta: 12, offsetDias: -3 },
   // FASE 4 — Trimestral (anos 2 e 3)
-  { fase: 4, tipo: 'verificar_geracao', template_key: 'geracao_15meses', descricao: 'Verificar geração 15 meses', visivel_cliente: false, meses: 15 },
-  { fase: 4, tipo: 'verificar_geracao', template_key: 'geracao_18meses', descricao: 'Verificar geração 18 meses', visivel_cliente: false, meses: 18 },
-  { fase: 4, tipo: 'verificar_geracao', template_key: 'geracao_21meses', descricao: 'Verificar geração 21 meses', visivel_cliente: false, meses: 21 },
-  { fase: 4, tipo: 'verificar_geracao', template_key: 'geracao_24meses', descricao: 'Verificar geração 24 meses (2 anos)', visivel_cliente: false, meses: 24 },
-  { fase: 4, tipo: 'verificar_geracao', template_key: 'geracao_27meses', descricao: 'Verificar geração 27 meses', visivel_cliente: false, meses: 27 },
-  { fase: 4, tipo: 'verificar_geracao', template_key: 'geracao_30meses', descricao: 'Verificar geração 30 meses', visivel_cliente: false, meses: 30 },
-  { fase: 4, tipo: 'verificar_geracao', template_key: 'geracao_33meses', descricao: 'Verificar geração 33 meses', visivel_cliente: false, meses: 33 },
-  { fase: 4, tipo: 'encerramento', template_key: 'geracao_36meses', descricao: 'Verificar geração 36 meses (encerramento)', visivel_cliente: false, meses: 36 },
+  { fase: 4, tipo: 'verificar_geracao', template_key: 'geracao_15meses', descricao: 'Verificar geração 15 meses', visivel_cliente: false, conta: 15, offsetDias: -3 },
+  { fase: 4, tipo: 'verificar_geracao', template_key: 'geracao_18meses', descricao: 'Verificar geração 18 meses', visivel_cliente: false, conta: 18, offsetDias: -3 },
+  { fase: 4, tipo: 'verificar_geracao', template_key: 'geracao_21meses', descricao: 'Verificar geração 21 meses', visivel_cliente: false, conta: 21, offsetDias: -3 },
+  { fase: 4, tipo: 'verificar_geracao', template_key: 'geracao_24meses', descricao: 'Verificar geração 24 meses (2 anos)', visivel_cliente: false, conta: 24, offsetDias: -3 },
+  { fase: 4, tipo: 'verificar_geracao', template_key: 'geracao_27meses', descricao: 'Verificar geração 27 meses', visivel_cliente: false, conta: 27, offsetDias: -3 },
+  { fase: 4, tipo: 'verificar_geracao', template_key: 'geracao_30meses', descricao: 'Verificar geração 30 meses', visivel_cliente: false, conta: 30, offsetDias: -3 },
+  { fase: 4, tipo: 'verificar_geracao', template_key: 'geracao_33meses', descricao: 'Verificar geração 33 meses', visivel_cliente: false, conta: 33, offsetDias: -3 },
+  { fase: 4, tipo: 'encerramento', template_key: 'geracao_36meses', descricao: 'Verificar geração 36 meses (encerramento)', visivel_cliente: false, conta: 36, offsetDias: -3 },
 ];
 
+/** Mapa template_key → item do plano (para sincronização e exibição de contexto). */
+const PLANO_POR_KEY: Record<string, PlanoItem> = Object.fromEntries(
+  PLANO.map((p) => [p.template_key, p]),
+);
+
+/** Info da conta âncora de um template (ou null se for lembrete fixo/sem conta). */
+export function contaInfoDoTemplate(
+  templateKey: string | null | undefined,
+): { conta: number; offsetDias: number } | null {
+  if (!templateKey) return null;
+  const p = PLANO_POR_KEY[templateKey];
+  if (!p || p.conta == null) return null;
+  return { conta: p.conta, offsetDias: p.offsetDias || 0 };
+}
+
 function toISODate(d: Date): string {
-  return d.toISOString().slice(0, 10);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 function addDays(d: Date, n: number): Date {
   const r = new Date(d);
@@ -105,6 +122,12 @@ function dataConta(instalacao: Date, diaLeitura: number, contaN: number): Date {
   return addDays(leitura, 5);
 }
 
+/** Data programada de um item do plano dada a instalação e o dia de leitura. */
+function dataDoItem(p: PlanoItem, instalacao: Date, diaLeitura: number): Date {
+  if (p.conta != null) return addDays(dataConta(instalacao, diaLeitura, p.conta), p.offsetDias || 0);
+  return addDays(instalacao, p.dias || 0);
+}
+
 export interface TarefaRow {
   fase: number;
   tipo: TarefaTipo;
@@ -114,6 +137,7 @@ export interface TarefaRow {
   visivel_cliente: boolean;
   concluido: boolean;
   adiamentos: number;
+  aguardando_leitura: boolean;
 }
 
 /** Próximo aniversário (mês/dia da data de nascimento) a partir de uma data de referência. */
@@ -125,7 +149,8 @@ function proximoAniversario(ref: Date, nascimento: Date): Date {
 
 /**
  * Constrói as linhas de tarefas do plano de pós-venda para uma data de
- * instalação. Se `onlyFuture` for true, ignora as datas que já passaram.
+ * instalação. Se `onlyFuture` for true, ignora as datas que já passaram
+ * (lembretes aguardando dia de leitura são sempre mantidos).
  * Se `dataNascimento` for informada, adiciona 1 lembrete de aniversário por
  * ano dentro da janela de 3 anos.
  */
@@ -136,14 +161,14 @@ export function construirTarefas(opts: {
   onlyFuture?: boolean;
 }): TarefaRow[] {
   const { dataInstalacao, diaLeitura, dataNascimento, onlyFuture } = opts;
+  const temLeitura = diaLeitura != null;
   const dia = diaLeitura ?? dataInstalacao.getDate();
   const hojeISO = toISODate(new Date());
 
   let rows: TarefaRow[] = PLANO.map((p) => {
-    let data: Date;
-    if (p.conta) data = dataConta(dataInstalacao, dia, p.conta);
-    else if (p.meses != null) data = addMonths(dataInstalacao, p.meses);
-    else data = addDays(dataInstalacao, p.dias || 0);
+    // Lembretes mensais sem dia de leitura definido ficam aguardando.
+    const aguardando = p.conta != null && !temLeitura;
+    const data = aguardando ? dataInstalacao : dataDoItem(p, dataInstalacao, dia);
     return {
       fase: p.fase,
       tipo: p.tipo,
@@ -153,6 +178,7 @@ export function construirTarefas(opts: {
       visivel_cliente: p.visivel_cliente,
       concluido: false,
       adiamentos: 0,
+      aguardando_leitura: aguardando,
     };
   });
 
@@ -171,13 +197,15 @@ export function construirTarefas(opts: {
         visivel_cliente: false,
         concluido: false,
         adiamentos: 0,
+        aguardando_leitura: false,
       });
       aniv = new Date(aniv.getFullYear() + 1, aniv.getMonth(), aniv.getDate());
       ano++;
     }
   }
 
-  if (onlyFuture) rows = rows.filter((r) => r.data_programada >= hojeISO);
+  // Mantém lembretes aguardando leitura mesmo com onlyFuture (não têm data real ainda).
+  if (onlyFuture) rows = rows.filter((r) => r.aguardando_leitura || r.data_programada >= hojeISO);
   return rows;
 }
 
@@ -242,9 +270,9 @@ export async function ativarPosVendaCliente(opts: {
   const { error } = await supabase.from('tarefas_posvenda' as any).insert(rows);
   if (error) throw error;
 
-  const ordenadas = [...base].sort((a, b) =>
-    a.data_programada < b.data_programada ? -1 : 1
-  );
+  const ordenadas = [...base]
+    .filter((r) => !r.aguardando_leitura)
+    .sort((a, b) => (a.data_programada < b.data_programada ? -1 : 1));
   const prox = ordenadas[0];
   return {
     created: rows.length,
@@ -278,14 +306,56 @@ export async function ativarPosVendaProjeto(opts: {
   const { error } = await supabase.from('tarefas_posvenda' as any).insert(rows);
   if (error) throw error;
 
-  const ordenadas = [...base].sort((a, b) =>
-    a.data_programada < b.data_programada ? -1 : 1
-  );
+  const ordenadas = [...base]
+    .filter((r) => !r.aguardando_leitura)
+    .sort((a, b) => (a.data_programada < b.data_programada ? -1 : 1));
   const prox = ordenadas[0];
   return {
     created: rows.length,
     proximo: prox ? { data: prox.data_programada, descricao: prox.descricao } : null,
   };
+}
+
+/**
+ * Recalcula as datas dos lembretes mensais que estavam aguardando o dia de
+ * leitura, assim que o `dia_leitura` é informado. Retorna a quantidade
+ * atualizada. Identifica o dono pelo projeto OU cliente da base.
+ */
+export async function sincronizarDiaLeitura(opts: {
+  projetoId?: string | null;
+  clienteBaseId?: string | null;
+  dataInstalacao: Date;
+  diaLeitura: number;
+}): Promise<number> {
+  const { projetoId, clienteBaseId, dataInstalacao, diaLeitura } = opts;
+  if (!projetoId && !clienteBaseId) return 0;
+  if (diaLeitura == null) return 0;
+
+  let query = supabase
+    .from('tarefas_posvenda' as any)
+    .select('id, template_key')
+    .eq('aguardando_leitura', true)
+    .eq('concluido', false);
+  query = projetoId ? query.eq('projeto_id', projetoId) : query.eq('cliente_base_id', clienteBaseId!);
+
+  const { data, error } = await query;
+  if (error) throw error;
+  const tarefas = (data || []) as { id: string; template_key: string | null }[];
+  if (tarefas.length === 0) return 0;
+
+  await Promise.all(
+    tarefas.map((t) => {
+      const p = t.template_key ? PLANO_POR_KEY[t.template_key] : undefined;
+      if (!p || p.conta == null) return Promise.resolve();
+      const novaData = toISODate(dataDoItem(p, dataInstalacao, diaLeitura));
+      return supabase
+        .from('tarefas_posvenda' as any)
+        .update({ data_programada: novaData, aguardando_leitura: false })
+        .eq('id', t.id);
+    }),
+  );
+
+  return tarefas.length;
 }
 
 /** Substitui variáveis [nome] e [link avaliação] no texto */
