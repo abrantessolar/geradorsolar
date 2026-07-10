@@ -42,7 +42,7 @@ function statusData(iso: string, concluido: boolean): { label: string; cls: stri
 }
 
 export default function TarefaPosVendaItem({
-  tarefa, nome, telefone, templateText, googleLink, onChanged,
+  tarefa, nome, telefone, templateText, googleLink, onChanged, instaladoEm, diaLeitura,
 }: {
   tarefa: TarefaPosVenda;
   nome: string;
@@ -50,12 +50,19 @@ export default function TarefaPosVendaItem({
   templateText: string;
   googleLink: string;
   onChanged: () => void;
+  instaladoEm?: string | null;
+  diaLeitura?: number | null;
 }) {
   const { session } = useAuth();
   const [obs, setObs] = useState(tarefa.observacao || '');
   const [showObs, setShowObs] = useState(false);
   const [busy, setBusy] = useState(false);
   const st = statusData(tarefa.data_programada, tarefa.concluido);
+  const aguardando = tarefa.aguardando_leitura;
+  const contaInfo = contaInfoDoTemplate(tarefa.template_key);
+  // Contexto exibido apenas em verificações de geração ancoradas na conta.
+  const mostrarContexto = tarefa.tipo === 'verificar_geracao' && !!contaInfo && !aguardando;
+  const dataSolicitarConta = mostrarContexto ? addDiasISO(tarefa.data_programada, 3) : null;
 
   const concluir = async () => {
     setBusy(true);
