@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Calculator, Settings, Menu, X, LogOut, Package, DollarSign, Users } from 'lucide-react';
+import { Calculator, Settings, Menu, X, LogOut, Package, DollarSign, Users, Wrench } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNewLeadsCount } from '@/components/LeadNotification';
@@ -24,6 +24,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     ...(permissions.calculadora ? [{ path: '/orcamentos', label: 'Calculadora', icon: Calculator, badge: 0 }] : []),
     ...(hasAnyGestor || permissions.gestor_clientes ? [{ path: '/clientes', label: 'Clientes', icon: Users, badge: posVendaCount }] : []),
     ...(permissions.gestor_custos ? [{ path: '/custos', label: 'Custos', icon: DollarSign, badge: 0 }] : []),
+    { path: '/ferramentas', label: 'Ferramentas', icon: Wrench, badge: 0 },
     ...(permissions.admin ? [{ path: '/admin', label: 'Admin', icon: Settings, badge: newLeadsCount }] : []),
   ];
 
