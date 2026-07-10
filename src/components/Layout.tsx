@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Calculator, Settings, Menu, X, LogOut, Package, DollarSign, Users } from 'lucide-react';
+import { Calculator, Settings, Menu, X, LogOut, Package, DollarSign, Users, Wrench } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNewLeadsCount } from '@/components/LeadNotification';
