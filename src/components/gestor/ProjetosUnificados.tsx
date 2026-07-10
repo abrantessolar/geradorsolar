@@ -4,7 +4,7 @@ import type { ClienteBase } from './ClientesList';
 import { Edit2, FileText, Snowflake, Image as ImageIcon, CheckCircle, Trash2, ClipboardList, Package, FileDown, Eye, Search, ArrowUpRight, GripVertical, Link2, Zap, Loader2, CheckCircle2, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { ativarPosVendaCliente, ativarPosVendaProjeto } from '@/lib/posvendaTarefas';
+import { ativarPosVendaCliente, ativarPosVendaProjeto, sincronizarDiaLeitura } from '@/lib/posvendaTarefas';
 import WhatsAppLink from './WhatsAppLink';
 import { generateFichaInstalacao } from '@/lib/generateFichaInstalacao';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -118,7 +118,19 @@ export default function ProjetosUnificados({
       .from((ehProjeto ? 'projetos' : 'clientes_base') as any)
       .update({ dia_leitura: valor })
       .eq('id', realId);
-    if (error) toast.error('Erro ao salvar dia de leitura: ' + error.message);
+    if (error) { toast.error('Erro ao salvar dia de leitura: ' + error.message); return; }
+    // Recalcula lembretes que estavam aguardando o dia de leitura
+    if (valor != null && c.instalado_em) {
+      try {
+        const n = await sincronizarDiaLeitura({
+          projetoId: ehProjeto ? realId : null,
+          clienteBaseId: ehProjeto ? null : realId,
+          dataInstalacao: new Date(c.instalado_em + 'T00:00:00'),
+          diaLeitura: valor,
+        });
+        if (n > 0) toast.success(`${n} lembrete(s) reagendado(s) com o dia de leitura.`);
+      } catch { /* silencioso */ }
+    }
   };
 
   const executarAtivacao = async (c: ClienteBase, diaLeitura: number | null) => {

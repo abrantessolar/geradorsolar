@@ -5,6 +5,7 @@ import { Save, X, Star, Search } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import WhatsAppLink from './WhatsAppLink';
 import type { ClienteBase } from './ClientesList';
+import { sincronizarDiaLeitura } from '@/lib/posvendaTarefas';
 
 export default function ClienteEditModal({ cliente, onClose, onSaved }: {
   cliente: ClienteBase;
@@ -188,6 +189,20 @@ export default function ClienteEditModal({ cliente, onClose, onSaved }: {
       }).eq('id', cliente.id);
       setSaving(false);
       if (error) { toast.error(error.message); return; }
+    }
+    // Recalcula lembretes de pós-venda que aguardavam o dia de leitura
+    const diaLeituraNum = form.dia_leitura ? parseInt(form.dia_leitura) : null;
+    if (diaLeituraNum != null && form.instalado_em) {
+      try {
+        const realId = isFromProjeto ? cliente.id.replace('proj-', '') : cliente.id;
+        const n = await sincronizarDiaLeitura({
+          projetoId: isFromProjeto ? realId : null,
+          clienteBaseId: isFromProjeto ? null : realId,
+          dataInstalacao: new Date(form.instalado_em + 'T00:00:00'),
+          diaLeitura: diaLeituraNum,
+        });
+        if (n > 0) toast.success(`${n} lembrete(s) de pós-venda reagendado(s).`);
+      } catch { /* silencioso */ }
     }
     toast.success('Cliente atualizado!');
     onSaved();

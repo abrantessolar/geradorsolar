@@ -13,6 +13,7 @@ export function usePosVendaHojeCount(): number {
         .from('tarefas_posvenda' as any)
         .select('id', { count: 'exact', head: true })
         .eq('concluido', false)
+        .eq('aguardando_leitura', false)
         .lte('data_programada', hoje);
       if (active) setCount(c || 0);
     };

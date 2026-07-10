@@ -14,6 +14,8 @@ interface TarefaComProjeto extends TarefaPosVenda {
   _marca_inversor: string | null;
   _nome_planta: string | null;
   _avaliacao: { nota: number; comentario: string | null } | null;
+  _instalado_em: string | null;
+  _dia_leitura: number | null;
 }
 
 function montarRotulo(t: TarefaComProjeto): string {
@@ -47,7 +49,7 @@ export default function PosVendaAgenda() {
     setLoading(true);
     const { data } = await supabase
       .from('tarefas_posvenda' as any)
-      .select('*, projetos!tarefas_posvenda_projeto_id_fkey(nome_completo, razao_social, telefone, email, marca_inversor, nome_planta), clientes_base!tarefas_posvenda_cliente_base_id_fkey(nome_completo, telefone, email, marca_inversor, nome_planta)')
+      .select('*, projetos!tarefas_posvenda_projeto_id_fkey(nome_completo, razao_social, telefone, email, marca_inversor, nome_planta, data_instalacao, dia_leitura), clientes_base!tarefas_posvenda_cliente_base_id_fkey(nome_completo, telefone, email, marca_inversor, nome_planta, instalado_em, dia_leitura)')
       .order('data_programada', { ascending: true });
 
     // Avaliações por projeto
@@ -75,6 +77,8 @@ export default function PosVendaAgenda() {
         _marca_inversor: p?.marca_inversor || c?.marca_inversor || null,
         _nome_planta: p?.nome_planta || c?.nome_planta || null,
         _avaliacao: t.projeto_id ? (avMap[t.projeto_id] || null) : null,
+        _instalado_em: p?.data_instalacao || c?.instalado_em || null,
+        _dia_leitura: p?.dia_leitura ?? c?.dia_leitura ?? null,
       };
     });
     setTarefas(list);
@@ -166,6 +170,8 @@ export default function PosVendaAgenda() {
               telefone={t._telefone}
               templateText={templates[t.template_key || ''] || ''}
               googleLink={googleLink}
+              instaladoEm={t._instalado_em}
+              diaLeitura={t._dia_leitura}
               onChanged={load}
             />
           </div>
