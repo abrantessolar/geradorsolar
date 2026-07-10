@@ -316,6 +316,11 @@ export default function EstoqueTab() {
         <EntradaLoteModal onClose={() => setShowEntradaLote(false)} onDone={load} />
       )}
 
+      {/* Modal de saída manual */}
+      {showSaidaManual && (
+        <SaidaManualModal onClose={() => setShowSaidaManual(false)} onDone={() => { load(); if (showHistorico) loadHistorico(); }} />
+      )}
+
       {/* Modal de confirmação para zerar estoque */}
       {showZerar && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowZerar(false)}>
