@@ -22,9 +22,11 @@ type MovRow = {
   id: string;
   material_nome: string;
   tipo: string;
+  tipo_saida: string | null;
   quantidade: number;
   obra_nome: string | null;
   observacao: string | null;
+  usuario_nome: string | null;
   criado_em: string;
 };
 
