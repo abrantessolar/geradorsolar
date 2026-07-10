@@ -118,7 +118,19 @@ export default function ProjetosUnificados({
       .from((ehProjeto ? 'projetos' : 'clientes_base') as any)
       .update({ dia_leitura: valor })
       .eq('id', realId);
-    if (error) toast.error('Erro ao salvar dia de leitura: ' + error.message);
+    if (error) { toast.error('Erro ao salvar dia de leitura: ' + error.message); return; }
+    // Recalcula lembretes que estavam aguardando o dia de leitura
+    if (valor != null && c.instalado_em) {
+      try {
+        const n = await sincronizarDiaLeitura({
+          projetoId: ehProjeto ? realId : null,
+          clienteBaseId: ehProjeto ? null : realId,
+          dataInstalacao: new Date(c.instalado_em + 'T00:00:00'),
+          diaLeitura: valor,
+        });
+        if (n > 0) toast.success(`${n} lembrete(s) reagendado(s) com o dia de leitura.`);
+      } catch { /* silencioso */ }
+    }
   };
 
   const executarAtivacao = async (c: ClienteBase, diaLeitura: number | null) => {
