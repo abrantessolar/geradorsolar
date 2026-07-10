@@ -14,6 +14,8 @@ interface TarefaComProjeto extends TarefaPosVenda {
   _marca_inversor: string | null;
   _nome_planta: string | null;
   _avaliacao: { nota: number; comentario: string | null } | null;
+  _instalado_em: string | null;
+  _dia_leitura: number | null;
 }
 
 function montarRotulo(t: TarefaComProjeto): string {
