@@ -32,8 +32,11 @@ export default function Ren1000Page() {
     return vals.reduce((a, b) => a + b, 0) / (preenchidos.length || 1);
   }, [modo, media, meses]);
 
+  const TETO_REN1000 = 50; // limite máximo pela REN 1000
   const resultadoExato = consumoMedio > 0 ? (consumoMedio / DENOMINADOR) * faObj.fa : 0;
-  const resultado = Math.ceil(resultadoExato * 100) / 100;
+  const resultadoBruto = Math.ceil(resultadoExato * 100) / 100;
+  const resultado = Math.min(resultadoBruto, TETO_REN1000);
+  const limitadoPeloTeto = resultadoBruto > TETO_REN1000;
 
   const inversorRecomendado = useMemo(() => {
     if (resultado <= 0) return null;
@@ -155,8 +158,13 @@ export default function Ren1000Page() {
                 ({fmt(consumoMedio)} ÷ (0,16 × 24 × 30)) × {Math.round(faObj.fa * 100)}% = <strong className="text-foreground">{fmt(resultadoExato)} kW</strong>
               </p>
               <p className="text-muted-foreground">
-                Arredondado para cima (conforme REN 1000): <strong className="text-foreground">{fmt(resultado)} kW</strong>
+                Arredondado para cima (conforme REN 1000): <strong className="text-foreground">{fmt(resultadoBruto)} kW</strong>
               </p>
+              {limitadoPeloTeto && (
+                <p className="text-amber-700 dark:text-amber-400">
+                  Limitado ao teto de 50 kW da REN 1000: <strong>{fmt(resultado)} kW</strong>
+                </p>
+              )}
             </div>
           )}
 
