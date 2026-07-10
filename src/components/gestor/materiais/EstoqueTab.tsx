@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { Plus, RotateCcw, Package } from 'lucide-react';
+import { Plus, RotateCcw, Package, Scissors } from 'lucide-react';
 import { CATEGORIA_ICONS } from './types';
 import EntradaLoteModal from './EntradaLoteModal';
+import SaidaManualModal from './SaidaManualModal';
 
 type EstoqueRow = {
   id: string;
@@ -21,9 +22,11 @@ type MovRow = {
   id: string;
   material_nome: string;
   tipo: string;
+  tipo_saida: string | null;
   quantidade: number;
   obra_nome: string | null;
   observacao: string | null;
+  usuario_nome: string | null;
   criado_em: string;
 };
 
@@ -36,6 +39,7 @@ export default function EstoqueTab() {
   const [movQtd, setMovQtd] = useState('');
   const [movObs, setMovObs] = useState('');
   const [showEntradaLote, setShowEntradaLote] = useState(false);
+  const [showSaidaManual, setShowSaidaManual] = useState(false);
   const [showHistorico, setShowHistorico] = useState(false);
   const [historico, setHistorico] = useState<MovRow[]>([]);
   const [loadingHist, setLoadingHist] = useState(false);
@@ -71,14 +75,27 @@ export default function EstoqueTab() {
       .select('*, materiais(nome), projetos(nome_completo, razao_social)')
       .order('criado_em', { ascending: false })
       .limit(100);
-    
-    setHistorico((data || []).map((m: any) => ({
+
+    const rows = (data || []) as any[];
+    const userIds = [...new Set(rows.map(m => m.usuario_id).filter(Boolean))];
+    let nomes: Record<string, string> = {};
+    if (userIds.length) {
+      const { data: profs } = await supabase
+        .from('user_profiles' as any)
+        .select('user_id, nome')
+        .in('user_id', userIds);
+      nomes = Object.fromEntries((profs || []).map((p: any) => [p.user_id, p.nome]));
+    }
+
+    setHistorico(rows.map((m: any) => ({
       id: m.id,
       material_nome: m.materiais?.nome || '—',
       tipo: m.tipo,
+      tipo_saida: m.tipo_saida || null,
       quantidade: m.quantidade,
       obra_nome: m.projetos?.nome_completo || m.projetos?.razao_social || null,
       observacao: m.observacao,
+      usuario_nome: nomes[m.usuario_id] || null,
       criado_em: m.criado_em,
     })));
     setLoadingHist(false);
@@ -139,6 +156,9 @@ export default function EstoqueTab() {
         <button onClick={() => setShowEntradaLote(true)} className="px-4 py-2 rounded-lg text-sm font-medium bg-primary text-primary-foreground flex items-center gap-2">
           <Package className="w-4 h-4" /> Entrada em Lote
         </button>
+        <button onClick={() => setShowSaidaManual(true)} className="px-4 py-2 rounded-lg text-sm font-medium bg-secondary text-secondary-foreground hover:bg-secondary/90 flex items-center gap-2">
+          <Scissors className="w-4 h-4" /> Saída Manual
+        </button>
         <button
           onClick={() => { setShowHistorico(!showHistorico); if (!showHistorico) loadHistorico(); }}
           className="px-4 py-2 rounded-lg text-sm bg-muted hover:bg-muted/70 flex items-center gap-2"
@@ -173,30 +193,47 @@ export default function EstoqueTab() {
                     <th className="py-1 px-2">Material</th>
                     <th className="py-1 px-2">Tipo</th>
                     <th className="py-1 px-2 text-center">Qtd</th>
-                    <th className="py-1 px-2">Obra/Cliente</th>
+                    <th className="py-1 px-2">Obra / Motivo</th>
+                    <th className="py-1 px-2">Responsável</th>
                     <th className="py-1 px-2">Data</th>
                     <th className="py-1 px-2">Obs</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {historico.map(m => (
-                    <tr key={m.id} className="border-b border-border/30">
-                      <td className="py-1 px-2 font-medium">{m.material_nome}</td>
-                      <td className="py-1 px-2">
-                        <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
-                          m.tipo === 'entrada' ? 'bg-primary/10 text-primary' :
-                          m.tipo === 'saida' ? 'bg-destructive/10 text-destructive' :
-                          'bg-accent text-accent-foreground'
-                        }`}>
-                          {m.tipo === 'entrada' ? '➕ Entrada' : m.tipo === 'saida' ? '➖ Saída' : '↩️ Retorno'}
-                        </span>
-                      </td>
-                      <td className="py-1 px-2 text-center">{m.quantidade}</td>
-                      <td className="py-1 px-2">{m.obra_nome || <span className="text-muted-foreground">—</span>}</td>
-                      <td className="py-1 px-2 text-muted-foreground">{new Date(m.criado_em).toLocaleDateString('pt-BR')}</td>
-                      <td className="py-1 px-2 text-muted-foreground max-w-[150px] truncate">{m.observacao || '—'}</td>
-                    </tr>
-                  ))}
+                  {historico.map(m => {
+                    const motivoBadge: Record<string, { label: string; cls: string }> = {
+                      uso_interno: { label: '🔵 Uso interno', cls: 'bg-blue-500/10 text-blue-600' },
+                      obra_nao_identificada: { label: '🟡 Obra não identificada', cls: 'bg-amber-500/10 text-amber-600' },
+                      ajuste_estoque: { label: '🔴 Ajuste de estoque', cls: 'bg-destructive/10 text-destructive' },
+                    };
+                    const mb = m.tipo_saida ? motivoBadge[m.tipo_saida] : null;
+                    return (
+                      <tr key={m.id} className="border-b border-border/30">
+                        <td className="py-1 px-2 font-medium">{m.material_nome}</td>
+                        <td className="py-1 px-2">
+                          <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
+                            m.tipo === 'entrada' ? 'bg-primary/10 text-primary' :
+                            m.tipo === 'saida' ? 'bg-destructive/10 text-destructive' :
+                            m.tipo === 'saida_manual' ? 'bg-secondary/20 text-secondary-foreground' :
+                            'bg-accent text-accent-foreground'
+                          }`}>
+                            {m.tipo === 'entrada' ? '➕ Entrada' : m.tipo === 'saida' ? '➖ Saída' : m.tipo === 'saida_manual' ? '✂️ Saída Manual' : '↩️ Retorno'}
+                          </span>
+                        </td>
+                        <td className="py-1 px-2 text-center">{m.quantidade}</td>
+                        <td className="py-1 px-2">
+                          {mb ? (
+                            <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${mb.cls}`}>{mb.label}</span>
+                          ) : (
+                            m.obra_nome || <span className="text-muted-foreground">—</span>
+                          )}
+                        </td>
+                        <td className="py-1 px-2 text-muted-foreground">{m.usuario_nome || '—'}</td>
+                        <td className="py-1 px-2 text-muted-foreground">{new Date(m.criado_em).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}</td>
+                        <td className="py-1 px-2 text-muted-foreground max-w-[150px] truncate" title={m.observacao || ''}>{m.observacao || '—'}</td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -277,6 +314,11 @@ export default function EstoqueTab() {
       {/* Modal de entrada em lote */}
       {showEntradaLote && (
         <EntradaLoteModal onClose={() => setShowEntradaLote(false)} onDone={load} />
+      )}
+
+      {/* Modal de saída manual */}
+      {showSaidaManual && (
+        <SaidaManualModal onClose={() => setShowSaidaManual(false)} onDone={() => { load(); if (showHistorico) loadHistorico(); }} />
       )}
 
       {/* Modal de confirmação para zerar estoque */}
