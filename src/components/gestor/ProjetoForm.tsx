@@ -301,6 +301,19 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel, prefill, pro
     if (error) { toast.error('Erro ao salvar: ' + error.message); return; }
     toast.success(projetoId ? 'Projeto atualizado!' : 'Projeto criado!');
 
+    // Recalcula lembretes de pós-venda que aguardavam o dia de leitura
+    const diaLeituraNum = form.dia_leitura ? parseInt(form.dia_leitura) : null;
+    if (savedId && diaLeituraNum != null && form.data_instalacao) {
+      try {
+        const n = await sincronizarDiaLeitura({
+          projetoId: savedId,
+          dataInstalacao: new Date(form.data_instalacao + 'T00:00:00'),
+          diaLeitura: diaLeituraNum,
+        });
+        if (n > 0) toast.success(`${n} lembrete(s) de pós-venda reagendado(s).`);
+      } catch { /* silencioso */ }
+    }
+
     // Save UCs to new table
     if (savedId) {
       // Delete existing UCs for this project
