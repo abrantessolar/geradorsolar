@@ -39,6 +39,7 @@ export default function EstoqueTab() {
   const [movQtd, setMovQtd] = useState('');
   const [movObs, setMovObs] = useState('');
   const [showEntradaLote, setShowEntradaLote] = useState(false);
+  const [showSaidaManual, setShowSaidaManual] = useState(false);
   const [showHistorico, setShowHistorico] = useState(false);
   const [historico, setHistorico] = useState<MovRow[]>([]);
   const [loadingHist, setLoadingHist] = useState(false);
