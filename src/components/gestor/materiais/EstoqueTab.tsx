@@ -74,14 +74,27 @@ export default function EstoqueTab() {
       .select('*, materiais(nome), projetos(nome_completo, razao_social)')
       .order('criado_em', { ascending: false })
       .limit(100);
-    
-    setHistorico((data || []).map((m: any) => ({
+
+    const rows = (data || []) as any[];
+    const userIds = [...new Set(rows.map(m => m.usuario_id).filter(Boolean))];
+    let nomes: Record<string, string> = {};
+    if (userIds.length) {
+      const { data: profs } = await supabase
+        .from('user_profiles' as any)
+        .select('user_id, nome')
+        .in('user_id', userIds);
+      nomes = Object.fromEntries((profs || []).map((p: any) => [p.user_id, p.nome]));
+    }
+
+    setHistorico(rows.map((m: any) => ({
       id: m.id,
       material_nome: m.materiais?.nome || '—',
       tipo: m.tipo,
+      tipo_saida: m.tipo_saida || null,
       quantidade: m.quantidade,
       obra_nome: m.projetos?.nome_completo || m.projetos?.razao_social || null,
       observacao: m.observacao,
+      usuario_nome: nomes[m.usuario_id] || null,
       criado_em: m.criado_em,
     })));
     setLoadingHist(false);
