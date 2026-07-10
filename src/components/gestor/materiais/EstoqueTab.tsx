@@ -193,30 +193,47 @@ export default function EstoqueTab() {
                     <th className="py-1 px-2">Material</th>
                     <th className="py-1 px-2">Tipo</th>
                     <th className="py-1 px-2 text-center">Qtd</th>
-                    <th className="py-1 px-2">Obra/Cliente</th>
+                    <th className="py-1 px-2">Obra / Motivo</th>
+                    <th className="py-1 px-2">Responsável</th>
                     <th className="py-1 px-2">Data</th>
                     <th className="py-1 px-2">Obs</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {historico.map(m => (
-                    <tr key={m.id} className="border-b border-border/30">
-                      <td className="py-1 px-2 font-medium">{m.material_nome}</td>
-                      <td className="py-1 px-2">
-                        <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
-                          m.tipo === 'entrada' ? 'bg-primary/10 text-primary' :
-                          m.tipo === 'saida' ? 'bg-destructive/10 text-destructive' :
-                          'bg-accent text-accent-foreground'
-                        }`}>
-                          {m.tipo === 'entrada' ? '➕ Entrada' : m.tipo === 'saida' ? '➖ Saída' : '↩️ Retorno'}
-                        </span>
-                      </td>
-                      <td className="py-1 px-2 text-center">{m.quantidade}</td>
-                      <td className="py-1 px-2">{m.obra_nome || <span className="text-muted-foreground">—</span>}</td>
-                      <td className="py-1 px-2 text-muted-foreground">{new Date(m.criado_em).toLocaleDateString('pt-BR')}</td>
-                      <td className="py-1 px-2 text-muted-foreground max-w-[150px] truncate">{m.observacao || '—'}</td>
-                    </tr>
-                  ))}
+                  {historico.map(m => {
+                    const motivoBadge: Record<string, { label: string; cls: string }> = {
+                      uso_interno: { label: '🔵 Uso interno', cls: 'bg-blue-500/10 text-blue-600' },
+                      obra_nao_identificada: { label: '🟡 Obra não identificada', cls: 'bg-amber-500/10 text-amber-600' },
+                      ajuste_estoque: { label: '🔴 Ajuste de estoque', cls: 'bg-destructive/10 text-destructive' },
+                    };
+                    const mb = m.tipo_saida ? motivoBadge[m.tipo_saida] : null;
+                    return (
+                      <tr key={m.id} className="border-b border-border/30">
+                        <td className="py-1 px-2 font-medium">{m.material_nome}</td>
+                        <td className="py-1 px-2">
+                          <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
+                            m.tipo === 'entrada' ? 'bg-primary/10 text-primary' :
+                            m.tipo === 'saida' ? 'bg-destructive/10 text-destructive' :
+                            m.tipo === 'saida_manual' ? 'bg-secondary/20 text-secondary-foreground' :
+                            'bg-accent text-accent-foreground'
+                          }`}>
+                            {m.tipo === 'entrada' ? '➕ Entrada' : m.tipo === 'saida' ? '➖ Saída' : m.tipo === 'saida_manual' ? '✂️ Saída Manual' : '↩️ Retorno'}
+                          </span>
+                        </td>
+                        <td className="py-1 px-2 text-center">{m.quantidade}</td>
+                        <td className="py-1 px-2">
+                          {mb ? (
+                            <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${mb.cls}`}>{mb.label}</span>
+                          ) : (
+                            m.obra_nome || <span className="text-muted-foreground">—</span>
+                          )}
+                        </td>
+                        <td className="py-1 px-2 text-muted-foreground">{m.usuario_nome || '—'}</td>
+                        <td className="py-1 px-2 text-muted-foreground">{new Date(m.criado_em).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}</td>
+                        <td className="py-1 px-2 text-muted-foreground max-w-[150px] truncate" title={m.observacao || ''}>{m.observacao || '—'}</td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
