@@ -2,10 +2,10 @@ import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { Check, MessageCircle, Clock3, Eye, EyeOff, StickyNote } from 'lucide-react';
+import { Check, MessageCircle, Clock3, Eye, EyeOff, StickyNote, CalendarClock } from 'lucide-react';
 import {
-  type TarefaPosVenda, TIPO_ICONE, TIPO_LABEL,
-  aplicarVariaveis, montarLinkWhatsApp,
+  type TarefaPosVenda, TIPO_ICONE,
+  aplicarVariaveis, montarLinkWhatsApp, contaInfoDoTemplate,
 } from '@/lib/posvendaTarefas';
 
 function fmtData(iso: string): string {
@@ -13,11 +13,29 @@ function fmtData(iso: string): string {
   return `${d}/${m}/${y}`;
 }
 
-function statusData(iso: string, concluido: boolean): { label: string; cls: string } {
-  if (concluido) return { label: 'Concluído', cls: 'bg-primary/10 text-primary' };
+function addDiasISO(iso: string, n: number): string {
+  const d = new Date(iso + 'T00:00:00');
+  d.setDate(d.getDate() + n);
+  return d.toISOString().slice(0, 10);
+}
+
+function diasAte(iso: string): number {
   const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
   const dt = new Date(iso + 'T00:00:00');
-  const diff = Math.round((dt.getTime() - hoje.getTime()) / 86400000);
+  return Math.round((dt.getTime() - hoje.getTime()) / 86400000);
+}
+
+function labelDiasAte(iso: string): string {
+  const diff = diasAte(iso);
+  if (diff < 0) return `há ${-diff} dias`;
+  if (diff === 0) return 'hoje';
+  if (diff === 1) return 'amanhã';
+  return `daqui ${diff} dias`;
+}
+
+function statusData(iso: string, concluido: boolean): { label: string; cls: string } {
+  if (concluido) return { label: 'Concluído', cls: 'bg-primary/10 text-primary' };
+  const diff = diasAte(iso);
   if (diff < 0) return { label: `Atrasada ${-diff}d`, cls: 'bg-destructive/15 text-destructive' };
   if (diff === 0) return { label: 'Hoje', cls: 'bg-amber-500/15 text-amber-700 dark:text-amber-400' };
   return { label: `Em ${diff}d`, cls: 'bg-muted text-muted-foreground' };
