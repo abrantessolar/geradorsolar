@@ -154,7 +154,7 @@ export default function TarefaPosVendaItem({
               <button onClick={abrirWhatsApp} className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md bg-green-600 text-white hover:bg-green-700">
                 <MessageCircle className="w-3.5 h-3.5" /> WhatsApp
               </button>
-              <button onClick={adiar} disabled={busy} className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md bg-muted text-foreground hover:bg-muted/70">
+              <button onClick={adiar} disabled={busy || aguardando} title={aguardando ? 'Defina o dia de leitura primeiro' : undefined} className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md bg-muted text-foreground hover:bg-muted/70 disabled:opacity-50">
                 <Clock3 className="w-3.5 h-3.5" /> Adiar 3 dias
               </button>
               <button onClick={() => setShowObs(s => !s)} className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md bg-muted text-muted-foreground hover:bg-muted/70">
