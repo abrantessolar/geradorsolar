@@ -6,6 +6,31 @@
     <priority>1.0</priority>
   </url>
   <url>
+    <loc>https://www.treslagoassolar.com.br/servicos/analise-de-demanda</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.treslagoassolar.com.br/servicos/grid-zero</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.treslagoassolar.com.br/servicos/adequacao-bombeiro</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.treslagoassolar.com.br/servicos/homologacao-solar</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.treslagoassolar.com.br/servicos/regularize-seu-projeto</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://www.treslagoassolar.com.br/login</loc>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
