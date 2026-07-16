@@ -20,6 +20,7 @@ import Ren1000Page from "@/pages/Ren1000Page";
 import ClientesPage from "@/pages/ClientesPage";
 import RastreamentoPage from "@/pages/RastreamentoPage";
 import FaqPage from "@/pages/FaqPage";
+import ServicoPage from "@/pages/ServicoPage";
 import UnauthorizedPage from "@/pages/UnauthorizedPage";
 import LeadNotification from "@/components/LeadNotification";
 import NotFound from "@/pages/NotFound";
@@ -118,6 +119,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<LandingPage />} />
             <Route path="/faq" element={<FaqPage />} />
+            <Route path="/servicos/:slug" element={<ServicoPage />} />
             <Route path="/login" element={<AuthRedirect />} />
             <Route path="/unauthorized" element={<div><SeoNoIndex /><UnauthorizedPage /></div>} />
             <Route path="/proposta/:id" element={<div><SeoNoIndex /><ProposalPage /></div>} />

@@ -7,6 +7,7 @@ import PublicSimulator from '@/components/PublicSimulator';
 import LazyImage from '@/components/LazyImage';
 import Diferenciais from '@/components/Diferenciais';
 import OndeEstamos from '@/components/OndeEstamos';
+import { SERVICOS } from '@/data/servicos';
 
 import logoImg from '@/assets/logo.png';
 const LOGO_URL = logoImg;
@@ -118,6 +119,20 @@ export default function LandingPage() {
           <nav className="hidden md:flex items-center gap-6 text-sm font-medium">
             <a href="#missao" className="text-foreground/80 hover:text-primary transition-colors">Nossa Missão</a>
             <a href="#solucoes" className="text-foreground/80 hover:text-primary transition-colors">Soluções</a>
+            <div className="relative group">
+              <button className="flex items-center gap-1 text-foreground/80 hover:text-primary transition-colors">
+                Serviços <ChevronDown className="w-4 h-4" />
+              </button>
+              <div className="absolute top-full left-1/2 -translate-x-1/2 pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all">
+                <div className="w-72 bg-card border border-border/50 rounded-xl shadow-xl py-2">
+                  {SERVICOS.map(s => (
+                    <Link key={s.slug} to={s.route} className="flex items-center gap-3 px-4 py-2 text-sm text-foreground/80 hover:bg-muted hover:text-primary transition-colors">
+                      <span className="text-lg">{s.emoji}</span> {s.title}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            </div>
             <a href="#projetos" className="text-foreground/80 hover:text-primary transition-colors">Projetos</a>
             <button onClick={scrollToSimulator} className="text-foreground/80 hover:text-primary transition-colors">Simular</button>
             <Link to="/faq" className="text-foreground/80 hover:text-primary transition-colors">❓ Dúvidas</Link>
@@ -313,6 +328,45 @@ export default function LandingPage() {
       {/* ─── DIFERENCIAIS ─── */}
       <Diferenciais />
 
+      {/* ─── SERVIÇOS ESPECIALIZADOS ─── */}
+      <section id="servicos" className="py-20 md:py-28">
+        <div className="container">
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} className="text-center mb-16">
+            <span className="inline-block px-4 py-1 rounded-full bg-secondary/10 text-secondary text-xs font-bold uppercase tracking-widest mb-4">
+              Serviços
+            </span>
+            <h2 className="text-3xl md:text-4xl font-black text-primary mb-4">Serviços Especializados</h2>
+            <p className="text-foreground/60 max-w-2xl mx-auto text-lg">
+              Muito além da instalação solar. Soluções técnicas completas para o seu projeto.
+            </p>
+          </motion.div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+            {SERVICOS.map((s, i) => (
+              <motion.div
+                key={s.slug}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true }}
+                variants={{ ...fadeUp, visible: { ...fadeUp.visible, transition: { duration: 0.5, delay: i * 0.08 } } }}
+              >
+                <Link
+                  to={s.route}
+                  className="group block h-full p-6 rounded-2xl border-2 border-border/50 bg-card transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:border-secondary"
+                >
+                  <div className="text-5xl mb-4">{s.emoji}</div>
+                  <h3 className="text-xl font-bold text-primary mb-2">{s.title}</h3>
+                  <p className="text-sm text-foreground/70 leading-relaxed mb-4 line-clamp-2">{s.cardResumo}</p>
+                  <span className="inline-flex items-center gap-1 text-sm font-bold text-secondary group-hover:gap-2 transition-all">
+                    Saiba mais <ArrowRight className="w-4 h-4" />
+                  </span>
+                </Link>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ─── PARCEIROS ─── */}
       <section className="py-16 bg-card border-y border-border/30">
         <div className="container">
@@ -410,7 +464,7 @@ export default function LandingPage() {
       {/* ─── RODAPÉ ─── */}
       <footer className="bg-foreground text-background py-16">
         <div className="container">
-          <div className="grid md:grid-cols-3 gap-12">
+          <div className="grid md:grid-cols-4 gap-12">
             <div>
               <img src={LOGO_URL} alt="Logo Três Lagoas Solar energia solar" className="h-12 w-auto mb-4 brightness-200" width={144} height={48} loading="lazy" />
               <p className="text-background/60 text-sm leading-relaxed">
@@ -431,6 +485,18 @@ export default function LandingPage() {
                   <span>Rua Luiz Corrêa da Silveira, 934<br />Jardim Alvorada — Três Lagoas/MS<br />79610-060</span>
                 </div>
               </div>
+            </div>
+            <div>
+              <h3 className="font-bold text-lg mb-4">Serviços Especializados</h3>
+              <ul className="space-y-2 text-sm text-background/70">
+                {SERVICOS.map(s => (
+                  <li key={s.slug}>
+                    <Link to={s.route} className="hover:text-secondary transition-colors flex items-center gap-2">
+                      <span>{s.emoji}</span> {s.title}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
             </div>
             <div>
               <h3 className="font-bold text-lg mb-4">Redes Sociais</h3>
