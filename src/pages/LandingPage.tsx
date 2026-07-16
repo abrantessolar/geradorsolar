@@ -487,6 +487,18 @@ export default function LandingPage() {
               </div>
             </div>
             <div>
+              <h3 className="font-bold text-lg mb-4">Serviços Especializados</h3>
+              <ul className="space-y-2 text-sm text-background/70">
+                {SERVICOS.map(s => (
+                  <li key={s.slug}>
+                    <Link to={s.route} className="hover:text-secondary transition-colors flex items-center gap-2">
+                      <span>{s.emoji}</span> {s.title}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div>
               <h3 className="font-bold text-lg mb-4">Redes Sociais</h3>
               <div className="flex gap-4">
                 <a href="http://www.facebook.com/treslagoassolar" target="_blank" rel="noopener noreferrer"
