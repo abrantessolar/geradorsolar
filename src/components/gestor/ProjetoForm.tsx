@@ -670,8 +670,6 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel, prefill, pro
           )}
         </div>
       )}
-        </div>
-      )}
 
       {/* Step 4 - Comercial */}
       {step === 4 && (
