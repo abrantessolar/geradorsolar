@@ -327,6 +327,15 @@ export default function ClienteEditModal({ cliente, onClose, onSaved }: {
               <div><label className={lb}>Nome da Planta</label><input className={ic} value={form.nome_planta} onChange={e => set('nome_planta', e.target.value)} /></div>
               <div><label className={lb}>Instalado em</label><input className={ic} type="date" value={form.instalado_em} onChange={e => set('instalado_em', e.target.value)} /></div>
               <div><label className={lb}>📅 Dia de leitura aproximado da conta (1 a 31)</label><input className={ic} type="number" min={1} max={31} value={form.dia_leitura} onChange={e => set('dia_leitura', e.target.value)} placeholder="Ex.: 15" /></div>
+              <div className="md:col-span-2 flex flex-wrap items-center gap-3 rounded-lg border border-border/60 bg-muted/30 p-3">
+                <span className="text-sm font-medium">Pós-venda:</span>
+                <PosVendaControles
+                  owner={isFromProjeto ? { projetoId: cliente.id.replace('proj-', '') } : { clienteBaseId: cliente.id }}
+                  dataInstalacao={form.instalado_em || null}
+                  diaLeitura={form.dia_leitura ? parseInt(form.dia_leitura) : null}
+                  dataNascimento={form.data_nascimento || null}
+                />
+              </div>
               <div><label className={lb}>Vistoriado em</label><input className={ic} type="date" value={form.vistoriado_em} onChange={e => set('vistoriado_em', e.target.value)} /></div>
               <div><label className={lb}>Projeto enviado em</label><input className={ic} type="date" value={form.projeto_enviado_em} onChange={e => set('projeto_enviado_em', e.target.value)} /></div>
               <div><label className={lb}>Projeto aprovado em</label><input className={ic} type="date" value={form.projeto_aprovado} onChange={e => set('projeto_aprovado', e.target.value)} /></div>
