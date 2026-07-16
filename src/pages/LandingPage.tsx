@@ -7,6 +7,7 @@ import PublicSimulator from '@/components/PublicSimulator';
 import LazyImage from '@/components/LazyImage';
 import Diferenciais from '@/components/Diferenciais';
 import OndeEstamos from '@/components/OndeEstamos';
+import { SERVICOS } from '@/data/servicos';
 
 import logoImg from '@/assets/logo.png';
 const LOGO_URL = logoImg;
