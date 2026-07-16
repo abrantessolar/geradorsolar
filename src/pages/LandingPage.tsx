@@ -119,6 +119,20 @@ export default function LandingPage() {
           <nav className="hidden md:flex items-center gap-6 text-sm font-medium">
             <a href="#missao" className="text-foreground/80 hover:text-primary transition-colors">Nossa Missão</a>
             <a href="#solucoes" className="text-foreground/80 hover:text-primary transition-colors">Soluções</a>
+            <div className="relative group">
+              <button className="flex items-center gap-1 text-foreground/80 hover:text-primary transition-colors">
+                Serviços <ChevronDown className="w-4 h-4" />
+              </button>
+              <div className="absolute top-full left-1/2 -translate-x-1/2 pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all">
+                <div className="w-72 bg-card border border-border/50 rounded-xl shadow-xl py-2">
+                  {SERVICOS.map(s => (
+                    <Link key={s.slug} to={s.route} className="flex items-center gap-3 px-4 py-2 text-sm text-foreground/80 hover:bg-muted hover:text-primary transition-colors">
+                      <span className="text-lg">{s.emoji}</span> {s.title}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            </div>
             <a href="#projetos" className="text-foreground/80 hover:text-primary transition-colors">Projetos</a>
             <button onClick={scrollToSimulator} className="text-foreground/80 hover:text-primary transition-colors">Simular</button>
             <Link to="/faq" className="text-foreground/80 hover:text-primary transition-colors">❓ Dúvidas</Link>
