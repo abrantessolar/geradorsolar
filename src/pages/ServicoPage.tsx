@@ -31,6 +31,10 @@ export default function ServicoPage() {
 
   if (!servico) return <Navigate to="/" replace />;
 
+  return <ServicoContent servico={servico} openServicos={openServicos} setOpenServicos={setOpenServicos} />;
+}
+
+function ServicoContent({ servico, openServicos, setOpenServicos }: { servico: NonNullable<ReturnType<typeof getServicoBySlug>>; openServicos: boolean; setOpenServicos: (v: boolean) => void }) {
   useSeo(servico.seoTitle, servico.seoDescription);
 
   const whatsUrl = waLink(servico.whatsappMsg);
