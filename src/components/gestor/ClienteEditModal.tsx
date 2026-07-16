@@ -193,9 +193,10 @@ export default function ClienteEditModal({ cliente, onClose, onSaved }: {
     }
     // Recalcula lembretes de pós-venda que aguardavam o dia de leitura
     const diaLeituraNum = form.dia_leitura ? parseInt(form.dia_leitura) : null;
+    const realId = isFromProjeto ? cliente.id.replace('proj-', '') : cliente.id;
+    const owner = isFromProjeto ? { projetoId: realId } : { clienteBaseId: realId };
     if (diaLeituraNum != null && form.instalado_em) {
       try {
-        const realId = isFromProjeto ? cliente.id.replace('proj-', '') : cliente.id;
         const n = await sincronizarDiaLeitura({
           projetoId: isFromProjeto ? realId : null,
           clienteBaseId: isFromProjeto ? null : realId,
@@ -203,6 +204,17 @@ export default function ClienteEditModal({ cliente, onClose, onSaved }: {
           diaLeitura: diaLeituraNum,
         });
         if (n > 0) toast.success(`${n} lembrete(s) de pós-venda reagendado(s).`);
+        // Se o cliente estava desativado (0 pendentes) e agora tem dados suficientes,
+        // pergunta se quer reativar automaticamente.
+        const pend = await contarTarefasPendentes(owner);
+        if (pend === 0 && confirm('Este cliente está com pós-venda desativado. Deseja reativar os lembretes agora?')) {
+          const criadas = await reativarPosVenda({
+            ...owner,
+            dataInstalacao: new Date(form.instalado_em + 'T00:00:00'),
+            diaLeitura: diaLeituraNum,
+          });
+          if (criadas > 0) toast.success(`Pós-venda reativado (${criadas} lembrete(s) criado(s)).`);
+        }
       } catch { /* silencioso */ }
     }
     toast.success('Cliente atualizado!');
