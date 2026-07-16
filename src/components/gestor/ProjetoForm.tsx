@@ -6,7 +6,8 @@ import { toast } from 'sonner';
 import { ChevronLeft, ChevronRight, Plus, X, Save, Copy, Trash2, Users } from 'lucide-react';
 import { getPotenciaKey, generateMaterialList, hasExistingList } from './materiais/generateMaterialList';
 import UnidadesConsumidorasStep, { createDefaultGeradora, type UCItem, type ModoDistribuicao } from './UnidadesConsumidorasStep';
-import { sincronizarDiaLeitura } from '@/lib/posvendaTarefas';
+import { sincronizarDiaLeitura, contarTarefasPendentes, reativarPosVenda } from '@/lib/posvendaTarefas';
+import PosVendaControles from './posvenda/PosVendaControles';
 
 const STATUS_LIST = ['Vendido', 'Equipamento Comprado', 'Entregue', 'Em Instalação', 'Instalado', 'Projeto Submetido', 'Homologado'];
 const CONC_LIST = ['ELEKTRO', 'ENERGISA', 'COPEL', 'OUTRA'];
