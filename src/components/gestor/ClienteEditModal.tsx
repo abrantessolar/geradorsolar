@@ -349,32 +349,53 @@ export default function ClienteEditModal({ cliente, onClose, onSaved }: {
           </TabsContent>
 
           <TabsContent value="historico" className="space-y-4 pt-2">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className={lb}>Satisfação</label>
-                <div className="flex gap-1 items-center">
-                  {[1, 2, 3, 4, 5].map(n => (
-                    <button key={n} type="button" onClick={() => set('satisfacao', n.toString())}
-                      className="p-1 hover:scale-110 transition-transform">
-                      <Star className={`w-6 h-6 ${parseInt(form.satisfacao) >= n ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground'}`} />
-                    </button>
-                  ))}
-                  {form.satisfacao && <button onClick={() => set('satisfacao', '')} className="text-xs text-muted-foreground ml-2 hover:text-foreground">Limpar</button>}
-                </div>
-              </div>
-              <div>
-                <label className={lb}>Origem</label>
-                <div className="solar-input bg-muted/50 cursor-not-allowed text-sm">
-                  {cliente.origem === 'importacao' ? 'Importação' : cliente.origem === 'promovido_de_obra' ? 'Via Obra' : cliente.origem}
-                </div>
-              </div>
-              <div>
-                <label className={lb}>Data de cadastro</label>
-                <div className="solar-input bg-muted/50 cursor-not-allowed text-sm">
-                  {new Date(cliente.criado_em).toLocaleDateString('pt-BR')}
-                </div>
-              </div>
-            </div>
+            {(() => {
+              try {
+                const satisNum = parseInt(String(form.satisfacao ?? ''), 10);
+                const origemLabel =
+                  cliente?.origem === 'importacao' ? 'Importação'
+                  : cliente?.origem === 'promovido_de_obra' ? 'Via Obra'
+                  : (cliente?.origem ?? '—');
+                let dataCadastro = '—';
+                if (cliente?.criado_em) {
+                  const d = new Date(cliente.criado_em);
+                  if (!isNaN(d.getTime())) dataCadastro = d.toLocaleDateString('pt-BR');
+                }
+                return (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className={lb}>Satisfação</label>
+                      <div className="flex gap-1 items-center">
+                        {[1, 2, 3, 4, 5].map(n => (
+                          <button key={n} type="button" onClick={() => set('satisfacao', n.toString())}
+                            className="p-1 hover:scale-110 transition-transform">
+                            <Star className={`w-6 h-6 ${!isNaN(satisNum) && satisNum >= n ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground'}`} />
+                          </button>
+                        ))}
+                        {form.satisfacao && (
+                          <button type="button" onClick={() => set('satisfacao', '')} className="text-xs text-muted-foreground ml-2 hover:text-foreground">Limpar</button>
+                        )}
+                      </div>
+                    </div>
+                    <div>
+                      <label className={lb}>Origem</label>
+                      <div className="solar-input bg-muted/50 cursor-not-allowed text-sm">{origemLabel}</div>
+                    </div>
+                    <div>
+                      <label className={lb}>Data de cadastro</label>
+                      <div className="solar-input bg-muted/50 cursor-not-allowed text-sm">{dataCadastro}</div>
+                    </div>
+                  </div>
+                );
+              } catch (e: any) {
+                console.error('[Histórico tab] render error', e, { cliente, form });
+                return (
+                  <div className="p-4 text-xs text-destructive border border-destructive/40 rounded-md">
+                    Erro ao renderizar Histórico: {e?.message || String(e)}
+                  </div>
+                );
+              }
+            })()}
           </TabsContent>
         </Tabs>
 
