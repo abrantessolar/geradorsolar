@@ -6,7 +6,8 @@ import { toast } from 'sonner';
 import { ChevronLeft, ChevronRight, Plus, X, Save, Copy, Trash2, Users } from 'lucide-react';
 import { getPotenciaKey, generateMaterialList, hasExistingList } from './materiais/generateMaterialList';
 import UnidadesConsumidorasStep, { createDefaultGeradora, type UCItem, type ModoDistribuicao } from './UnidadesConsumidorasStep';
-import { sincronizarDiaLeitura } from '@/lib/posvendaTarefas';
+import { sincronizarDiaLeitura, contarTarefasPendentes, reativarPosVenda } from '@/lib/posvendaTarefas';
+import PosVendaControles from './posvenda/PosVendaControles';
 
 const STATUS_LIST = ['Vendido', 'Equipamento Comprado', 'Entregue', 'Em Instalação', 'Instalado', 'Projeto Submetido', 'Homologado'];
 const CONC_LIST = ['ELEKTRO', 'ENERGISA', 'COPEL', 'OUTRA'];
@@ -311,6 +312,15 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel, prefill, pro
           diaLeitura: diaLeituraNum,
         });
         if (n > 0) toast.success(`${n} lembrete(s) de pós-venda reagendado(s).`);
+        const pend = await contarTarefasPendentes({ projetoId: savedId });
+        if (pend === 0 && confirm('Este projeto está com pós-venda desativado. Deseja reativar os lembretes agora?')) {
+          const criadas = await reativarPosVenda({
+            projetoId: savedId,
+            dataInstalacao: new Date(form.data_instalacao + 'T00:00:00'),
+            diaLeitura: diaLeituraNum,
+          });
+          if (criadas > 0) toast.success(`Pós-venda reativado (${criadas} lembrete(s) criado(s)).`);
+        }
       } catch { /* silencioso */ }
     }
 
@@ -647,6 +657,17 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel, prefill, pro
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div><label className={labelClass}>📅 Dia de leitura aproximado da conta de luz (1 a 31)</label><input className={inputClass} type="number" min={1} max={31} value={form.dia_leitura} onChange={e => set('dia_leitura', e.target.value)} placeholder="Ex.: 15" /></div>
           </div>
+          {projetoId && (
+            <div className="flex flex-wrap items-center gap-3 rounded-lg border border-border/60 bg-muted/30 p-3">
+              <span className="text-sm font-medium">Pós-venda:</span>
+              <PosVendaControles
+                owner={{ projetoId }}
+                dataInstalacao={form.data_instalacao || null}
+                diaLeitura={form.dia_leitura ? parseInt(form.dia_leitura) : null}
+                dataNascimento={(form as any).data_nascimento || null}
+              />
+            </div>
+          )}
         </div>
       )}
 

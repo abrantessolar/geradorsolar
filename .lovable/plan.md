@@ -1,79 +1,51 @@
-# Sincronizar lembretes de pós-venda com a conta de luz
+# Desativar pós-venda e alterar dia de leitura
 
-Hoje os lembretes de "verificar geração" usam prazos fixos (+30, +60, +90 dias, etc.) que ficam dessincronizados da chegada da conta de luz. Vamos ancorar tudo no `dia_leitura` do cliente, de forma que cada verificação de geração caia 3 dias antes da respectiva solicitação de conta.
+Adicionar controle para desativar o pós-venda de um cliente (excluindo todas as tarefas pendentes) e para editar o dia de leitura recalculando todas as datas restantes. Disponível em dois lugares: **Agenda de Pós-venda** e **modais de edição do cliente/projeto**.
 
-## 1. Nova lógica de datas (`src/lib/posvendaTarefas.ts`)
+## 1. Núcleo (helpers em `src/lib/posvendaTarefas.ts`)
 
-A função `dataConta(instalacao, dia_leitura, N)` já existe e produz exatamente as datas do exemplo (instalação 01/04 + leitura 15 → 1ª conta 20/05, 2ª 20/06, 3ª 20/07). Vamos reestruturar o `PLANO` para que **todos** os lembretes mensais derivem dessa âncora:
+Três funções novas, todas idempotentes e filtrando por `projeto_id` ou `cliente_base_id`:
 
-- `data_conta_N` = 1ª leitura após instalação + (N−1) meses + 5 dias (fatura chega)
-- `data_geracao_N` = `data_conta_N` − 3 dias
-- `data_avaliacao` = `data_conta_3` + 3 dias
+- `desativarPosVenda({ projetoId?, clienteBaseId? }): Promise<number>` — `DELETE FROM tarefas_posvenda WHERE owner match AND concluido = false`. Retorna quantas foram removidas. Tarefas concluídas ficam intactas (histórico).
+- `contarTarefasPendentes({ ownerFilter })` — para exibir "X lembretes pendentes" no botão de confirmação.
+- `reativarPosVenda({ projetoId?, clienteBaseId?, dataInstalacao, diaLeitura })` — wrapper que chama `gerarTarefasPosVenda` (já é idempotente via `ON CONFLICT`), útil para expor uma API única do fluxo.
 
-`PlanoItem` ganha dois campos: `conta` (nº da conta âncora) e `offsetDias` (deslocamento em dias em relação à `data_conta`). O `PLANO` passa a ser:
+A função `sincronizarDiaLeitura` já existente continua sendo usada quando o usuário só troca a data de leitura sem desativar.
 
-```text
-FASE 2
-  Verificar geração +2 dias      dias:2   (fixo — confirma que ligou)
-  Verificar geração +7 dias      dias:7   (fixo — 1ª semana)
-  Verificar geração — mês 1      conta:1  offset:-3
-  Solicitar 1ª conta             conta:1  offset:0
-  Verificar geração — mês 2      conta:2  offset:-3
-  Solicitar 2ª conta             conta:2  offset:0
-  Verificar geração — mês 3      conta:3  offset:-3
-  Solicitar 3ª conta             conta:3  offset:0
-  Avaliação Google               conta:3  offset:+3
-FASE 3
-  Verificar geração 6 meses      conta:6  offset:-3
-  Verificar geração 1 ano + Ind. conta:12 offset:-3
-FASE 4 (trimestral)
-  15/18/21/24/27/30/33/36 meses  conta:N  offset:-3
-```
+## 2. Agenda de Pós-venda (`PosVendaAgenda.tsx`)
 
-Os `+2 dias` e `+7 dias` continuam fixos a partir da instalação. Os campos `dias`/`meses` antigos são substituídos por `conta`/`offsetDias` nos itens mensais.
+Hoje a lista mostra tarefas soltas. Vamos **agrupar por cliente** (chave: `projeto_id ?? cliente_base_id`). Cada grupo ganha um cabeçalho com:
 
-## 2. Caso `dia_leitura` não preenchido
+- Nome, marca do inversor, planta, avaliação (o que já existe hoje, movido para o header do grupo).
+- Badge com o dia de leitura atual (ex.: `Leitura dia 15`) ou `⚠️ Sem dia de leitura`.
+- Botão **✏️ Editar dia de leitura** → abre popover pequeno com input numérico (1–28) + Salvar. Ao salvar: `UPDATE projetos/clientes_base SET dia_leitura` e chama `sincronizarDiaLeitura` (recalcula todas as pendentes ancoradas em conta e limpa `aguardando_leitura`). Toast: "Datas recalculadas".
+- Botão **🚫 Desativar pós-venda** → abre um `AlertDialog` com contagem: "Isto vai excluir N lembretes pendentes deste cliente. Tarefas já concluídas serão preservadas como histórico. Deseja continuar?". Confirma → `desativarPosVenda` → toast + `load()`.
+- Se o cliente **não tem pendentes** (todas concluídas ou desativado): mostrar botão **▶️ Reativar pós-venda** (aparece só se houver `data_instalacao`). Confirma → `reativarPosVenda` → toast + `load()`.
 
-Hoje, sem `dia_leitura`, o código usa o dia da instalação como fallback silencioso — o que gera datas erradas. Novo comportamento:
+Para saber quais clientes estão "desativados mas elegíveis", a query passa a incluir também clientes com projeto instalado sem nenhuma tarefa pendente — filtro `pendentes` (padrão) esconde grupos vazios, filtro `todas`/`concluidas` mostra o cabeçalho com o botão Reativar.
 
-- Adicionar coluna `aguardando_leitura boolean not null default false` em `tarefas_posvenda` (migração).
-- Ao gerar tarefas sem `dia_leitura`: criar `+2 dias` e `+7 dias` normalmente e criar os lembretes mensais com `aguardando_leitura = true` e uma data provisória (dia da instalação) apenas para satisfazer o `NOT NULL`.
-- Criar `sincronizarDiaLeitura({ ownerFilter, dataInstalacao, diaLeitura })` que recalcula `data_programada` e zera `aguardando_leitura` de todas as tarefas mensais pendentes daquele cliente/projeto (identificadas pelo `template_key`).
-- Chamar essa sincronização sempre que o `dia_leitura` for salvo em: `ClienteEditModal.tsx`, `ProjetoForm.tsx`, `ProjetosUnificados.tsx` (`salvarDiaLeitura`) e `AtivarPosVendaTab.tsx` (`saveDiaLeitura`/`confirmarPrompt`).
+## 3. Modais de edição
 
-## 3. Exibição do lembrete (`TarefaPosVendaItem.tsx` + `PosVendaAgenda.tsx`)
+**`ClienteEditModal.tsx`** e **`ProjetoForm.tsx`** (e `ProjetosUnificados.tsx`/`AtivarPosVendaTab.tsx` onde já editam `dia_leitura`): adicionar uma seção **"Pós-venda"** logo abaixo do campo `dia_leitura`:
 
-- `PosVendaAgenda` passa a selecionar `instalado_em`/`data_instalacao` e `dia_leitura` do projeto/cliente e repassa ao item.
-- Para tarefas com `aguardando_leitura = true`: exibir badge `⚠️ Aguardando dia de leitura` no lugar da data/contagem, e desabilitar "Adiar".
-- Para verificações de geração ancoradas na conta (todas menos `+2 dias`/`+7 dias`), mostrar bloco de contexto:
+- Se existem tarefas pendentes: botão vermelho **Desativar pós-venda** (mesmo AlertDialog com contagem).
+- Se não existem pendentes e há `data_instalacao`: botão verde **Reativar pós-venda**.
+- Se `data_instalacao` está vazia: linha informativa "O pós-venda é iniciado ao concluir a obra".
 
-```text
-📊 Verificar geração — Mês 3
-Instalado em: 01/04/2026
-Leitura prevista: dia 15
-Solicitar conta em: 20/07/2026 (daqui 3 dias)
-```
+A lógica que já sincroniza ao salvar `dia_leitura` permanece; só adicionamos a possibilidade de o usuário desativar/reativar dali sem fechar o modal.
 
-A data "Solicitar conta em" = `data_programada + 3 dias`; "(daqui X dias)" é calculado em relação a hoje.
+**Reativação automática**: quando o usuário salva um `dia_leitura` em um cliente que está **desativado** (0 pendentes) **e** tem `data_instalacao`, mostrar um `confirm` inline: "Este cliente está com pós-venda desativado. Deseja reativar os lembretes agora?" — se sim, `reativarPosVenda`. Se não, apenas salva o dia_leitura (não gera nada).
 
-- `usePosVendaHoje.ts`: contar apenas tarefas com `aguardando_leitura = false` (não contabilizar as pendentes de leitura).
+## 4. Detalhes técnicos
 
-## 4. Textos de WhatsApp (dados)
+- **Sem migração de banco**: `DELETE` é suficiente para "excluir pendentes"; o histórico de concluídas fica na mesma tabela.
+- **Filtro de dono**: sempre `.eq('projeto_id', id)` OU `.eq('cliente_base_id', id)` — nunca ambos, para não apagar tarefas de outro cliente.
+- **Idempotência da reativação**: `gerarTarefasPosVenda` já usa `ON CONFLICT DO NOTHING` na chave `(owner, template_key)`, então reativar após uma desativação parcial não duplica.
+- **Contadores** (`usePosVendaHoje`, badge do menu): sem mudança de lógica — passam a refletir os deletes automaticamente porque leem a mesma tabela.
+- **Sheets sync**: nenhum, pós-venda é local.
 
-Atualizar/garantir os templates em `whatsapp_templates` com os textos sugeridos (verificação mês 1/2/3 e solicitações de conta 1/2/3). Será necessário um novo `template_key` `geracao_3meses` para a verificação do 3º mês (o `geracao_3meses_google` existente passa a ser exclusivo da tarefa de Avaliação Google). Feito via ferramenta de dados (upsert), preservando a possibilidade de o usuário editar depois.
+## 5. Arquivos afetados
 
-## Detalhes técnicos
-
-- Migração: `ALTER TABLE public.tarefas_posvenda ADD COLUMN aguardando_leitura boolean NOT NULL DEFAULT false;` (sem novos GRANT/policy — a tabela já os possui).
-- `construirTarefas` retorna `aguardando_leitura` por linha; `TarefaRow` e a interface `TarefaPosVenda` ganham o campo.
-- Mapa `template_key → { conta, offsetDias }` exportado do `posvendaTarefas.ts` para reuso na sincronização e na exibição.
-- Sem alteração de regra de negócio fora do pós-venda; mudanças concentradas em `posvendaTarefas.ts`, componentes de pós-venda e um upsert de templates.
-
-## Arquivos afetados
-
-- `src/lib/posvendaTarefas.ts` (lógica central)
-- `src/components/gestor/posvenda/TarefaPosVendaItem.tsx`
-- `src/components/gestor/posvenda/PosVendaAgenda.tsx`
-- `src/components/gestor/posvenda/usePosVendaHoje.ts`
-- `src/components/gestor/ClienteEditModal.tsx`, `ProjetoForm.tsx`, `ProjetosUnificados.tsx`, `src/components/admin/AtivarPosVendaTab.tsx` (gatilho de sincronização)
-- Migração para `aguardando_leitura` + upsert de `whatsapp_templates`
+- `src/lib/posvendaTarefas.ts` — novas funções `desativarPosVenda`, `contarTarefasPendentes`, `reativarPosVenda`.
+- `src/components/gestor/posvenda/PosVendaAgenda.tsx` — agrupamento por cliente, header com badges e botões, popover de edição do dia de leitura, AlertDialog de desativação/reativação.
+- `src/components/gestor/ClienteEditModal.tsx`, `src/components/gestor/ProjetoForm.tsx`, `src/components/gestor/ProjetosUnificados.tsx`, `src/components/admin/AtivarPosVendaTab.tsx` — seção "Pós-venda" com botões Desativar/Reativar e prompt de reativação automática ao salvar `dia_leitura`.

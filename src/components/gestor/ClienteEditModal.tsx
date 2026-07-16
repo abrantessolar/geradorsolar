@@ -5,7 +5,8 @@ import { Save, X, Star, Search } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import WhatsAppLink from './WhatsAppLink';
 import type { ClienteBase } from './ClientesList';
-import { sincronizarDiaLeitura } from '@/lib/posvendaTarefas';
+import { sincronizarDiaLeitura, contarTarefasPendentes, reativarPosVenda } from '@/lib/posvendaTarefas';
+import PosVendaControles from './posvenda/PosVendaControles';
 
 export default function ClienteEditModal({ cliente, onClose, onSaved }: {
   cliente: ClienteBase;
@@ -192,9 +193,10 @@ export default function ClienteEditModal({ cliente, onClose, onSaved }: {
     }
     // Recalcula lembretes de pós-venda que aguardavam o dia de leitura
     const diaLeituraNum = form.dia_leitura ? parseInt(form.dia_leitura) : null;
+    const realId = isFromProjeto ? cliente.id.replace('proj-', '') : cliente.id;
+    const owner = isFromProjeto ? { projetoId: realId } : { clienteBaseId: realId };
     if (diaLeituraNum != null && form.instalado_em) {
       try {
-        const realId = isFromProjeto ? cliente.id.replace('proj-', '') : cliente.id;
         const n = await sincronizarDiaLeitura({
           projetoId: isFromProjeto ? realId : null,
           clienteBaseId: isFromProjeto ? null : realId,
@@ -202,6 +204,17 @@ export default function ClienteEditModal({ cliente, onClose, onSaved }: {
           diaLeitura: diaLeituraNum,
         });
         if (n > 0) toast.success(`${n} lembrete(s) de pós-venda reagendado(s).`);
+        // Se o cliente estava desativado (0 pendentes) e agora tem dados suficientes,
+        // pergunta se quer reativar automaticamente.
+        const pend = await contarTarefasPendentes(owner);
+        if (pend === 0 && confirm('Este cliente está com pós-venda desativado. Deseja reativar os lembretes agora?')) {
+          const criadas = await reativarPosVenda({
+            ...owner,
+            dataInstalacao: new Date(form.instalado_em + 'T00:00:00'),
+            diaLeitura: diaLeituraNum,
+          });
+          if (criadas > 0) toast.success(`Pós-venda reativado (${criadas} lembrete(s) criado(s)).`);
+        }
       } catch { /* silencioso */ }
     }
     toast.success('Cliente atualizado!');
@@ -314,6 +327,15 @@ export default function ClienteEditModal({ cliente, onClose, onSaved }: {
               <div><label className={lb}>Nome da Planta</label><input className={ic} value={form.nome_planta} onChange={e => set('nome_planta', e.target.value)} /></div>
               <div><label className={lb}>Instalado em</label><input className={ic} type="date" value={form.instalado_em} onChange={e => set('instalado_em', e.target.value)} /></div>
               <div><label className={lb}>📅 Dia de leitura aproximado da conta (1 a 31)</label><input className={ic} type="number" min={1} max={31} value={form.dia_leitura} onChange={e => set('dia_leitura', e.target.value)} placeholder="Ex.: 15" /></div>
+              <div className="md:col-span-2 flex flex-wrap items-center gap-3 rounded-lg border border-border/60 bg-muted/30 p-3">
+                <span className="text-sm font-medium">Pós-venda:</span>
+                <PosVendaControles
+                  owner={isFromProjeto ? { projetoId: cliente.id.replace('proj-', '') } : { clienteBaseId: cliente.id }}
+                  dataInstalacao={form.instalado_em || null}
+                  diaLeitura={form.dia_leitura ? parseInt(form.dia_leitura) : null}
+                  dataNascimento={form.data_nascimento || null}
+                />
+              </div>
               <div><label className={lb}>Vistoriado em</label><input className={ic} type="date" value={form.vistoriado_em} onChange={e => set('vistoriado_em', e.target.value)} /></div>
               <div><label className={lb}>Projeto enviado em</label><input className={ic} type="date" value={form.projeto_enviado_em} onChange={e => set('projeto_enviado_em', e.target.value)} /></div>
               <div><label className={lb}>Projeto aprovado em</label><input className={ic} type="date" value={form.projeto_aprovado} onChange={e => set('projeto_aprovado', e.target.value)} /></div>

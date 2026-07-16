@@ -1,13 +1,16 @@
 import { useEffect, useMemo, useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { getConfigDB } from '@/data/supabaseStore';
-import { Loader2, Search, CalendarClock } from 'lucide-react';
+import { toast } from 'sonner';
+import { Loader2, Search, CalendarClock, CalendarDays, Save } from 'lucide-react';
 import {
-  type TarefaPosVenda, type TarefaTipo, TIPO_LABEL,
+  type TarefaPosVenda, type TarefaTipo, TIPO_LABEL, sincronizarDiaLeitura,
 } from '@/lib/posvendaTarefas';
 import TarefaPosVendaItem from './TarefaPosVendaItem';
+import PosVendaControles from './PosVendaControles';
 
 interface TarefaComProjeto extends TarefaPosVenda {
+  cliente_base_id: string | null;
   _nome: string;
   _telefone: string | null;
   _email: string | null;
@@ -16,10 +19,6 @@ interface TarefaComProjeto extends TarefaPosVenda {
   _avaliacao: { nota: number; comentario: string | null } | null;
   _instalado_em: string | null;
   _dia_leitura: number | null;
-}
-
-function montarRotulo(t: TarefaComProjeto): string {
-  return [t._nome, t._marca_inversor, t._nome_planta].filter(Boolean).join(' — ');
 }
 
 function estrelas(n: number): string {
@@ -34,6 +33,66 @@ export async function loadTemplatesMap(): Promise<Record<string, string>> {
   const map: Record<string, string> = {};
   for (const t of (data || []) as any[]) map[t.tipo] = t.texto;
   return map;
+}
+
+function DiaLeituraEditor({ owner, valorAtual, instaladoEm, onChanged }: {
+  owner: { projetoId?: string | null; clienteBaseId?: string | null };
+  valorAtual: number | null;
+  instaladoEm: string | null;
+  onChanged: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [valor, setValor] = useState<string>(valorAtual != null ? String(valorAtual) : '');
+  const [busy, setBusy] = useState(false);
+
+  const salvar = async () => {
+    const n = valor ? parseInt(valor) : null;
+    if (n != null && (isNaN(n) || n < 1 || n > 28)) { toast.error('Dia entre 1 e 28.'); return; }
+    setBusy(true);
+    try {
+      const table = owner.projetoId ? 'projetos' : 'clientes_base';
+      const id = owner.projetoId || owner.clienteBaseId!;
+      const { error } = await supabase.from(table as any).update({ dia_leitura: n }).eq('id', id);
+      if (error) throw error;
+      if (n != null && instaladoEm) {
+        const recalc = await sincronizarDiaLeitura({
+          projetoId: owner.projetoId || null,
+          clienteBaseId: owner.clienteBaseId || null,
+          dataInstalacao: new Date(instaladoEm + 'T00:00:00'),
+          diaLeitura: n,
+        });
+        toast.success(recalc > 0 ? `Dia salvo. ${recalc} lembrete(s) recalculado(s).` : 'Dia salvo.');
+      } else {
+        toast.success('Dia de leitura salvo.');
+      }
+      setOpen(false);
+      onChanged();
+    } catch (e: any) {
+      toast.error('Erro: ' + (e?.message || e));
+    } finally { setBusy(false); }
+  };
+
+  if (!open) {
+    return (
+      <button onClick={() => setOpen(true)} className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md bg-muted text-foreground hover:bg-muted/70">
+        <CalendarDays className="w-3.5 h-3.5" />
+        {valorAtual != null ? `Leitura dia ${valorAtual}` : '⚠️ Definir dia de leitura'}
+      </button>
+    );
+  }
+
+  return (
+    <div className="inline-flex items-center gap-1">
+      <input
+        type="number" min={1} max={28} value={valor} onChange={e => setValor(e.target.value)}
+        placeholder="1-28" className="solar-input py-1 text-xs w-20"
+      />
+      <button onClick={salvar} disabled={busy} className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md bg-primary text-primary-foreground disabled:opacity-50">
+        {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+      </button>
+      <button onClick={() => { setOpen(false); setValor(valorAtual != null ? String(valorAtual) : ''); }} className="text-xs px-2 py-1 rounded-md bg-muted text-muted-foreground">Cancelar</button>
+    </div>
+  );
 }
 
 export default function PosVendaAgenda() {
@@ -52,7 +111,6 @@ export default function PosVendaAgenda() {
       .select('*, projetos!tarefas_posvenda_projeto_id_fkey(nome_completo, razao_social, telefone, email, marca_inversor, nome_planta, data_instalacao, dia_leitura), clientes_base!tarefas_posvenda_cliente_base_id_fkey(nome_completo, telefone, email, marca_inversor, nome_planta, instalado_em, dia_leitura)')
       .order('data_programada', { ascending: true });
 
-    // Avaliações por projeto
     const projIds = [...new Set(((data || []) as any[]).map((t: any) => t.projeto_id).filter(Boolean))];
     const avMap: Record<string, { nota: number; comentario: string | null }> = {};
     if (projIds.length) {
@@ -110,6 +168,18 @@ export default function PosVendaAgenda() {
     });
   }, [tarefas, busca, filtroData, filtroTipo]);
 
+  // Agrupa por dono (projeto_id ou cliente_base_id).
+  const grupos = useMemo(() => {
+    const map = new Map<string, { header: TarefaComProjeto; itens: TarefaComProjeto[] }>();
+    for (const t of filtradas) {
+      const key = t.projeto_id ? `p:${t.projeto_id}` : t.cliente_base_id ? `c:${t.cliente_base_id}` : `?:${t.id}`;
+      const g = map.get(key);
+      if (g) g.itens.push(t);
+      else map.set(key, { header: t, itens: [t] });
+    }
+    return Array.from(map.entries()).map(([key, v]) => ({ key, ...v }));
+  }, [filtradas]);
+
   if (loading) return <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
 
   const filtrosData: { key: FiltroData; label: string }[] = [
@@ -150,32 +220,59 @@ export default function PosVendaAgenda() {
         </div>
       </div>
 
-      {filtradas.length === 0 && <p className="text-sm text-muted-foreground text-center py-10">Nenhuma tarefa encontrada.</p>}
+      {grupos.length === 0 && <p className="text-sm text-muted-foreground text-center py-10">Nenhuma tarefa encontrada.</p>}
 
-      <div className="space-y-2">
-        {filtradas.map(t => (
-          <div key={t.id}>
-            <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mb-1">
-              <span className="text-xs font-medium text-muted-foreground">{montarRotulo(t)}</span>
-              {t._email && <span className="text-[11px] text-muted-foreground">✉️ {t._email}</span>}
-              {t._avaliacao && (
-                <span className="inline-flex items-center gap-1 text-[11px] text-yellow-600" title={t._avaliacao.comentario || ''}>
-                  <span className="text-yellow-500">{estrelas(t._avaliacao.nota)}</span> {t._avaliacao.nota}/5
-                </span>
-              )}
+      <div className="space-y-4">
+        {grupos.map(g => {
+          const owner = g.header.projeto_id
+            ? { projetoId: g.header.projeto_id }
+            : { clienteBaseId: g.header.cliente_base_id! };
+          return (
+            <div key={g.key} className="rounded-xl border border-border bg-card/40 p-3 space-y-2">
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 pb-2 border-b border-border/50">
+                <span className="text-sm font-semibold text-foreground">{g.header._nome}</span>
+                {g.header._marca_inversor && <span className="text-[11px] text-muted-foreground">{g.header._marca_inversor}</span>}
+                {g.header._nome_planta && <span className="text-[11px] text-muted-foreground">• {g.header._nome_planta}</span>}
+                {g.header._email && <span className="text-[11px] text-muted-foreground">✉️ {g.header._email}</span>}
+                {g.header._avaliacao && (
+                  <span className="inline-flex items-center gap-1 text-[11px] text-yellow-600" title={g.header._avaliacao.comentario || ''}>
+                    <span className="text-yellow-500">{estrelas(g.header._avaliacao.nota)}</span> {g.header._avaliacao.nota}/5
+                  </span>
+                )}
+                <div className="ml-auto flex flex-wrap items-center gap-2">
+                  <DiaLeituraEditor
+                    owner={owner}
+                    valorAtual={g.header._dia_leitura}
+                    instaladoEm={g.header._instalado_em}
+                    onChanged={load}
+                  />
+                  <PosVendaControles
+                    owner={owner}
+                    dataInstalacao={g.header._instalado_em}
+                    diaLeitura={g.header._dia_leitura}
+                    onChanged={load}
+                    compact
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                {g.itens.map(t => (
+                  <TarefaPosVendaItem
+                    key={t.id}
+                    tarefa={t}
+                    nome={t._nome}
+                    telefone={t._telefone}
+                    templateText={templates[t.template_key || ''] || ''}
+                    googleLink={googleLink}
+                    instaladoEm={t._instalado_em}
+                    diaLeitura={t._dia_leitura}
+                    onChanged={load}
+                  />
+                ))}
+              </div>
             </div>
-            <TarefaPosVendaItem
-              tarefa={t}
-              nome={t._nome}
-              telefone={t._telefone}
-              templateText={templates[t.template_key || ''] || ''}
-              googleLink={googleLink}
-              instaladoEm={t._instalado_em}
-              diaLeitura={t._dia_leitura}
-              onChanged={load}
-            />
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

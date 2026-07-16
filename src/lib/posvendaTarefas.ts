@@ -358,6 +358,81 @@ export async function sincronizarDiaLeitura(opts: {
   return tarefas.length;
 }
 
+export interface OwnerFilter {
+  projetoId?: string | null;
+  clienteBaseId?: string | null;
+}
+
+function ownerColumn(f: OwnerFilter): { col: 'projeto_id' | 'cliente_base_id'; id: string } | null {
+  if (f.projetoId) return { col: 'projeto_id', id: f.projetoId };
+  if (f.clienteBaseId) return { col: 'cliente_base_id', id: f.clienteBaseId };
+  return null;
+}
+
+/** Conta quantas tarefas de pós-venda pendentes existem para o cliente/projeto. */
+export async function contarTarefasPendentes(f: OwnerFilter): Promise<number> {
+  const owner = ownerColumn(f);
+  if (!owner) return 0;
+  const { count } = await supabase
+    .from('tarefas_posvenda' as any)
+    .select('id', { count: 'exact', head: true })
+    .eq(owner.col, owner.id)
+    .eq('concluido', false);
+  return count || 0;
+}
+
+/**
+ * Desativa o pós-venda excluindo TODAS as tarefas pendentes do cliente/projeto.
+ * Tarefas concluídas ficam preservadas como histórico. Retorna quantas foram removidas.
+ */
+export async function desativarPosVenda(f: OwnerFilter): Promise<number> {
+  const owner = ownerColumn(f);
+  if (!owner) return 0;
+  const pendentes = await contarTarefasPendentes(f);
+  if (pendentes === 0) return 0;
+  const { error } = await supabase
+    .from('tarefas_posvenda' as any)
+    .delete()
+    .eq(owner.col, owner.id)
+    .eq('concluido', false);
+  if (error) throw error;
+  return pendentes;
+}
+
+/**
+ * Reativa o pós-venda para um cliente/projeto já instalado. Idempotente:
+ * só cria tarefas que não existem (por template_key). Retorna quantas foram criadas.
+ */
+export async function reativarPosVenda(opts: OwnerFilter & {
+  dataInstalacao: Date;
+  diaLeitura: number | null;
+  dataNascimento?: Date | null;
+}): Promise<number> {
+  const owner = ownerColumn(opts);
+  if (!owner) return 0;
+
+  // Templates já existentes (concluídas ou não) — não recriar duplicadas.
+  const { data: existentes } = await supabase
+    .from('tarefas_posvenda' as any)
+    .select('template_key')
+    .eq(owner.col, owner.id);
+  const jaExistem = new Set(((existentes || []) as any[]).map((t) => t.template_key));
+
+  const base = construirTarefas({
+    dataInstalacao: opts.dataInstalacao,
+    diaLeitura: opts.diaLeitura,
+    dataNascimento: opts.dataNascimento,
+    onlyFuture: true,
+  }).filter((r) => !jaExistem.has(r.template_key));
+
+  if (base.length === 0) return 0;
+
+  const rows = base.map((r) => ({ ...r, [owner.col]: owner.id }));
+  const { error } = await supabase.from('tarefas_posvenda' as any).insert(rows);
+  if (error) throw error;
+  return rows.length;
+}
+
 /** Substitui variáveis [nome] e [link avaliação] no texto */
 export function aplicarVariaveis(texto: string, nome: string, googleLink: string): string {
   return (texto || '')
