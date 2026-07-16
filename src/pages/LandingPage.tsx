@@ -328,6 +328,45 @@ export default function LandingPage() {
       {/* ─── DIFERENCIAIS ─── */}
       <Diferenciais />
 
+      {/* ─── SERVIÇOS ESPECIALIZADOS ─── */}
+      <section id="servicos" className="py-20 md:py-28">
+        <div className="container">
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} className="text-center mb-16">
+            <span className="inline-block px-4 py-1 rounded-full bg-secondary/10 text-secondary text-xs font-bold uppercase tracking-widest mb-4">
+              Serviços
+            </span>
+            <h2 className="text-3xl md:text-4xl font-black text-primary mb-4">Serviços Especializados</h2>
+            <p className="text-foreground/60 max-w-2xl mx-auto text-lg">
+              Muito além da instalação solar. Soluções técnicas completas para o seu projeto.
+            </p>
+          </motion.div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+            {SERVICOS.map((s, i) => (
+              <motion.div
+                key={s.slug}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true }}
+                variants={{ ...fadeUp, visible: { ...fadeUp.visible, transition: { duration: 0.5, delay: i * 0.08 } } }}
+              >
+                <Link
+                  to={s.route}
+                  className="group block h-full p-6 rounded-2xl border-2 border-border/50 bg-card transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:border-secondary"
+                >
+                  <div className="text-5xl mb-4">{s.emoji}</div>
+                  <h3 className="text-xl font-bold text-primary mb-2">{s.title}</h3>
+                  <p className="text-sm text-foreground/70 leading-relaxed mb-4 line-clamp-2">{s.cardResumo}</p>
+                  <span className="inline-flex items-center gap-1 text-sm font-bold text-secondary group-hover:gap-2 transition-all">
+                    Saiba mais <ArrowRight className="w-4 h-4" />
+                  </span>
+                </Link>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ─── PARCEIROS ─── */}
       <section className="py-16 bg-card border-y border-border/30">
         <div className="container">
