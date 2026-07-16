@@ -5,7 +5,8 @@ import { Save, X, Star, Search } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import WhatsAppLink from './WhatsAppLink';
 import type { ClienteBase } from './ClientesList';
-import { sincronizarDiaLeitura } from '@/lib/posvendaTarefas';
+import { sincronizarDiaLeitura, contarTarefasPendentes, reativarPosVenda } from '@/lib/posvendaTarefas';
+import PosVendaControles from './posvenda/PosVendaControles';
 
 export default function ClienteEditModal({ cliente, onClose, onSaved }: {
   cliente: ClienteBase;
