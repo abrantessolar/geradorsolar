@@ -20,6 +20,7 @@ import Ren1000Page from "@/pages/Ren1000Page";
 import ClientesPage from "@/pages/ClientesPage";
 import RastreamentoPage from "@/pages/RastreamentoPage";
 import FaqPage from "@/pages/FaqPage";
+import ServicoPage from "@/pages/ServicoPage";
 import UnauthorizedPage from "@/pages/UnauthorizedPage";
 import LeadNotification from "@/components/LeadNotification";
 import NotFound from "@/pages/NotFound";
