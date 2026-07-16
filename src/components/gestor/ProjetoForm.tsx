@@ -312,6 +312,15 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel, prefill, pro
           diaLeitura: diaLeituraNum,
         });
         if (n > 0) toast.success(`${n} lembrete(s) de pós-venda reagendado(s).`);
+        const pend = await contarTarefasPendentes({ projetoId: savedId });
+        if (pend === 0 && confirm('Este projeto está com pós-venda desativado. Deseja reativar os lembretes agora?')) {
+          const criadas = await reativarPosVenda({
+            projetoId: savedId,
+            dataInstalacao: new Date(form.data_instalacao + 'T00:00:00'),
+            diaLeitura: diaLeituraNum,
+          });
+          if (criadas > 0) toast.success(`Pós-venda reativado (${criadas} lembrete(s) criado(s)).`);
+        }
       } catch { /* silencioso */ }
     }
 
