@@ -464,7 +464,7 @@ export default function LandingPage() {
       {/* ─── RODAPÉ ─── */}
       <footer className="bg-foreground text-background py-16">
         <div className="container">
-          <div className="grid md:grid-cols-3 gap-12">
+          <div className="grid md:grid-cols-4 gap-12">
             <div>
               <img src={LOGO_URL} alt="Logo Três Lagoas Solar energia solar" className="h-12 w-auto mb-4 brightness-200" width={144} height={48} loading="lazy" />
               <p className="text-background/60 text-sm leading-relaxed">
