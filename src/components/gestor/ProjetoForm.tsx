@@ -657,6 +657,19 @@ export default function ProjetoForm({ projetoId, onSaved, onCancel, prefill, pro
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div><label className={labelClass}>📅 Dia de leitura aproximado da conta de luz (1 a 31)</label><input className={inputClass} type="number" min={1} max={31} value={form.dia_leitura} onChange={e => set('dia_leitura', e.target.value)} placeholder="Ex.: 15" /></div>
           </div>
+          {projetoId && (
+            <div className="flex flex-wrap items-center gap-3 rounded-lg border border-border/60 bg-muted/30 p-3">
+              <span className="text-sm font-medium">Pós-venda:</span>
+              <PosVendaControles
+                owner={{ projetoId }}
+                dataInstalacao={form.data_instalacao || null}
+                diaLeitura={form.dia_leitura ? parseInt(form.dia_leitura) : null}
+                dataNascimento={(form as any).data_nascimento || null}
+              />
+            </div>
+          )}
+        </div>
+      )}
         </div>
       )}
 
