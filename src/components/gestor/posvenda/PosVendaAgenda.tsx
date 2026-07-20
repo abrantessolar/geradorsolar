@@ -232,60 +232,92 @@ export default function PosVendaAgenda() {
         </div>
       </div>
 
-      {grupos.length === 0 && <p className="text-sm text-muted-foreground text-center py-10">Nenhuma tarefa encontrada.</p>}
+      {filtradas.length === 0 && <p className="text-sm text-muted-foreground text-center py-10">Nenhuma tarefa encontrada.</p>}
 
-      <div className="space-y-4">
-        {grupos.map(g => {
-          const owner = g.header.projeto_id
-            ? { projetoId: g.header.projeto_id }
-            : { clienteBaseId: g.header.cliente_base_id! };
-          return (
-            <div key={g.key} className="rounded-xl border border-border bg-card/40 p-3 space-y-2">
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 pb-2 border-b border-border/50">
-                <span className="text-sm font-semibold text-foreground">{g.header._nome}</span>
-                {g.header._marca_inversor && <span className="text-[11px] text-muted-foreground">{g.header._marca_inversor}</span>}
-                {g.header._nome_planta && <span className="text-[11px] text-muted-foreground">• {g.header._nome_planta}</span>}
-                {g.header._email && <span className="text-[11px] text-muted-foreground">✉️ {g.header._email}</span>}
-                {g.header._avaliacao && (
-                  <span className="inline-flex items-center gap-1 text-[11px] text-yellow-600" title={g.header._avaliacao.comentario || ''}>
-                    <span className="text-yellow-500">{estrelas(g.header._avaliacao.nota)}</span> {g.header._avaliacao.nota}/5
-                  </span>
-                )}
-                <div className="ml-auto flex flex-wrap items-center gap-2">
-                  <DiaLeituraEditor
-                    owner={owner}
-                    valorAtual={g.header._dia_leitura}
-                    instaladoEm={g.header._instalado_em}
-                    onChanged={load}
-                  />
-                  <PosVendaControles
-                    owner={owner}
-                    dataInstalacao={g.header._instalado_em}
-                    diaLeitura={g.header._dia_leitura}
-                    onChanged={load}
-                    compact
-                  />
+      {filtroData === 'pendentes' ? (
+        <div className="space-y-2">
+          {[...filtradas]
+            .sort((a, b) => {
+              const aAg = (a as any).aguardando_leitura ? 1 : 0;
+              const bAg = (b as any).aguardando_leitura ? 1 : 0;
+              if (aAg !== bAg) return aAg - bAg;
+              return a.data_programada.localeCompare(b.data_programada);
+            })
+            .map(t => (
+              <div key={t.id} className="rounded-xl border border-border bg-card/40 p-3 space-y-2">
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-muted-foreground">
+                  <span className="text-sm font-semibold text-foreground">{t._nome}</span>
+                  {t._marca_inversor && <span>• {t._marca_inversor}</span>}
+                  {t._nome_planta && <span>• {t._nome_planta}</span>}
+                  {t._dia_leitura != null && <span>• Leitura dia {t._dia_leitura}</span>}
+                </div>
+                <TarefaPosVendaItem
+                  tarefa={t}
+                  nome={t._nome}
+                  telefone={t._telefone}
+                  templateText={templates[t.template_key || ''] || ''}
+                  googleLink={googleLink}
+                  instaladoEm={t._instalado_em}
+                  diaLeitura={t._dia_leitura}
+                  onChanged={load}
+                />
+              </div>
+            ))}
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {grupos.map(g => {
+            const owner = g.header.projeto_id
+              ? { projetoId: g.header.projeto_id }
+              : { clienteBaseId: g.header.cliente_base_id! };
+            return (
+              <div key={g.key} className="rounded-xl border border-border bg-card/40 p-3 space-y-2">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 pb-2 border-b border-border/50">
+                  <span className="text-sm font-semibold text-foreground">{g.header._nome}</span>
+                  {g.header._marca_inversor && <span className="text-[11px] text-muted-foreground">{g.header._marca_inversor}</span>}
+                  {g.header._nome_planta && <span className="text-[11px] text-muted-foreground">• {g.header._nome_planta}</span>}
+                  {g.header._email && <span className="text-[11px] text-muted-foreground">✉️ {g.header._email}</span>}
+                  {g.header._avaliacao && (
+                    <span className="inline-flex items-center gap-1 text-[11px] text-yellow-600" title={g.header._avaliacao.comentario || ''}>
+                      <span className="text-yellow-500">{estrelas(g.header._avaliacao.nota)}</span> {g.header._avaliacao.nota}/5
+                    </span>
+                  )}
+                  <div className="ml-auto flex flex-wrap items-center gap-2">
+                    <DiaLeituraEditor
+                      owner={owner}
+                      valorAtual={g.header._dia_leitura}
+                      instaladoEm={g.header._instalado_em}
+                      onChanged={load}
+                    />
+                    <PosVendaControles
+                      owner={owner}
+                      dataInstalacao={g.header._instalado_em}
+                      diaLeitura={g.header._dia_leitura}
+                      onChanged={load}
+                      compact
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  {g.itens.map(t => (
+                    <TarefaPosVendaItem
+                      key={t.id}
+                      tarefa={t}
+                      nome={t._nome}
+                      telefone={t._telefone}
+                      templateText={templates[t.template_key || ''] || ''}
+                      googleLink={googleLink}
+                      instaladoEm={t._instalado_em}
+                      diaLeitura={t._dia_leitura}
+                      onChanged={load}
+                    />
+                  ))}
                 </div>
               </div>
-              <div className="space-y-2">
-                {g.itens.map(t => (
-                  <TarefaPosVendaItem
-                    key={t.id}
-                    tarefa={t}
-                    nome={t._nome}
-                    telefone={t._telefone}
-                    templateText={templates[t.template_key || ''] || ''}
-                    googleLink={googleLink}
-                    instaladoEm={t._instalado_em}
-                    diaLeitura={t._dia_leitura}
-                    onChanged={load}
-                  />
-                ))}
-              </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
