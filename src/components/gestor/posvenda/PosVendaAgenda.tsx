@@ -245,11 +245,18 @@ export default function PosVendaAgenda() {
             })
             .map(t => (
               <div key={t.id} className="rounded-xl border border-border bg-card/40 p-3 space-y-2">
-                <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-muted-foreground">
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-muted-foreground">
                   <span className="text-sm font-semibold text-foreground">{t._nome}</span>
                   {t._marca_inversor && <span>• {t._marca_inversor}</span>}
                   {t._nome_planta && <span>• {t._nome_planta}</span>}
-                  {t._dia_leitura != null && <span>• Leitura dia {t._dia_leitura}</span>}
+                  <div className="ml-auto">
+                    <DiaLeituraEditor
+                      owner={t.projeto_id ? { projetoId: t.projeto_id } : { clienteBaseId: t.cliente_base_id! }}
+                      valorAtual={t._dia_leitura}
+                      instaladoEm={t._instalado_em}
+                      onChanged={load}
+                    />
+                  </div>
                 </div>
                 <TarefaPosVendaItem
                   tarefa={t}
