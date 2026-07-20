@@ -331,10 +331,12 @@ export async function sincronizarDiaLeitura(opts: {
   if (!projetoId && !clienteBaseId) return 0;
   if (diaLeitura == null) return 0;
 
+  // Recalcula TODAS as tarefas pendentes ancoradas em conta de luz — tanto as
+  // que estavam aguardando o dia (aguardando_leitura=true) quanto as que já
+  // tinham data mas agora precisam ser reajustadas porque o dia mudou.
   let query = supabase
     .from('tarefas_posvenda' as any)
     .select('id, template_key')
-    .eq('aguardando_leitura', true)
     .eq('concluido', false);
   query = projetoId ? query.eq('projeto_id', projetoId) : query.eq('cliente_base_id', clienteBaseId!);
 
