@@ -177,7 +177,19 @@ export default function PosVendaAgenda() {
       if (g) g.itens.push(t);
       else map.set(key, { header: t, itens: [t] });
     }
-    return Array.from(map.entries()).map(([key, v]) => ({ key, ...v }));
+    // Ordena grupos pela data mais antiga de tarefa pendente (atrasadas primeiro,
+    // depois hoje, depois futuras). Tarefas aguardando dia de leitura vão ao fim.
+    const arr = Array.from(map.entries()).map(([key, v]) => {
+      const datas = v.itens
+        .filter(t => !t.concluido && !(t as any).aguardando_leitura)
+        .map(t => t.data_programada)
+        .sort();
+      const temAguardando = v.itens.some(t => !t.concluido && (t as any).aguardando_leitura);
+      const sortKey = datas[0] ?? (temAguardando ? '9999-12-31' : '9999-12-30');
+      return { key, ...v, sortKey };
+    });
+    arr.sort((a, b) => a.sortKey.localeCompare(b.sortKey));
+    return arr;
   }, [filtradas]);
 
   if (loading) return <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
