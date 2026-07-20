@@ -132,18 +132,6 @@ export default function TarefaPosVendaItem({
               {tarefa.visivel_cliente ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
             </button>
           </div>
-          {mostrarContexto && (
-            <div className="mt-1.5 rounded-md bg-muted/50 border border-border/60 px-2.5 py-1.5 text-[11px] text-muted-foreground space-y-0.5">
-              {instaladoEm && <div>Instalado em: <span className="text-foreground">{fmtData(instaladoEm)}</span></div>}
-              {diaLeitura != null && <div>Leitura prevista: <span className="text-foreground">dia {diaLeitura}</span></div>}
-              {dataSolicitarConta && (
-                <div className="flex items-center gap-1">
-                  <CalendarClock className="w-3 h-3" />
-                  Solicitar conta em: <span className="text-foreground font-medium">{fmtData(dataSolicitarConta)}</span> ({labelDiasAte(dataSolicitarConta)})
-                </div>
-              )}
-            </div>
-          )}
           {aguardando && (
             <p className="mt-1 text-[11px] text-amber-700 dark:text-amber-400">
               Defina o dia de leitura da conta do cliente para calcular esta data automaticamente.
