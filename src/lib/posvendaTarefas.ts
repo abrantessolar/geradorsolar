@@ -70,8 +70,8 @@ const PLANO: PlanoItem[] = [
   { fase: 2, tipo: 'verificar_geracao', template_key: 'geracao_2meses', descricao: 'Verificar geração — mês 2', visivel_cliente: false, conta: 2, offsetDias: -3 },
   { fase: 2, tipo: 'solicitar_conta', template_key: 'conta_2', descricao: 'Solicitar 2ª conta de luz', visivel_cliente: true, conta: 2, offsetDias: 0 },
   { fase: 2, tipo: 'verificar_geracao', template_key: 'geracao_3meses', descricao: 'Verificar geração — mês 3', visivel_cliente: false, conta: 3, offsetDias: -3 },
-  { fase: 2, tipo: 'solicitar_conta', template_key: 'conta_3', descricao: 'Solicitar 3ª conta de luz', visivel_cliente: true, conta: 3, offsetDias: 0 },
-  { fase: 2, tipo: 'avaliacao_google', template_key: 'geracao_3meses_google', descricao: 'Avaliação Google', visivel_cliente: false, conta: 3, offsetDias: 3 },
+  { fase: 2, tipo: 'solicitar_conta', template_key: 'conta_3', descricao: 'Solicitar 3ª conta de luz + Avaliação Google', visivel_cliente: true, conta: 3, offsetDias: 0 },
+  { fase: 2, tipo: 'avaliacao_google', template_key: 'geracao_3meses_google', descricao: 'Verificar geração 3 meses', visivel_cliente: false, conta: 3, offsetDias: 3 },
   // FASE 3 — Acompanhamento
   { fase: 3, tipo: 'verificar_geracao', template_key: 'geracao_6meses', descricao: 'Verificar geração 6 meses', visivel_cliente: false, conta: 6, offsetDias: -3 },
   { fase: 3, tipo: 'indicacao', template_key: 'aniversario_1ano', descricao: 'Verificar geração 1 ano + Indicação', visivel_cliente: false, conta: 12, offsetDias: -3 },
