@@ -1,0 +1,2 @@
+UPDATE public.tarefas_posvenda SET descricao = 'Verificar geração 3 meses' WHERE template_key = 'geracao_3meses_google';
+UPDATE public.tarefas_posvenda SET descricao = 'Solicitar 3ª conta de luz + Avaliação Google' WHERE template_key = 'conta_3';
