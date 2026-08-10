@@ -15,10 +15,11 @@ interface LeadNotif {
 
 export function useNewLeadsCount() {
   const [count, setCount] = useState(0);
-  const { session, isAdmin, isOrcamentista } = useAuth();
+  const { session, permissions } = useAuth();
+  const podeVer = permissions.leads;
 
   useEffect(() => {
-    if (!session || (!isAdmin && !isOrcamentista)) return;
+    if (!session || !podeVer) { setCount(0); return; }
 
     const loadCount = async () => {
       const { count: c } = await supabase
@@ -39,18 +40,19 @@ export function useNewLeadsCount() {
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [session, isAdmin, isOrcamentista]);
+  }, [session, podeVer]);
 
   return count;
 }
 
 export default function LeadNotification() {
   const [notifications, setNotifications] = useState<LeadNotif[]>([]);
-  const { session, isAdmin, isOrcamentista } = useAuth();
+  const { session, permissions } = useAuth();
   const navigate = useNavigate();
+  const podeVer = permissions.leads;
 
   useEffect(() => {
-    if (!session || (!isAdmin && !isOrcamentista)) return;
+    if (!session || !podeVer) return;
 
     const channel = supabase
       .channel('leads-realtime-notif')
@@ -74,7 +76,7 @@ export default function LeadNotification() {
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [session, isAdmin, isOrcamentista]);
+  }, [session, podeVer]);
 
   const dismiss = (id: string) => {
     setNotifications(prev => prev.filter(n => n.id !== id));
