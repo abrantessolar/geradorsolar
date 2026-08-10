@@ -24,12 +24,15 @@ export interface UserPermissions {
   importar_dados: boolean;
   sincronizar_sheets: boolean;
   zerar_base: boolean;
+  /** Responsável exclusivo pelo pós-venda (recebe avisos/badge). Não é herdada por admin. */
+  posvenda: boolean;
 }
 
 const DEFAULT_PERMISSIONS: UserPermissions = {
   calculadora: false, gestor_obras: false, gestor_clientes: false,
   gestor_materiais: false, gestor_equipamentos: false, gestor_custos: false,
   estoque: false, admin: false, importar_dados: false, sincronizar_sheets: false, zerar_base: false,
+  posvenda: false,
 };
 
 interface AuthContextType {
