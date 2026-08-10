@@ -138,27 +138,31 @@ function PermissionCheckboxes({ perms, onChange, disabled }: { perms: Record<str
   const toggle = (key: string) => {
     if (disabled) return;
     const newPerms = { ...perms, [key]: !perms[key] };
-    // If admin toggled on, enable all
+    // If admin toggled on, enable all (except independent ones)
     if (key === 'admin' && !perms.admin) {
-      Object.keys(newPerms).forEach(k => { newPerms[k] = true; });
+      Object.keys(newPerms).forEach(k => { if (!INDEPENDENT_PERMS.includes(k)) newPerms[k] = true; });
     }
     onChange(newPerms);
   };
 
   return (
     <div className="space-y-1.5 max-h-[240px] overflow-y-auto pr-1">
-      {PERMISSION_LABELS.map(p => (
-        <label key={p.key} className={`flex items-center gap-2 py-1 px-2 rounded cursor-pointer hover:bg-muted/50 text-sm ${isAdmin && p.key !== 'admin' ? 'opacity-50' : ''}`}>
-          <input
-            type="checkbox"
-            checked={isAdmin || perms[p.key] || false}
-            onChange={() => toggle(p.key)}
-            disabled={disabled || (isAdmin && p.key !== 'admin')}
-            className="rounded border-border"
-          />
-          <span>{p.label}</span>
-        </label>
-      ))}
+      {PERMISSION_LABELS.map(p => {
+        const independent = INDEPENDENT_PERMS.includes(p.key);
+        const locked = isAdmin && p.key !== 'admin' && !independent;
+        return (
+          <label key={p.key} className={`flex items-center gap-2 py-1 px-2 rounded cursor-pointer hover:bg-muted/50 text-sm ${locked ? 'opacity-50' : ''}`}>
+            <input
+              type="checkbox"
+              checked={locked || perms[p.key] || false}
+              onChange={() => toggle(p.key)}
+              disabled={disabled || locked}
+              className="rounded border-border"
+            />
+            <span>{p.label}</span>
+          </label>
+        );
+      })}
     </div>
   );
 }
