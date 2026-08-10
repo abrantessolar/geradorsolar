@@ -115,16 +115,21 @@ const PERMISSION_LABELS: { key: string; label: string; group?: string }[] = [
   { key: 'gestor_equipamentos', label: 'Gestor — Equipamentos', group: 'Gestor' },
   { key: 'gestor_custos', label: 'Gestor — Custos', group: 'Gestor' },
   { key: 'estoque', label: 'Estoque — acesso à tela de estoque' },
+  { key: 'posvenda', label: 'Pós-venda — responsável (recebe avisos e notificações)' },
   { key: 'admin', label: 'Admin — acesso total à área administrativa' },
   { key: 'importar_dados', label: 'Importar dados — importar JSON' },
   { key: 'sincronizar_sheets', label: 'Sincronizar Sheets — Google Sheets' },
   { key: 'zerar_base', label: 'Zerar base — apagar todos os dados' },
 ];
 
+/** Permissões que NÃO são herdadas automaticamente ao marcar "Admin". */
+const INDEPENDENT_PERMS = ['posvenda'];
+
 const DEFAULT_PERMS = {
   calculadora: false, gestor_obras: false, gestor_clientes: false,
   gestor_materiais: false, gestor_equipamentos: false, gestor_custos: false,
   estoque: false, admin: false, importar_dados: false, sincronizar_sheets: false, zerar_base: false,
+  posvenda: false,
 };
 
 function PermissionCheckboxes({ perms, onChange, disabled }: { perms: Record<string, boolean>; onChange: (p: Record<string, boolean>) => void; disabled?: boolean }) {
