@@ -359,7 +359,7 @@ function EditUserModal({ user, onClose, callApi }: { user: any; onClose: () => v
         gestor_equipamentos: p.gestor_equipamentos ?? false, gestor_custos: p.gestor_custos ?? false,
         estoque: p.estoque ?? false, admin: p.admin ?? false,
         importar_dados: p.importar_dados ?? false, sincronizar_sheets: p.sincronizar_sheets ?? false,
-        zerar_base: p.zerar_base ?? false,
+        zerar_base: p.zerar_base ?? false, posvenda: p.posvenda ?? false,
       };
     }
     return { ...DEFAULT_PERMS, admin: user.role === 'admin' };

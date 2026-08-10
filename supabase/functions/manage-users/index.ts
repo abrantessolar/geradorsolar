@@ -87,6 +87,7 @@ Deno.serve(async (req) => {
           calculadora: true, gestor_obras: true, gestor_clientes: true,
           gestor_materiais: true, gestor_equipamentos: true, gestor_custos: true,
           estoque: true, admin: true, importar_dados: true, sincronizar_sheets: true, zerar_base: true,
+          posvenda: permissions?.posvenda ?? false,
         });
       }
 
@@ -123,6 +124,7 @@ Deno.serve(async (req) => {
           calculadora: true, gestor_obras: true, gestor_clientes: true,
           gestor_materiais: true, gestor_equipamentos: true, gestor_custos: true,
           estoque: true, admin: true, importar_dados: true, sincronizar_sheets: true, zerar_base: true,
+          posvenda: permissions?.posvenda ?? false,
         } : permissions;
 
         const { data: existingPerm } = await supabaseAdmin.from('user_permissions').select('id').eq('user_id', user_id).maybeSingle();
