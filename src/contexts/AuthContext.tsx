@@ -24,12 +24,15 @@ export interface UserPermissions {
   importar_dados: boolean;
   sincronizar_sheets: boolean;
   zerar_base: boolean;
+  /** Responsável exclusivo pelo pós-venda (recebe avisos/badge). Não é herdada por admin. */
+  posvenda: boolean;
 }
 
 const DEFAULT_PERMISSIONS: UserPermissions = {
   calculadora: false, gestor_obras: false, gestor_clientes: false,
   gestor_materiais: false, gestor_equipamentos: false, gestor_custos: false,
   estoque: false, admin: false, importar_dados: false, sincronizar_sheets: false, zerar_base: false,
+  posvenda: false,
 };
 
 interface AuthContextType {
@@ -74,6 +77,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           calculadora: true, gestor_obras: true, gestor_clientes: true,
           gestor_materiais: true, gestor_equipamentos: true, gestor_custos: true,
           estoque: true, admin: true, importar_dados: true, sincronizar_sheets: true, zerar_base: true,
+          posvenda: p.posvenda ?? false,
         });
       } else {
         setPermissions({
@@ -88,6 +92,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           importar_dados: p.importar_dados ?? false,
           sincronizar_sheets: p.sincronizar_sheets ?? false,
           zerar_base: p.zerar_base ?? false,
+          posvenda: p.posvenda ?? false,
         });
       }
     } else {
@@ -97,6 +102,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           calculadora: true, gestor_obras: true, gestor_clientes: true,
           gestor_materiais: true, gestor_equipamentos: true, gestor_custos: true,
           estoque: true, admin: true, importar_dados: true, sincronizar_sheets: true, zerar_base: true,
+          posvenda: false,
         });
       } else {
         setPermissions(DEFAULT_PERMISSIONS);

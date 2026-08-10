@@ -115,16 +115,21 @@ const PERMISSION_LABELS: { key: string; label: string; group?: string }[] = [
   { key: 'gestor_equipamentos', label: 'Gestor — Equipamentos', group: 'Gestor' },
   { key: 'gestor_custos', label: 'Gestor — Custos', group: 'Gestor' },
   { key: 'estoque', label: 'Estoque — acesso à tela de estoque' },
+  { key: 'posvenda', label: 'Pós-venda — responsável (recebe avisos e notificações)' },
   { key: 'admin', label: 'Admin — acesso total à área administrativa' },
   { key: 'importar_dados', label: 'Importar dados — importar JSON' },
   { key: 'sincronizar_sheets', label: 'Sincronizar Sheets — Google Sheets' },
   { key: 'zerar_base', label: 'Zerar base — apagar todos os dados' },
 ];
 
+/** Permissões que NÃO são herdadas automaticamente ao marcar "Admin". */
+const INDEPENDENT_PERMS = ['posvenda'];
+
 const DEFAULT_PERMS = {
   calculadora: false, gestor_obras: false, gestor_clientes: false,
   gestor_materiais: false, gestor_equipamentos: false, gestor_custos: false,
   estoque: false, admin: false, importar_dados: false, sincronizar_sheets: false, zerar_base: false,
+  posvenda: false,
 };
 
 function PermissionCheckboxes({ perms, onChange, disabled }: { perms: Record<string, boolean>; onChange: (p: Record<string, boolean>) => void; disabled?: boolean }) {
@@ -133,27 +138,31 @@ function PermissionCheckboxes({ perms, onChange, disabled }: { perms: Record<str
   const toggle = (key: string) => {
     if (disabled) return;
     const newPerms = { ...perms, [key]: !perms[key] };
-    // If admin toggled on, enable all
+    // If admin toggled on, enable all (except independent ones)
     if (key === 'admin' && !perms.admin) {
-      Object.keys(newPerms).forEach(k => { newPerms[k] = true; });
+      Object.keys(newPerms).forEach(k => { if (!INDEPENDENT_PERMS.includes(k)) newPerms[k] = true; });
     }
     onChange(newPerms);
   };
 
   return (
     <div className="space-y-1.5 max-h-[240px] overflow-y-auto pr-1">
-      {PERMISSION_LABELS.map(p => (
-        <label key={p.key} className={`flex items-center gap-2 py-1 px-2 rounded cursor-pointer hover:bg-muted/50 text-sm ${isAdmin && p.key !== 'admin' ? 'opacity-50' : ''}`}>
-          <input
-            type="checkbox"
-            checked={isAdmin || perms[p.key] || false}
-            onChange={() => toggle(p.key)}
-            disabled={disabled || (isAdmin && p.key !== 'admin')}
-            className="rounded border-border"
-          />
-          <span>{p.label}</span>
-        </label>
-      ))}
+      {PERMISSION_LABELS.map(p => {
+        const independent = INDEPENDENT_PERMS.includes(p.key);
+        const locked = isAdmin && p.key !== 'admin' && !independent;
+        return (
+          <label key={p.key} className={`flex items-center gap-2 py-1 px-2 rounded cursor-pointer hover:bg-muted/50 text-sm ${locked ? 'opacity-50' : ''}`}>
+            <input
+              type="checkbox"
+              checked={locked || perms[p.key] || false}
+              onChange={() => toggle(p.key)}
+              disabled={disabled || locked}
+              className="rounded border-border"
+            />
+            <span>{p.label}</span>
+          </label>
+        );
+      })}
     </div>
   );
 }
@@ -350,7 +359,7 @@ function EditUserModal({ user, onClose, callApi }: { user: any; onClose: () => v
         gestor_equipamentos: p.gestor_equipamentos ?? false, gestor_custos: p.gestor_custos ?? false,
         estoque: p.estoque ?? false, admin: p.admin ?? false,
         importar_dados: p.importar_dados ?? false, sincronizar_sheets: p.sincronizar_sheets ?? false,
-        zerar_base: p.zerar_base ?? false,
+        zerar_base: p.zerar_base ?? false, posvenda: p.posvenda ?? false,
       };
     }
     return { ...DEFAULT_PERMS, admin: user.role === 'admin' };

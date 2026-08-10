@@ -13,7 +13,8 @@ export default function PosVendaReminder() {
   const [count, setCount] = useState(0);
   const [open, setOpen] = useState(false);
 
-  const podeVer = permissions.gestor_obras || permissions.gestor_clientes || permissions.admin;
+  // Somente o responsável pelo pós-venda recebe o aviso.
+  const podeVer = permissions.posvenda;
 
   useEffect(() => {
     if (!podeVer) return;
