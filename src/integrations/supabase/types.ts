@@ -1957,6 +1957,7 @@ export type Database = {
           gestor_obras: boolean
           id: string
           importar_dados: boolean
+          leads: boolean
           posvenda: boolean
           sincronizar_sheets: boolean
           user_id: string
@@ -1973,6 +1974,7 @@ export type Database = {
           gestor_obras?: boolean
           id?: string
           importar_dados?: boolean
+          leads?: boolean
           posvenda?: boolean
           sincronizar_sheets?: boolean
           user_id: string
@@ -1989,6 +1991,7 @@ export type Database = {
           gestor_obras?: boolean
           id?: string
           importar_dados?: boolean
+          leads?: boolean
           posvenda?: boolean
           sincronizar_sheets?: boolean
           user_id?: string

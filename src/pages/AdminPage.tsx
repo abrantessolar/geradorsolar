@@ -116,6 +116,7 @@ const PERMISSION_LABELS: { key: string; label: string; group?: string }[] = [
   { key: 'gestor_custos', label: 'Gestor — Custos', group: 'Gestor' },
   { key: 'estoque', label: 'Estoque — acesso à tela de estoque' },
   { key: 'posvenda', label: 'Pós-venda — responsável (recebe avisos e notificações)' },
+  { key: 'leads', label: 'Leads — responsável (recebe notificações de novos leads)' },
   { key: 'admin', label: 'Admin — acesso total à área administrativa' },
   { key: 'importar_dados', label: 'Importar dados — importar JSON' },
   { key: 'sincronizar_sheets', label: 'Sincronizar Sheets — Google Sheets' },
@@ -123,13 +124,13 @@ const PERMISSION_LABELS: { key: string; label: string; group?: string }[] = [
 ];
 
 /** Permissões que NÃO são herdadas automaticamente ao marcar "Admin". */
-const INDEPENDENT_PERMS = ['posvenda'];
+const INDEPENDENT_PERMS = ['posvenda', 'leads'];
 
 const DEFAULT_PERMS = {
   calculadora: false, gestor_obras: false, gestor_clientes: false,
   gestor_materiais: false, gestor_equipamentos: false, gestor_custos: false,
   estoque: false, admin: false, importar_dados: false, sincronizar_sheets: false, zerar_base: false,
-  posvenda: false,
+  posvenda: false, leads: false,
 };
 
 function PermissionCheckboxes({ perms, onChange, disabled }: { perms: Record<string, boolean>; onChange: (p: Record<string, boolean>) => void; disabled?: boolean }) {
@@ -359,7 +360,7 @@ function EditUserModal({ user, onClose, callApi }: { user: any; onClose: () => v
         gestor_equipamentos: p.gestor_equipamentos ?? false, gestor_custos: p.gestor_custos ?? false,
         estoque: p.estoque ?? false, admin: p.admin ?? false,
         importar_dados: p.importar_dados ?? false, sincronizar_sheets: p.sincronizar_sheets ?? false,
-        zerar_base: p.zerar_base ?? false, posvenda: p.posvenda ?? false,
+        zerar_base: p.zerar_base ?? false, posvenda: p.posvenda ?? false, leads: p.leads ?? false,
       };
     }
     return { ...DEFAULT_PERMS, admin: user.role === 'admin' };
