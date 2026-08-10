@@ -77,6 +77,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           calculadora: true, gestor_obras: true, gestor_clientes: true,
           gestor_materiais: true, gestor_equipamentos: true, gestor_custos: true,
           estoque: true, admin: true, importar_dados: true, sincronizar_sheets: true, zerar_base: true,
+          posvenda: p.posvenda ?? false,
         });
       } else {
         setPermissions({
@@ -91,6 +92,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           importar_dados: p.importar_dados ?? false,
           sincronizar_sheets: p.sincronizar_sheets ?? false,
           zerar_base: p.zerar_base ?? false,
+          posvenda: p.posvenda ?? false,
         });
       }
     } else {
@@ -100,6 +102,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           calculadora: true, gestor_obras: true, gestor_clientes: true,
           gestor_materiais: true, gestor_equipamentos: true, gestor_custos: true,
           estoque: true, admin: true, importar_dados: true, sincronizar_sheets: true, zerar_base: true,
+          posvenda: false,
         });
       } else {
         setPermissions(DEFAULT_PERMISSIONS);
