@@ -1,51 +1,22 @@
-# Desativar pós-venda e alterar dia de leitura
+# Nova página final no PDF da proposta — Galeria de Instalações
 
-Adicionar controle para desativar o pós-venda de um cliente (excluindo todas as tarefas pendentes) e para editar o dia de leitura recalculando todas as datas restantes. Disponível em dois lugares: **Agenda de Pós-venda** e **modais de edição do cliente/projeto**.
+Adicionar uma 5ª página ao PDF gerado pela calculadora (botão PDF na proposta), no mesmo padrão visual das outras páginas.
 
-## 1. Núcleo (helpers em `src/lib/posvendaTarefas.ts`)
+## O que a página terá
 
-Três funções novas, todas idempotentes e filtrando por `projeto_id` ou `cliente_base_id`:
+- Header verde com o número da proposta (igual às demais páginas)
+- Selo/rótulo "Nossas Instalações" + título "Qualidade em cada detalhe"
+- Linha de apoio curta: instalações reais executadas pela equipe Três Lagoas Solar
+- A imagem enviada (mosaico de inversores instalados) ocupando o corpo da página, com cantos arredondados e borda suave, mantendo proporção sem distorção
+- Rodapé padrão da proposta (endereço, telefone, e-mail, site)
 
-- `desativarPosVenda({ projetoId?, clienteBaseId? }): Promise<number>` — `DELETE FROM tarefas_posvenda WHERE owner match AND concluido = false`. Retorna quantas foram removidas. Tarefas concluídas ficam intactas (histórico).
-- `contarTarefasPendentes({ ownerFilter })` — para exibir "X lembretes pendentes" no botão de confirmação.
-- `reativarPosVenda({ projetoId?, clienteBaseId?, dataInstalacao, diaLeitura })` — wrapper que chama `gerarTarefasPosVenda` (já é idempotente via `ON CONFLICT`), útil para expor uma API única do fluxo.
+## Como será feito
 
-A função `sincronizarDiaLeitura` já existente continua sendo usada quando o usuário só troca a data de leitura sem desativar.
+- Adicionar a imagem enviada em `src/assets/proposta-template/` e importá-la no template
+- Em `src/components/PropostaTemplatePages.tsx`, acrescentar um novo `<Page>` após a página 4 (Investimento), usando `Header`, `SectionLabel` e `Footer` já existentes e a mesma paleta (verde #4A5A2A, amarelo #E8B84B) e estilos inline exigidos pelo html2canvas
+- A geração do PDF em `src/lib/generatePropostaPDF.ts` percorre automaticamente todas as páginas filhas, então o PDF passa a ter 5 páginas sem outras mudanças
+- A imagem será dimensionada para caber na área útil (1241×1755 px por página) preservando o aspecto original
 
-## 2. Agenda de Pós-venda (`PosVendaAgenda.tsx`)
+## Verificação
 
-Hoje a lista mostra tarefas soltas. Vamos **agrupar por cliente** (chave: `projeto_id ?? cliente_base_id`). Cada grupo ganha um cabeçalho com:
-
-- Nome, marca do inversor, planta, avaliação (o que já existe hoje, movido para o header do grupo).
-- Badge com o dia de leitura atual (ex.: `Leitura dia 15`) ou `⚠️ Sem dia de leitura`.
-- Botão **✏️ Editar dia de leitura** → abre popover pequeno com input numérico (1–28) + Salvar. Ao salvar: `UPDATE projetos/clientes_base SET dia_leitura` e chama `sincronizarDiaLeitura` (recalcula todas as pendentes ancoradas em conta e limpa `aguardando_leitura`). Toast: "Datas recalculadas".
-- Botão **🚫 Desativar pós-venda** → abre um `AlertDialog` com contagem: "Isto vai excluir N lembretes pendentes deste cliente. Tarefas já concluídas serão preservadas como histórico. Deseja continuar?". Confirma → `desativarPosVenda` → toast + `load()`.
-- Se o cliente **não tem pendentes** (todas concluídas ou desativado): mostrar botão **▶️ Reativar pós-venda** (aparece só se houver `data_instalacao`). Confirma → `reativarPosVenda` → toast + `load()`.
-
-Para saber quais clientes estão "desativados mas elegíveis", a query passa a incluir também clientes com projeto instalado sem nenhuma tarefa pendente — filtro `pendentes` (padrão) esconde grupos vazios, filtro `todas`/`concluidas` mostra o cabeçalho com o botão Reativar.
-
-## 3. Modais de edição
-
-**`ClienteEditModal.tsx`** e **`ProjetoForm.tsx`** (e `ProjetosUnificados.tsx`/`AtivarPosVendaTab.tsx` onde já editam `dia_leitura`): adicionar uma seção **"Pós-venda"** logo abaixo do campo `dia_leitura`:
-
-- Se existem tarefas pendentes: botão vermelho **Desativar pós-venda** (mesmo AlertDialog com contagem).
-- Se não existem pendentes e há `data_instalacao`: botão verde **Reativar pós-venda**.
-- Se `data_instalacao` está vazia: linha informativa "O pós-venda é iniciado ao concluir a obra".
-
-A lógica que já sincroniza ao salvar `dia_leitura` permanece; só adicionamos a possibilidade de o usuário desativar/reativar dali sem fechar o modal.
-
-**Reativação automática**: quando o usuário salva um `dia_leitura` em um cliente que está **desativado** (0 pendentes) **e** tem `data_instalacao`, mostrar um `confirm` inline: "Este cliente está com pós-venda desativado. Deseja reativar os lembretes agora?" — se sim, `reativarPosVenda`. Se não, apenas salva o dia_leitura (não gera nada).
-
-## 4. Detalhes técnicos
-
-- **Sem migração de banco**: `DELETE` é suficiente para "excluir pendentes"; o histórico de concluídas fica na mesma tabela.
-- **Filtro de dono**: sempre `.eq('projeto_id', id)` OU `.eq('cliente_base_id', id)` — nunca ambos, para não apagar tarefas de outro cliente.
-- **Idempotência da reativação**: `gerarTarefasPosVenda` já usa `ON CONFLICT DO NOTHING` na chave `(owner, template_key)`, então reativar após uma desativação parcial não duplica.
-- **Contadores** (`usePosVendaHoje`, badge do menu): sem mudança de lógica — passam a refletir os deletes automaticamente porque leem a mesma tabela.
-- **Sheets sync**: nenhum, pós-venda é local.
-
-## 5. Arquivos afetados
-
-- `src/lib/posvendaTarefas.ts` — novas funções `desativarPosVenda`, `contarTarefasPendentes`, `reativarPosVenda`.
-- `src/components/gestor/posvenda/PosVendaAgenda.tsx` — agrupamento por cliente, header com badges e botões, popover de edição do dia de leitura, AlertDialog de desativação/reativação.
-- `src/components/gestor/ClienteEditModal.tsx`, `src/components/gestor/ProjetoForm.tsx`, `src/components/gestor/ProjetosUnificados.tsx`, `src/components/admin/AtivarPosVendaTab.tsx` — seção "Pós-venda" com botões Desativar/Reativar e prompt de reativação automática ao salvar `dia_leitura`.
+Gerar o PDF de uma proposta e conferir visualmente a página nova: sem corte de imagem, sem sobreposição com header/rodapé e sem estouro para uma 6ª página.
