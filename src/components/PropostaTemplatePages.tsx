@@ -18,6 +18,8 @@ import emp3 from '@/assets/proposta-template/empresa/emp3.jpg';
 import emp4 from '@/assets/proposta-template/empresa/emp4.jpg';
 import inversorImg from '@/assets/proposta-template/inversor.png';
 import moduloImg from '@/assets/proposta-template/modulo.png';
+import instalacoesImg from '@/assets/proposta-template/instalacoes.png';
+
 const EMPRESA_FOTOS = [emp1, emp2, emp3, emp4];
 import { formatCurrency, formatNumber } from '@/data/calculations';
 import {
@@ -928,8 +930,45 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
           <Footer />
         </Page>
 
+        {/* ══════════════════════════════════════════════════════
+            PÁGINA 5 — GALERIA DE INSTALAÇÕES
+        ══════════════════════════════════════════════════════ */}
+        <Page>
+          <Header numero={data.numero_proposta} />
+          <div style={{ padding: '30px 52px 90px', display: 'flex', flexDirection: 'column', height: PAGE_H - 110 - 60, boxSizing: 'border-box' }}>
+            <SectionLabel>Nossas Instalações</SectionLabel>
+            <h1 style={{ fontSize: 30, color: OLIVE_DARK, margin: '0 0 6px', fontWeight: 700, letterSpacing: -0.5, fontFamily: 'Georgia, serif' }}>
+              Qualidade em cada detalhe
+            </h1>
+            <div style={{ fontSize: 14, color: GRAY, fontFamily: 'Arial, sans-serif', marginBottom: 16 }}>
+              Instalações reais executadas pela equipe Três Lagoas Solar — acabamento padronizado,
+              infraestrutura elétrica organizada e equipamentos de marcas homologadas.
+            </div>
+            <div style={{
+              flex: 1,
+              border: `1.5px solid ${BORDER}`,
+              borderRadius: 14,
+              background: LIGHT,
+              padding: 14,
+              boxSizing: 'border-box',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              overflow: 'hidden',
+            }}>
+              <img
+                src={instalacoesImg}
+                alt="Instalações Três Lagoas Solar"
+                style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', borderRadius: 10, display: 'block' }}
+              />
+            </div>
+          </div>
+          <Footer />
+        </Page>
+
       </div>
     );
+
   },
 );
 
