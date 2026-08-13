@@ -684,46 +684,6 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
           <Header numero={data.numero_proposta} />
           <div style={{ padding: '30px 52px 100px', display: 'flex', flexDirection: 'column', gap: 22 }}>
 
-            {/* payback destaque */}
-            <div style={{
-              background: `linear-gradient(135deg, ${OLIVE_DARK} 0%, ${OLIVE_MID} 100%)`,
-              borderRadius: 14,
-              padding: '26px 36px',
-              color: WHITE,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              boxShadow: '0 8px 28px rgba(74,90,42,0.28)',
-              position: 'relative',
-              overflow: 'hidden',
-            }}>
-              {/* círculo decorativo */}
-              <div style={{ position: 'absolute', right: -30, top: -30, width: 160, height: 160, borderRadius: '50%', background: 'rgba(232,184,75,0.12)' }} />
-              <div style={{ position: 'absolute', right: 40, bottom: -50, width: 120, height: 120, borderRadius: '50%', background: 'rgba(232,184,75,0.08)' }} />
-              <div>
-                <div style={{ fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', opacity: 0.75, fontFamily: 'Arial, sans-serif', fontWeight: 600 }}>
-                  Retorno do Investimento
-                </div>
-                <div style={{ fontSize: 52, fontWeight: 700, marginTop: 4, lineHeight: 1, fontFamily: 'Arial, sans-serif', transform: 'translateY(-22px)' }}>
-                  {formatNumber(data.payback_anos, 1)} <span style={{ fontSize: 26, fontWeight: 400 }}>anos</span>
-                </div>
-                <div style={{ fontSize: 13, opacity: 0.75, marginTop: 6, fontFamily: 'Arial, sans-serif' }}>
-                  Payback estimado do sistema
-                </div>
-              </div>
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', opacity: 0.7, fontFamily: 'Arial, sans-serif', fontWeight: 600 }}>
-                  Economia Mensal
-                </div>
-                <div style={{ fontSize: 36, fontWeight: 700, color: YELLOW, marginTop: 4, fontFamily: 'Arial, sans-serif' }}>
-                  R$ {fmtMoney(data.economia_mensal)}
-                </div>
-                <div style={{ fontSize: 12, opacity: 0.7, marginTop: 4, fontFamily: 'Arial, sans-serif' }}>
-                  Tarifa: R$ {formatNumber(data.tarifa_kwh, 4)}/kWh
-                </div>
-              </div>
-            </div>
-
             {/* condições de pagamento */}
             <div>
               <SectionLabel>Investimento</SectionLabel>
@@ -834,6 +794,47 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
                 </div>
               )}
             </div>
+
+            {/* payback destaque */}
+            <div style={{
+              background: `linear-gradient(135deg, ${OLIVE_DARK} 0%, ${OLIVE_MID} 100%)`,
+              borderRadius: 14,
+              padding: '26px 36px',
+              color: WHITE,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              boxShadow: '0 8px 28px rgba(74,90,42,0.28)',
+              position: 'relative',
+              overflow: 'hidden',
+            }}>
+              {/* círculo decorativo */}
+              <div style={{ position: 'absolute', right: -30, top: -30, width: 160, height: 160, borderRadius: '50%', background: 'rgba(232,184,75,0.12)' }} />
+              <div style={{ position: 'absolute', right: 40, bottom: -50, width: 120, height: 120, borderRadius: '50%', background: 'rgba(232,184,75,0.08)' }} />
+              <div>
+                <div style={{ fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', opacity: 0.75, fontFamily: 'Arial, sans-serif', fontWeight: 600 }}>
+                  Retorno do Investimento
+                </div>
+                <div style={{ fontSize: 52, fontWeight: 700, marginTop: 4, lineHeight: 1, fontFamily: 'Arial, sans-serif', transform: 'translateY(-22px)' }}>
+                  {formatNumber(data.payback_anos, 1)} <span style={{ fontSize: 26, fontWeight: 400 }}>anos</span>
+                </div>
+                <div style={{ fontSize: 13, opacity: 0.75, marginTop: 6, fontFamily: 'Arial, sans-serif' }}>
+                  Payback estimado do sistema
+                </div>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', opacity: 0.7, fontFamily: 'Arial, sans-serif', fontWeight: 600 }}>
+                  Economia Mensal
+                </div>
+                <div style={{ fontSize: 36, fontWeight: 700, color: YELLOW, marginTop: 4, fontFamily: 'Arial, sans-serif' }}>
+                  R$ {fmtMoney(data.economia_mensal)}
+                </div>
+                <div style={{ fontSize: 12, opacity: 0.7, marginTop: 4, fontFamily: 'Arial, sans-serif' }}>
+                  Tarifa: R$ {formatNumber(data.tarifa_kwh, 4)}/kWh
+                </div>
+              </div>
+            </div>
+
 
             {/* fluxo de caixa */}
             <div>
