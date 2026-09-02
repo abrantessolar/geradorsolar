@@ -17,6 +17,9 @@ import EstoquePage from "@/pages/EstoquePage";
 import CustosPage from "@/pages/CustosPage";
 import FerramentasPage from "@/pages/FerramentasPage";
 import Ren1000Page from "@/pages/Ren1000Page";
+import OffgridPage from "@/pages/OffgridPage";
+import BackupPage from "@/pages/BackupPage";
+import BombeamentoPage from "@/pages/BombeamentoPage";
 import ClientesPage from "@/pages/ClientesPage";
 import RastreamentoPage from "@/pages/RastreamentoPage";
 import FaqPage from "@/pages/FaqPage";
@@ -159,6 +162,21 @@ const App = () => (
             <Route path="/ferramentas/ren1000" element={
               <ProtectedRoute>
                 <SeoNoIndex /><Layout><Ren1000Page /></Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/ferramentas/offgrid" element={
+              <ProtectedRoute>
+                <SeoNoIndex /><Layout><OffgridPage /></Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/ferramentas/backup" element={
+              <ProtectedRoute>
+                <SeoNoIndex /><Layout><BackupPage /></Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/ferramentas/bombeamento" element={
+              <ProtectedRoute>
+                <SeoNoIndex /><Layout><BombeamentoPage /></Layout>
               </ProtectedRoute>
             } />
             <Route path="/energia" element={<div><SeoNoIndex /><EnergiaProvider><EnergiaLogin /></EnergiaProvider></div>} />

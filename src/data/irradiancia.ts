@@ -136,6 +136,12 @@ export function getAverageIrradiance(monthly: number[]): number {
   return monthly.reduce((a, b) => a + b, 0) / 12;
 }
 
+/** Pior mês do ano (menor valor mensal) — usado como HSP de dimensionamento
+ * em sistemas offgrid/bombeamento, pra garantir autonomia mesmo no mês mais fraco. */
+export function getMinIrradiance(monthly: number[]): number {
+  return Math.min(...monthly);
+}
+
 // Search cities for autocomplete
 export function searchCidades(query: string): { cidade: string; uf: string }[] {
   if (!query || query.length < 2) return [];

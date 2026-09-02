@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Calculator, Wrench, ChevronRight } from 'lucide-react';
+import { Calculator, Wrench, ChevronRight, Sun, BatteryCharging, Waves } from 'lucide-react';
 
 const tools = [
   {
@@ -7,6 +7,24 @@ const tools = [
     icon: Calculator,
     title: 'Calculadora REN 1000',
     desc: 'Calcula a potência máxima de inversor permitida pela norma REN 1000',
+  },
+  {
+    to: '/ferramentas/offgrid',
+    icon: Sun,
+    title: 'Dimensionamento Offgrid',
+    desc: 'Placas + bateria a partir da lista de cargas e autonomia em dias',
+  },
+  {
+    to: '/ferramentas/backup',
+    icon: BatteryCharging,
+    title: 'Dimensionamento de Backup',
+    desc: 'Bateria do circuito de emergência (horas ou dias)',
+  },
+  {
+    to: '/ferramentas/bombeamento',
+    icon: Waves,
+    title: 'Dimensionamento de Bombeamento',
+    desc: 'Placas solares para bomba, por CV',
   },
 ];
 
