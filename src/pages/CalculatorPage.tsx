@@ -464,6 +464,28 @@ export default function CalculatorPage() {
     }
   };
 
+  const fillTestData = () => {
+    setClient(p => ({
+      ...p,
+      name: 'Cliente Teste',
+      city: 'Três Lagoas',
+      state: 'MS',
+      networkType: 'bifasica',
+      kwhPrice: defaultDist?.kwhPrice || 0.85,
+    }));
+    setUnits([{ id: '1', name: 'Principal', averageKwh: 450, mode: 'average', monthlyValues: emptyMonthly() }]);
+    setKit({
+      tipoInversor: 'string',
+      marcaInversor: 'GoodWe', modeloInversor: 'GW8K-DT',
+      potenciaInversorKw: 8, qtdInversores: 1,
+      marcaPlaca: 'Jinko', modeloPlaca: 'Tiger Neo 620W',
+      potenciaPlacaWp: 620, qtdPlacas: 12,
+      custoKit: 18000,
+      precoVendaManual: null,
+    });
+    toast.success('Dados de teste preenchidos — role até o fim e clique em "Gerar Proposta".');
+  };
+
   return (
     <div className="space-y-8 max-w-6xl mx-auto">
       {/* Header */}
@@ -477,6 +499,15 @@ export default function CalculatorPage() {
         <p className="text-muted-foreground max-w-lg mx-auto">
           Preencha os dados abaixo para calcular o sistema ideal para seu cliente.
         </p>
+        {!editMode && (
+          <button
+            type="button"
+            onClick={fillTestData}
+            className="text-xs font-medium text-primary hover:underline"
+          >
+            Preencher com dados de teste (pré-visualizar proposta)
+          </button>
+        )}
       </div>
 
       {/* Client Data */}
