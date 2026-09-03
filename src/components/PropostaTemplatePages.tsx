@@ -23,7 +23,7 @@ import instalacoesImg from '@/assets/proposta-template/instalacoes.png';
 const EMPRESA_FOTOS = [emp1, emp2, emp3, emp4];
 import { formatCurrency, formatNumber } from '@/data/calculations';
 import {
-  Calendar, Shield, FileText, Building2, CreditCard, Zap, BadgeCheck, Plane,
+  Calendar, Shield, FileText, Building2, CreditCard, Zap, BadgeCheck, Plane, Check, X,
 } from 'lucide-react';
 
 export interface CashflowRow {
@@ -69,6 +69,9 @@ export interface PropostaTemplateData {
   dados_mensais: MonthlyRow[];
   fluxo_caixa: CashflowRow[];
   fotos_portfolio: string[];
+  observacoes?: string;
+  escopo_incluso?: string[];
+  escopo_excluido?: string[];
 }
 
 // A4 a 150 dpi
@@ -676,6 +679,61 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
           <Footer />
         </Page>
 
+
+        {/* ══════════════════════════════════════════════════════
+            PÁGINA 3.5 — ESCOPO & OBSERVAÇÕES (só aparece se houver conteúdo)
+        ══════════════════════════════════════════════════════ */}
+        {((data.escopo_incluso && data.escopo_incluso.length > 0) ||
+          (data.escopo_excluido && data.escopo_excluido.length > 0) ||
+          data.observacoes) && (
+          <Page>
+            <Header numero={data.numero_proposta} />
+            <div style={{ padding: '30px 52px 100px', display: 'flex', flexDirection: 'column', gap: 26 }}>
+              {(data.escopo_incluso?.length || data.escopo_excluido?.length) ? (
+                <div>
+                  <SectionLabel>Escopo do Fornecimento</SectionLabel>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginTop: 4 }}>
+                    <div style={{ border: `1.5px solid ${BORDER}`, borderRadius: 12, padding: '18px 20px', background: LIGHT }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: OLIVE_DARK, marginBottom: 10, fontFamily: 'Arial, sans-serif', textTransform: 'uppercase', letterSpacing: 1 }}>
+                        Incluso
+                      </div>
+                      {(data.escopo_incluso || []).map((item, i) => (
+                        <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'flex-start', marginBottom: 8 }}>
+                          <Check size={15} color={OLIVE_DARK} strokeWidth={2.5} style={{ flexShrink: 0, marginTop: 2 }} />
+                          <span style={{ fontSize: 14, color: GRAY, fontFamily: 'Arial, sans-serif', lineHeight: 1.4 }}>{item}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <div style={{ border: `1.5px solid ${BORDER}`, borderRadius: 12, padding: '18px 20px', background: WHITE }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: GRAY_LIGHT, marginBottom: 10, fontFamily: 'Arial, sans-serif', textTransform: 'uppercase', letterSpacing: 1 }}>
+                        Não Incluso
+                      </div>
+                      {(data.escopo_excluido || []).map((item, i) => (
+                        <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'flex-start', marginBottom: 8 }}>
+                          <X size={15} color={GRAY_LIGHT} strokeWidth={2.5} style={{ flexShrink: 0, marginTop: 2 }} />
+                          <span style={{ fontSize: 14, color: GRAY_LIGHT, fontFamily: 'Arial, sans-serif', lineHeight: 1.4 }}>{item}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ) : null}
+
+              {data.observacoes && (
+                <div>
+                  <SectionLabel>Observações e Condições Especiais</SectionLabel>
+                  <div style={{
+                    fontSize: 14, color: GRAY, fontFamily: 'Georgia, serif', lineHeight: 1.7,
+                    whiteSpace: 'pre-wrap', border: `1.5px solid ${BORDER}`, borderRadius: 12, padding: '18px 20px',
+                  }}>
+                    {data.observacoes}
+                  </div>
+                </div>
+              )}
+            </div>
+            <Footer />
+          </Page>
+        )}
 
         {/* ══════════════════════════════════════════════════════
             PÁGINA 4 — INVESTIMENTO + FLUXO DE CAIXA

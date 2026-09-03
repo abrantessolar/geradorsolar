@@ -2,7 +2,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import logoTls from '@/assets/logo.png';
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { getProposals, saveProposal, getSettings, getSocialProofs, lookupIrradiation, getPriceTable } from '@/data/store';
-import { getPropostaByIdDB, markPropostaViewedDB, getSettingsDB, addHistoricoDB } from '@/data/supabaseStore';
+import { getPropostaByIdDB, markPropostaViewedDB, getSettingsDB, addHistoricoDB, savePropostaDB } from '@/data/supabaseStore';
 import { getCidadesIrradianciaDB } from '@/data/supabaseStore';
 import {
   formatCurrency, formatNumber, calcInstallments, calcDimensioning,
@@ -46,6 +46,12 @@ export default function ProposalPage() {
   const [pdfPortfolioPhotos, setPdfPortfolioPhotos] = useState<string[]>([]);
   const [showPdfViewer, setShowPdfViewer] = useState(false);
   const [showCostPanel, setShowCostPanel] = useState(false);
+  const [editingProposal, setEditingProposal] = useState(false);
+  const [editForm, setEditForm] = useState({
+    inverterBrand: '', inverterModel: '', panelBrand: '', panelPowerLabel: '',
+    totalPrice: '', observacoes: '', escopoIncluso: '', escopoExcluido: '',
+  });
+  const [savingEdit, setSavingEdit] = useState(false);
   const proposalContentRef = useRef<HTMLDivElement>(null);
   const templateContainerRef = useRef<HTMLDivElement>(null);
   const settings = getSettings();
@@ -381,6 +387,9 @@ export default function ProposalPage() {
       dados_mensais: dadosMensais,
       fluxo_caixa: fluxo,
       fotos_portfolio: pdfPortfolioPhotos,
+      observacoes: proposal.observacoes || undefined,
+      escopo_incluso: proposal.escopoIncluso,
+      escopo_excluido: proposal.escopoExcluido,
     };
   };
 
@@ -467,6 +476,56 @@ export default function ProposalPage() {
   // CET removed - financing uses fixed multipliers now
 
   const selectedCard = lineCards.find(c => c.line === proposal.selectedLine) || lineCards[0];
+
+  const openEditPanel = () => {
+    setEditForm({
+      inverterBrand: proposal.inverterBrand || selectedCard?.inverterBrand || '',
+      inverterModel: proposal.inverterModel || '',
+      panelBrand: proposal.panelBrand || selectedCard?.panelBrand || '',
+      panelPowerLabel: proposal.panelPowerLabel || selectedCard?.panelPowerLabel || '',
+      totalPrice: String(selectedCard?.totalPrice ?? proposal.totalPrice ?? ''),
+      observacoes: proposal.observacoes || '',
+      escopoIncluso: (proposal.escopoIncluso || []).join('\n'),
+      escopoExcluido: (proposal.escopoExcluido || []).join('\n'),
+    });
+    setEditingProposal(true);
+  };
+
+  const saveEditPanel = async () => {
+    setSavingEdit(true);
+    try {
+      const novoPreco = parseFloat(editForm.totalPrice.replace(',', '.')) || selectedCard.totalPrice;
+      const precoMudou = novoPreco !== selectedCard.totalPrice;
+
+      const updated = {
+        ...proposal,
+        inverterBrand: editForm.inverterBrand,
+        inverterModel: editForm.inverterModel,
+        panelBrand: editForm.panelBrand,
+        panelPowerLabel: editForm.panelPowerLabel,
+        observacoes: editForm.observacoes.trim() || undefined,
+        escopoIncluso: editForm.escopoIncluso.split('\n').map(s => s.trim()).filter(Boolean),
+        escopoExcluido: editForm.escopoExcluido.split('\n').map(s => s.trim()).filter(Boolean),
+        ...(precoMudou ? {
+          totalPrice: novoPreco,
+          installmentValues: calcInstallments(novoPreco),
+          cardInstallments: calcCardInstallments(novoPreco, settings.creditCardRates),
+        } : {}),
+      };
+
+      setProposal(updated);
+      await savePropostaDB(updated);
+      const { addHistoricoDB: addHist } = await import('@/data/supabaseStore');
+      await addHist(id || '', 'editada', session?.user?.id || null, { origem: 'edicao_pontual' });
+      toast.success('Alterações salvas!');
+      setEditingProposal(false);
+    } catch (err) {
+      console.error(err);
+      toast.error('Erro ao salvar alterações');
+    } finally {
+      setSavingEdit(false);
+    }
+  };
   const cashflowCard = lineCards.find(c => c.line === cashflowLine) || lineCards[0];
   const savingsEnd = cashflowData.length > 0
     ? (cashflowData[cashflowData.length - 1]?.semSolar || 0) - (cashflowData[cashflowData.length - 1]?.comSolar || 0)
@@ -715,6 +774,83 @@ export default function ProposalPage() {
                 <button onClick={() => setPanelDelta(0)} className="ml-2 text-primary underline">Resetar</button>
               )}
             </p>
+          </section>
+        )}
+
+        {/* EDIÇÃO PONTUAL - only for authenticated */}
+        {isAuthenticated && (
+          <section className="solar-card p-6 space-y-4 no-print">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-bold text-primary flex items-center gap-2">
+                <Edit className="w-5 h-5 text-secondary" /> Ajustes da Proposta
+              </h2>
+              {!editingProposal && (
+                <button onClick={openEditPanel} className="solar-btn-outline text-xs py-1.5 px-3">
+                  Editar campos
+                </button>
+              )}
+            </div>
+
+            {editingProposal && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium mb-1 text-muted-foreground">Marca do inversor</label>
+                    <input className="solar-input py-2 text-sm" value={editForm.inverterBrand}
+                      onChange={e => setEditForm(f => ({ ...f, inverterBrand: e.target.value }))} />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium mb-1 text-muted-foreground">Modelo do inversor</label>
+                    <input className="solar-input py-2 text-sm" value={editForm.inverterModel}
+                      onChange={e => setEditForm(f => ({ ...f, inverterModel: e.target.value }))} />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium mb-1 text-muted-foreground">Marca da placa</label>
+                    <input className="solar-input py-2 text-sm" value={editForm.panelBrand}
+                      onChange={e => setEditForm(f => ({ ...f, panelBrand: e.target.value }))} />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium mb-1 text-muted-foreground">Potência da placa</label>
+                    <input className="solar-input py-2 text-sm" value={editForm.panelPowerLabel}
+                      onChange={e => setEditForm(f => ({ ...f, panelPowerLabel: e.target.value }))} />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium mb-1 text-muted-foreground">Preço total (R$)</label>
+                    <input className="solar-input py-2 text-sm" inputMode="decimal" value={editForm.totalPrice}
+                      onChange={e => setEditForm(f => ({ ...f, totalPrice: e.target.value }))} />
+                    <p className="text-[11px] text-muted-foreground mt-1">Alterar recalcula parcelas automaticamente.</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium mb-1 text-muted-foreground">Escopo — incluso (1 item por linha)</label>
+                    <textarea className="solar-input py-2 text-sm min-h-[90px]" value={editForm.escopoIncluso}
+                      onChange={e => setEditForm(f => ({ ...f, escopoIncluso: e.target.value }))} />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium mb-1 text-muted-foreground">Escopo — não incluso (1 item por linha)</label>
+                    <textarea className="solar-input py-2 text-sm min-h-[90px]" value={editForm.escopoExcluido}
+                      onChange={e => setEditForm(f => ({ ...f, escopoExcluido: e.target.value }))} />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium mb-1 text-muted-foreground">Observações / condições especiais</label>
+                  <textarea className="solar-input py-2 text-sm min-h-[80px]" value={editForm.observacoes}
+                    onChange={e => setEditForm(f => ({ ...f, observacoes: e.target.value }))} />
+                </div>
+
+                <div className="flex gap-2 justify-end">
+                  <button onClick={() => setEditingProposal(false)} className="solar-btn-outline text-sm py-2 px-4" disabled={savingEdit}>
+                    Cancelar
+                  </button>
+                  <button onClick={saveEditPanel} className="solar-btn-primary text-sm py-2 px-4" disabled={savingEdit}>
+                    {savingEdit ? 'Salvando...' : 'Salvar alterações'}
+                  </button>
+                </div>
+              </div>
+            )}
           </section>
         )}
 
@@ -1070,6 +1206,48 @@ export default function ProposalPage() {
         <div data-pdf-section="differentials">
           <Diferenciais compact />
         </div>
+
+        {/* ESCOPO & OBSERVAÇÕES (visível para o cliente, quando preenchido) */}
+        {((proposal.escopoIncluso && proposal.escopoIncluso.length > 0) ||
+          (proposal.escopoExcluido && proposal.escopoExcluido.length > 0) ||
+          proposal.observacoes) && (
+          <section data-pdf-section="scope" className="space-y-4 print-page">
+            {(proposal.escopoIncluso?.length > 0 || proposal.escopoExcluido?.length > 0) && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {proposal.escopoIncluso?.length > 0 && (
+                  <div className="solar-card p-5">
+                    <h3 className="text-sm font-bold text-primary uppercase tracking-wide mb-3">Incluso</h3>
+                    <ul className="space-y-1.5">
+                      {proposal.escopoIncluso.map((item: string, i: number) => (
+                        <li key={i} className="flex items-start gap-2 text-sm text-foreground">
+                          <Check className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" /> {item}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {proposal.escopoExcluido?.length > 0 && (
+                  <div className="solar-card p-5">
+                    <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wide mb-3">Não incluso</h3>
+                    <ul className="space-y-1.5">
+                      {proposal.escopoExcluido.map((item: string, i: number) => (
+                        <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
+                          <X className="w-4 h-4 flex-shrink-0 mt-0.5" /> {item}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
+            {proposal.observacoes && (
+              <div className="solar-card p-5">
+                <h3 className="text-sm font-bold text-primary uppercase tracking-wide mb-2">Observações</h3>
+                <p className="text-sm text-foreground whitespace-pre-wrap">{proposal.observacoes}</p>
+              </div>
+            )}
+          </section>
+        )}
 
         {/* PORTFÓLIO DE OBRAS */}
         <div data-pdf-section="portfolio">

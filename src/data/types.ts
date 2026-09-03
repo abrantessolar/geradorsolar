@@ -153,6 +153,10 @@ export interface Proposal {
   panelPowerLabel?: string;
   customKit?: any;
   numero_proposta?: string;
+  // Campos editáveis pontualmente na tela da proposta (overrides do operador)
+  observacoes?: string;
+  escopoIncluso?: string[];
+  escopoExcluido?: string[];
 }
 
 export interface DimensioningResult {
