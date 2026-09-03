@@ -14,7 +14,6 @@ import type { PriceTableEntry, PriceTableLineDetails } from '@/data/types';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, LineChart, Line, ReferenceLine } from 'recharts';
 import { Download, Share2, Edit, ArrowLeft, Sun, Zap, TrendingUp, Shield, X, Cpu, Check, MessageCircle, Calendar, AlertTriangle, ChevronDown, ChevronUp, BarChart3, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
 import { gerarPropostaPDF, downloadPropostaPDF, fetchPortfolioPhotosOptimized } from '@/lib/generatePropostaPDF';
-import { gerarPropostaDOCX } from '@/lib/generatePropostaDOCX';
 import { PropostaTemplatePages, type PropostaTemplateData } from '@/components/PropostaTemplatePages';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
@@ -422,25 +421,6 @@ export default function ProposalPage() {
     }
   };
 
-  const handleDownloadDOCX = async () => {
-    const data = buildTemplateData();
-    if (!data) {
-      toast.error('Dados da proposta não carregados');
-      return;
-    }
-    const toastId = toast.loading('Gerando documento...');
-    try {
-      await gerarPropostaDOCX(data);
-      toast.dismiss(toastId);
-      toast.success('DOCX gerado com sucesso!');
-      addHistoricoDB(id || '', 'docx_baixado', session?.user?.id || null, {});
-    } catch (err) {
-      toast.dismiss(toastId);
-      toast.error('Erro ao gerar DOCX');
-      console.error(err);
-    }
-  };
-
   const handlePreviewPDF = async () => {
     const toastId = toast.loading('Gerando visualização...');
     try {
@@ -575,9 +555,6 @@ export default function ProposalPage() {
                 </button>
                 <button onClick={handleDownloadPDF} className="solar-btn-primary text-xs py-1 px-2.5 flex items-center gap-1">
                   <Download className="w-3.5 h-3.5" /> PDF
-                </button>
-                <button onClick={handleDownloadDOCX} className="solar-btn-outline text-xs py-1 px-2.5 flex items-center gap-1" title="Baixar proposta em Word (.docx)">
-                  <Download className="w-3.5 h-3.5" /> DOCX
                 </button>
                 <div className="relative">
                   <button onClick={() => setShowShareMenu(!showShareMenu)}
