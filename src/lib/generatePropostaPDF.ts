@@ -26,6 +26,17 @@ export async function gerarPropostaPDF(
   const pageHmm = pdf.internal.pageSize.getHeight();
 
   // Espera fontes/imagens
+  try {
+    await document.fonts.load('400 16px Fraunces');
+    await document.fonts.load('600 16px Fraunces');
+    await document.fonts.load('700 16px Fraunces');
+    await document.fonts.load('400 16px Inter');
+    await document.fonts.load('600 16px Inter');
+    await document.fonts.load('700 16px Inter');
+    await document.fonts.ready;
+  } catch {
+    // segue mesmo se alguma fonte falhar — fallback sera Georgia/Arial
+  }
   await new Promise((r) => setTimeout(r, 150));
   const imgs = pagesContainer.querySelectorAll('img');
   await Promise.all(

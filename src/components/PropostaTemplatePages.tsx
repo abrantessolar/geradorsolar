@@ -11,7 +11,6 @@
 import { forwardRef } from 'react';
 import logoTls from '@/assets/logo-tls-pdf.png';
 
-import capaBg from '@/assets/proposta-template/capa-bg.png';
 import emp1 from '@/assets/proposta-template/empresa/emp1.jpg';
 import emp2 from '@/assets/proposta-template/empresa/emp2.jpg';
 import emp3 from '@/assets/proposta-template/empresa/emp3.jpg';
@@ -110,7 +109,7 @@ function Page({ children }: { children?: React.ReactNode }) {
         background: WHITE,
         overflow: 'hidden',
         pageBreakAfter: 'always',
-        fontFamily: 'Georgia, "Times New Roman", serif',
+        fontFamily: 'Inter, Arial, sans-serif',
         color: DARK,
       }}
     >
@@ -152,10 +151,10 @@ function Header({ numero }: { numero: string }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
           <div style={{ width: 1, height: 32, background: 'rgba(255,255,255,0.25)' }} />
           <div style={{ textAlign: 'right' }}>
-            <div style={{ fontSize: 10, letterSpacing: 2, opacity: 0.7, textTransform: 'uppercase', fontFamily: 'Arial, sans-serif', fontWeight: 600 }}>
+            <div style={{ fontSize: 10, letterSpacing: 2, opacity: 0.7, textTransform: 'uppercase', fontFamily: 'Inter, Arial, sans-serif', fontWeight: 600 }}>
               Proposta Comercial
             </div>
-            <div style={{ fontSize: 21, fontWeight: 700, color: YELLOW, letterSpacing: 0.5, fontFamily: 'Arial, sans-serif', marginTop: 2 }}>
+            <div style={{ fontSize: 21, fontWeight: 700, color: YELLOW, letterSpacing: 0.5, fontFamily: 'Inter, Arial, sans-serif', marginTop: 2 }}>
               {numero}
             </div>
           </div>
@@ -182,7 +181,7 @@ function Footer() {
         padding: '15px 50px',
         textAlign: 'center',
         boxSizing: 'border-box',
-        fontFamily: 'Arial, sans-serif',
+        fontFamily: 'Inter, Arial, sans-serif',
         letterSpacing: 0.3,
       }}
     >
@@ -209,7 +208,7 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
       <span style={{
         fontSize: 11, fontWeight: 700, letterSpacing: 2,
         textTransform: 'uppercase', color: OLIVE_DARK,
-        fontFamily: 'Arial, sans-serif',
+        fontFamily: 'Inter, Arial, sans-serif',
       }}>
         {children}
       </span>
@@ -244,14 +243,14 @@ function MetricCard({ label, value, sub, accent }: { label: string; value: strin
         textTransform: 'uppercase',
         color: accent ? 'rgba(255,255,255,0.9)' : GRAY,
         marginBottom: 7,
-        fontFamily: 'Arial, sans-serif',
+        fontFamily: 'Inter, Arial, sans-serif',
         fontWeight: 600,
       }}>
         {label}
       </div>
-      <div style={{ fontSize: 30, fontWeight: 700, lineHeight: 1, fontFamily: 'Arial, sans-serif' }}>{value}</div>
+      <div style={{ fontSize: 30, fontWeight: 700, lineHeight: 1, fontFamily: 'Inter, Arial, sans-serif' }}>{value}</div>
       {sub && (
-        <div style={{ fontSize: 15, marginTop: 7, color: accent ? 'rgba(255,255,255,0.75)' : GRAY, fontFamily: 'Arial, sans-serif' }}>
+        <div style={{ fontSize: 15, marginTop: 7, color: accent ? 'rgba(255,255,255,0.75)' : GRAY, fontFamily: 'Inter, Arial, sans-serif' }}>
           {sub}
         </div>
       )}
@@ -392,68 +391,75 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
       <div ref={ref} style={{ width: `${PAGE_W}px`, background: WHITE }}>
 
         {/* ══════════════════════════════════════════════════════
-            PÁGINA 1 — CAPA (novo template com background ilustrado)
+            PÁGINA 1 — CAPA (foto real + tipografia editorial, 100% código)
         ══════════════════════════════════════════════════════ */}
         <Page>
-          {/* fundo ilustrado da capa (logo + título + rodapé já incluídos na arte) */}
           <img
-            src={capaBg}
+            src={emp1}
             alt=""
             crossOrigin="anonymous"
-            style={{
-              position: 'absolute',
-              inset: 0,
-              width: '100%',
-              height: '100%',
-              objectFit: 'cover',
-            }}
+            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
           />
-
-          {/* Nome do cliente + geração — sobreposto na faixa verde inferior */}
+          {/* gradiente escurecendo de cima (leve) para baixo (forte) — legibilidade do texto */}
           <div style={{
-            position: 'absolute',
-            top: `${Math.round(PAGE_H * 0.76)}px`,      // 76%
-            left: `${Math.round(PAGE_W * 0.285)}px`,    // 28.5%
-            right: `${Math.round(PAGE_W * 0.03)}px`,    // 3%
-            color: WHITE,
-            lineHeight: 1.15,
-            fontFamily: 'Arial, sans-serif',
-          }}>
-            <div style={{
-              fontWeight: 700,
-              letterSpacing: '-0.01em',
-              fontSize: 40,
-            }}>
-              {data.cliente_nome}
-            </div>
-            <div style={{
-              fontWeight: 400,
-              fontSize: 22,
-              marginTop: 8,
-              opacity: 0.92,
-            }}>
-              {fmtKwh(data.geracao_mensal)} por mês
-            </div>
-          </div>
+            position: 'absolute', inset: 0,
+            background: 'linear-gradient(180deg, rgba(30,36,18,0.20) 0%, rgba(43,52,22,0.55) 48%, rgba(27,33,14,0.94) 82%, rgba(20,25,10,0.98) 100%)',
+          }} />
 
-          {/* Representante — sobre o ícone "Representante:" da arte */}
+          {/* topo: logo + número da proposta */}
           <div style={{
-            position: 'absolute',
-            top: `${Math.round(PAGE_H * 0.896)}px`,    // 89.6%
-            left: `${Math.round(PAGE_W * 0.337)}px`,   // 33.7%
-            color: OLIVE_DARK,
-            fontFamily: 'Arial, sans-serif',
-            lineHeight: 1.1,
+            position: 'absolute', top: 0, left: 0, right: 0,
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            padding: '44px 56px',
           }}>
-            <div style={{ fontWeight: 700, fontSize: 24, letterSpacing: '-0.01em' }}>
-              {data.responsavel_nome || '—'}
-            </div>
-            {data.responsavel_telefone && (
-              <div style={{ fontWeight: 600, fontSize: 16, marginTop: 4, opacity: 0.85 }}>
-                {data.responsavel_telefone}
+            <img src={logoTls} alt="Três Lagoas Solar" crossOrigin="anonymous" style={{ height: 108, objectFit: 'contain' }} />
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontSize: 11, letterSpacing: 3, color: 'rgba(255,255,255,0.75)', textTransform: 'uppercase', fontFamily: 'Inter, Arial, sans-serif', fontWeight: 600 }}>
+                Proposta Comercial
               </div>
-            )}
+              <div style={{ fontSize: 20, fontWeight: 700, color: YELLOW, fontFamily: 'Inter, Arial, sans-serif', marginTop: 4 }}>
+                {data.numero_proposta}
+              </div>
+            </div>
           </div>
+
+          {/* headline editorial */}
+          <div style={{ position: 'absolute', left: 56, right: 56, top: '38%' }}>
+            <div style={{ width: 56, height: 4, background: YELLOW, borderRadius: 2, marginBottom: 22 }} />
+            <h1 style={{
+              fontFamily: 'Fraunces, Georgia, serif', fontWeight: 600, fontSize: 58, lineHeight: 1.08,
+              color: WHITE, margin: 0, maxWidth: 780, letterSpacing: -0.5,
+            }}>
+              Seu projeto de<br />energia solar fotovoltaica
+            </h1>
+          </div>
+
+          {/* rodapé de identificação: cliente + representante */}
+          <div style={{
+            position: 'absolute', left: 56, right: 56, bottom: 96,
+            display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between',
+            borderTop: '1px solid rgba(255,255,255,0.22)', paddingTop: 22,
+          }}>
+            <div>
+              <div style={{ fontFamily: 'Fraunces, Georgia, serif', fontWeight: 600, fontSize: 34, color: WHITE, lineHeight: 1.1 }}>
+                {data.cliente_nome}
+              </div>
+              <div style={{ fontFamily: 'Inter, Arial, sans-serif', fontSize: 16, color: YELLOW, marginTop: 6, fontWeight: 600 }}>
+                {fmtKwh(data.geracao_mensal)} por mês {data.cliente_cidade ? `· ${data.cliente_cidade}` : ''}
+              </div>
+            </div>
+            <div style={{ textAlign: 'right', fontFamily: 'Inter, Arial, sans-serif' }}>
+              <div style={{ fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', color: 'rgba(255,255,255,0.6)', marginBottom: 4 }}>
+                Representante
+              </div>
+              <div style={{ fontSize: 17, fontWeight: 700, color: WHITE }}>{data.responsavel_nome || '—'}</div>
+              {data.responsavel_telefone && (
+                <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.75)', marginTop: 2 }}>{data.responsavel_telefone}</div>
+              )}
+            </div>
+          </div>
+
+          <Footer />
         </Page>
 
 
@@ -466,10 +472,10 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
 
             <div>
               <SectionLabel>Nossos Projetos</SectionLabel>
-              <h1 style={{ fontSize: 32, color: OLIVE_DARK, margin: '4px 0 4px', fontWeight: 700, letterSpacing: -0.5, fontFamily: 'Georgia, serif' }}>
+              <h1 style={{ fontSize: 32, color: OLIVE_DARK, margin: '4px 0 4px', fontWeight: 700, letterSpacing: -0.5, fontFamily: 'Fraunces, Georgia, serif' }}>
                 Alguns dos nossos projetos
               </h1>
-              <div style={{ fontSize: 13, color: GRAY, fontFamily: 'Arial, sans-serif' }}>
+              <div style={{ fontSize: 13, color: GRAY, fontFamily: 'Inter, Arial, sans-serif' }}>
                 Projetos entregues com excelência técnica, como você merece
               </div>
             </div>
@@ -503,7 +509,7 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
                     <div style={{
                       position: 'absolute', inset: 0, display: 'flex',
                       alignItems: 'center', justifyContent: 'center',
-                      color: BORDER, fontSize: 32, fontWeight: 700, fontFamily: 'Arial, sans-serif',
+                      color: BORDER, fontSize: 32, fontWeight: 700, fontFamily: 'Inter, Arial, sans-serif',
                     }}>
                       {i + 1}
                     </div>
@@ -551,7 +557,7 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
             {/* título */}
             <div>
               <SectionLabel>Especificações do Projeto</SectionLabel>
-              <h1 style={{ fontSize: 42, color: OLIVE_DARK, margin: 0, fontWeight: 700, letterSpacing: -0.5, fontFamily: 'Georgia, serif' }}>
+              <h1 style={{ fontSize: 42, color: OLIVE_DARK, margin: 0, fontWeight: 700, letterSpacing: -0.5, fontFamily: 'Fraunces, Georgia, serif' }}>
                 Seu sistema solar
               </h1>
             </div>
@@ -599,13 +605,13 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
                   <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 4, background: YELLOW, borderRadius: '12px 0 0 12px' }} />
                   <div style={{ flexShrink: 0, paddingLeft: 8 }}>{eq.Icon}</div>
                   <div>
-                  <div style={{ fontSize: 14, color: GRAY, textTransform: 'uppercase', letterSpacing: 1.3, fontFamily: 'Arial, sans-serif', fontWeight: 600, marginBottom: 6 }}>
+                  <div style={{ fontSize: 14, color: GRAY, textTransform: 'uppercase', letterSpacing: 1.3, fontFamily: 'Inter, Arial, sans-serif', fontWeight: 600, marginBottom: 6 }}>
                       {eq.tipo}
                     </div>
-                    <div style={{ fontSize: 31, fontWeight: 700, color: OLIVE_DARK, lineHeight: 1.1, fontFamily: 'Georgia, serif' }}>
+                    <div style={{ fontSize: 31, fontWeight: 700, color: OLIVE_DARK, lineHeight: 1.1, fontFamily: 'Fraunces, Georgia, serif' }}>
                       {eq.modelo}
                     </div>
-                    <div style={{ fontSize: 18, color: GRAY, marginTop: 8, fontFamily: 'Arial, sans-serif' }}>
+                    <div style={{ fontSize: 18, color: GRAY, marginTop: 8, fontFamily: 'Inter, Arial, sans-serif' }}>
                       {eq.detalhe}
                     </div>
                   </div>
@@ -624,11 +630,11 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
                 <div>
                   <SectionLabel>Geração × Consumo — 12 meses</SectionLabel>
-                  <div style={{ fontSize: 16, color: GRAY, marginTop: -2, fontFamily: 'Arial, sans-serif' }}>
+                  <div style={{ fontSize: 16, color: GRAY, marginTop: -2, fontFamily: 'Inter, Arial, sans-serif' }}>
                     Estimativa mensal com base na irradiância da sua cidade
                   </div>
                 </div>
-                <div style={{ display: 'flex', gap: 18, fontSize: 16, fontFamily: 'Arial, sans-serif', paddingTop: 4 }}>
+                <div style={{ display: 'flex', gap: 18, fontSize: 16, fontFamily: 'Inter, Arial, sans-serif', paddingTop: 4 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
                     <div style={{ width: 14, height: 14, background: OLIVE_DARK, borderRadius: 3 }} />
                     <span style={{ color: GRAY }}>Geração</span>
@@ -667,10 +673,10 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
                     }}>
                       <Icon size={27} color={OLIVE_DARK} strokeWidth={2.2} />
                     </div>
-                    <div style={{ fontSize: 16, fontWeight: 700, color: OLIVE_DARK, marginBottom: 6, lineHeight: 1.3, fontFamily: 'Arial, sans-serif' }}>
+                    <div style={{ fontSize: 16, fontWeight: 700, color: OLIVE_DARK, marginBottom: 6, lineHeight: 1.3, fontFamily: 'Inter, Arial, sans-serif' }}>
                       {title}
                     </div>
-                    <div style={{ fontSize: 14, color: GRAY, lineHeight: 1.5, fontFamily: 'Arial, sans-serif' }}>{text}</div>
+                    <div style={{ fontSize: 14, color: GRAY, lineHeight: 1.5, fontFamily: 'Inter, Arial, sans-serif' }}>{text}</div>
                   </div>
                 ))}
               </div>
@@ -694,24 +700,24 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
                   <SectionLabel>Escopo do Fornecimento</SectionLabel>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginTop: 4 }}>
                     <div style={{ border: `1.5px solid ${BORDER}`, borderRadius: 12, padding: '18px 20px', background: LIGHT }}>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: OLIVE_DARK, marginBottom: 10, fontFamily: 'Arial, sans-serif', textTransform: 'uppercase', letterSpacing: 1 }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: OLIVE_DARK, marginBottom: 10, fontFamily: 'Inter, Arial, sans-serif', textTransform: 'uppercase', letterSpacing: 1 }}>
                         Incluso
                       </div>
                       {(data.escopo_incluso || []).map((item, i) => (
                         <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'flex-start', marginBottom: 8 }}>
                           <Check size={15} color={OLIVE_DARK} strokeWidth={2.5} style={{ flexShrink: 0, marginTop: 2 }} />
-                          <span style={{ fontSize: 14, color: GRAY, fontFamily: 'Arial, sans-serif', lineHeight: 1.4 }}>{item}</span>
+                          <span style={{ fontSize: 14, color: GRAY, fontFamily: 'Inter, Arial, sans-serif', lineHeight: 1.4 }}>{item}</span>
                         </div>
                       ))}
                     </div>
                     <div style={{ border: `1.5px solid ${BORDER}`, borderRadius: 12, padding: '18px 20px', background: WHITE }}>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: GRAY_LIGHT, marginBottom: 10, fontFamily: 'Arial, sans-serif', textTransform: 'uppercase', letterSpacing: 1 }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: GRAY_LIGHT, marginBottom: 10, fontFamily: 'Inter, Arial, sans-serif', textTransform: 'uppercase', letterSpacing: 1 }}>
                         Não Incluso
                       </div>
                       {(data.escopo_excluido || []).map((item, i) => (
                         <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'flex-start', marginBottom: 8 }}>
                           <X size={15} color={GRAY_LIGHT} strokeWidth={2.5} style={{ flexShrink: 0, marginTop: 2 }} />
-                          <span style={{ fontSize: 14, color: GRAY_LIGHT, fontFamily: 'Arial, sans-serif', lineHeight: 1.4 }}>{item}</span>
+                          <span style={{ fontSize: 14, color: GRAY_LIGHT, fontFamily: 'Inter, Arial, sans-serif', lineHeight: 1.4 }}>{item}</span>
                         </div>
                       ))}
                     </div>
@@ -723,7 +729,7 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
                 <div>
                   <SectionLabel>Observações e Condições Especiais</SectionLabel>
                   <div style={{
-                    fontSize: 14, color: GRAY, fontFamily: 'Georgia, serif', lineHeight: 1.7,
+                    fontSize: 14, color: GRAY, fontFamily: 'Fraunces, Georgia, serif', lineHeight: 1.7,
                     whiteSpace: 'pre-wrap', border: `1.5px solid ${BORDER}`, borderRadius: 12, padding: '18px 20px',
                   }}>
                     {data.observacoes}
@@ -745,7 +751,7 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
             {/* condições de pagamento */}
             <div>
               <SectionLabel>Investimento</SectionLabel>
-              <h1 style={{ fontSize: 30, color: OLIVE_DARK, margin: '0 0 16px', fontWeight: 700, letterSpacing: -0.5, fontFamily: 'Georgia, serif' }}>
+              <h1 style={{ fontSize: 30, color: OLIVE_DARK, margin: '0 0 16px', fontWeight: 700, letterSpacing: -0.5, fontFamily: 'Fraunces, Georgia, serif' }}>
                 Condições de pagamento
               </h1>
 
@@ -764,10 +770,10 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
               }}>
                 <div style={{ position: 'absolute', right: -20, bottom: -20, width: 100, height: 100, borderRadius: '50%', background: 'rgba(232,184,75,0.15)' }} />
                 <div>
-                  <div style={{ fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', opacity: 0.8, fontFamily: 'Arial, sans-serif', fontWeight: 600 }}>
+                  <div style={{ fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', opacity: 0.8, fontFamily: 'Inter, Arial, sans-serif', fontWeight: 600 }}>
                     Pagamento à Vista
                   </div>
-                  <div style={{ fontSize: 46, fontWeight: 700, marginTop: 4, fontFamily: 'Arial, sans-serif', letterSpacing: -0.5 }}>
+                  <div style={{ fontSize: 46, fontWeight: 700, marginTop: 4, fontFamily: 'Inter, Arial, sans-serif', letterSpacing: -0.5 }}>
                     R$ {fmtMoney(data.preco_vista)}
                   </div>
                 </div>
@@ -778,7 +784,7 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
                   borderRadius: 999,
                   fontSize: 13,
                   fontWeight: 700,
-                  fontFamily: 'Arial, sans-serif',
+                  fontFamily: 'Inter, Arial, sans-serif',
                   letterSpacing: 0.5,
                 }}>
                   Pix · Transferência · Boleto
@@ -789,7 +795,7 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
               <div style={{ marginTop: 16 }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
                   <SectionLabel>Financiamento Bancário</SectionLabel>
-                  <span style={{ fontSize: 11, color: GRAY_LIGHT, fontStyle: 'italic', fontFamily: 'Arial, sans-serif' }}>*valores aproximados</span>
+                  <span style={{ fontSize: 11, color: GRAY_LIGHT, fontStyle: 'italic', fontFamily: 'Inter, Arial, sans-serif' }}>*valores aproximados</span>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 10 }}>
                   {parcelas.map((p) => (
@@ -806,11 +812,11 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
                       }}
                     >
                       <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: OLIVE_DARK }} />
-                      <div style={{ fontSize: 28, fontWeight: 700, color: OLIVE_DARK, lineHeight: 1, fontFamily: 'Arial, sans-serif' }}>
+                      <div style={{ fontSize: 28, fontWeight: 700, color: OLIVE_DARK, lineHeight: 1, fontFamily: 'Inter, Arial, sans-serif' }}>
                         {p.label}
                       </div>
-                      <div style={{ fontSize: 11, color: GRAY_LIGHT, margin: '3px 0', fontFamily: 'Arial, sans-serif' }}>de</div>
-                      <div style={{ fontSize: 18, fontWeight: 700, color: DARK, fontFamily: 'Arial, sans-serif' }}>
+                      <div style={{ fontSize: 11, color: GRAY_LIGHT, margin: '3px 0', fontFamily: 'Inter, Arial, sans-serif' }}>de</div>
+                      <div style={{ fontSize: 18, fontWeight: 700, color: DARK, fontFamily: 'Inter, Arial, sans-serif' }}>
                         R$ {fmtMoney(p.value)}
                       </div>
                     </div>
@@ -818,39 +824,48 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
                 </div>
               </div>
 
-              {/* cartão de crédito */}
-              {data.cartao_parcelas && data.cartao_parcelas.length > 0 && (
-                <div style={{ marginTop: 16 }}>
-                  <div style={{ marginBottom: 10 }}>
-                    <SectionLabel>Cartão de Crédito</SectionLabel>
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 8 }}>
-                    {data.cartao_parcelas.slice(0, 18).map((c) => (
-                      <div
-                        key={c.meses}
-                        style={{
-                          background: YELLOW_LIGHT,
-                          border: `1.5px solid ${YELLOW}`,
-                          borderRadius: 10,
-                          padding: '10px 6px',
-                          textAlign: 'center',
-                          position: 'relative',
-                          overflow: 'hidden',
-                        }}
-                      >
-                        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: YELLOW }} />
-                        <div style={{ fontSize: 20, fontWeight: 700, color: DARK, lineHeight: 1, fontFamily: 'Arial, sans-serif' }}>
-                          {c.meses}x
+              {/* cartão de crédito — resumo compacto (evita grade de 18 caixinhas) */}
+              {data.cartao_parcelas && data.cartao_parcelas.length > 0 && (() => {
+                const destaque = [3, 6, 12, 18]
+                  .map(n => data.cartao_parcelas.find(c => c.meses === n))
+                  .filter((c): c is { meses: number; valor: number } => !!c);
+                const lista = destaque.length > 0 ? destaque : data.cartao_parcelas.slice(0, 4);
+                return (
+                  <div style={{ marginTop: 16 }}>
+                    <div style={{ marginBottom: 10 }}>
+                      <SectionLabel>Cartão de Crédito</SectionLabel>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: `repeat(${lista.length}, 1fr)`, gap: 12 }}>
+                      {lista.map((c) => (
+                        <div
+                          key={c.meses}
+                          style={{
+                            background: YELLOW_LIGHT,
+                            border: `1.5px solid ${YELLOW}`,
+                            borderRadius: 10,
+                            padding: '14px 10px',
+                            textAlign: 'center',
+                            position: 'relative',
+                            overflow: 'hidden',
+                          }}
+                        >
+                          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: YELLOW }} />
+                          <div style={{ fontSize: 24, fontWeight: 700, color: DARK, lineHeight: 1, fontFamily: 'Fraunces, Georgia, serif' }}>
+                            {c.meses}x
+                          </div>
+                          <div style={{ fontSize: 11, color: GRAY_LIGHT, margin: '4px 0', fontFamily: 'Inter, Arial, sans-serif' }}>de</div>
+                          <div style={{ fontSize: 16, fontWeight: 700, color: OLIVE_DARK, fontFamily: 'Inter, Arial, sans-serif' }}>
+                            R$ {fmtMoney(c.valor)}
+                          </div>
                         </div>
-                        <div style={{ fontSize: 10, color: GRAY_LIGHT, margin: '2px 0', fontFamily: 'Arial, sans-serif' }}>de</div>
-                        <div style={{ fontSize: 14, fontWeight: 700, color: OLIVE_DARK, fontFamily: 'Arial, sans-serif' }}>
-                          R$ {fmtMoney(c.valor)}
-                        </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
+                    <p style={{ fontSize: 11.5, color: GRAY_LIGHT, marginTop: 8, fontFamily: 'Inter, Arial, sans-serif' }}>
+                      Outras opções de parcelamento (1x a 18x) disponíveis — consulte seu representante.
+                    </p>
                   </div>
-                </div>
-              )}
+                );
+              })()}
             </div>
 
             {/* payback destaque */}
@@ -870,24 +885,24 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
               <div style={{ position: 'absolute', right: -30, top: -30, width: 160, height: 160, borderRadius: '50%', background: 'rgba(232,184,75,0.12)' }} />
               <div style={{ position: 'absolute', right: 40, bottom: -50, width: 120, height: 120, borderRadius: '50%', background: 'rgba(232,184,75,0.08)' }} />
               <div>
-                <div style={{ fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', opacity: 0.75, fontFamily: 'Arial, sans-serif', fontWeight: 600 }}>
+                <div style={{ fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', opacity: 0.75, fontFamily: 'Inter, Arial, sans-serif', fontWeight: 600 }}>
                   Retorno do Investimento
                 </div>
-                <div style={{ fontSize: 52, fontWeight: 700, marginTop: 4, lineHeight: 1, fontFamily: 'Arial, sans-serif', transform: 'translateY(-22px)' }}>
+                <div style={{ fontSize: 52, fontWeight: 700, marginTop: 4, lineHeight: 1, fontFamily: 'Inter, Arial, sans-serif', transform: 'translateY(-22px)' }}>
                   {formatNumber(data.payback_anos, 1)} <span style={{ fontSize: 26, fontWeight: 400 }}>anos</span>
                 </div>
-                <div style={{ fontSize: 13, opacity: 0.75, marginTop: 6, fontFamily: 'Arial, sans-serif' }}>
+                <div style={{ fontSize: 13, opacity: 0.75, marginTop: 6, fontFamily: 'Inter, Arial, sans-serif' }}>
                   Payback estimado do sistema
                 </div>
               </div>
               <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', opacity: 0.7, fontFamily: 'Arial, sans-serif', fontWeight: 600 }}>
+                <div style={{ fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', opacity: 0.7, fontFamily: 'Inter, Arial, sans-serif', fontWeight: 600 }}>
                   Economia Mensal
                 </div>
-                <div style={{ fontSize: 36, fontWeight: 700, color: YELLOW, marginTop: 4, fontFamily: 'Arial, sans-serif' }}>
+                <div style={{ fontSize: 36, fontWeight: 700, color: YELLOW, marginTop: 4, fontFamily: 'Inter, Arial, sans-serif' }}>
                   R$ {fmtMoney(data.economia_mensal)}
                 </div>
-                <div style={{ fontSize: 12, opacity: 0.7, marginTop: 4, fontFamily: 'Arial, sans-serif' }}>
+                <div style={{ fontSize: 12, opacity: 0.7, marginTop: 4, fontFamily: 'Inter, Arial, sans-serif' }}>
                   Tarifa: R$ {formatNumber(data.tarifa_kwh, 4)}/kWh
                 </div>
               </div>
@@ -898,15 +913,15 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
             <div>
               <SectionLabel>Projeção Financeira</SectionLabel>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 10 }}>
-                <h2 style={{ fontSize: 22, color: OLIVE_DARK, margin: 0, fontWeight: 700, fontFamily: 'Georgia, serif' }}>
+                <h2 style={{ fontSize: 22, color: OLIVE_DARK, margin: 0, fontWeight: 700, fontFamily: 'Fraunces, Georgia, serif' }}>
                   Fluxo de caixa acumulado
                 </h2>
-                <div style={{ fontSize: 11, color: GRAY, fontFamily: 'Arial, sans-serif', fontStyle: 'italic' }}>
+                <div style={{ fontSize: 11, color: GRAY, fontFamily: 'Inter, Arial, sans-serif', fontStyle: 'italic' }}>
                   Conta atual de luz × investir em energia solar
                 </div>
               </div>
 
-              <div style={{ border: `1.5px solid ${BORDER}`, borderRadius: 12, overflow: 'hidden', fontSize: 13, fontFamily: 'Arial, sans-serif' }}>
+              <div style={{ border: `1.5px solid ${BORDER}`, borderRadius: 12, overflow: 'hidden', fontSize: 13, fontFamily: 'Inter, Arial, sans-serif' }}>
                 {/* cabeçalho */}
                 <div style={{
                   display: 'grid',
@@ -964,22 +979,22 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
               marginTop: 4,
             }}>
               <div>
-                <div style={{ fontSize: 22, fontWeight: 700, fontFamily: 'Georgia, serif', lineHeight: 1.2 }}>
+                <div style={{ fontSize: 22, fontWeight: 700, fontFamily: 'Fraunces, Georgia, serif', lineHeight: 1.2 }}>
                   Pronto para começar?
                 </div>
-                <div style={{ fontSize: 14, opacity: 0.85, marginTop: 5, fontFamily: 'Arial, sans-serif' }}>
+                <div style={{ fontSize: 14, opacity: 0.85, marginTop: 5, fontFamily: 'Inter, Arial, sans-serif' }}>
                   Entre em contato e dê o próximo passo rumo à independência energética.
                 </div>
               </div>
               <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: 24, fontWeight: 700, color: YELLOW, fontFamily: 'Arial, sans-serif' }}>
+                <div style={{ fontSize: 24, fontWeight: 700, color: YELLOW, fontFamily: 'Inter, Arial, sans-serif' }}>
                   {data.responsavel_telefone || '(67) 99644-8995'}
                 </div>
-                <div style={{ fontSize: 13, opacity: 0.9, marginTop: 4, fontFamily: 'Arial, sans-serif' }}>
+                <div style={{ fontSize: 13, opacity: 0.9, marginTop: 4, fontFamily: 'Inter, Arial, sans-serif' }}>
                   {data.responsavel_nome || 'Três Lagoas Solar'}
                 </div>
                 {data.responsavel_email && (
-                  <div style={{ fontSize: 12, opacity: 0.85, marginTop: 2, fontFamily: 'Arial, sans-serif' }}>
+                  <div style={{ fontSize: 12, opacity: 0.85, marginTop: 2, fontFamily: 'Inter, Arial, sans-serif' }}>
                     {data.responsavel_email}
                   </div>
                 )}
@@ -996,10 +1011,10 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
           <Header numero={data.numero_proposta} />
           <div style={{ padding: '30px 52px 90px', display: 'flex', flexDirection: 'column', height: PAGE_H - 110 - 60, boxSizing: 'border-box' }}>
             <SectionLabel>Nossas Instalações</SectionLabel>
-            <h1 style={{ fontSize: 30, color: OLIVE_DARK, margin: '0 0 6px', fontWeight: 700, letterSpacing: -0.5, fontFamily: 'Georgia, serif' }}>
+            <h1 style={{ fontSize: 30, color: OLIVE_DARK, margin: '0 0 6px', fontWeight: 700, letterSpacing: -0.5, fontFamily: 'Fraunces, Georgia, serif' }}>
               Qualidade em cada detalhe
             </h1>
-            <div style={{ fontSize: 14, color: GRAY, fontFamily: 'Arial, sans-serif', marginBottom: 16 }}>
+            <div style={{ fontSize: 14, color: GRAY, fontFamily: 'Inter, Arial, sans-serif', marginBottom: 16 }}>
               Instalações reais executadas pela equipe Três Lagoas Solar — acabamento padronizado,
               infraestrutura elétrica organizada e equipamentos de marcas homologadas.
             </div>
