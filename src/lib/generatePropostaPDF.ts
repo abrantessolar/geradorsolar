@@ -27,9 +27,8 @@ export async function gerarPropostaPDF(
 
   // Espera fontes/imagens
   try {
+    await document.fonts.load('300 16px Fraunces');
     await document.fonts.load('400 16px Fraunces');
-    await document.fonts.load('600 16px Fraunces');
-    await document.fonts.load('700 16px Fraunces');
     await document.fonts.load('400 16px Inter');
     await document.fonts.load('600 16px Inter');
     await document.fonts.load('700 16px Inter');

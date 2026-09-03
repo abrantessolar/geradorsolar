@@ -15,6 +15,7 @@ import emp1 from '@/assets/proposta-template/empresa/emp1.jpg';
 import emp2 from '@/assets/proposta-template/empresa/emp2.jpg';
 import emp3 from '@/assets/proposta-template/empresa/emp3.jpg';
 import emp4 from '@/assets/proposta-template/empresa/emp4.jpg';
+import fachadaImg from '@/assets/proposta-template/fachada-empresa.jpg';
 import inversorImg from '@/assets/proposta-template/inversor.png';
 import moduloImg from '@/assets/proposta-template/modulo.png';
 import instalacoesImg from '@/assets/proposta-template/instalacoes.png';
@@ -201,6 +202,30 @@ function Footer() {
 // ────────────────────────────────────────────────────────────
 // Componentes auxiliares
 // ────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────
+// Acento decorativo (bolinhas + cruzes) — motivo da identidade visual
+// ────────────────────────────────────────────────────────────
+function DotPlusAccent({ color = '#E8B84B' }: { color?: string }) {
+  const cell = 11;
+  const cols = 3;
+  const rows = 2;
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, ${cell}px)`, gap: 5, opacity: 0.85 }}>
+      {Array.from({ length: cols * rows }).map((_, i) => {
+        const isPlus = i % 3 === 2; // 1 em cada 3 vira "+"
+        return isPlus ? (
+          <span key={i} style={{ color, fontSize: 13, fontWeight: 700, lineHeight: `${cell}px`, textAlign: 'center' }}>+</span>
+        ) : (
+          <span key={i} style={{
+            width: 4, height: 4, borderRadius: '50%', background: color,
+            justifySelf: 'center', alignSelf: 'center',
+          }} />
+        );
+      })}
+    </div>
+  );
+}
+
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
@@ -391,75 +416,106 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
       <div ref={ref} style={{ width: `${PAGE_W}px`, background: WHITE }}>
 
         {/* ══════════════════════════════════════════════════════
-            PÁGINA 1 — CAPA (foto real + tipografia editorial, 100% código)
+            PÁGINA 1 — CAPA (estilo referência: fundo branco, foto
+            contida, faixa olive, acentos de bolinhas/cruzes)
         ══════════════════════════════════════════════════════ */}
         <Page>
-          <img
-            src={emp1}
-            alt=""
-            crossOrigin="anonymous"
-            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
-          />
-          {/* gradiente escurecendo de cima (leve) para baixo (forte) — legibilidade do texto */}
+          {/* topo: logo + acento decorativo */}
           <div style={{
-            position: 'absolute', inset: 0,
-            background: 'linear-gradient(180deg, rgba(30,36,18,0.20) 0%, rgba(43,52,22,0.55) 48%, rgba(27,33,14,0.94) 82%, rgba(20,25,10,0.98) 100%)',
-          }} />
-
-          {/* topo: logo + número da proposta */}
-          <div style={{
-            position: 'absolute', top: 0, left: 0, right: 0,
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            padding: '44px 56px',
+            display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
+            padding: '40px 52px 0',
           }}>
-            <img src={logoTls} alt="Três Lagoas Solar" crossOrigin="anonymous" style={{ height: 108, objectFit: 'contain' }} />
-            <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: 11, letterSpacing: 3, color: 'rgba(255,255,255,0.75)', textTransform: 'uppercase', fontFamily: 'Inter, Arial, sans-serif', fontWeight: 600 }}>
-                Proposta Comercial
-              </div>
-              <div style={{ fontSize: 20, fontWeight: 700, color: YELLOW, fontFamily: 'Inter, Arial, sans-serif', marginTop: 4 }}>
-                {data.numero_proposta}
-              </div>
-            </div>
+            <img src={logoTls} alt="Três Lagoas Solar" crossOrigin="anonymous" style={{ height: 96, objectFit: 'contain' }} />
+            <DotPlusAccent color={YELLOW} />
           </div>
 
-          {/* headline editorial */}
-          <div style={{ position: 'absolute', left: 56, right: 56, top: '38%' }}>
-            <div style={{ width: 56, height: 4, background: YELLOW, borderRadius: 2, marginBottom: 22 }} />
-            <h1 style={{
-              fontFamily: 'Fraunces, Georgia, serif', fontWeight: 600, fontSize: 58, lineHeight: 1.08,
-              color: WHITE, margin: 0, maxWidth: 780, letterSpacing: -0.5,
-            }}>
-              Seu projeto de<br />energia solar fotovoltaica
-            </h1>
+          {/* foto real da fachada — faixa contida, não sangra na página inteira */}
+          <div style={{ margin: '28px 0 0', height: 620, position: 'relative', overflow: 'hidden' }}>
+            <img
+              src={fachadaImg}
+              alt=""
+              crossOrigin="anonymous"
+              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+            />
           </div>
+          {/* linha dourada fina */}
+          <div style={{ height: 5, background: YELLOW }} />
 
-          {/* rodapé de identificação: cliente + representante */}
-          <div style={{
-            position: 'absolute', left: 56, right: 56, bottom: 96,
-            display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between',
-            borderTop: '1px solid rgba(255,255,255,0.22)', paddingTop: 22,
-          }}>
-            <div>
-              <div style={{ fontFamily: 'Fraunces, Georgia, serif', fontWeight: 600, fontSize: 34, color: WHITE, lineHeight: 1.1 }}>
+          {/* faixa olive — identificação do cliente + painel decorativo */}
+          <div style={{ background: OLIVE_DARK, position: 'relative', overflow: 'visible', padding: '34px 52px', minHeight: 150 }}>
+            <img
+              src={moduloImg}
+              alt=""
+              crossOrigin="anonymous"
+              style={{
+                position: 'absolute', left: 40, bottom: -18, width: 132, height: 132,
+                objectFit: 'contain', transform: 'rotate(-18deg)',
+                filter: 'drop-shadow(0 10px 14px rgba(0,0,0,0.35))',
+              }}
+            />
+            <div style={{ paddingLeft: 150 }}>
+              <div style={{ fontFamily: 'Inter, Arial, sans-serif', fontWeight: 700, fontSize: 32, color: WHITE, lineHeight: 1.15 }}>
                 {data.cliente_nome}
               </div>
               <div style={{ fontFamily: 'Inter, Arial, sans-serif', fontSize: 16, color: YELLOW, marginTop: 6, fontWeight: 600 }}>
                 {fmtKwh(data.geracao_mensal)} por mês {data.cliente_cidade ? `· ${data.cliente_cidade}` : ''}
               </div>
             </div>
-            <div style={{ textAlign: 'right', fontFamily: 'Inter, Arial, sans-serif' }}>
-              <div style={{ fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', color: 'rgba(255,255,255,0.6)', marginBottom: 4 }}>
-                Representante
-              </div>
-              <div style={{ fontSize: 17, fontWeight: 700, color: WHITE }}>{data.responsavel_nome || '—'}</div>
-              {data.responsavel_telefone && (
-                <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.75)', marginTop: 2 }}>{data.responsavel_telefone}</div>
-              )}
+            <div style={{ position: 'absolute', right: 40, top: 26 }}>
+              <DotPlusAccent color={YELLOW} />
             </div>
           </div>
 
-          <Footer />
+          {/* headline editorial — abaixo da faixa, sobre fundo branco */}
+          <div style={{ padding: '30px 52px 0' }}>
+            <h1 style={{
+              fontFamily: 'Fraunces, Georgia, serif', fontWeight: 300, fontSize: 40, lineHeight: 1.15,
+              color: OLIVE_DARK, margin: 0, letterSpacing: -0.3,
+            }}>
+              Seu projeto de energia solar fotovoltaica
+            </h1>
+          </div>
+
+          {/* representante */}
+          <div style={{
+            position: 'absolute', left: 52, right: 52, bottom: 96,
+            display: 'flex', alignItems: 'center', gap: 14,
+          }}>
+            <div style={{
+              width: 44, height: 44, borderRadius: '50%', background: YELLOW_LIGHT,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+            }}>
+              <Zap size={22} color={OLIVE_DARK} strokeWidth={2.2} />
+            </div>
+            <div>
+              <div style={{ fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', color: GRAY_LIGHT, fontFamily: 'Inter, Arial, sans-serif' }}>
+                Representante
+              </div>
+              <div style={{ fontSize: 16, fontWeight: 700, color: OLIVE_DARK, fontFamily: 'Inter, Arial, sans-serif' }}>
+                {data.responsavel_nome || '—'}
+                {data.responsavel_telefone ? `  ·  ${data.responsavel_telefone}` : ''}
+              </div>
+            </div>
+            <div style={{ marginLeft: 'auto', textAlign: 'right' }}>
+              <div style={{ fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', color: GRAY_LIGHT, fontFamily: 'Inter, Arial, sans-serif' }}>
+                Proposta
+              </div>
+              <div style={{ fontSize: 16, fontWeight: 700, color: OLIVE_DARK, fontFamily: 'Inter, Arial, sans-serif' }}>
+                {data.numero_proposta}
+              </div>
+            </div>
+          </div>
+
+          {/* contato — linha simples, sem barra pesada */}
+          <div style={{
+            position: 'absolute', left: 0, right: 0, bottom: 0,
+            padding: '16px 52px', textAlign: 'center',
+            fontSize: 12.5, color: GRAY_LIGHT, fontFamily: 'Inter, Arial, sans-serif',
+            borderTop: `1px solid ${BORDER}`,
+          }}>
+            <span style={{ color: OLIVE_DARK, fontWeight: 700 }}>{data.responsavel_telefone || '(67) 99644-8995'}</span>
+            {' · '}contato@treslagoassolar.com.br{' · '}www.treslagoassolar.com.br{' · '}@treslagoassolar
+          </div>
         </Page>
 
 
@@ -472,7 +528,7 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
 
             <div>
               <SectionLabel>Nossos Projetos</SectionLabel>
-              <h1 style={{ fontSize: 32, color: OLIVE_DARK, margin: '4px 0 4px', fontWeight: 700, letterSpacing: -0.5, fontFamily: 'Fraunces, Georgia, serif' }}>
+              <h1 style={{ fontSize: 32, color: OLIVE_DARK, margin: '4px 0 4px', fontWeight: 300, letterSpacing: -0.3, fontFamily: 'Fraunces, Georgia, serif' }}>
                 Alguns dos nossos projetos
               </h1>
               <div style={{ fontSize: 13, color: GRAY, fontFamily: 'Inter, Arial, sans-serif' }}>
@@ -557,7 +613,7 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
             {/* título */}
             <div>
               <SectionLabel>Especificações do Projeto</SectionLabel>
-              <h1 style={{ fontSize: 42, color: OLIVE_DARK, margin: 0, fontWeight: 700, letterSpacing: -0.5, fontFamily: 'Fraunces, Georgia, serif' }}>
+              <h1 style={{ fontSize: 42, color: OLIVE_DARK, margin: 0, fontWeight: 300, letterSpacing: -0.3, fontFamily: 'Fraunces, Georgia, serif' }}>
                 Seu sistema solar
               </h1>
             </div>
@@ -608,7 +664,7 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
                   <div style={{ fontSize: 14, color: GRAY, textTransform: 'uppercase', letterSpacing: 1.3, fontFamily: 'Inter, Arial, sans-serif', fontWeight: 600, marginBottom: 6 }}>
                       {eq.tipo}
                     </div>
-                    <div style={{ fontSize: 31, fontWeight: 700, color: OLIVE_DARK, lineHeight: 1.1, fontFamily: 'Fraunces, Georgia, serif' }}>
+                    <div style={{ fontSize: 31, fontWeight: 700, color: OLIVE_DARK, lineHeight: 1.1, fontFamily: 'Inter, Arial, sans-serif' }}>
                       {eq.modelo}
                     </div>
                     <div style={{ fontSize: 18, color: GRAY, marginTop: 8, fontFamily: 'Inter, Arial, sans-serif' }}>
@@ -729,7 +785,7 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
                 <div>
                   <SectionLabel>Observações e Condições Especiais</SectionLabel>
                   <div style={{
-                    fontSize: 14, color: GRAY, fontFamily: 'Fraunces, Georgia, serif', lineHeight: 1.7,
+                    fontSize: 14, color: GRAY, fontFamily: 'Inter, Arial, sans-serif', lineHeight: 1.7,
                     whiteSpace: 'pre-wrap', border: `1.5px solid ${BORDER}`, borderRadius: 12, padding: '18px 20px',
                   }}>
                     {data.observacoes}
@@ -751,7 +807,7 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
             {/* condições de pagamento */}
             <div>
               <SectionLabel>Investimento</SectionLabel>
-              <h1 style={{ fontSize: 30, color: OLIVE_DARK, margin: '0 0 16px', fontWeight: 700, letterSpacing: -0.5, fontFamily: 'Fraunces, Georgia, serif' }}>
+              <h1 style={{ fontSize: 30, color: OLIVE_DARK, margin: '0 0 16px', fontWeight: 300, letterSpacing: -0.3, fontFamily: 'Fraunces, Georgia, serif' }}>
                 Condições de pagamento
               </h1>
 
@@ -850,7 +906,7 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
                           }}
                         >
                           <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: YELLOW }} />
-                          <div style={{ fontSize: 24, fontWeight: 700, color: DARK, lineHeight: 1, fontFamily: 'Fraunces, Georgia, serif' }}>
+                          <div style={{ fontSize: 24, fontWeight: 700, color: DARK, lineHeight: 1, fontFamily: 'Inter, Arial, sans-serif' }}>
                             {c.meses}x
                           </div>
                           <div style={{ fontSize: 11, color: GRAY_LIGHT, margin: '4px 0', fontFamily: 'Inter, Arial, sans-serif' }}>de</div>
@@ -913,7 +969,7 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
             <div>
               <SectionLabel>Projeção Financeira</SectionLabel>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 10 }}>
-                <h2 style={{ fontSize: 22, color: OLIVE_DARK, margin: 0, fontWeight: 700, fontFamily: 'Fraunces, Georgia, serif' }}>
+                <h2 style={{ fontSize: 22, color: OLIVE_DARK, margin: 0, fontWeight: 300, fontFamily: 'Fraunces, Georgia, serif' }}>
                   Fluxo de caixa acumulado
                 </h2>
                 <div style={{ fontSize: 11, color: GRAY, fontFamily: 'Inter, Arial, sans-serif', fontStyle: 'italic' }}>
@@ -979,7 +1035,7 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
               marginTop: 4,
             }}>
               <div>
-                <div style={{ fontSize: 22, fontWeight: 700, fontFamily: 'Fraunces, Georgia, serif', lineHeight: 1.2 }}>
+                <div style={{ fontSize: 22, fontWeight: 700, fontFamily: 'Inter, Arial, sans-serif', lineHeight: 1.2 }}>
                   Pronto para começar?
                 </div>
                 <div style={{ fontSize: 14, opacity: 0.85, marginTop: 5, fontFamily: 'Inter, Arial, sans-serif' }}>
@@ -1011,7 +1067,7 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
           <Header numero={data.numero_proposta} />
           <div style={{ padding: '30px 52px 90px', display: 'flex', flexDirection: 'column', height: PAGE_H - 110 - 60, boxSizing: 'border-box' }}>
             <SectionLabel>Nossas Instalações</SectionLabel>
-            <h1 style={{ fontSize: 30, color: OLIVE_DARK, margin: '0 0 6px', fontWeight: 700, letterSpacing: -0.5, fontFamily: 'Fraunces, Georgia, serif' }}>
+            <h1 style={{ fontSize: 30, color: OLIVE_DARK, margin: '0 0 6px', fontWeight: 300, letterSpacing: -0.3, fontFamily: 'Fraunces, Georgia, serif' }}>
               Qualidade em cada detalhe
             </h1>
             <div style={{ fontSize: 14, color: GRAY, fontFamily: 'Inter, Arial, sans-serif', marginBottom: 16 }}>
