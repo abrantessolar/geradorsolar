@@ -6,7 +6,7 @@ import type { PropostaTemplateData } from '@/components/PropostaTemplatePages';
 import { FALLBACK_PHOTOS } from '@/components/ProposalPortfolio';
 
 /**
- * Gera PDF A4 (4 páginas) a partir do componente <PropostaTemplatePages />.
+ * Gera PDF A4 (5 páginas) a partir do componente <PropostaTemplatePages />.
  * Foco em leveza: scale 1.5, JPEG q70 → alvo ~600 KB-1 MB.
  */
 export async function gerarPropostaPDF(
@@ -27,6 +27,8 @@ export async function gerarPropostaPDF(
 
   // Espera fontes/imagens
   try {
+    await document.fonts.load('600 16px "Bricolage Grotesque"');
+    await document.fonts.load('400 16px "Bricolage Grotesque"');
     await document.fonts.load('300 16px Fraunces');
     await document.fonts.load('400 16px Fraunces');
     await document.fonts.load('400 16px Inter');
@@ -125,8 +127,8 @@ async function optimizeImage(url: string, maxSide = 400, quality = 0.55): Promis
 }
 
 /**
- * Busca até 16 fotos do portfólio (Supabase ou fallback) e retorna
- * thumbnails 400×400 q55 em data-URL.
+ * Busca até 30 fotos do portfólio (Supabase ou fallback) e retorna
+ * thumbnails 400×400 q55 em data-URL. A página 2 da proposta usa 30 slots.
  */
 export async function fetchPortfolioPhotosOptimized(): Promise<string[]> {
   let urls: string[] = [];
@@ -136,13 +138,13 @@ export async function fetchPortfolioPhotosOptimized(): Promise<string[]> {
       .select('url')
       .eq('ativo', true)
       .order('ordem', { ascending: true })
-      .limit(16);
+      .limit(30);
     if (data && data.length > 0) urls = data.map((d) => d.url);
   } catch {
     // ignore
   }
   if (urls.length === 0) urls = [...FALLBACK_PHOTOS];
-  urls = urls.slice(0, 16);
+  urls = urls.slice(0, 30);
 
   const optimized = await Promise.all(urls.map((u) => optimizeImage(u, 400, 0.55)));
   return optimized.filter(Boolean);

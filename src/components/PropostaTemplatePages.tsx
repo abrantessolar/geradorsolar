@@ -1,30 +1,26 @@
 /**
- * Renderiza as 4 páginas da proposta em layout HTML estilizado, inspirado
- * na proposta online (cards, badges, gradientes sutis, paleta TLS).
+ * Renderiza as 5 páginas da proposta comercial da Três Lagoas Solar.
  *
  * RESTRIÇÕES html2canvas:
- * - Apenas estilos inline (sem CSS externo, sem Tailwind, sem fontes web)
- * - Ícones lucide-react e logo @/assets/logo-tls-pdf.png mantidos como referência
+ * - Apenas estilos inline (sem CSS externo, sem Tailwind, sem classes)
+ * - Sem CSS grid, sem writing-mode, sem background-image escalado:
+ *   usar flexbox, transform:rotate e <img> posicionado
  * - Tamanho fixo: 1241 × 1755 px por página (A4 a 150 dpi)
- * - Paleta: verde #4A5A2A, amarelo #E8B84B
+ * - Paleta TLS: verde musgo #4A5A2A, dourado #E8B84B
+ *
+ * Páginas: 1 Capa · 2 Clientes · 3 Geração x consumo e investimento
+ *          4 Antes e depois · 5 A empresa
  */
 import { forwardRef } from 'react';
-import logoTls from '@/assets/logo-tls-pdf.png';
 
-import emp1 from '@/assets/proposta-template/empresa/emp1.jpg';
-import emp2 from '@/assets/proposta-template/empresa/emp2.jpg';
-import emp3 from '@/assets/proposta-template/empresa/emp3.jpg';
-import emp4 from '@/assets/proposta-template/empresa/emp4.jpg';
+import logoColor from '@/assets/proposta-template/logo-tls-color.png';
+import capaIlustracao from '@/assets/proposta-template/capa-ilustracao.jpg';
+import mapaImg from '@/assets/proposta-template/mapa-localizacao.jpg';
+import faturaImg from '@/assets/proposta-template/fatura-elektro.png';
 import fachadaImg from '@/assets/proposta-template/fachada-empresa.jpg';
-import inversorImg from '@/assets/proposta-template/inversor.png';
-import moduloImg from '@/assets/proposta-template/modulo.png';
 import instalacoesImg from '@/assets/proposta-template/instalacoes.png';
 
-const EMPRESA_FOTOS = [emp1, emp2, emp3, emp4];
 import { formatCurrency, formatNumber } from '@/data/calculations';
-import {
-  Calendar, Shield, FileText, Building2, CreditCard, Zap, BadgeCheck, Plane, Check, X,
-} from 'lucide-react';
 
 export interface CashflowRow {
   year: number;
@@ -74,31 +70,62 @@ export interface PropostaTemplateData {
   escopo_excluido?: string[];
 }
 
-// A4 a 150 dpi
+// ────────────────────────────────────────────────────────────
+// Escala: A4 a 150 dpi
+// ────────────────────────────────────────────────────────────
 const PAGE_W = 1241;
 const PAGE_H = 1755;
 
-const OLIVE      = '#5b6a2a';
-const OLIVE_DARK = '#4A5A2A';
-const OLIVE_MID  = '#6b7c34';
-const YELLOW     = '#E8B84B';
-const YELLOW_LIGHT = '#FDF3D8';
-const GRAY       = '#4a4a4a';
-const GRAY_LIGHT = '#6a6a6a';
-const DARK       = '#1e1e1e';
-const LIGHT      = '#f7f7f3';
-const LIGHT2     = '#f0f0ea';
-const BORDER     = '#e2e2db';
-const WHITE      = '#ffffff';
+/** milímetros → px na página */
+const mm = (v: number) => Math.round(v * (PAGE_W / 210) * 100) / 100;
+/** px do mockup (A4 a 96 dpi) → px na página */
+const fs = (v: number) => Math.round(v * (PAGE_W / 793.7) * 10) / 10;
 
-const fmtKwh   = (n: number) => `${formatNumber(n, 0)} kWh`;
-const fmtMoney = (n: number) => formatCurrency(n).replace('R$', '').trim();
-const today    = () => new Date().toLocaleDateString('pt-BR', {
-  day: '2-digit', month: 'long', year: 'numeric',
-});
+const VERDE     = '#4A5A2A';
+const OURO      = '#E8B84B';
+const OURO_ESC  = '#9C7412';
+const CREME     = '#F7F4EC';
+const LINHA     = '#DED7C6';
+const TEXTO     = '#232717';
+const MUTED     = '#6F7360';
+const WHITE     = '#ffffff';
+const VERDE_ESC = '#2F3A1A';
+const VERDE_FAT = '#01A556'; // verde da fatura da concessionária
+
+const FONT = 'Inter, Arial, Helvetica, sans-serif';
+const DISPLAY = '"Bricolage Grotesque", Inter, Arial, sans-serif';
+
+const fmtInt   = (n: number) => formatNumber(n, 0);
+const fmtMoney = (n: number) => formatCurrency(n);
+const hoje = () => new Date().toLocaleDateString('pt-BR');
+
+// Escopo fixo — não vem da proposta
+const ESCOPO_INCLUSO = [
+  'Visita técnica e análise 3D com drone',
+  'Projeto elétrico com ART do responsável técnico',
+  'Homologação do projeto na concessionária',
+  'Todos os equipamentos e materiais de instalação',
+  'Instalação, comissionamento e testes',
+  'Monitoramento configurado com app nativo do inversor',
+  'Acompanhamento do sistema por 3 anos pelo nosso setor de pós-venda',
+  'Garantia total da Três Lagoas Solar por 3 anos',
+];
+
+const ENDERECO = {
+  rua: 'Rua Luiz Correa da Silveira, 934',
+  bairro: 'Jardim Alvorada',
+  cidade: 'Três Lagoas / MS · 79610-060',
+  horario1: 'Seg a sex, 7h–11h e 13h–17h',
+  horario2: 'Sáb, 8h–12h',
+  telefone: '(67) 99644-8995',
+  email: 'contato@treslagoassolar.com.br',
+  instagram: '@treslagoassolar',
+  site: 'www.treslagoassolar.com.br',
+  cnpj: 'CNPJ 39.369.943/0001-21',
+};
 
 // ────────────────────────────────────────────────────────────
-// Layout base
+// Blocos de layout
 // ────────────────────────────────────────────────────────────
 function Page({ children }: { children?: React.ReactNode }) {
   return (
@@ -110,8 +137,10 @@ function Page({ children }: { children?: React.ReactNode }) {
         background: WHITE,
         overflow: 'hidden',
         pageBreakAfter: 'always',
-        fontFamily: 'Inter, Arial, sans-serif',
-        color: DARK,
+        fontFamily: FONT,
+        color: TEXTO,
+        display: 'flex',
+        flexDirection: 'column',
       }}
     >
       {children}
@@ -119,986 +148,550 @@ function Page({ children }: { children?: React.ReactNode }) {
   );
 }
 
-// ────────────────────────────────────────────────────────────
-// Header com acento lateral amarelo
-// ────────────────────────────────────────────────────────────
 function Header({ numero }: { numero: string }) {
   return (
     <div
       style={{
+        flexShrink: 0,
+        height: `${mm(17)}px`,
+        padding: `0 ${mm(16)}px`,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        background: OLIVE_DARK,
-        color: WHITE,
-        height: 110,
-        boxSizing: 'border-box',
-        position: 'relative',
-        overflow: 'visible',
+        borderBottom: `1px solid ${LINHA}`,
       }}
     >
-      {/* faixa decorativa lateral esquerda */}
-      <div style={{
-        position: 'absolute', left: 0, top: 0, bottom: 0, width: 6,
-        background: YELLOW,
-      }} />
-      <div style={{ paddingLeft: 56, paddingRight: 44, display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', height: '100%' }}>
-        <img
-          src={logoTls}
-          alt="Três Lagoas Solar"
-          crossOrigin="anonymous"
-          style={{ height: 200, objectFit: 'contain', position: 'relative', zIndex: 2 }}
-        />
-        <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
-          <div style={{ width: 1, height: 32, background: 'rgba(255,255,255,0.25)' }} />
-          <div style={{ textAlign: 'right' }}>
-            <div style={{ fontSize: 10, letterSpacing: 2, opacity: 0.7, textTransform: 'uppercase', fontFamily: 'Inter, Arial, sans-serif', fontWeight: 600 }}>
-              Proposta Comercial
-            </div>
-            <div style={{ fontSize: 21, fontWeight: 700, color: YELLOW, letterSpacing: 0.5, fontFamily: 'Inter, Arial, sans-serif', marginTop: 2 }}>
-              {numero}
-            </div>
-          </div>
-        </div>
+      <img src={logoColor} crossOrigin="anonymous" alt="Três Lagoas Solar"
+           style={{ height: `${mm(9)}px`, width: 'auto', display: 'block' }} />
+      <div style={{ textAlign: 'right', fontSize: `${fs(10.2)}px`, color: MUTED, lineHeight: 1.5 }}>
+        Proposta
+        <b style={{ display: 'block', fontSize: `${fs(12.7)}px`, color: VERDE, fontWeight: 600 }}>{numero}</b>
       </div>
     </div>
   );
 }
 
-// ────────────────────────────────────────────────────────────
-// Footer
-// ────────────────────────────────────────────────────────────
-function Footer() {
+function Footer({ num }: { num: string }) {
   return (
     <div
       style={{
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        background: OLIVE_DARK,
-        color: 'rgba(255,255,255,0.85)',
-        fontSize: 13,
-        padding: '15px 50px',
-        textAlign: 'center',
-        boxSizing: 'border-box',
-        fontFamily: 'Inter, Arial, sans-serif',
-        letterSpacing: 0.3,
+        flexShrink: 0,
+        height: `${mm(13)}px`,
+        padding: `0 ${mm(16)}px`,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        borderTop: `1px solid ${LINHA}`,
+        fontSize: `${fs(9.7)}px`,
+        color: MUTED,
       }}
     >
-      <span style={{ color: YELLOW, fontWeight: 700 }}>(67) 99644-8995</span>
-      {' '}·{' '}
-      contato@treslagoassolar.com.br
-      {' '}·{' '}
-      CNPJ: 39.369.943/0001-21
-      {' '}·{' '}
-      <span style={{ color: YELLOW }}>www.treslagoassolar.com.br</span>
-      {' '}·{' '}
-      @treslagoassolar
+      <span>Três Lagoas Solar · Três Lagoas, MS · {ENDERECO.cnpj}</span>
+      <span style={{ fontWeight: 600, color: VERDE, fontSize: `${fs(10.7)}px` }}>{num}</span>
     </div>
   );
 }
 
-// ────────────────────────────────────────────────────────────
-// Componentes auxiliares
-// ────────────────────────────────────────────────────────────
-// ────────────────────────────────────────────────────────────
-// Acento decorativo (bolinhas + cruzes) — motivo da identidade visual
-// ────────────────────────────────────────────────────────────
-function DotPlusAccent({ color = '#E8B84B' }: { color?: string }) {
-  const cell = 11;
-  const cols = 3;
-  const rows = 2;
+function Body({ children, style }: { children?: React.ReactNode; style?: React.CSSProperties }) {
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, ${cell}px)`, gap: 5, opacity: 0.85 }}>
-      {Array.from({ length: cols * rows }).map((_, i) => {
-        const isPlus = i % 3 === 2; // 1 em cada 3 vira "+"
-        return isPlus ? (
-          <span key={i} style={{ color, fontSize: 13, fontWeight: 700, lineHeight: `${cell}px`, textAlign: 'center' }}>+</span>
-        ) : (
-          <span key={i} style={{
-            width: 4, height: 4, borderRadius: '50%', background: color,
-            justifySelf: 'center', alignSelf: 'center',
-          }} />
-        );
-      })}
+    <div style={{ flex: 1, minHeight: 0, padding: `${mm(9)}px ${mm(16)}px 0`, ...style }}>
+      {children}
     </div>
   );
 }
 
-function SectionLabel({ children }: { children: React.ReactNode }) {
+function Eyebrow({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-      <div style={{ width: 4, height: 22, background: YELLOW, borderRadius: 2, flexShrink: 0 }} />
+    <div style={{ fontSize: `${fs(10.7)}px`, color: OURO_ESC, fontWeight: 600, marginBottom: `${fs(5)}px` }}>
+      {children}
+    </div>
+  );
+}
+
+function Title({ children }: { children: React.ReactNode }) {
+  return (
+    <div style={{
+      fontFamily: DISPLAY, fontSize: `${fs(25)}px`, fontWeight: 600, color: VERDE,
+      lineHeight: 1.15, letterSpacing: '-0.02em', marginBottom: `${mm(3)}px`,
+    }}>
+      {children}
+    </div>
+  );
+}
+
+function H3({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
+  return (
+    <div style={{
+      fontFamily: DISPLAY, fontSize: `${fs(15.2)}px`, fontWeight: 600, color: VERDE,
+      letterSpacing: '-0.02em', marginBottom: `${mm(2.5)}px`, ...style,
+    }}>
+      {children}
+    </div>
+  );
+}
+
+function Stat({ valor, rotulo }: { valor: string; rotulo: string }) {
+  return (
+    <div style={{ flex: 1, borderLeft: `2px solid ${OURO}`, paddingLeft: `${mm(3.5)}px` }}>
+      <div style={{
+        fontFamily: DISPLAY, fontSize: `${fs(22)}px`, fontWeight: 600, color: VERDE,
+        lineHeight: 1.1, letterSpacing: '-0.02em',
+      }}>{valor}</div>
+      <div style={{ fontSize: `${fs(11.7)}px`, color: MUTED, marginTop: `${fs(3)}px` }}>{rotulo}</div>
+    </div>
+  );
+}
+
+function Row({ label, value, last }: { label: React.ReactNode; value: React.ReactNode; last?: boolean }) {
+  return (
+    <div style={{
+      display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
+      padding: `${mm(2.2)}px 0`, borderBottom: last ? 'none' : '1px solid #F0ECE2',
+      fontSize: `${fs(13.2)}px`, gap: `${mm(6)}px`,
+    }}>
+      <span style={{ color: TEXTO }}>{label}</span>
+      <span style={{ fontWeight: 600, color: VERDE, textAlign: 'right' }}>{value}</span>
+    </div>
+  );
+}
+
+function TableHead({ children }: { children: React.ReactNode }) {
+  return (
+    <div style={{
+      fontSize: `${fs(11.7)}px`, fontWeight: 600, color: MUTED,
+      paddingBottom: `${mm(2.5)}px`, borderBottom: `1px solid ${LINHA}`,
+    }}>{children}</div>
+  );
+}
+
+function Check({ children }: { children: React.ReactNode }) {
+  return (
+    <div style={{
+      position: 'relative', paddingLeft: `${mm(5.5)}px`, marginBottom: `${mm(1.4)}px`,
+      fontSize: `${fs(13.2)}px`, lineHeight: 1.7,
+    }}>
       <span style={{
-        fontSize: 11, fontWeight: 700, letterSpacing: 2,
-        textTransform: 'uppercase', color: OLIVE_DARK,
-        fontFamily: 'Inter, Arial, sans-serif',
-      }}>
-        {children}
-      </span>
+        position: 'absolute', left: 0, top: `${fs(7)}px`, width: `${fs(6)}px`, height: `${fs(6)}px`,
+        borderRadius: '1px', background: OURO, display: 'block',
+      }} />
+      {children}
     </div>
   );
 }
 
-function MetricCard({ label, value, sub, accent }: { label: string; value: string; sub?: string; accent?: boolean }) {
+function Parcela({ n, valor, destaque }: { n: string; valor: string; destaque?: boolean }) {
   return (
-    <div
-      style={{
-        background: accent ? OLIVE_DARK : WHITE,
-        color: accent ? WHITE : DARK,
-        border: accent ? 'none' : `1.5px solid ${BORDER}`,
-        borderRadius: 12,
-        padding: '18px 20px',
-        boxShadow: accent ? '0 6px 20px rgba(74,90,42,0.22)' : '0 2px 6px rgba(0,0,0,0.04)',
-        position: 'relative',
-        overflow: 'hidden',
-      }}
-    >
-      {accent && (
-        <div style={{
-          position: 'absolute', bottom: -8, right: -8,
-          width: 60, height: 60, borderRadius: '50%',
-          background: 'rgba(232,184,75,0.18)',
-        }} />
-      )}
+    <div style={{
+      flex: 1, border: `1px solid ${destaque ? OURO : LINHA}`, borderRadius: '2px',
+      padding: `${mm(2.8)}px ${mm(2)}px`, textAlign: 'center',
+      background: destaque ? CREME : WHITE,
+    }}>
+      <div style={{ fontSize: `${fs(11.7)}px`, color: MUTED, marginBottom: `${mm(1.5)}px` }}>{n}</div>
       <div style={{
-        fontSize: 14,
-        letterSpacing: 1.2,
-        textTransform: 'uppercase',
-        color: accent ? 'rgba(255,255,255,0.9)' : GRAY,
-        marginBottom: 7,
-        fontFamily: 'Inter, Arial, sans-serif',
-        fontWeight: 600,
-      }}>
-        {label}
-      </div>
-      <div style={{ fontSize: 30, fontWeight: 700, lineHeight: 1, fontFamily: 'Inter, Arial, sans-serif' }}>{value}</div>
-      {sub && (
-        <div style={{ fontSize: 15, marginTop: 7, color: accent ? 'rgba(255,255,255,0.75)' : GRAY, fontFamily: 'Inter, Arial, sans-serif' }}>
-          {sub}
-        </div>
+        fontFamily: DISPLAY, fontSize: `${fs(15.9)}px`, fontWeight: 600, color: VERDE, letterSpacing: '-0.02em',
+      }}>{valor}</div>
+    </div>
+  );
+}
+
+function Foto({ src, ratio, alt }: { src?: string; ratio: number; alt?: string }) {
+  return (
+    <div style={{
+      position: 'relative', width: '100%', paddingTop: `${ratio * 100}%`,
+      borderRadius: '2px', overflow: 'hidden', background: '#EEE9DD',
+    }}>
+      {src && (
+        <img src={src} crossOrigin="anonymous" alt={alt || ''}
+             style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
       )}
     </div>
   );
 }
 
 // ────────────────────────────────────────────────────────────
-// Ícones SVG inline
+// Gráfico geração x consumo
 // ────────────────────────────────────────────────────────────
-function PanelIcon({ size = 80 }: { size?: number }) {
+function Barra({ valor, altura, cor, corTexto }: { valor: number; altura: number; cor: string; corTexto: string }) {
   return (
-    <img
-      src={moduloImg}
-      alt="Módulo Fotovoltaico"
-      crossOrigin="anonymous"
-      style={{ width: size, height: size, objectFit: 'contain', display: 'block' }}
-    />
+    <div style={{
+      flex: 1, height: `${altura}%`, background: cor, borderRadius: '1px 1px 0 0',
+      position: 'relative', overflow: 'hidden',
+    }}>
+      <div style={{
+        position: 'absolute', top: `${mm(1.5)}px`, left: 0, right: 0, height: `${fs(46)}px`,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}>
+        <span style={{
+          transform: 'rotate(-90deg)', whiteSpace: 'nowrap', display: 'block',
+          fontSize: `${fs(8.9)}px`, fontWeight: 600, color: corTexto, lineHeight: 1,
+        }}>{fmtInt(valor)}</span>
+      </div>
+    </div>
   );
 }
 
-function InverterIcon({ size = 80 }: { size?: number }) {
+function Grafico({ dados }: { dados: MonthlyRow[] }) {
+  const meses = (dados || []).slice(0, 12);
+  if (meses.length === 0) return null;
+  const max = Math.max(1, ...meses.map(m => Math.max(m.consumo, m.geracao)));
+
   return (
-    <img
-      src={inversorImg}
-      alt="Inversor"
-      crossOrigin="anonymous"
-      style={{ width: size, height: size, objectFit: 'contain', display: 'block' }}
-    />
+    <div>
+      <div style={{
+        display: 'flex', alignItems: 'flex-end', gap: `${mm(2.4)}px`,
+        height: `${mm(62)}px`, paddingTop: `${mm(3)}px`,
+      }}>
+        {meses.map((m, i) => (
+          <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', height: '100%' }}>
+            <div style={{ display: 'flex', gap: '2px', alignItems: 'flex-end', width: '100%', flex: 1, minHeight: 0 }}>
+              <Barra valor={m.consumo} altura={(m.consumo / max) * 100} cor={OURO} corTexto={VERDE_ESC} />
+              <Barra valor={m.geracao} altura={(m.geracao / max) * 100} cor={VERDE} corTexto={WHITE} />
+            </div>
+            <div style={{ fontSize: `${fs(9.2)}px`, color: MUTED, marginTop: `${mm(1.5)}px`, textAlign: 'center' }}>{m.mes}</div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ display: 'flex', gap: `${mm(2.4)}px`, marginTop: `${mm(1.5)}px` }}>
+        {meses.map((m, i) => {
+          const saldo = Math.round(m.geracao - m.consumo);
+          return (
+            <div key={i} style={{
+              flex: 1, textAlign: 'center', fontSize: `${fs(8.8)}px`, fontWeight: 600,
+              color: saldo < 0 ? '#B4553A' : VERDE,
+            }}>
+              {saldo >= 0 ? `+${fmtInt(saldo)}` : `−${fmtInt(Math.abs(saldo))}`}
+            </div>
+          );
+        })}
+      </div>
+
+      <div style={{
+        display: 'flex', gap: `${mm(6)}px`, fontSize: `${fs(11.7)}px`, color: MUTED,
+        marginTop: `${mm(3)}px`, flexWrap: 'wrap',
+      }}>
+        <span>
+          <i style={{ width: `${fs(9)}px`, height: `${fs(9)}px`, borderRadius: '2px', display: 'inline-block', marginRight: `${fs(4)}px`, background: OURO }} />
+          Consumo
+        </span>
+        <span>
+          <i style={{ width: `${fs(9)}px`, height: `${fs(9)}px`, borderRadius: '2px', display: 'inline-block', marginRight: `${fs(4)}px`, background: VERDE }} />
+          Geração estimada
+        </span>
+        <span>Abaixo do gráfico: saldo mensal em kWh (crédito ou déficit)</span>
+      </div>
+    </div>
+  );
+}
+
+function KpiCapa({ valor, unidade, rotulo, primeiro }: { valor: string; unidade: string; rotulo: string; primeiro?: boolean }) {
+  return (
+    <div style={{
+      flex: 1,
+      paddingLeft: primeiro ? 0 : `${mm(4)}px`,
+      borderLeft: primeiro ? 'none' : `1px solid ${LINHA}`,
+    }}>
+      <div style={{
+        fontFamily: DISPLAY, fontSize: `${fs(23.2)}px`, fontWeight: 600, color: VERDE,
+        letterSpacing: '-0.02em', lineHeight: 1,
+      }}>
+        {valor}<span style={{ color: OURO_ESC }}>{unidade}</span>
+      </div>
+      <div style={{ fontSize: `${fs(11.7)}px`, color: MUTED, marginTop: `${fs(3)}px` }}>{rotulo}</div>
+    </div>
+  );
+}
+
+function CardFatura({ valor, legenda }: { valor: string; legenda: string }) {
+  return (
+    <div style={{ flex: 1 }}>
+      <div style={{ position: 'relative', width: '100%' }}>
+        <img src={faturaImg} crossOrigin="anonymous" alt=""
+             style={{ width: '100%', display: 'block' }} />
+        <div style={{
+          position: 'absolute', left: '6%', right: '6%', top: '68.7%',
+          transform: 'translateY(-50%)', textAlign: 'center',
+          fontFamily: DISPLAY, fontWeight: 600, fontSize: `${fs(31.2)}px`,
+          letterSpacing: '-0.02em', color: VERDE_FAT, lineHeight: 1,
+        }}>{valor}</div>
+      </div>
+      <div style={{
+        marginTop: `${mm(3)}px`, textAlign: 'center',
+        fontSize: `${fs(14.2)}px`, color: VERDE, fontWeight: 600,
+      }}>{legenda}</div>
+    </div>
   );
 }
 
 // ────────────────────────────────────────────────────────────
-// Gráfico barras Geração × Consumo (SVG puro)
-// ────────────────────────────────────────────────────────────
-function GeracaoConsumoChart({ data }: { data: MonthlyRow[] }) {
-  const W = 1100;
-  const H = 480;
-  const PAD_L = 58;
-  const PAD_R = 20;
-  const PAD_T = 28;
-  const PAD_B = 44;
-  const innerW = W - PAD_L - PAD_R;
-  const innerH = H - PAD_T - PAD_B;
-  const max = Math.max(...data.flatMap((d) => [d.geracao, d.consumo]), 1);
-  const niceMax = Math.ceil(max / 100) * 100;
-  const groupW = innerW / data.length;
-  const barW = (groupW - 10) / 2;
-
-  const yTicks = 5;
-  const ticks = Array.from({ length: yTicks + 1 }, (_, i) => Math.round((niceMax / yTicks) * i));
-
-  return (
-    <svg width={W} height={H} xmlns="http://www.w3.org/2000/svg" style={{ display: 'block' }}>
-      {/* faixa de fundo alternada */}
-      {data.map((_, i) => (
-        i % 2 === 0 ? null :
-        <rect key={`bg-${i}`} x={PAD_L + i * groupW} y={PAD_T} width={groupW} height={innerH} fill="#f9f9f5" />
-      ))}
-      {/* grid horizontal */}
-      {ticks.map((t, i) => {
-        const y = PAD_T + innerH - (t / niceMax) * innerH;
-        return (
-          <g key={i}>
-            <line x1={PAD_L} y1={y} x2={W - PAD_R} y2={y}
-              stroke={i === 0 ? DARK : BORDER} strokeWidth={i === 0 ? '1.5' : '1'} />
-            <text x={PAD_L - 8} y={y + 5} fontSize="16" textAnchor="end"
-              fill={GRAY_LIGHT} fontFamily="Arial, sans-serif">
-              {t}
-            </text>
-          </g>
-        );
-      })}
-      {/* barras */}
-      {data.map((d, i) => {
-        const xBase = PAD_L + i * groupW + 5;
-        const hG = (d.geracao / niceMax) * innerH;
-        const hC = (d.consumo / niceMax) * innerH;
-        const yG = PAD_T + innerH - hG;
-        const yC = PAD_T + innerH - hC;
-        return (
-          <g key={i}>
-            {/* barra geração com topo arredondado simulado */}
-            <rect x={xBase} y={yG} width={barW} height={hG} fill={OLIVE_DARK} rx="3" />
-            <text x={xBase + barW / 2} y={yG - 7} fontSize="15" fontWeight="700"
-              textAnchor="middle" fill={OLIVE_DARK} fontFamily="Arial, sans-serif">
-              {Math.round(d.geracao)}
-            </text>
-            {/* barra consumo */}
-            <rect x={xBase + barW + 4} y={yC} width={barW} height={hC} fill={YELLOW} rx="3" />
-            <text x={xBase + barW + 4 + barW / 2} y={yC - 7} fontSize="15" fontWeight="700"
-              textAnchor="middle" fill={OLIVE_MID} fontFamily="Arial, sans-serif">
-              {Math.round(d.consumo)}
-            </text>
-            {/* label mês */}
-            <text x={xBase + barW + 2} y={H - PAD_B + 24} fontSize="15" fontWeight="600"
-              textAnchor="middle" fill={DARK} fontFamily="Arial, sans-serif">
-              {d.mes}
-            </text>
-          </g>
-        );
-      })}
-    </svg>
-  );
-}
-
-// ────────────────────────────────────────────────────────────
-// Diferenciais
-// ────────────────────────────────────────────────────────────
-const DIFF_ICONS = [
-  { Icon: Calendar,   title: 'Acompanhamento 3 anos', text: 'Monitoramos sua usina no pós-venda para segurança e tranquilidade.' },
-  { Icon: Shield,     title: 'Garantia de instalação', text: 'Montagem segura e acabamento profissional com 3 anos de garantia.' },
-  { Icon: FileText,   title: 'Geração em contrato',   text: 'Dimensionamento técnico com compromisso formal de geração.' },
-  { Icon: Building2,  title: 'Empresa sólida',        text: 'Estrutura profissional e relação de longo prazo com cada cliente.' },
-  { Icon: CreditCard, title: 'Financiamento fácil',   text: 'Você financia com a nossa ajuda, sem precisar ir ao banco.' },
-  { Icon: Zap,        title: 'Sistema completo',      text: 'Todos os equipamentos e componentes da solução entregues.' },
-  { Icon: BadgeCheck, title: 'Materiais selecionados',text: 'Estrutura, proteções e acessórios com padrão de qualidade.' },
-  { Icon: Plane,      title: 'Análise 3D com drone',  text: 'Estudo técnico de sombreamento para máxima eficiência.' },
-];
-
-// ────────────────────────────────────────────────────────────
-// COMPONENTE PRINCIPAL
+// Componente principal
 // ────────────────────────────────────────────────────────────
 export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: PropostaTemplateData }>(
   ({ data }, ref) => {
-    const parcelas = [
-      { label: '24x', value: data.parcela_24x },
-      { label: '36x', value: data.parcela_36x },
-      { label: '48x', value: data.parcela_48x },
-      { label: '60x', value: data.parcela_60x },
-      { label: '72x', value: data.parcela_72x },
-    ];
+    const fotos = (data.fotos_portfolio || []).slice(0, 30);
+    const slots = Array.from({ length: 30 }, (_, i) => fotos[i]);
 
-    const fotos = data.fotos_portfolio.slice(0, 16);
-    while (fotos.length < 16) fotos.push('');
+    const faturaAntes  = data.consumo_mensal * data.tarifa_kwh;
+    const faturaDepois = Math.max(0, faturaAntes - data.economia_mensal);
+    const cobertura    = data.consumo_mensal > 0 ? (data.geracao_mensal / data.consumo_mensal) * 100 : 0;
+
+    const cartao = [3, 6, 12, 18]
+      .map(m => (data.cartao_parcelas || []).find(c => c.meses === m))
+      .filter((c): c is { meses: number; valor: number } => Boolean(c));
 
     return (
       <div ref={ref} style={{ width: `${PAGE_W}px`, background: WHITE }}>
 
-        {/* ══════════════════════════════════════════════════════
-            PÁGINA 1 — CAPA (estilo referência: fundo branco, foto
-            contida, faixa olive, acentos de bolinhas/cruzes)
-        ══════════════════════════════════════════════════════ */}
+        {/* ═══ 1 · CAPA ═══ */}
         <Page>
-          {/* topo: logo + acento decorativo */}
           <div style={{
-            display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
-            padding: '40px 52px 0',
+            flex: 1, display: 'flex', flexDirection: 'column',
+            padding: `${mm(16)}px ${mm(16)}px ${mm(12)}px`, position: 'relative',
           }}>
-            <img src={logoTls} alt="Três Lagoas Solar" crossOrigin="anonymous" style={{ height: 96, objectFit: 'contain' }} />
-            <DotPlusAccent color={YELLOW} />
-          </div>
-
-          {/* foto real da fachada — faixa contida, não sangra na página inteira */}
-          <div style={{ margin: '28px 0 0', height: 620, position: 'relative', overflow: 'hidden' }}>
-            <img
-              src={fachadaImg}
-              alt=""
-              crossOrigin="anonymous"
-              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-            />
-          </div>
-          {/* linha dourada fina */}
-          <div style={{ height: 5, background: YELLOW }} />
-
-          {/* faixa olive — identificação do cliente + painel decorativo */}
-          <div style={{ background: OLIVE_DARK, position: 'relative', overflow: 'visible', padding: '34px 52px', minHeight: 150 }}>
-            <img
-              src={moduloImg}
-              alt=""
-              crossOrigin="anonymous"
-              style={{
-                position: 'absolute', left: 40, bottom: -18, width: 132, height: 132,
-                objectFit: 'contain', transform: 'rotate(-18deg)',
-                filter: 'drop-shadow(0 10px 14px rgba(0,0,0,0.35))',
-              }}
-            />
-            <div style={{ paddingLeft: 150 }}>
-              <div style={{ fontFamily: 'Inter, Arial, sans-serif', fontWeight: 700, fontSize: 32, color: WHITE, lineHeight: 1.15 }}>
-                {data.cliente_nome}
-              </div>
-              <div style={{ fontFamily: 'Inter, Arial, sans-serif', fontSize: 16, color: YELLOW, marginTop: 6, fontWeight: 600 }}>
-                {fmtKwh(data.geracao_mensal)} por mês {data.cliente_cidade ? `· ${data.cliente_cidade}` : ''}
-              </div>
-            </div>
-            <div style={{ position: 'absolute', right: 40, top: 26 }}>
-              <DotPlusAccent color={YELLOW} />
-            </div>
-          </div>
-
-          {/* headline editorial — abaixo da faixa, sobre fundo branco */}
-          <div style={{ padding: '30px 52px 0' }}>
-            <h1 style={{
-              fontFamily: 'Fraunces, Georgia, serif', fontWeight: 300, fontSize: 40, lineHeight: 1.15,
-              color: OLIVE_DARK, margin: 0, letterSpacing: -0.3,
-            }}>
-              Seu projeto de energia solar fotovoltaica
-            </h1>
-          </div>
-
-          {/* representante */}
-          <div style={{
-            position: 'absolute', left: 52, right: 52, bottom: 96,
-            display: 'flex', alignItems: 'center', gap: 14,
-          }}>
-            <div style={{
-              width: 44, height: 44, borderRadius: '50%', background: YELLOW_LIGHT,
-              display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-            }}>
-              <Zap size={22} color={OLIVE_DARK} strokeWidth={2.2} />
-            </div>
-            <div>
-              <div style={{ fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', color: GRAY_LIGHT, fontFamily: 'Inter, Arial, sans-serif' }}>
-                Representante
-              </div>
-              <div style={{ fontSize: 16, fontWeight: 700, color: OLIVE_DARK, fontFamily: 'Inter, Arial, sans-serif' }}>
-                {data.responsavel_nome || '—'}
-                {data.responsavel_telefone ? `  ·  ${data.responsavel_telefone}` : ''}
-              </div>
-            </div>
-            <div style={{ marginLeft: 'auto', textAlign: 'right' }}>
-              <div style={{ fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', color: GRAY_LIGHT, fontFamily: 'Inter, Arial, sans-serif' }}>
-                Proposta
-              </div>
-              <div style={{ fontSize: 16, fontWeight: 700, color: OLIVE_DARK, fontFamily: 'Inter, Arial, sans-serif' }}>
-                {data.numero_proposta}
-              </div>
-            </div>
-          </div>
-
-          {/* contato — linha simples, sem barra pesada */}
-          <div style={{
-            position: 'absolute', left: 0, right: 0, bottom: 0,
-            padding: '16px 52px', textAlign: 'center',
-            fontSize: 12.5, color: GRAY_LIGHT, fontFamily: 'Inter, Arial, sans-serif',
-            borderTop: `1px solid ${BORDER}`,
-          }}>
-            <span style={{ color: OLIVE_DARK, fontWeight: 700 }}>{data.responsavel_telefone || '(67) 99644-8995'}</span>
-            {' · '}contato@treslagoassolar.com.br{' · '}www.treslagoassolar.com.br{' · '}@treslagoassolar
-          </div>
-        </Page>
-
-
-        {/* ══════════════════════════════════════════════════════
-            PÁGINA 2 — PORTFÓLIO
-        ══════════════════════════════════════════════════════ */}
-        <Page>
-          <Header numero={data.numero_proposta} />
-          <div style={{ padding: '32px 52px 100px', display: 'flex', flexDirection: 'column', gap: 20 }}>
-
-            <div>
-              <SectionLabel>Nossos Projetos</SectionLabel>
-              <h1 style={{ fontSize: 32, color: OLIVE_DARK, margin: '4px 0 4px', fontWeight: 300, letterSpacing: -0.3, fontFamily: 'Fraunces, Georgia, serif' }}>
-                Alguns dos nossos projetos
-              </h1>
-              <div style={{ fontSize: 13, color: GRAY, fontFamily: 'Inter, Arial, sans-serif' }}>
-                Projetos entregues com excelência técnica, como você merece
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: `${mm(10)}px` }}>
+              <img src={logoColor} crossOrigin="anonymous" alt="Três Lagoas Solar"
+                   style={{ height: `${mm(14)}px`, width: 'auto', display: 'block' }} />
+              <div style={{ textAlign: 'right', fontSize: `${fs(10.2)}px`, color: MUTED, lineHeight: 1.5 }}>
+                Proposta comercial
+                <b style={{ display: 'block', fontSize: `${fs(12.7)}px`, color: VERDE, fontWeight: 600 }}>
+                  {data.numero_proposta} · {hoje()}
+                </b>
               </div>
             </div>
 
-            {/* grid de fotos */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
-              {fotos.map((url, i) => (
-                <div
-                  key={i}
-                  style={{
-                    aspectRatio: '1 / 1',
-                    width: '100%',
-                    background: LIGHT2,
-                    borderRadius: 10,
-                    overflow: 'hidden',
-                    border: `1.5px solid ${BORDER}`,
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.07)',
-                    position: 'relative',
-                  }}
-                >
-                  {url && (
-                    <img
-                      src={url}
-                      alt={`Projeto ${i + 1}`}
-                      crossOrigin="anonymous"
-                      style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-                    />
-                  )}
-                  {/* numeração discreta */}
-                  {!url && (
-                    <div style={{
-                      position: 'absolute', inset: 0, display: 'flex',
-                      alignItems: 'center', justifyContent: 'center',
-                      color: BORDER, fontSize: 32, fontWeight: 700, fontFamily: 'Inter, Arial, sans-serif',
-                    }}>
-                      {i + 1}
-                    </div>
-                  )}
-                </div>
-              ))}
+            <div style={{ height: `${mm(186)}px`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <img src={capaIlustracao} crossOrigin="anonymous" alt=""
+                   style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', display: 'block' }} />
             </div>
 
-            {/* Nossa empresa — linha 1x4 */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
-                {EMPRESA_FOTOS.map((url, i) => (
-                  <div
-                    key={i}
-                    style={{
-                      aspectRatio: '1 / 1',
-                      width: '100%',
-                      background: LIGHT2,
-                      borderRadius: 10,
-                      overflow: 'hidden',
-                      border: `1.5px solid ${BORDER}`,
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.07)',
-                    }}
-                  >
-                    <img
-                      src={url}
-                      alt={`Empresa ${i + 1}`}
-                      crossOrigin="anonymous"
-                      style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-                    />
-                  </div>
-                ))}
-            </div>
-          </div>
-          <Footer />
-        </Page>
-
-
-        {/* ══════════════════════════════════════════════════════
-            PÁGINA 3 — ESPECIFICAÇÕES + GRÁFICO + DIFERENCIAIS
-        ══════════════════════════════════════════════════════ */}
-        <Page>
-          <Header numero={data.numero_proposta} />
-          <div style={{ padding: '30px 52px 100px', display: 'flex', flexDirection: 'column', gap: 22 }}>
-
-            {/* título */}
-            <div>
-              <SectionLabel>Especificações do Projeto</SectionLabel>
-              <h1 style={{ fontSize: 42, color: OLIVE_DARK, margin: 0, fontWeight: 300, letterSpacing: -0.3, fontFamily: 'Fraunces, Georgia, serif' }}>
-                Seu sistema solar
-              </h1>
-            </div>
-
-            {/* métricas principais */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>
-              <MetricCard label="Potência do Sistema" value={`${formatNumber(data.potencia_kwp, 2)} kWp`} accent />
-              <MetricCard label="Geração Mensal" value={fmtKwh(data.geracao_mensal)} sub="estimada" />
-              <MetricCard label="Consumo Mensal" value={fmtKwh(data.consumo_mensal)} sub="médio" />
-              <MetricCard label="Excedente Injetado" value={fmtKwh(Math.max(0, data.excedente_kwh))} />
-            </div>
-
-            {/* equipamentos */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-              {[
-                {
-                  Icon: <InverterIcon size={90} />,
-                  tipo: 'Inversor Solar',
-                  modelo: `${data.qtd_inversores}× ${data.marca_inversor}`,
-                  detalhe: `Potência: ${data.potencia_inversor}`,
-                },
-                {
-                  Icon: <PanelIcon size={90} />,
-                  tipo: 'Módulos Fotovoltaicos',
-                  modelo: `${data.num_placas}× ${data.marca_placa}`,
-                  detalhe: `Potência: ${data.potencia_placa}`,
-                },
-              ].map((eq, i) => (
-                <div
-                  key={i}
-                  style={{
-                    background: WHITE,
-                    border: `1.5px solid ${BORDER}`,
-                    borderRadius: 12,
-                    padding: '20px 24px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 20,
-                    boxShadow: '0 3px 10px rgba(0,0,0,0.05)',
-                    position: 'relative',
-                    overflow: 'hidden',
-                  }}
-                >
-                  {/* acento lateral */}
-                  <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 4, background: YELLOW, borderRadius: '12px 0 0 12px' }} />
-                  <div style={{ flexShrink: 0, paddingLeft: 8 }}>{eq.Icon}</div>
-                  <div>
-                  <div style={{ fontSize: 14, color: GRAY, textTransform: 'uppercase', letterSpacing: 1.3, fontFamily: 'Inter, Arial, sans-serif', fontWeight: 600, marginBottom: 6 }}>
-                      {eq.tipo}
-                    </div>
-                    <div style={{ fontSize: 31, fontWeight: 700, color: OLIVE_DARK, lineHeight: 1.1, fontFamily: 'Inter, Arial, sans-serif' }}>
-                      {eq.modelo}
-                    </div>
-                    <div style={{ fontSize: 18, color: GRAY, marginTop: 8, fontFamily: 'Inter, Arial, sans-serif' }}>
-                      {eq.detalhe}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* gráfico */}
-            <div style={{
-              background: WHITE,
-              border: `1.5px solid ${BORDER}`,
-              borderRadius: 12,
-              padding: '18px 20px',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-            }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
-                <div>
-                  <SectionLabel>Geração × Consumo — 12 meses</SectionLabel>
-                  <div style={{ fontSize: 16, color: GRAY, marginTop: -2, fontFamily: 'Inter, Arial, sans-serif' }}>
-                    Estimativa mensal com base na irradiância da sua cidade
-                  </div>
-                </div>
-                <div style={{ display: 'flex', gap: 18, fontSize: 16, fontFamily: 'Inter, Arial, sans-serif', paddingTop: 4 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                    <div style={{ width: 14, height: 14, background: OLIVE_DARK, borderRadius: 3 }} />
-                    <span style={{ color: GRAY }}>Geração</span>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                    <div style={{ width: 14, height: 14, background: YELLOW, borderRadius: 3 }} />
-                    <span style={{ color: GRAY }}>Consumo</span>
-                  </div>
-                </div>
-              </div>
-              <GeracaoConsumoChart data={data.dados_mensais} />
-            </div>
-
-            {/* diferenciais */}
-            <div>
-              <SectionLabel>Nossos Diferenciais</SectionLabel>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginTop: 4 }}>
-                {DIFF_ICONS.map(({ Icon, title, text }, i) => (
-                  <div
-                    key={i}
-                    style={{
-                      background: i < 4 ? LIGHT : WHITE,
-                      border: `1.5px solid ${BORDER}`,
-                      borderRadius: 12,
-                      padding: '18px 16px',
-                      textAlign: 'center',
-                      boxShadow: '0 2px 6px rgba(0,0,0,0.04)',
-                    }}
-                  >
-                    <div style={{
-                      width: 52, height: 52, borderRadius: '50%',
-                      background: YELLOW, display: 'flex',
-                      alignItems: 'center', justifyContent: 'center',
-                      margin: '0 auto 10px',
-                      boxShadow: '0 3px 10px rgba(232,184,75,0.35)',
-                    }}>
-                      <Icon size={27} color={OLIVE_DARK} strokeWidth={2.2} />
-                    </div>
-                    <div style={{ fontSize: 16, fontWeight: 700, color: OLIVE_DARK, marginBottom: 6, lineHeight: 1.3, fontFamily: 'Inter, Arial, sans-serif' }}>
-                      {title}
-                    </div>
-                    <div style={{ fontSize: 14, color: GRAY, lineHeight: 1.5, fontFamily: 'Inter, Arial, sans-serif' }}>{text}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-          <Footer />
-        </Page>
-
-
-        {/* ══════════════════════════════════════════════════════
-            PÁGINA 3.5 — ESCOPO & OBSERVAÇÕES (só aparece se houver conteúdo)
-        ══════════════════════════════════════════════════════ */}
-        {((data.escopo_incluso && data.escopo_incluso.length > 0) ||
-          (data.escopo_excluido && data.escopo_excluido.length > 0) ||
-          data.observacoes) && (
-          <Page>
-            <Header numero={data.numero_proposta} />
-            <div style={{ padding: '30px 52px 100px', display: 'flex', flexDirection: 'column', gap: 26 }}>
-              {(data.escopo_incluso?.length || data.escopo_excluido?.length) ? (
-                <div>
-                  <SectionLabel>Escopo do Fornecimento</SectionLabel>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginTop: 4 }}>
-                    <div style={{ border: `1.5px solid ${BORDER}`, borderRadius: 12, padding: '18px 20px', background: LIGHT }}>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: OLIVE_DARK, marginBottom: 10, fontFamily: 'Inter, Arial, sans-serif', textTransform: 'uppercase', letterSpacing: 1 }}>
-                        Incluso
-                      </div>
-                      {(data.escopo_incluso || []).map((item, i) => (
-                        <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'flex-start', marginBottom: 8 }}>
-                          <Check size={15} color={OLIVE_DARK} strokeWidth={2.5} style={{ flexShrink: 0, marginTop: 2 }} />
-                          <span style={{ fontSize: 14, color: GRAY, fontFamily: 'Inter, Arial, sans-serif', lineHeight: 1.4 }}>{item}</span>
-                        </div>
-                      ))}
-                    </div>
-                    <div style={{ border: `1.5px solid ${BORDER}`, borderRadius: 12, padding: '18px 20px', background: WHITE }}>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: GRAY_LIGHT, marginBottom: 10, fontFamily: 'Inter, Arial, sans-serif', textTransform: 'uppercase', letterSpacing: 1 }}>
-                        Não Incluso
-                      </div>
-                      {(data.escopo_excluido || []).map((item, i) => (
-                        <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'flex-start', marginBottom: 8 }}>
-                          <X size={15} color={GRAY_LIGHT} strokeWidth={2.5} style={{ flexShrink: 0, marginTop: 2 }} />
-                          <span style={{ fontSize: 14, color: GRAY_LIGHT, fontFamily: 'Inter, Arial, sans-serif', lineHeight: 1.4 }}>{item}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              ) : null}
-
-              {data.observacoes && (
-                <div>
-                  <SectionLabel>Observações e Condições Especiais</SectionLabel>
-                  <div style={{
-                    fontSize: 14, color: GRAY, fontFamily: 'Inter, Arial, sans-serif', lineHeight: 1.7,
-                    whiteSpace: 'pre-wrap', border: `1.5px solid ${BORDER}`, borderRadius: 12, padding: '18px 20px',
-                  }}>
-                    {data.observacoes}
-                  </div>
-                </div>
-              )}
-            </div>
-            <Footer />
-          </Page>
-        )}
-
-        {/* ══════════════════════════════════════════════════════
-            PÁGINA 4 — INVESTIMENTO + FLUXO DE CAIXA
-        ══════════════════════════════════════════════════════ */}
-        <Page>
-          <Header numero={data.numero_proposta} />
-          <div style={{ padding: '30px 52px 100px', display: 'flex', flexDirection: 'column', gap: 22 }}>
-
-            {/* condições de pagamento */}
-            <div>
-              <SectionLabel>Investimento</SectionLabel>
-              <h1 style={{ fontSize: 30, color: OLIVE_DARK, margin: '0 0 16px', fontWeight: 300, letterSpacing: -0.3, fontFamily: 'Fraunces, Georgia, serif' }}>
-                Condições de pagamento
-              </h1>
-
-              {/* à vista */}
+            <div style={{ marginTop: 'auto', paddingTop: `${mm(7)}px` }}>
+              <div style={{ fontSize: `${fs(13.2)}px`, color: MUTED, marginBottom: `${mm(2)}px` }}>Preparada para</div>
               <div style={{
-                background: `linear-gradient(135deg, ${OLIVE_DARK} 0%, ${OLIVE} 100%)`,
-                color: WHITE,
-                padding: '22px 30px',
-                borderRadius: 12,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                boxShadow: '0 6px 20px rgba(74,90,42,0.28)',
-                position: 'relative',
-                overflow: 'hidden',
-              }}>
-                <div style={{ position: 'absolute', right: -20, bottom: -20, width: 100, height: 100, borderRadius: '50%', background: 'rgba(232,184,75,0.15)' }} />
-                <div>
-                  <div style={{ fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', opacity: 0.8, fontFamily: 'Inter, Arial, sans-serif', fontWeight: 600 }}>
-                    Pagamento à Vista
-                  </div>
-                  <div style={{ fontSize: 46, fontWeight: 700, marginTop: 4, fontFamily: 'Inter, Arial, sans-serif', letterSpacing: -0.5 }}>
-                    R$ {fmtMoney(data.preco_vista)}
-                  </div>
-                </div>
-                <div style={{
-                  background: YELLOW,
-                  color: DARK,
-                  padding: '10px 22px',
-                  borderRadius: 999,
-                  fontSize: 13,
-                  fontWeight: 700,
-                  fontFamily: 'Inter, Arial, sans-serif',
-                  letterSpacing: 0.5,
-                }}>
-                  Pix · Transferência · Boleto
-                </div>
+                fontFamily: DISPLAY, fontSize: `${fs(28.2)}px`, fontWeight: 600,
+                letterSpacing: '-0.02em', color: VERDE, lineHeight: 1.1,
+              }}>{data.cliente_nome}</div>
+              <div style={{ marginTop: `${mm(3)}px`, fontSize: `${fs(13.2)}px`, color: MUTED }}>
+                Representante: <strong style={{ color: VERDE, fontWeight: 600 }}>{data.responsavel_nome}</strong>
+                {data.responsavel_telefone ? ` · ${data.responsavel_telefone}` : ''}
               </div>
-
-              {/* financiamento */}
-              <div style={{ marginTop: 16 }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-                  <SectionLabel>Financiamento Bancário</SectionLabel>
-                  <span style={{ fontSize: 11, color: GRAY_LIGHT, fontStyle: 'italic', fontFamily: 'Inter, Arial, sans-serif' }}>*valores aproximados</span>
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 10 }}>
-                  {parcelas.map((p) => (
-                    <div
-                      key={p.label}
-                      style={{
-                        background: LIGHT,
-                        border: `2px solid ${OLIVE_DARK}`,
-                        borderRadius: 12,
-                        padding: '14px 10px',
-                        textAlign: 'center',
-                        position: 'relative',
-                        overflow: 'hidden',
-                      }}
-                    >
-                      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: OLIVE_DARK }} />
-                      <div style={{ fontSize: 28, fontWeight: 700, color: OLIVE_DARK, lineHeight: 1, fontFamily: 'Inter, Arial, sans-serif' }}>
-                        {p.label}
-                      </div>
-                      <div style={{ fontSize: 11, color: GRAY_LIGHT, margin: '3px 0', fontFamily: 'Inter, Arial, sans-serif' }}>de</div>
-                      <div style={{ fontSize: 18, fontWeight: 700, color: DARK, fontFamily: 'Inter, Arial, sans-serif' }}>
-                        R$ {fmtMoney(p.value)}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* cartão de crédito — resumo compacto (evita grade de 18 caixinhas) */}
-              {data.cartao_parcelas && data.cartao_parcelas.length > 0 && (() => {
-                const destaque = [3, 6, 12, 18]
-                  .map(n => data.cartao_parcelas.find(c => c.meses === n))
-                  .filter((c): c is { meses: number; valor: number } => !!c);
-                const lista = destaque.length > 0 ? destaque : data.cartao_parcelas.slice(0, 4);
-                return (
-                  <div style={{ marginTop: 16 }}>
-                    <div style={{ marginBottom: 10 }}>
-                      <SectionLabel>Cartão de Crédito</SectionLabel>
-                    </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: `repeat(${lista.length}, 1fr)`, gap: 12 }}>
-                      {lista.map((c) => (
-                        <div
-                          key={c.meses}
-                          style={{
-                            background: YELLOW_LIGHT,
-                            border: `1.5px solid ${YELLOW}`,
-                            borderRadius: 10,
-                            padding: '14px 10px',
-                            textAlign: 'center',
-                            position: 'relative',
-                            overflow: 'hidden',
-                          }}
-                        >
-                          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: YELLOW }} />
-                          <div style={{ fontSize: 24, fontWeight: 700, color: DARK, lineHeight: 1, fontFamily: 'Inter, Arial, sans-serif' }}>
-                            {c.meses}x
-                          </div>
-                          <div style={{ fontSize: 11, color: GRAY_LIGHT, margin: '4px 0', fontFamily: 'Inter, Arial, sans-serif' }}>de</div>
-                          <div style={{ fontSize: 16, fontWeight: 700, color: OLIVE_DARK, fontFamily: 'Inter, Arial, sans-serif' }}>
-                            R$ {fmtMoney(c.valor)}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    <p style={{ fontSize: 11.5, color: GRAY_LIGHT, marginTop: 8, fontFamily: 'Inter, Arial, sans-serif' }}>
-                      Outras opções de parcelamento (1x a 18x) disponíveis — consulte seu representante.
-                    </p>
-                  </div>
-                );
-              })()}
             </div>
 
-            {/* payback destaque */}
+            <div style={{ display: 'flex', borderTop: `1px solid ${LINHA}`, marginTop: `${mm(6)}px`, paddingTop: `${mm(5)}px` }}>
+              <KpiCapa valor={`${formatNumber(data.potencia_kwp, 2)} `} unidade="kWp" rotulo="Potência instalada" primeiro />
+              <KpiCapa valor={`${fmtInt(data.geracao_mensal)} `} unidade="kWh" rotulo="Geração média mensal" />
+            </div>
+
             <div style={{
-              background: `linear-gradient(135deg, ${OLIVE_DARK} 0%, ${OLIVE_MID} 100%)`,
-              borderRadius: 14,
-              padding: '26px 36px',
-              color: WHITE,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              boxShadow: '0 8px 28px rgba(74,90,42,0.28)',
-              position: 'relative',
-              overflow: 'hidden',
+              marginTop: `${mm(6)}px`, fontSize: `${fs(9.7)}px`, color: MUTED,
+              display: 'flex', justifyContent: 'space-between',
             }}>
-              {/* círculo decorativo */}
-              <div style={{ position: 'absolute', right: -30, top: -30, width: 160, height: 160, borderRadius: '50%', background: 'rgba(232,184,75,0.12)' }} />
-              <div style={{ position: 'absolute', right: 40, bottom: -50, width: 120, height: 120, borderRadius: '50%', background: 'rgba(232,184,75,0.08)' }} />
-              <div>
-                <div style={{ fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', opacity: 0.75, fontFamily: 'Inter, Arial, sans-serif', fontWeight: 600 }}>
-                  Retorno do Investimento
-                </div>
-                <div style={{ fontSize: 52, fontWeight: 700, marginTop: 4, lineHeight: 1, fontFamily: 'Inter, Arial, sans-serif', transform: 'translateY(-22px)' }}>
-                  {formatNumber(data.payback_anos, 1)} <span style={{ fontSize: 26, fontWeight: 400 }}>anos</span>
-                </div>
-                <div style={{ fontSize: 13, opacity: 0.75, marginTop: 6, fontFamily: 'Inter, Arial, sans-serif' }}>
-                  Payback estimado do sistema
-                </div>
-              </div>
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', opacity: 0.7, fontFamily: 'Inter, Arial, sans-serif', fontWeight: 600 }}>
-                  Economia Mensal
-                </div>
-                <div style={{ fontSize: 36, fontWeight: 700, color: YELLOW, marginTop: 4, fontFamily: 'Inter, Arial, sans-serif' }}>
-                  R$ {fmtMoney(data.economia_mensal)}
-                </div>
-                <div style={{ fontSize: 12, opacity: 0.7, marginTop: 4, fontFamily: 'Inter, Arial, sans-serif' }}>
-                  Tarifa: R$ {formatNumber(data.tarifa_kwh, 4)}/kWh
-                </div>
-              </div>
+              <span>Três Lagoas Solar Ltda. · {ENDERECO.cnpj}</span>
+              <span>treslagoassolar.com.br</span>
             </div>
 
-
-            {/* fluxo de caixa */}
-            <div>
-              <SectionLabel>Projeção Financeira</SectionLabel>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 10 }}>
-                <h2 style={{ fontSize: 22, color: OLIVE_DARK, margin: 0, fontWeight: 300, fontFamily: 'Fraunces, Georgia, serif' }}>
-                  Fluxo de caixa acumulado
-                </h2>
-                <div style={{ fontSize: 11, color: GRAY, fontFamily: 'Inter, Arial, sans-serif', fontStyle: 'italic' }}>
-                  Conta atual de luz × investir em energia solar
-                </div>
-              </div>
-
-              <div style={{ border: `1.5px solid ${BORDER}`, borderRadius: 12, overflow: 'hidden', fontSize: 13, fontFamily: 'Inter, Arial, sans-serif' }}>
-                {/* cabeçalho */}
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: '1fr 1.4fr 1.4fr 1.3fr',
-                  background: OLIVE_DARK,
-                  color: WHITE,
-                  fontWeight: 700,
-                  fontSize: 12,
-                  letterSpacing: 0.5,
-                }}>
-                  {['Período', 'Sem energia solar', 'Com energia solar', 'Economia acumulada'].map((h, i) => (
-                    <div key={i} style={{ padding: '14px 18px', borderRight: i < 3 ? '1px solid rgba(255,255,255,0.12)' : 'none' }}>
-                      {h}
-                    </div>
-                  ))}
-                </div>
-                {/* linhas */}
-                {data.fluxo_caixa.map((row, i) => (
-                  <div
-                    key={row.year}
-                    style={{
-                      display: 'grid',
-                      gridTemplateColumns: '1fr 1.4fr 1.4fr 1.3fr',
-                      background: i % 2 === 0 ? WHITE : LIGHT,
-                      borderTop: `1px solid ${BORDER}`,
-                    }}
-                  >
-                    <div style={{ padding: '13px 18px', fontWeight: 700, color: OLIVE_DARK, borderRight: `1px solid ${BORDER}` }}>
-                      {row.year} anos
-                    </div>
-                    <div style={{ padding: '13px 18px', color: '#b03535', borderRight: `1px solid ${BORDER}` }}>
-                      R$ {fmtMoney(row.semSolar)}
-                    </div>
-                    <div style={{ padding: '13px 18px', color: DARK, borderRight: `1px solid ${BORDER}` }}>
-                      R$ {fmtMoney(row.comSolar)}
-                    </div>
-                    <div style={{ padding: '13px 18px', fontWeight: 700, color: OLIVE_DARK }}>
-                      <span style={{ color: '#2a8a2a' }}>↑</span> R$ {fmtMoney(row.economia)}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* CTA final */}
-            <div style={{
-              background: `linear-gradient(135deg, ${OLIVE_DARK} 0%, ${OLIVE_MID} 100%)`,
-              borderRadius: 14,
-              padding: '28px 40px',
-              color: WHITE,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              boxShadow: '0 6px 22px rgba(74,90,42,0.25)',
-              marginTop: 4,
-            }}>
-              <div>
-                <div style={{ fontSize: 22, fontWeight: 700, fontFamily: 'Inter, Arial, sans-serif', lineHeight: 1.2 }}>
-                  Pronto para começar?
-                </div>
-                <div style={{ fontSize: 14, opacity: 0.85, marginTop: 5, fontFamily: 'Inter, Arial, sans-serif' }}>
-                  Entre em contato e dê o próximo passo rumo à independência energética.
-                </div>
-              </div>
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: 24, fontWeight: 700, color: YELLOW, fontFamily: 'Inter, Arial, sans-serif' }}>
-                  {data.responsavel_telefone || '(67) 99644-8995'}
-                </div>
-                <div style={{ fontSize: 13, opacity: 0.9, marginTop: 4, fontFamily: 'Inter, Arial, sans-serif' }}>
-                  {data.responsavel_nome || 'Três Lagoas Solar'}
-                </div>
-                {data.responsavel_email && (
-                  <div style={{ fontSize: 12, opacity: 0.85, marginTop: 2, fontFamily: 'Inter, Arial, sans-serif' }}>
-                    {data.responsavel_email}
-                  </div>
-                )}
-              </div>
-            </div>
+            <div style={{ position: 'absolute', left: 0, bottom: 0, width: '100%', height: `${mm(3)}px`, background: OURO }} />
           </div>
-          <Footer />
         </Page>
 
-        {/* ══════════════════════════════════════════════════════
-            PÁGINA 5 — GALERIA DE INSTALAÇÕES
-        ══════════════════════════════════════════════════════ */}
+        {/* ═══ 2 · CLIENTES ═══ */}
         <Page>
           <Header numero={data.numero_proposta} />
-          <div style={{ padding: '30px 52px 90px', display: 'flex', flexDirection: 'column', height: PAGE_H - 110 - 60, boxSizing: 'border-box' }}>
-            <SectionLabel>Nossas Instalações</SectionLabel>
-            <h1 style={{ fontSize: 30, color: OLIVE_DARK, margin: '0 0 6px', fontWeight: 300, letterSpacing: -0.3, fontFamily: 'Fraunces, Georgia, serif' }}>
-              Qualidade em cada detalhe
-            </h1>
-            <div style={{ fontSize: 14, color: GRAY, fontFamily: 'Inter, Arial, sans-serif', marginBottom: 16 }}>
-              Instalações reais executadas pela equipe Três Lagoas Solar — acabamento padronizado,
-              infraestrutura elétrica organizada e equipamentos de marcas homologadas.
-            </div>
+          <Body>
+            <Eyebrow>Cases</Eyebrow>
+            <Title>Alguns de nossos clientes</Title>
             <div style={{
-              flex: 1,
-              border: `1.5px solid ${BORDER}`,
-              borderRadius: 14,
-              background: LIGHT,
-              padding: 14,
-              boxSizing: 'border-box',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              overflow: 'hidden',
+              fontSize: `${fs(13.2)}px`, color: MUTED, maxWidth: `${mm(125)}px`,
+              marginBottom: `${mm(5)}px`, lineHeight: 1.65,
             }}>
-              <img
-                src={instalacoesImg}
-                alt="Instalações Três Lagoas Solar"
-                style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', borderRadius: 10, display: 'block' }}
+              Telhados residenciais, comerciais e rurais em Três Lagoas e região.
+              Todas as fotos são de obras executadas pela nossa equipe.
+            </div>
+
+            <div style={{ display: 'flex', gap: `${mm(5)}px`, marginBottom: `${mm(6)}px` }}>
+              <Stat valor="800+" rotulo="Clientes atendidos" />
+              <Stat valor="7,4 MWp" rotulo="Potência entregue" />
+              <Stat valor="5,0" rotulo="Avaliação dos clientes" />
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: `${mm(2.4)}px` }}>
+              {[0, 1, 2, 3, 4, 5].map(linha => (
+                <div key={linha} style={{ display: 'flex', gap: `${mm(2.4)}px` }}>
+                  {[0, 1, 2, 3, 4].map(col => (
+                    <div key={col} style={{ flex: 1 }}>
+                      <Foto src={slots[linha * 5 + col]} ratio={0.78} alt="Instalação Três Lagoas Solar" />
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+          </Body>
+          <Footer num="02" />
+        </Page>
+
+        {/* ═══ 3 · GERAÇÃO x CONSUMO E INVESTIMENTO ═══ */}
+        <Page>
+          <Header numero={data.numero_proposta} />
+          <Body>
+            <Eyebrow>Sistema proposto</Eyebrow>
+            <Title>Geração vs consumo</Title>
+
+            <div style={{ display: 'flex', gap: `${mm(5)}px`, marginBottom: `${mm(2)}px` }}>
+              <Stat valor={`${fmtInt(data.geracao_mensal)} kWh`} rotulo="Geração média mensal" />
+              <Stat valor={`${fmtInt(data.consumo_mensal)} kWh`} rotulo="Consumo médio mensal" />
+              <Stat valor={`+${fmtInt(data.excedente_kwh)} kWh`} rotulo="Excedente médio mensal" />
+              <Stat valor={`${formatNumber(cobertura, 1)}%`} rotulo="Cobertura do consumo" />
+            </div>
+
+            <Grafico dados={data.dados_mensais} />
+
+            <div style={{ marginTop: `${mm(6)}px` }}>
+              <TableHead>Equipamentos principais</TableHead>
+              <Row label="Módulos" value={`${data.num_placas} × ${data.marca_placa} ${data.potencia_placa}`} />
+              <Row
+                label="Inversor"
+                value={`${data.qtd_inversores > 1 ? `${data.qtd_inversores} × ` : ''}${data.marca_inversor} ${data.potencia_inversor}`}
+                last
               />
             </div>
-          </div>
-          <Footer />
+
+            <H3 style={{ marginTop: `${mm(7)}px` }}>Financiamento solar — entrada zero</H3>
+            <div style={{ display: 'flex', gap: `${mm(3)}px`, marginBottom: `${mm(5)}px` }}>
+              <Parcela n="24x" valor={fmtMoney(data.parcela_24x)} />
+              <Parcela n="36x" valor={fmtMoney(data.parcela_36x)} />
+              <Parcela n="48x" valor={fmtMoney(data.parcela_48x)} />
+              <Parcela n="60x" valor={fmtMoney(data.parcela_60x)} destaque />
+              <Parcela n="72x" valor={fmtMoney(data.parcela_72x)} />
+            </div>
+
+            {cartao.length > 0 && (
+              <>
+                <H3>Cartão de crédito</H3>
+                <div style={{ display: 'flex', gap: `${mm(3)}px` }}>
+                  {cartao.map(c => <Parcela key={c.meses} n={`${c.meses}x`} valor={fmtMoney(c.valor)} />)}
+                </div>
+              </>
+            )}
+
+            <div style={{
+              marginTop: `${mm(6)}px`, borderTop: `2px solid ${VERDE}`, paddingTop: `${mm(4)}px`,
+              display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: `${mm(8)}px`,
+            }}>
+              <div>
+                <b style={{ display: 'block', fontSize: `${fs(14.2)}px`, fontWeight: 600, color: VERDE }}>À vista</b>
+                <span style={{ fontSize: `${fs(11.2)}px`, color: MUTED }}>
+                  Sistema completo, instalado e homologado · PIX ou transferência
+                </span>
+              </div>
+              <div style={{
+                fontFamily: DISPLAY, fontSize: `${fs(33.2)}px`, fontWeight: 600, color: VERDE,
+                letterSpacing: '-0.03em', lineHeight: 1, whiteSpace: 'nowrap',
+              }}>{fmtMoney(data.preco_vista)}</div>
+            </div>
+          </Body>
+          <Footer num="03" />
+        </Page>
+
+        {/* ═══ 4 · ANTES E DEPOIS ═══ */}
+        <Page>
+          <Header numero={data.numero_proposta} />
+          <Body>
+            <Eyebrow>Retorno financeiro</Eyebrow>
+            <Title>Antes e depois</Title>
+
+            <div style={{ display: 'flex', gap: `${mm(8)}px`, marginTop: `${mm(6)}px`, marginBottom: `${mm(8)}px` }}>
+              <CardFatura valor={fmtMoney(faturaAntes)} legenda="Hoje, sem energia solar" />
+              <CardFatura valor={fmtMoney(faturaDepois)} legenda="Com o sistema instalado" />
+            </div>
+
+            <H3>O que está incluído</H3>
+            <div style={{ display: 'flex', gap: `${mm(10)}px` }}>
+              <div style={{ flex: 1 }}>
+                {ESCOPO_INCLUSO.slice(0, 4).map((t, i) => <Check key={i}>{t}</Check>)}
+              </div>
+              <div style={{ flex: 1 }}>
+                {ESCOPO_INCLUSO.slice(4).map((t, i) => <Check key={i}>{t}</Check>)}
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: `${mm(6)}px`, marginTop: `${mm(7)}px` }}>
+              <div style={{ flex: 1 }}>
+                <TableHead>Condições</TableHead>
+                <Row label="Validade da proposta" value="5 dias" />
+                <Row label="Prazo estimado de entrega" value="20 a 30 dias" last />
+              </div>
+              <div style={{ flex: 1 }}>
+                <TableHead>Garantias</TableHead>
+                <Row label="Módulos — desempenho / fabricação" value="30 / 15 anos" />
+                <Row label="Inversor" value="10 anos" />
+                <Row label="Estrutura e mão de obra" value="10 / 5 anos" last />
+              </div>
+            </div>
+
+            {data.observacoes && (
+              <div style={{
+                marginTop: `${mm(6)}px`, fontSize: `${fs(10.7)}px`, color: MUTED, lineHeight: 1.6,
+                borderLeft: `2px solid ${LINHA}`, paddingLeft: `${mm(3.5)}px`,
+              }}>{data.observacoes}</div>
+            )}
+          </Body>
+          <Footer num="04" />
+        </Page>
+
+        {/* ═══ 5 · A EMPRESA ═══ */}
+        <Page>
+          <Header numero={data.numero_proposta} />
+          <Body style={{ display: 'flex', flexDirection: 'column' }}>
+            <Eyebrow>A empresa</Eyebrow>
+            <Title>Estamos aqui, com endereço fixo</Title>
+            <div style={{
+              fontSize: `${fs(13.2)}px`, color: MUTED, maxWidth: `${mm(125)}px`,
+              marginBottom: `${mm(5)}px`, lineHeight: 1.65,
+            }}>
+              Loja física em Três Lagoas, com assistência e pós-venda depois da obra — não é venda por telefone.
+            </div>
+
+            <div style={{ marginBottom: `${mm(6)}px` }}>
+              <Foto src={fachadaImg} ratio={0.28} alt="Fachada da Três Lagoas Solar" />
+            </div>
+
+            <div style={{ display: 'flex', gap: `${mm(6)}px`, marginBottom: `${mm(6)}px` }}>
+              <div style={{ flex: 1 }}>
+                <H3>Nosso padrão de instalação</H3>
+                <Foto src={instalacoesImg} ratio={0.75} alt="Padrão de instalação" />
+                <div style={{ fontSize: `${fs(13.2)}px`, color: MUTED, marginTop: `${mm(3)}px`, lineHeight: 1.6 }}>
+                  Cabeamento com dupla isolação em eletroduto zincado. Disjuntores selecionados,
+                  DPS Clamper, aterramento, sinalização normativa e material padronizado.
+                </div>
+              </div>
+              <div style={{ flex: 1 }}>
+                <H3>Onde nos encontrar</H3>
+                <Foto src={mapaImg} ratio={0.75} alt="Mapa de localização" />
+                <div style={{ marginTop: `${mm(3)}px` }}>
+                  <Row label="Endereço" value={<>{ENDERECO.rua}<br />{ENDERECO.bairro}</>} />
+                  <Row label="Cidade" value={ENDERECO.cidade} />
+                  <Row label="Atendimento" value={<>{ENDERECO.horario1}<br />{ENDERECO.horario2}</>} last />
+                </div>
+              </div>
+            </div>
+
+            <div style={{
+              marginTop: 'auto', background: VERDE, color: WHITE, borderRadius: '2px',
+              padding: `${mm(6)}px`, textAlign: 'center',
+            }}>
+              <div style={{ fontFamily: DISPLAY, fontSize: `${fs(15.2)}px`, fontWeight: 600, marginBottom: `${mm(2)}px` }}>
+                Alguma dúvida antes de decidir?
+              </div>
+              <div style={{ fontSize: `${fs(13.2)}px`, color: 'rgba(255,255,255,0.85)', lineHeight: 1.7 }}>
+                Fale direto com quem fez o projeto.<br />
+                {ENDERECO.telefone} &nbsp;·&nbsp; {ENDERECO.email} &nbsp;·&nbsp; {ENDERECO.instagram} &nbsp;·&nbsp; {ENDERECO.site}
+              </div>
+            </div>
+          </Body>
+          <Footer num="05" />
         </Page>
 
       </div>
     );
-
   },
 );
 
