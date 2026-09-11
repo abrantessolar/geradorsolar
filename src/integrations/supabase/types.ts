@@ -1154,7 +1154,6 @@ export type Database = {
           cidade: string
           consumo_kwh: number
           criado_em: string
-          dados_simulacao: Json | null
           id: string
           nome: string
           observacoes: string | null
@@ -1170,7 +1169,6 @@ export type Database = {
           cidade: string
           consumo_kwh: number
           criado_em?: string
-          dados_simulacao?: Json | null
           id?: string
           nome: string
           observacoes?: string | null
@@ -1186,7 +1184,6 @@ export type Database = {
           cidade?: string
           consumo_kwh?: number
           criado_em?: string
-          dados_simulacao?: Json | null
           id?: string
           nome?: string
           observacoes?: string | null
