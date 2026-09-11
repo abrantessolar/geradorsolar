@@ -598,12 +598,18 @@ function PriceTableTab() {
     setTable(newTable);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (hasAnyViolation) {
       setShowSaveWarning(true);
-    } else {
-      savePriceTable(table);
-      savePriceTableDB(table);
+      return;
+    }
+    savePriceTable(table);
+    try {
+      await savePriceTableDB(table);
+      toast.success('Tabela de preços salva!');
+    } catch (err) {
+      console.error(err);
+      toast.error('Salvo localmente, mas houve erro ao sincronizar com o servidor. Tente de novo.');
     }
   };
 
@@ -826,7 +832,16 @@ function PricingTab() {
     setSettings(prev => ({ ...prev, creditCardRates: rates }));
   };
 
-  const handleSave = () => { saveSettings(settings); saveSettingsDB(settings); };
+  const handleSave = async () => {
+    saveSettings(settings);
+    try {
+      await saveSettingsDB(settings);
+      toast.success('Configurações salvas!');
+    } catch (err) {
+      console.error(err);
+      toast.error('Salvo localmente, mas houve erro ao sincronizar com o servidor. Tente de novo.');
+    }
+  };
   return (
     <div className="solar-card p-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -1045,7 +1060,19 @@ function CompanyTab() {
     setSettings(prev => ({ ...prev, distributors: (prev.distributors || []).filter((_, i) => i !== idx) }));
   };
 
-  const handleSave = () => { saveSettings(settings); saveSettingsDB(settings); saveDistribuidorasDB(settings.distributors || [], settings.defaultDistributor || ''); };
+  const handleSave = async () => {
+    saveSettings(settings);
+    try {
+      await Promise.all([
+        saveSettingsDB(settings),
+        saveDistribuidorasDB(settings.distributors || [], settings.defaultDistributor || ''),
+      ]);
+      toast.success('Configurações salvas!');
+    } catch (err) {
+      console.error(err);
+      toast.error('Salvo localmente, mas houve erro ao sincronizar com o servidor. Tente de novo.');
+    }
+  };
 
   const COMPANY_FIELDS = [
     { key: 'name', label: 'Nome da empresa' }, { key: 'cnpj', label: 'CNPJ' },
@@ -1222,7 +1249,16 @@ function SocialTab() {
     setProofs(prev => prev.map(p => p.id === id ? { ...p, [field]: value } : p));
   };
 
-  const handleSave = () => { saveSocialProofs(proofs); saveSocialProofsDB(proofs); };
+  const handleSave = async () => {
+    saveSocialProofs(proofs);
+    try {
+      await saveSocialProofsDB(proofs);
+      toast.success('Depoimentos salvos!');
+    } catch (err) {
+      console.error(err);
+      toast.error('Salvo localmente, mas houve erro ao sincronizar com o servidor. Tente de novo.');
+    }
+  };
 
   return (
     <div className="solar-card p-6 space-y-4">

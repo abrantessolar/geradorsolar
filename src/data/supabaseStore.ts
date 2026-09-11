@@ -30,12 +30,14 @@ export async function getDistribuidorasDB(): Promise<Distributor[]> {
 }
 
 export async function saveDistribuidorasDB(dists: Distributor[], defaultName: string) {
-  await supabase.from('distribuidoras').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+  const { error: delError } = await supabase.from('distribuidoras').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+  if (delError) throw delError;
   if (dists.length === 0) return;
   const rows = dists.map(d => ({
     nome: d.name, valor_kwh: d.kwhPrice, padrao: d.name === defaultName,
   }));
-  await supabase.from('distribuidoras').insert(rows);
+  const { error } = await supabase.from('distribuidoras').insert(rows);
+  if (error) throw error;
 }
 
 // ─── CONFIGURAÇÕES ───
@@ -47,9 +49,11 @@ export async function getConfigDB(chave: string): Promise<any | null> {
 export async function saveConfigDB(chave: string, valor: any) {
   const { data: existing } = await supabase.from('configuracoes').select('id').eq('chave', chave).maybeSingle();
   if (existing) {
-    await supabase.from('configuracoes').update({ valor }).eq('chave', chave);
+    const { error } = await supabase.from('configuracoes').update({ valor }).eq('chave', chave);
+    if (error) throw error;
   } else {
-    await supabase.from('configuracoes').insert({ chave, valor });
+    const { error } = await supabase.from('configuracoes').insert({ chave, valor });
+    if (error) throw error;
   }
 }
 

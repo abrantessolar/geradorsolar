@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes, Navigate, useLocation } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -28,6 +29,8 @@ import UnauthorizedPage from "@/pages/UnauthorizedPage";
 import LeadNotification from "@/components/LeadNotification";
 import NotFound from "@/pages/NotFound";
 import { EnergiaProvider } from "@/contexts/EnergiaContext";
+import { saveSettings } from "@/data/store";
+import { getSettingsDB, syncKitsFromDB } from "@/data/supabaseStore";
 import EnergiaLogin from "@/pages/energia/EnergiaLogin";
 import EnergiaCadastro from "@/pages/energia/EnergiaCadastro";
 import EnergiaDashboard from "@/pages/energia/EnergiaDashboard";
@@ -116,7 +119,48 @@ function CalculatorRoute() {
   return <CalculatorPage key={location.key} />;
 }
 
-const App = () => (
+/**
+ * Sincroniza configurações (precificação, perdas sistêmicas, etc.) e o
+ * catálogo de kits do Supabase para o localStorage ANTES de qualquer
+ * página renderizar. Sem isso, getSettings()/getKits() (usados em
+ * quase todo o app) sempre liam só a copia local de cada navegador —
+ * mudanças feitas por um usuário nunca apareciam pros outros.
+ */
+function useSyncFromDB() {
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    const timeout = new Promise<void>((resolve) => setTimeout(resolve, 4000));
+    const sync = async () => {
+      try {
+        const [dbSettings] = await Promise.race([
+          Promise.all([getSettingsDB(), syncKitsFromDB()]),
+          timeout.then(() => { throw new Error('timeout'); }),
+        ]);
+        if (dbSettings) saveSettings(dbSettings);
+      } catch {
+        // offline, erro de rede, ou timeout: segue com o que já está no localStorage
+      } finally {
+        if (!cancelled) setReady(true);
+      }
+    };
+    sync();
+    return () => { cancelled = true; };
+  }, []);
+  return ready;
+}
+
+const App = () => {
+  const synced = useSyncFromDB();
+  if (!synced) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  return (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
@@ -208,6 +252,7 @@ const App = () => (
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
-);
+  );
+};
 
 export default App;
