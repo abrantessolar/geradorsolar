@@ -314,14 +314,22 @@ function Foto({ src, ratio, alt }: { src?: string; ratio: number; alt?: string }
 // ────────────────────────────────────────────────────────────
 // Gráfico geração x consumo
 // ────────────────────────────────────────────────────────────
+const HATCH_SVG = (base: string, stripe: string) => {
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8'>` +
+    `<rect width='8' height='8' fill='${base}'/>` +
+    `<path d='M-2,2 l4,-4 M0,8 l8,-8 M6,10 l4,-4' stroke='${stripe}' stroke-width='3'/>` +
+    `</svg>`;
+  return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
+};
+
 function Barra({ valor, altura, cor, corTexto, hatch }: { valor: number; altura: number; cor: string; corTexto: string; hatch?: boolean }) {
   return (
     <div style={{
       flex: 1, height: `${altura}%`, borderRadius: '1px 1px 0 0',
       position: 'relative', overflow: 'hidden',
-      background: hatch
-        ? `repeating-linear-gradient(45deg, ${cor} 0px, ${cor} 4px, ${OURO} 4px, ${OURO} 8px)`
-        : cor,
+      background: cor,
+      backgroundImage: hatch ? HATCH_SVG(cor, OURO) : undefined,
+      backgroundRepeat: hatch ? 'repeat' : undefined,
     }}>
       <div style={{
         position: 'absolute', top: `${mm(1.5)}px`, left: 0, right: 0, height: `${fs(46)}px`,
@@ -379,7 +387,8 @@ function Grafico({ dados }: { dados: MonthlyRow[] }) {
         <span>
           <i style={{
             width: `${fs(9)}px`, height: `${fs(9)}px`, borderRadius: '2px', display: 'inline-block', marginRight: `${fs(4)}px`,
-            background: `repeating-linear-gradient(45deg, ${VERDE} 0px, ${VERDE} 2px, ${OURO} 2px, ${OURO} 4px)`,
+            backgroundImage: HATCH_SVG(VERDE, OURO),
+            backgroundRepeat: 'repeat',
           }} />
           Consumo
         </span>
