@@ -52,6 +52,8 @@ const DEFAULT_SETTINGS: AdminSettings = {
     { id: '2', name: 'Ana Souza', phone: '(67) 99999-0002', email: '', active: true },
     { id: '3', name: 'Pedro Santos', phone: '(67) 99999-0003', email: '', active: true },
   ],
+  inverterBrandImages: {},
+  panelImage: '',
 };
 
 const DEFAULT_KITS: Kit[] = [

@@ -95,6 +95,10 @@ export interface AdminSettings {
     name: string; cnpj: string; phone: string; email: string; site: string; social: string;
   };
   sellers: Seller[];
+  /** Miniatura por marca de inversor (chave = marca em maiúsculas, valor = URL da imagem). */
+  inverterBrandImages?: Record<string, string>;
+  /** Miniatura única para placas (qualquer marca). */
+  panelImage?: string;
 }
 
 export interface PriceTableLineDetails {

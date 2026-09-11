@@ -19,6 +19,8 @@ import mapaImg from '@/assets/proposta-template/mapa-localizacao.jpg';
 import faturaImg from '@/assets/proposta-template/fatura-elektro.png';
 import fachadaImg from '@/assets/proposta-template/fachada-empresa.jpg';
 import instalacoesImg from '@/assets/proposta-template/instalacoes.jpg';
+import inversorFallback from '@/assets/proposta-template/inversor.png';
+import moduloFallback from '@/assets/proposta-template/modulo.png';
 
 import { formatCurrency, formatNumber } from '@/data/calculations';
 
@@ -53,6 +55,8 @@ export interface PropostaTemplateData {
   num_placas: number;
   marca_placa: string;
   potencia_placa: string;
+  imagem_inversor?: string;
+  imagem_placa?: string;
   preco_vista: number;
   parcela_24x: number;
   parcela_36x: number;
@@ -275,6 +279,24 @@ function Check({ children }: { children: React.ReactNode }) {
         borderRadius: '1px', background: OURO, display: 'block',
       }} />
       {children}
+    </div>
+  );
+}
+
+function EquipmentBox({ img, fallbackImg, linha1, linha2 }: { img?: string; fallbackImg: string; linha1: string; linha2: string }) {
+  return (
+    <div style={{
+      flex: 1, border: `1px solid ${LINHA}`, borderRadius: '2px',
+      padding: `${mm(4)}px ${mm(3)}px`, textAlign: 'center', background: WHITE,
+    }}>
+      <div style={{
+        width: `${mm(20)}px`, height: `${mm(20)}px`, margin: '0 auto', marginBottom: `${mm(2.5)}px`,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}>
+        <img src={img || fallbackImg} crossOrigin="anonymous" alt="" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
+      </div>
+      <div style={{ fontSize: `${fs(14.5)}px`, fontWeight: 700, color: VERDE, lineHeight: 1.3 }}>{linha1}</div>
+      <div style={{ fontSize: `${fs(14.5)}px`, fontWeight: 700, color: VERDE, lineHeight: 1.3 }}>{linha2}</div>
     </div>
   );
 }
@@ -557,12 +579,20 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
 
             <div style={{ marginTop: `${mm(6)}px` }}>
               <TableHead>Equipamentos principais</TableHead>
-              <Row label="Módulos" value={`${data.num_placas} × ${data.marca_placa} ${data.potencia_placa}`} />
-              <Row
-                label="Inversor"
-                value={`${data.qtd_inversores > 1 ? `${data.qtd_inversores} × ` : ''}${data.marca_inversor} ${data.potencia_inversor}`}
-                last
-              />
+              <div style={{ display: 'flex', gap: `${mm(6)}px` }}>
+                <EquipmentBox
+                  img={data.imagem_inversor}
+                  fallbackImg={inversorFallback}
+                  linha1={data.marca_inversor}
+                  linha2={`${data.qtd_inversores > 1 ? `${data.qtd_inversores} × ` : ''}${data.potencia_inversor}`}
+                />
+                <EquipmentBox
+                  img={data.imagem_placa}
+                  fallbackImg={moduloFallback}
+                  linha1={`${data.num_placas} × ${data.potencia_placa}`}
+                  linha2={data.marca_placa}
+                />
+              </div>
             </div>
 
             <H3 style={{ marginTop: `${mm(7)}px` }}>Financiamento solar — entrada zero</H3>

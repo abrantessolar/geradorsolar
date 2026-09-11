@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Plus, Edit2, X, Save, Power, PowerOff, Trash2, SunMedium, Zap } from 'lucide-react';
+import { Plus, Edit2, X, Save, Power, PowerOff, Trash2, SunMedium, Zap, Image as ImageIcon, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { getSettings, saveSettings } from '@/data/store';
+import { getSettingsDB, saveSettingsDB } from '@/data/supabaseStore';
 
 interface EquipmentRow {
   id: string;
@@ -50,11 +52,15 @@ export default function EquipmentTab() {
           <TabsTrigger value="calculadora" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-5 py-2 rounded-lg">
             Calculadora
           </TabsTrigger>
+          <TabsTrigger value="miniaturas" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-5 py-2 rounded-lg">
+            <ImageIcon className="w-4 h-4" /> Miniaturas (Proposta)
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="placas"><PlacasSection /></TabsContent>
         <TabsContent value="inversores"><InversoresSection /></TabsContent>
         <TabsContent value="calculadora"><CalculadoraSection /></TabsContent>
+        <TabsContent value="miniaturas"><MiniaturasSection /></TabsContent>
       </Tabs>
     </div>
   );
@@ -413,6 +419,124 @@ function CalculadoraSection() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+/* ─── MINIATURAS (imagens usadas na proposta comercial) ─── */
+function MiniaturasSection() {
+  const [settings, setSettingsState] = useState(getSettings());
+  const [novaMarca, setNovaMarca] = useState('');
+  const [uploadingBrand, setUploadingBrand] = useState<string | null>(null);
+  const [uploadingPanel, setUploadingPanel] = useState(false);
+
+  const persist = async (next: typeof settings) => {
+    setSettingsState(next);
+    saveSettings(next);
+    try { await saveSettingsDB(next); } catch { /* segue local se offline */ }
+  };
+
+  const uploadTo = async (file: File, path: string): Promise<string | null> => {
+    const { error } = await supabase.storage.from('site-content').upload(path, file, { upsert: true });
+    if (error) { toast.error('Erro ao fazer upload da imagem'); return null; }
+    const { data } = supabase.storage.from('site-content').getPublicUrl(path);
+    return data.publicUrl;
+  };
+
+  const handleBrandUpload = async (marca: string, file: File) => {
+    const key = marca.trim().toUpperCase();
+    if (!key) return;
+    setUploadingBrand(key);
+    const ext = file.name.split('.').pop();
+    const url = await uploadTo(file, `equipamentos/inversor-${key.toLowerCase().replace(/\s+/g, '-')}.${ext}`);
+    setUploadingBrand(null);
+    if (!url) return;
+    const next = { ...settings, inverterBrandImages: { ...(settings.inverterBrandImages || {}), [key]: url } };
+    await persist(next);
+    toast.success(`Miniatura de ${key} salva!`);
+  };
+
+  const handlePanelUpload = async (file: File) => {
+    setUploadingPanel(true);
+    const ext = file.name.split('.').pop();
+    const url = await uploadTo(file, `equipamentos/placa-padrao.${ext}`);
+    setUploadingPanel(false);
+    if (!url) return;
+    const next = { ...settings, panelImage: url };
+    await persist(next);
+    toast.success('Miniatura de placas salva!');
+  };
+
+  const removeBrand = async (key: string) => {
+    const imgs = { ...(settings.inverterBrandImages || {}) };
+    delete imgs[key];
+    await persist({ ...settings, inverterBrandImages: imgs });
+  };
+
+  const brands = Object.entries(settings.inverterBrandImages || {});
+
+  return (
+    <div className="solar-card p-6 space-y-6">
+      <div>
+        <h3 className="text-lg font-bold text-primary mb-1">Miniaturas por marca de inversor</h3>
+        <p className="text-sm text-muted-foreground mb-4">
+          Cada proposta comercial mostra automaticamente a miniatura da marca do inversor escolhido.
+          O nome digitado aqui precisa bater com a marca usada no inversor (não diferencia maiúsculas/minúsculas).
+        </p>
+
+        <div className="flex flex-wrap gap-4 mb-4">
+          {brands.map(([marca, url]) => (
+            <div key={marca} className="w-36 text-center">
+              <div className="w-full aspect-square rounded-xl border-2 border-dashed border-border bg-card flex items-center justify-center overflow-hidden mb-1.5">
+                <img src={url} alt={marca} className="w-full h-full object-contain p-2" />
+              </div>
+              <p className="text-xs font-semibold truncate">{marca}</p>
+              <div className="flex items-center justify-center gap-2 mt-1">
+                <label className="text-xs text-primary hover:underline cursor-pointer">
+                  Trocar
+                  <input type="file" accept="image/*" className="hidden"
+                    onChange={e => e.target.files?.[0] && handleBrandUpload(marca, e.target.files[0])} />
+                </label>
+                <button onClick={() => removeBrand(marca)} className="text-xs text-destructive hover:underline">Remover</button>
+              </div>
+              {uploadingBrand === marca && <p className="text-[10px] text-muted-foreground">Enviando...</p>}
+            </div>
+          ))}
+        </div>
+
+        <div className="flex items-end gap-2 max-w-md">
+          <div className="flex-1">
+            <label className="block text-xs font-medium mb-1">Nova marca (ex: SOFAR, SOLIS, GOODWE)</label>
+            <input className="solar-input text-sm" value={novaMarca} onChange={e => setNovaMarca(e.target.value)}
+              placeholder="Nome da marca" />
+          </div>
+          <label className={`solar-btn-outline text-sm py-2 px-3 flex items-center gap-1.5 cursor-pointer ${!novaMarca.trim() ? 'opacity-50 pointer-events-none' : ''}`}>
+            <Upload className="w-4 h-4" /> Enviar imagem
+            <input type="file" accept="image/*" className="hidden"
+              onChange={e => { if (e.target.files?.[0] && novaMarca.trim()) { handleBrandUpload(novaMarca, e.target.files[0]); setNovaMarca(''); } }} />
+          </label>
+        </div>
+      </div>
+
+      <div className="border-t border-border pt-6">
+        <h3 className="text-lg font-bold text-primary mb-1">Miniatura de placas</h3>
+        <p className="text-sm text-muted-foreground mb-4">
+          Uma única imagem, usada em todas as propostas independente da marca da placa.
+        </p>
+        <div className="w-36 text-center">
+          <div className="w-full aspect-square rounded-xl border-2 border-dashed border-border bg-card flex items-center justify-center overflow-hidden mb-1.5">
+            {settings.panelImage
+              ? <img src={settings.panelImage} alt="Placas" className="w-full h-full object-contain p-2" />
+              : <SunMedium className="w-8 h-8 text-muted-foreground" />}
+          </div>
+          <label className="text-xs text-primary hover:underline cursor-pointer">
+            {settings.panelImage ? 'Trocar' : 'Enviar imagem'}
+            <input type="file" accept="image/*" className="hidden"
+              onChange={e => e.target.files?.[0] && handlePanelUpload(e.target.files[0])} />
+          </label>
+          {uploadingPanel && <p className="text-[10px] text-muted-foreground">Enviando...</p>}
+        </div>
+      </div>
     </div>
   );
 }

@@ -281,6 +281,8 @@ export default function ProposalPage() {
       num_placas: selectedCard.panelCount,
       marca_placa: selectedCard.panelBrand || selectedCard.panel?.brand || '',
       potencia_placa: panelPower,
+      imagem_inversor: settings.inverterBrandImages?.[(selectedCard.inverterBrand || selectedCard.inverter?.brand || '').trim().toUpperCase()],
+      imagem_placa: settings.panelImage || undefined,
       preco_vista: selectedCard.totalPrice,
       parcela_24x: getInst(24),
       parcela_36x: getInst(36),
