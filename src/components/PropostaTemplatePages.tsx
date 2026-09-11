@@ -314,11 +314,14 @@ function Foto({ src, ratio, alt }: { src?: string; ratio: number; alt?: string }
 // ────────────────────────────────────────────────────────────
 // Gráfico geração x consumo
 // ────────────────────────────────────────────────────────────
-function Barra({ valor, altura, cor, corTexto }: { valor: number; altura: number; cor: string; corTexto: string }) {
+function Barra({ valor, altura, cor, corTexto, hatch }: { valor: number; altura: number; cor: string; corTexto: string; hatch?: boolean }) {
   return (
     <div style={{
-      flex: 1, height: `${altura}%`, background: cor, borderRadius: '1px 1px 0 0',
+      flex: 1, height: `${altura}%`, borderRadius: '1px 1px 0 0',
       position: 'relative', overflow: 'hidden',
+      background: hatch
+        ? `repeating-linear-gradient(45deg, ${cor} 0px, ${cor} 4px, ${OURO} 4px, ${OURO} 8px)`
+        : cor,
     }}>
       <div style={{
         position: 'absolute', top: `${mm(1.5)}px`, left: 0, right: 0, height: `${fs(46)}px`,
@@ -347,7 +350,7 @@ function Grafico({ dados }: { dados: MonthlyRow[] }) {
         {meses.map((m, i) => (
           <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', height: '100%' }}>
             <div style={{ display: 'flex', gap: '2px', alignItems: 'flex-end', width: '100%', flex: 1, minHeight: 0 }}>
-              <Barra valor={m.consumo} altura={(m.consumo / max) * 100} cor={OURO} corTexto={VERDE_ESC} />
+              <Barra valor={m.consumo} altura={(m.consumo / max) * 100} cor={VERDE} corTexto={WHITE} hatch />
               <Barra valor={m.geracao} altura={(m.geracao / max) * 100} cor={VERDE} corTexto={WHITE} />
             </div>
             <div style={{ fontSize: `${fs(9.2)}px`, color: MUTED, marginTop: `${mm(1.5)}px`, textAlign: 'center' }}>{m.mes}</div>
@@ -374,7 +377,10 @@ function Grafico({ dados }: { dados: MonthlyRow[] }) {
         marginTop: `${mm(3)}px`, flexWrap: 'wrap',
       }}>
         <span>
-          <i style={{ width: `${fs(9)}px`, height: `${fs(9)}px`, borderRadius: '2px', display: 'inline-block', marginRight: `${fs(4)}px`, background: OURO }} />
+          <i style={{
+            width: `${fs(9)}px`, height: `${fs(9)}px`, borderRadius: '2px', display: 'inline-block', marginRight: `${fs(4)}px`,
+            background: `repeating-linear-gradient(45deg, ${VERDE} 0px, ${VERDE} 2px, ${OURO} 2px, ${OURO} 4px)`,
+          }} />
           Consumo
         </span>
         <span>
