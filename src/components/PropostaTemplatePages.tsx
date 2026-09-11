@@ -651,6 +651,10 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
                 borderLeft: `2px solid ${LINHA}`, paddingLeft: `${mm(3.5)}px`,
               }}>{data.observacoes}</div>
             )}
+
+            <div style={{ marginTop: `${mm(6)}px`, fontSize: `${fs(9.2)}px`, color: MUTED, fontStyle: 'italic' }}>
+              Valores estimados, sujeitos a variações de consumo, tarifas e critérios da concessionária.
+            </div>
           </Body>
           <Footer num="04" />
         </Page>
@@ -665,7 +669,7 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
               fontSize: `${fs(13.2)}px`, color: MUTED, maxWidth: `${mm(125)}px`,
               marginBottom: `${mm(5)}px`, lineHeight: 1.65,
             }}>
-              Loja física em Três Lagoas, com assistência e pós-venda depois da obra — não é venda por telefone.
+              Loja física em Três Lagoas, com assistência e pós-venda de verdade. Aqui, você sabe onde nos encontrar — antes, durante e depois da instalação.
             </div>
 
             <div style={{ marginBottom: `${mm(6)}px` }}>
