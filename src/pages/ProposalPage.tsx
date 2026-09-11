@@ -260,7 +260,7 @@ export default function ProposalPage() {
     const dadosMensais = MONTH_KEYS.map((k, i) => {
       const irrMonth = monthlyIrr ? monthlyIrr[i] : irradiation * SEASONAL_FACTORS[k];
       const gen = selectedCard.dimensioning.powerKwp * irrMonth * 30 * (1 - settings.systemLoss / 100);
-      const cons = selectedCard.dimensioning.avgMonthlyKwh * SEASONAL_FACTORS[k];
+      const cons = selectedCard.dimensioning.avgBase * SEASONAL_FACTORS[k];
       return { mes: MONTH_LABELS[i], geracao: Math.round(gen), consumo: Math.round(cons) };
     });
 
