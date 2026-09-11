@@ -255,10 +255,12 @@ export default function ProposalPage() {
     const paybackAnos = economiaMensal > 0 ? selectedCard.totalPrice / (economiaMensal * 12) : 0;
 
     // Dados mensais (12 meses) — geração x consumo
+    const savedDataConsumption = (proposal.dados_completos || proposal)?.consumption;
+    const consumoReal: Record<string, number> | undefined = proposal.consumption || savedDataConsumption;
     const dadosMensais = MONTH_KEYS.map((k, i) => {
       const irrMonth = monthlyIrr ? monthlyIrr[i] : irradiation * SEASONAL_FACTORS[k];
       const gen = selectedCard.dimensioning.powerKwp * irrMonth * 30 * (1 - settings.systemLoss / 100);
-      const cons = selectedCard.dimensioning.avgBase * SEASONAL_FACTORS[k];
+      const cons = consumoReal?.[k] ?? (selectedCard.dimensioning.avgBase * SEASONAL_FACTORS[k]);
       return { mes: MONTH_LABELS[i], geracao: Math.round(gen), consumo: Math.round(cons) };
     });
 
