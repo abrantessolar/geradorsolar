@@ -212,12 +212,6 @@ export default function ProposalPage() {
     setShowShareMenu(false);
   };
 
-  const getFileName = () => {
-    const numero = proposal?.numero_proposta || 'TLS-0000';
-    const clientName = (proposal?.clientData?.name || 'Cliente').replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_');
-    return `Proposta_${numero}_${clientName}.pdf`;
-  };
-
   const buildTemplateData = (): PropostaTemplateData | null => {
     if (!selectedCard) return null;
     const getInst = (n: number) => {
@@ -331,7 +325,7 @@ export default function ProposalPage() {
     const toastId = toast.loading('Gerando PDF...');
     try {
       const blob = await buildPdfBlob();
-      downloadPropostaPDF(blob, data.numero_proposta, data.cliente_nome);
+      downloadPropostaPDF(blob, data.cliente_nome, data.geracao_mensal);
       toast.dismiss(toastId);
       toast.success('PDF gerado com sucesso!');
       addHistoricoDB(id || '', 'pdf_baixado', session?.user?.id || null, {});

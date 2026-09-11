@@ -87,8 +87,9 @@ export function sanitizeFilename(name: string): string {
     .substring(0, 60);
 }
 
-export function downloadPropostaPDF(blob: Blob, numero: string, cliente: string): void {
-  const filename = `Proposta_${numero || 'TLS-0000'}_${sanitizeFilename(cliente || 'Cliente')}.pdf`;
+export function downloadPropostaPDF(blob: Blob, cliente: string, geracaoMensalKwh: number): void {
+  const kwh = Math.round(geracaoMensalKwh || 0);
+  const filename = `${sanitizeFilename(cliente || 'Cliente')}_${kwh}kWh.pdf`;
   saveAs(blob, filename);
 }
 
