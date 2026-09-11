@@ -20,6 +20,7 @@ import { savePropostaDB, searchCidadesDB } from '@/data/supabaseStore';
 import type { Proposal } from '@/data/types';
 import { useAuth } from '@/contexts/AuthContext';
 import ProposalsList from '@/components/calculator/ProposalsList';
+import { Button } from '@/components/ui/button';
 
 const EQUIPMENT_COLORS = [
   '#E67E22', '#3498DB', '#9B59B6', '#1ABC9C', '#E74C3C',
@@ -491,20 +492,20 @@ export default function CalculatorPage() {
   return (
     <div className="space-y-8 max-w-6xl mx-auto">
       <div className="flex justify-center gap-2">
-        <button
+        <Button
           type="button"
           onClick={() => setCalculatorView('new')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${calculatorView === 'new' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/70'}`}
+          variant={calculatorView === 'new' ? 'default' : 'secondary'}
         >
           <FilePlus2 className="w-4 h-4" /> {editMode ? 'Editar proposta' : 'Nova proposta'}
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
           onClick={() => setCalculatorView('proposals')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${calculatorView === 'proposals' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/70'}`}
+          variant={calculatorView === 'proposals' ? 'default' : 'secondary'}
         >
           <Files className="w-4 h-4" /> Propostas geradas
-        </button>
+        </Button>
       </div>
 
       {calculatorView === 'proposals' ? <ProposalsList /> : <div className="space-y-8">

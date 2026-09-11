@@ -8,12 +8,13 @@ import { getProposals } from '@/data/store';
 import { getPropostasDB } from '@/data/supabaseStore';
 import { LINE_NAMES } from '@/data/types';
 import { propostaToProjetoPrefill } from '@/lib/propostaToProjeto';
+import { Button } from '@/components/ui/button';
 
 export default function ProposalsList() {
   const [proposals, setProposals] = useState<any[]>([]);
   const [loadingProposals, setLoadingProposals] = useState(true);
   const navigate = useNavigate();
-  const { profile, isAdmin, isOrcamentista, session } = useAuth();
+  const { profile, session } = useAuth();
 
   // Filters
   const [filterStatus, setFilterStatus] = useState('');
@@ -158,25 +159,25 @@ export default function ProposalsList() {
                   <td className="py-2 px-2 text-xs text-muted-foreground">{p.dados_completos?.updatedAt ? new Date(p.dados_completos.updatedAt).toLocaleDateString('pt-BR') : '—'}</td>
                   <td className="py-2 px-2">
                     <div className="flex gap-1">
-                      <button onClick={() => navigate(`/proposta/${p.id}`)} className="text-primary hover:text-primary/80" title="Visualizar">
+                      <Button variant="ghost" size="icon" onClick={() => navigate(`/proposta/${p.id}`)} className="h-8 w-8 text-primary" title="Visualizar">
                         <Eye className="w-4 h-4" />
-                      </button>
-                      <button onClick={() => handleEditProposal(p)} className="text-blue-600 hover:text-blue-500" title="Editar">
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={() => handleEditProposal(p)} className="h-8 w-8 text-primary" title="Editar">
                         <Edit2 className="w-4 h-4" />
-                      </button>
-                      <button onClick={() => handleDuplicate(p.id)} className="text-purple-600 hover:text-purple-500" title="Duplicar">
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={() => handleDuplicate(p.id)} className="h-8 w-8 text-primary" title="Duplicar">
                         <FileText className="w-4 h-4" />
-                      </button>
-                      <button onClick={() => handleCopyLink(p.id)} className="text-green-600 hover:text-green-500" title="Copiar link">
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={() => handleCopyLink(p.id)} className="h-8 w-8 text-primary" title="Copiar link">
                         <Share2 className="w-4 h-4" />
-                      </button>
-                      <button onClick={() => handleCriarObra(p)} className="text-emerald-600 hover:text-emerald-500" title="Criar obra a partir da proposta">
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={() => handleCriarObra(p)} className="h-8 w-8 text-primary" title="Criar obra a partir da proposta">
                         <Building2 className="w-4 h-4" />
-                      </button>
+                      </Button>
 
-                      <button onClick={() => handleArchive(p.id)} className="text-muted-foreground hover:text-destructive" title="Arquivar">
+                      <Button variant="ghost" size="icon" onClick={() => handleArchive(p.id)} className="h-8 w-8 text-muted-foreground hover:text-destructive" title="Arquivar">
                         <Trash2 className="w-4 h-4" />
-                      </button>
+                      </Button>
                     </div>
                   </td>
                 </tr>
