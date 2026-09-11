@@ -294,15 +294,18 @@ function Parcela({ n, valor, destaque }: { n: string; valor: string; destaque?: 
 
 function Foto({ src, ratio, alt }: { src?: string; ratio: number; alt?: string }) {
   return (
-    <div style={{
-      position: 'relative', width: '100%', paddingTop: `${ratio * 100}%`,
-      borderRadius: '2px', overflow: 'hidden', background: '#EEE9DD',
-    }}>
-      {src && (
-        <img src={src} crossOrigin="anonymous" alt={alt || ''}
-             style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-      )}
-    </div>
+    <div
+      role="img"
+      aria-label={alt || ''}
+      style={{
+        position: 'relative', width: '100%', paddingTop: `${ratio * 100}%`,
+        borderRadius: '2px', overflow: 'hidden', background: '#EEE9DD',
+        backgroundImage: src ? `url(${src})` : undefined,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+      }}
+    />
   );
 }
 
@@ -430,7 +433,7 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
     const slots = Array.from({ length: 30 }, (_, i) => fotos[i]);
 
     const faturaAntes  = data.consumo_mensal * data.tarifa_kwh;
-    const faturaDepois = Math.max(0, faturaAntes - data.economia_mensal);
+    const faturaDepois = faturaAntes * 0.16;
     const cobertura    = data.consumo_mensal > 0 ? (data.geracao_mensal / data.consumo_mensal) * 100 : 0;
 
     const cartao = [3, 6, 12, 18]
