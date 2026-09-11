@@ -542,7 +542,7 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
           <Header numero={data.numero_proposta} />
           <Body>
             <Eyebrow>Sistema proposto</Eyebrow>
-            <Title>Geração vs consumo</Title>
+            <Title>Consumo x geração</Title>
 
             <div style={{ display: 'flex', gap: `${mm(5)}px`, marginBottom: `${mm(2)}px` }}>
               <Stat valor={`${fmtInt(data.geracao_mensal)} kWh`} rotulo="Geração média mensal" />
