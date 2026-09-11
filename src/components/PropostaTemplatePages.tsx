@@ -436,7 +436,7 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
 
     const faturaAntes  = data.consumo_informado * data.tarifa_kwh;
     const faturaDepois = faturaAntes * 0.16;
-    const cobertura    = data.consumo_mensal > 0 ? (data.geracao_mensal / data.consumo_mensal) * 100 : 0;
+    const cobertura    = data.consumo_informado > 0 ? (data.geracao_mensal / data.consumo_informado) * 100 : 0;
 
     const cartao = [3, 6, 12, 18]
       .map(m => (data.cartao_parcelas || []).find(c => c.meses === m))
@@ -540,7 +540,7 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
 
             <div style={{ display: 'flex', gap: `${mm(5)}px`, marginBottom: `${mm(2)}px` }}>
               <Stat valor={`${fmtInt(data.geracao_mensal)} kWh`} rotulo="Geração média mensal" />
-              <Stat valor={`${fmtInt(data.consumo_mensal)} kWh`} rotulo="Consumo médio mensal" />
+              <Stat valor={`${fmtInt(data.consumo_informado)} kWh`} rotulo="Consumo médio mensal" />
               <Stat valor={`+${fmtInt(data.excedente_kwh)} kWh`} rotulo="Excedente médio mensal" />
               <Stat valor={`${formatNumber(cobertura, 1)}%`} rotulo="Cobertura do consumo" />
             </div>
