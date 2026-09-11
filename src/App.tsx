@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
+import { BrowserRouter, Route, Routes, Navigate, useLocation } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -111,6 +111,11 @@ function AuthRedirect() {
   return <LoginPage />;
 }
 
+function CalculatorRoute() {
+  const location = useLocation();
+  return <CalculatorPage key={location.key} />;
+}
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -130,7 +135,7 @@ const App = () => (
             <Route path="/acompanhar/:codigo" element={<div><SeoNoIndex /><RastreamentoPage /></div>} />
             <Route path="/orcamentos" element={
               <ProtectedRoute permissionKey="calculadora">
-                <SeoNoIndex /><Layout><CalculatorPage /></Layout>
+                <SeoNoIndex /><Layout><CalculatorRoute /></Layout>
               </ProtectedRoute>
             } />
             <Route path="/admin" element={

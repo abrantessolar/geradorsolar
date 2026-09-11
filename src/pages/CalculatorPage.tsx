@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Plus, Minus, ChevronDown, ChevronUp, Zap, Sun, TrendingUp, ArrowRight, AlertTriangle, Eye, EyeOff, CreditCard } from 'lucide-react';
+import { Plus, Minus, ChevronDown, ChevronUp, Zap, Sun, TrendingUp, ArrowRight, AlertTriangle, Eye, EyeOff, CreditCard, FilePlus2, Files } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { toast } from 'sonner';
 import KitManualForm, { KitData, defaultKit, calcKitBreakdown } from '@/components/calculator/KitManualForm';
@@ -19,6 +19,8 @@ import { getSettings, saveProposal, lookupIrradiation } from '@/data/store';
 import { savePropostaDB, searchCidadesDB } from '@/data/supabaseStore';
 import type { Proposal } from '@/data/types';
 import { useAuth } from '@/contexts/AuthContext';
+import ProposalsList from '@/components/calculator/ProposalsList';
+import { Button } from '@/components/ui/button';
 
 const EQUIPMENT_COLORS = [
   '#E67E22', '#3498DB', '#9B59B6', '#1ABC9C', '#E74C3C',
@@ -72,6 +74,7 @@ export default function CalculatorPage() {
   const [editMode, setEditMode] = useState(!!editProposal);
   const [editProposalId, setEditProposalId] = useState<string | null>(editProposal?.id || null);
   const [editNumero, setEditNumero] = useState<string | null>(editProposal?.numero_proposta || null);
+  const [calculatorView, setCalculatorView] = useState<'new' | 'proposals'>('new');
 
   const defaultDist = settings.distributors?.find(d => d.name === settings.defaultDistributor);
   const [selectedDistributor, setSelectedDistributor] = useState(settings.defaultDistributor || 'ELEKTRO');
@@ -488,6 +491,24 @@ export default function CalculatorPage() {
 
   return (
     <div className="space-y-8 max-w-6xl mx-auto">
+      <div className="flex justify-center gap-2">
+        <Button
+          type="button"
+          onClick={() => setCalculatorView('new')}
+          variant={calculatorView === 'new' ? 'default' : 'secondary'}
+        >
+          <FilePlus2 className="w-4 h-4" /> {editMode ? 'Editar proposta' : 'Nova proposta'}
+        </Button>
+        <Button
+          type="button"
+          onClick={() => setCalculatorView('proposals')}
+          variant={calculatorView === 'proposals' ? 'default' : 'secondary'}
+        >
+          <Files className="w-4 h-4" /> Propostas geradas
+        </Button>
+      </div>
+
+      {calculatorView === 'proposals' ? <ProposalsList /> : <div className="space-y-8">
       {/* Header */}
       <div className="text-center space-y-2 animate-fade-in-up">
         <div className="inline-flex items-center gap-2 solar-badge bg-secondary/20 text-secondary-foreground">
@@ -967,7 +988,7 @@ export default function CalculatorPage() {
           ))}
         </div>
       </section>
-
+      </div>}
     </div>
   );
 }
