@@ -159,6 +159,8 @@ export interface Proposal {
 
 export interface DimensioningResult {
   avgMonthlyKwh: number;
+  /** Consumo informado na conta de luz, sem os acréscimos de equipamentos adicionais da calculadora. */
+  avgBase: number;
   avgDailyKwh: number;
   powerKwp: number;
   panelCount: number;

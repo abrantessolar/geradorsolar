@@ -272,6 +272,7 @@ export default function ProposalPage() {
       responsavel_email: proposal.sellerEmail || '',
       geracao_mensal: selectedCard.dimensioning.monthlyGeneration,
       consumo_mensal: selectedCard.dimensioning.avgMonthlyKwh,
+      consumo_informado: selectedCard.dimensioning.avgBase,
       excedente_kwh: selectedCard.dimensioning.surplus,
       potencia_kwp: selectedCard.dimensioning.powerKwp,
       qtd_inversores: qtdInversores,

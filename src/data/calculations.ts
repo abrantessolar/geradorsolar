@@ -63,7 +63,7 @@ export function calcDimensioning(
   };
 
   return {
-    avgMonthlyKwh, avgDailyKwh, powerKwp, panelCount,
+    avgMonthlyKwh, avgBase, avgDailyKwh, powerKwp, panelCount,
     monthlyGeneration, surplus: surplusKwh, availabilityFee, monthlySavings, paybackYears,
     return10: calcReturn(10), return15: calcReturn(15), return25: calcReturn(25),
   };

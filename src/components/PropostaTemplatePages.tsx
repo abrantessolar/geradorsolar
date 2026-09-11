@@ -43,6 +43,8 @@ export interface PropostaTemplateData {
   responsavel_email?: string;
   geracao_mensal: number;
   consumo_mensal: number;
+  /** Consumo informado na conta de luz do cliente, sem os acréscimos de equipamentos adicionais — usado no cálculo da fatura (Antes e Depois). */
+  consumo_informado: number;
   excedente_kwh: number;
   potencia_kwp: number;
   qtd_inversores: number;
@@ -432,7 +434,7 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
     const fotos = (data.fotos_portfolio || []).slice(0, 30);
     const slots = Array.from({ length: 30 }, (_, i) => fotos[i]);
 
-    const faturaAntes  = data.consumo_mensal * data.tarifa_kwh;
+    const faturaAntes  = data.consumo_informado * data.tarifa_kwh;
     const faturaDepois = faturaAntes * 0.16;
     const cobertura    = data.consumo_mensal > 0 ? (data.geracao_mensal / data.consumo_mensal) * 100 : 0;
 
