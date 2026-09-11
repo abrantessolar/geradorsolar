@@ -1,10 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Building2, Edit2, Eye, FileText, Share2, Trash2 } from 'lucide-react';
+import { Building2, Edit2, Eye, FileText, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { formatCurrency } from '@/data/calculations';
-import { getProposals } from '@/data/store';
 import { getPropostasDB } from '@/data/supabaseStore';
 import { LINE_NAMES } from '@/data/types';
 import { propostaToProjetoPrefill } from '@/lib/propostaToProjeto';
@@ -25,7 +24,7 @@ export default function ProposalsList() {
   const loadProposals = useCallback(async () => {
     setLoadingProposals(true);
     const data = await getPropostasDB();
-    let list = data.length > 0 ? data : getProposals();
+    let list = data;
     // Vendedor: only own proposals
     if (profile?.role === 'vendedor' && profile?.nome) {
       list = list.filter(p => p.clientData?.seller === profile.nome);
@@ -70,12 +69,6 @@ export default function ProposalsList() {
     proposals.forEach(p => { if (p.clientData?.seller) sellers.add(p.clientData.seller); });
     return Array.from(sellers);
   }, [proposals]);
-
-  const handleCopyLink = async (id: string) => {
-    const url = `${window.location.origin}/proposta/${id}`;
-    await navigator.clipboard.writeText(url);
-    toast.success('Link copiado!');
-  };
 
   const handleDuplicate = async (id: string) => {
     const { duplicatePropostaDB } = await import('@/data/supabaseStore');
@@ -167,9 +160,6 @@ export default function ProposalsList() {
                       </Button>
                       <Button variant="ghost" size="icon" onClick={() => handleDuplicate(p.id)} className="h-8 w-8 text-primary" title="Duplicar">
                         <FileText className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" onClick={() => handleCopyLink(p.id)} className="h-8 w-8 text-primary" title="Copiar link">
-                        <Share2 className="w-4 h-4" />
                       </Button>
                       <Button variant="ghost" size="icon" onClick={() => handleCriarObra(p)} className="h-8 w-8 text-primary" title="Criar obra a partir da proposta">
                         <Building2 className="w-4 h-4" />
