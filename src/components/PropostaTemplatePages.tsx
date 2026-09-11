@@ -57,6 +57,7 @@ export interface PropostaTemplateData {
   potencia_placa: string;
   imagem_inversor?: string;
   imagem_placa?: string;
+  usa_microinversor?: boolean;
   preco_vista: number;
   parcela_24x: number;
   parcela_36x: number;
@@ -465,7 +466,7 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
     const slots = Array.from({ length: 30 }, (_, i) => fotos[i]);
 
     const faturaAntes  = data.consumo_informado * data.tarifa_kwh;
-    const faturaDepois = faturaAntes * 0.16;
+    const faturaDepois = Math.max(faturaAntes * 0.16, 65.24);
     const cobertura    = data.consumo_informado > 0 ? (data.geracao_mensal / data.consumo_informado) * 100 : 0;
 
     const cartao = [3, 6, 12, 18]
@@ -668,7 +669,7 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
                 <TableHead>Garantias</TableHead>
                 <Row label="Módulos — desempenho / fabricação" value="30 / 15 anos" />
                 <Row label="Inversor" value="10 anos" />
-                {data.qtd_inversores > 1 && (
+                {data.usa_microinversor && (
                   <Row label="Micro inversor" value="12 anos" />
                 )}
                 <Row label="Instalação e acompanhamento" value="3 anos" last />

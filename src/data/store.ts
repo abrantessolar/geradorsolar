@@ -53,6 +53,7 @@ const DEFAULT_SETTINGS: AdminSettings = {
     { id: '3', name: 'Pedro Santos', phone: '(67) 99999-0003', email: '', active: true },
   ],
   inverterBrandImages: {},
+  microInverterBrandImages: {},
   panelImage: '',
 };
 

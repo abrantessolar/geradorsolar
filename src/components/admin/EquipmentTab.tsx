@@ -424,10 +424,83 @@ function CalculadoraSection() {
 }
 
 /* ─── MINIATURAS (imagens usadas na proposta comercial) ─── */
-function MiniaturasSection() {
-  const [settings, setSettingsState] = useState(getSettings());
+function BrandImageManager({
+  title, description, field, settings, persist, uploadTo, pathPrefix,
+}: {
+  title: string;
+  description: string;
+  field: 'inverterBrandImages' | 'microInverterBrandImages';
+  settings: ReturnType<typeof getSettings>;
+  persist: (next: ReturnType<typeof getSettings>) => Promise<void>;
+  uploadTo: (file: File, path: string) => Promise<string | null>;
+  pathPrefix: string;
+}) {
   const [novaMarca, setNovaMarca] = useState('');
   const [uploadingBrand, setUploadingBrand] = useState<string | null>(null);
+  const brands = Object.entries(settings[field] || {});
+
+  const handleBrandUpload = async (marca: string, file: File) => {
+    const key = marca.trim().toUpperCase();
+    if (!key) return;
+    setUploadingBrand(key);
+    const ext = file.name.split('.').pop();
+    const url = await uploadTo(file, `${pathPrefix}-${key.toLowerCase().replace(/\s+/g, '-')}.${ext}`);
+    setUploadingBrand(null);
+    if (!url) return;
+    await persist({ ...settings, [field]: { ...(settings[field] || {}), [key]: url } });
+    toast.success(`Miniatura de ${key} salva!`);
+  };
+
+  const removeBrand = async (key: string) => {
+    const imgs = { ...(settings[field] || {}) };
+    delete imgs[key];
+    await persist({ ...settings, [field]: imgs });
+  };
+
+  return (
+    <div>
+      <h3 className="text-lg font-bold text-primary mb-1">{title}</h3>
+      <p className="text-sm text-muted-foreground mb-4">{description}</p>
+
+      <div className="flex flex-wrap gap-4 mb-4">
+        {brands.map(([marca, url]) => (
+          <div key={marca} className="w-36 text-center">
+            <div className="w-full aspect-square rounded-xl border-2 border-dashed border-border bg-card flex items-center justify-center overflow-hidden mb-1.5">
+              <img src={url as string} alt={marca} className="w-full h-full object-contain p-2" />
+            </div>
+            <p className="text-xs font-semibold truncate">{marca}</p>
+            <div className="flex items-center justify-center gap-2 mt-1">
+              <label className="text-xs text-primary hover:underline cursor-pointer">
+                Trocar
+                <input type="file" accept="image/*" className="hidden"
+                  onChange={e => e.target.files?.[0] && handleBrandUpload(marca, e.target.files[0])} />
+              </label>
+              <button onClick={() => removeBrand(marca)} className="text-xs text-destructive hover:underline">Remover</button>
+            </div>
+            {uploadingBrand === marca && <p className="text-[10px] text-muted-foreground">Enviando...</p>}
+          </div>
+        ))}
+      </div>
+
+      <div className="flex items-end gap-2 max-w-md">
+        <div className="flex-1">
+          <label className="block text-xs font-medium mb-1">Nova marca (ex: SOFAR, SOLIS, GOODWE)</label>
+          <input className="solar-input text-sm" value={novaMarca} onChange={e => setNovaMarca(e.target.value)}
+            placeholder="Nome da marca" />
+        </div>
+        <label className={`solar-btn-outline text-sm py-2 px-3 flex items-center gap-1.5 cursor-pointer ${!novaMarca.trim() ? 'opacity-50 pointer-events-none' : ''}`}>
+          <Upload className="w-4 h-4" /> Enviar imagem
+          <input type="file" accept="image/*" className="hidden"
+            onChange={e => { if (e.target.files?.[0] && novaMarca.trim()) { handleBrandUpload(novaMarca, e.target.files[0]); setNovaMarca(''); } }} />
+        </label>
+      </div>
+    </div>
+  );
+}
+
+/* ─── MINIATURAS (imagens usadas na proposta comercial) ─── */
+function MiniaturasSection() {
+  const [settings, setSettingsState] = useState(getSettings());
   const [uploadingPanel, setUploadingPanel] = useState(false);
 
   const persist = async (next: typeof settings) => {
@@ -443,79 +516,38 @@ function MiniaturasSection() {
     return data.publicUrl;
   };
 
-  const handleBrandUpload = async (marca: string, file: File) => {
-    const key = marca.trim().toUpperCase();
-    if (!key) return;
-    setUploadingBrand(key);
-    const ext = file.name.split('.').pop();
-    const url = await uploadTo(file, `equipamentos/inversor-${key.toLowerCase().replace(/\s+/g, '-')}.${ext}`);
-    setUploadingBrand(null);
-    if (!url) return;
-    const next = { ...settings, inverterBrandImages: { ...(settings.inverterBrandImages || {}), [key]: url } };
-    await persist(next);
-    toast.success(`Miniatura de ${key} salva!`);
-  };
-
   const handlePanelUpload = async (file: File) => {
     setUploadingPanel(true);
     const ext = file.name.split('.').pop();
     const url = await uploadTo(file, `equipamentos/placa-padrao.${ext}`);
     setUploadingPanel(false);
     if (!url) return;
-    const next = { ...settings, panelImage: url };
-    await persist(next);
+    await persist({ ...settings, panelImage: url });
     toast.success('Miniatura de placas salva!');
   };
 
-  const removeBrand = async (key: string) => {
-    const imgs = { ...(settings.inverterBrandImages || {}) };
-    delete imgs[key];
-    await persist({ ...settings, inverterBrandImages: imgs });
-  };
-
-  const brands = Object.entries(settings.inverterBrandImages || {});
-
   return (
     <div className="solar-card p-6 space-y-6">
-      <div>
-        <h3 className="text-lg font-bold text-primary mb-1">Miniaturas por marca de inversor</h3>
-        <p className="text-sm text-muted-foreground mb-4">
-          Cada proposta comercial mostra automaticamente a miniatura da marca do inversor escolhido.
-          O nome digitado aqui precisa bater com a marca usada no inversor (não diferencia maiúsculas/minúsculas).
-        </p>
+      <BrandImageManager
+        title="Miniaturas por marca de inversor (string)"
+        description="Cada proposta com inversor string mostra automaticamente a miniatura da marca escolhida. O nome digitado aqui precisa bater com a marca usada no inversor (não diferencia maiúsculas/minúsculas)."
+        field="inverterBrandImages"
+        settings={settings}
+        persist={persist}
+        uploadTo={uploadTo}
+        pathPrefix="equipamentos/inversor"
+      />
 
-        <div className="flex flex-wrap gap-4 mb-4">
-          {brands.map(([marca, url]) => (
-            <div key={marca} className="w-36 text-center">
-              <div className="w-full aspect-square rounded-xl border-2 border-dashed border-border bg-card flex items-center justify-center overflow-hidden mb-1.5">
-                <img src={url} alt={marca} className="w-full h-full object-contain p-2" />
-              </div>
-              <p className="text-xs font-semibold truncate">{marca}</p>
-              <div className="flex items-center justify-center gap-2 mt-1">
-                <label className="text-xs text-primary hover:underline cursor-pointer">
-                  Trocar
-                  <input type="file" accept="image/*" className="hidden"
-                    onChange={e => e.target.files?.[0] && handleBrandUpload(marca, e.target.files[0])} />
-                </label>
-                <button onClick={() => removeBrand(marca)} className="text-xs text-destructive hover:underline">Remover</button>
-              </div>
-              {uploadingBrand === marca && <p className="text-[10px] text-muted-foreground">Enviando...</p>}
-            </div>
-          ))}
-        </div>
-
-        <div className="flex items-end gap-2 max-w-md">
-          <div className="flex-1">
-            <label className="block text-xs font-medium mb-1">Nova marca (ex: SOFAR, SOLIS, GOODWE)</label>
-            <input className="solar-input text-sm" value={novaMarca} onChange={e => setNovaMarca(e.target.value)}
-              placeholder="Nome da marca" />
-          </div>
-          <label className={`solar-btn-outline text-sm py-2 px-3 flex items-center gap-1.5 cursor-pointer ${!novaMarca.trim() ? 'opacity-50 pointer-events-none' : ''}`}>
-            <Upload className="w-4 h-4" /> Enviar imagem
-            <input type="file" accept="image/*" className="hidden"
-              onChange={e => { if (e.target.files?.[0] && novaMarca.trim()) { handleBrandUpload(novaMarca, e.target.files[0]); setNovaMarca(''); } }} />
-          </label>
-        </div>
+      <div className="border-t border-border pt-6">
+        <BrandImageManager
+          title="Miniaturas por marca de MICRO inversor (linha Premium)"
+          description="Usada nas propostas da linha Premium (microinversores) — separada da imagem do inversor string, já que o produto é visualmente diferente mesmo sendo a mesma marca."
+          field="microInverterBrandImages"
+          settings={settings}
+          persist={persist}
+          uploadTo={uploadTo}
+          pathPrefix="equipamentos/microinversor"
+        />
       </div>
 
       <div className="border-t border-border pt-6">

@@ -97,6 +97,8 @@ export interface AdminSettings {
   sellers: Seller[];
   /** Miniatura por marca de inversor (chave = marca em maiúsculas, valor = URL da imagem). */
   inverterBrandImages?: Record<string, string>;
+  /** Miniatura por marca de MICRO inversor (linha premium) — separada do inversor string. */
+  microInverterBrandImages?: Record<string, string>;
   /** Miniatura única para placas (qualquer marca). */
   panelImage?: string;
 }
