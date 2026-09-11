@@ -322,7 +322,8 @@ function Barra({ valor, altura, cor, corTexto }: { valor: number; altura: number
       background: cor,
     }}>
       <div style={{
-        position: 'absolute', top: `${mm(1.5)}px`, left: 0, right: 0, height: `${fs(46)}px`,
+        position: 'absolute', top: '50%', left: 0, right: 0,
+        transform: 'translateY(-50%)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
       }}>
         <span style={{
@@ -406,7 +407,7 @@ function KpiCapa({ valor, unidade, rotulo, primeiro }: { valor: string; unidade:
   );
 }
 
-function CardFatura({ valor, legenda, legendaColor }: { valor: string; legenda: string; legendaColor?: string }) {
+function CardFatura({ valor, legenda, nota }: { valor: string; legenda: string; nota?: string }) {
   return (
     <div style={{ width: '38%' }}>
       <div style={{ position: 'relative', width: '100%' }}>
@@ -421,8 +422,14 @@ function CardFatura({ valor, legenda, legendaColor }: { valor: string; legenda: 
       </div>
       <div style={{
         marginTop: `${mm(3)}px`, textAlign: 'center',
-        fontSize: `${fs(14.2)}px`, color: legendaColor || VERDE, fontWeight: 600,
+        fontSize: `${fs(14.2)}px`, color: VERDE, fontWeight: 600,
       }}>{legenda}</div>
+      {nota && (
+        <div style={{
+          marginTop: `${fs(2)}px`, textAlign: 'center',
+          fontSize: `${fs(10.2)}px`, color: MUTED, fontWeight: 500,
+        }}>{nota}</div>
+      )}
     </div>
   );
 }
@@ -606,8 +613,8 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
               <CardFatura valor={fmtMoney(faturaAntes)} legenda="Hoje, sem energia solar" />
               <CardFatura
                 valor={fmtMoney(faturaDepois)}
-                legenda="Com o sistema instalado (considerando 60% do fio B atual)"
-                legendaColor={MUTED}
+                legenda="Com o sistema instalado"
+                nota="(considerando 60% do fio B atual)"
               />
             </div>
 
@@ -631,6 +638,9 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
                 <TableHead>Garantias</TableHead>
                 <Row label="Módulos — desempenho / fabricação" value="30 / 15 anos" />
                 <Row label="Inversor" value="10 anos" />
+                {data.qtd_inversores > 1 && (
+                  <Row label="Micro inversor" value="12 anos" />
+                )}
                 <Row label="Instalação e acompanhamento" value="3 anos" last />
               </div>
             </div>

@@ -227,8 +227,8 @@ export default function ProposalPage() {
     };
     const inverterKw = selectedCard.inverter?.power;
     const inverterModelLabel = selectedCard.inverterModel || (selectedCard.inverter ? selectedCard.inverter.model : '') || '';
-    const inverterPower = inverterKw && !inverterModelLabel.includes(`${inverterKw}`)
-      ? `${inverterModelLabel} — ${inverterKw} kW`.trim()
+    const inverterPower = inverterKw
+      ? `${inverterModelLabel} - ${inverterKw} kW`.trim()
       : inverterModelLabel;
     const panelPower = selectedCard.panelPowerLabel || (selectedCard.panel ? `${selectedCard.panel.power} Wp` : '');
     const qtdInversores = selectedCard.line === 'premium' ? selectedCard.microCount : 1;
