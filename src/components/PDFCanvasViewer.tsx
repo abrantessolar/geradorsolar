@@ -7,11 +7,13 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
 interface PDFCanvasViewerProps {
   blob: Blob;
-  onClose: () => void;
+  onClose?: () => void;
   onDownload: () => void;
+  /** Quando true, renderiza sem overlay/fullscreen — encaixado no fluxo normal da página. */
+  inline?: boolean;
 }
 
-export default function PDFCanvasViewer({ blob, onClose, onDownload }: PDFCanvasViewerProps) {
+export default function PDFCanvasViewer({ blob, onClose, onDownload, inline = false }: PDFCanvasViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [pdf, setPdf] = useState<pdfjsLib.PDFDocumentProxy | null>(null);
   const [zoom, setZoom] = useState(1.2);
@@ -79,7 +81,7 @@ export default function PDFCanvasViewer({ blob, onClose, onDownload }: PDFCanvas
   }, [pdf, zoom]);
 
   return (
-    <div className="fixed inset-0 bg-black/80 z-[100] flex flex-col">
+    <div className={inline ? 'relative bg-muted/40 rounded-xl border border-border overflow-hidden' : 'fixed inset-0 bg-black/80 z-[100] flex flex-col'}>
       <div className="bg-card border-b border-border px-4 py-2 flex items-center justify-between gap-2">
         <div className="text-sm font-medium text-foreground">
           {numPages > 0 ? `${numPages} página${numPages > 1 ? 's' : ''}` : 'Carregando...'}
@@ -107,12 +109,14 @@ export default function PDFCanvasViewer({ blob, onClose, onDownload }: PDFCanvas
           >
             <Download className="w-3.5 h-3.5" /> Baixar
           </button>
-          <button onClick={onClose} className="p-1.5 rounded-md hover:bg-muted transition-colors" title="Fechar">
-            <X className="w-5 h-5 text-foreground" />
-          </button>
+          {!inline && onClose && (
+            <button onClick={onClose} className="p-1.5 rounded-md hover:bg-muted transition-colors" title="Fechar">
+              <X className="w-5 h-5 text-foreground" />
+            </button>
+          )}
         </div>
       </div>
-      <div className="flex-1 overflow-auto bg-muted/40 p-4">
+      <div className={inline ? 'overflow-auto bg-muted/40 p-4' : 'flex-1 overflow-auto bg-muted/40 p-4'}>
         {loading && (
           <div className="flex items-center justify-center h-full text-muted-foreground gap-2">
             <Loader2 className="w-5 h-5 animate-spin" />

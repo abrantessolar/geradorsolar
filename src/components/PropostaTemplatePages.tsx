@@ -66,8 +66,6 @@ export interface PropostaTemplateData {
   fluxo_caixa: CashflowRow[];
   fotos_portfolio: string[];
   observacoes?: string;
-  escopo_incluso?: string[];
-  escopo_excluido?: string[];
 }
 
 // ────────────────────────────────────────────────────────────

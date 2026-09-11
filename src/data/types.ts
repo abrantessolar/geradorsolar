@@ -155,8 +155,6 @@ export interface Proposal {
   numero_proposta?: string;
   // Campos editáveis pontualmente na tela da proposta (overrides do operador)
   observacoes?: string;
-  escopoIncluso?: string[];
-  escopoExcluido?: string[];
 }
 
 export interface DimensioningResult {
