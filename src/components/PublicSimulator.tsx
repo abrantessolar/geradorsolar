@@ -201,37 +201,31 @@ export default function PublicSimulator() {
     if (!results || !selectedCity) return;
     setSavingLead(true);
     try {
-      // Monta um resumo legível de tudo que a pessoa usou como base na simulação
-      const linhasResumo: string[] = ['Base da simulação (simulador público):'];
-
-      if (consumptionMode === 'average') {
-        linhasResumo.push(`• Consumo informado: média de ${avgConsumption || 0} kWh/mês`);
-      } else {
-        const mesesPreenchidos = MONTH_KEYS
-          .map((k, i) => (monthlyValues[k] > 0 ? `${MONTH_LABELS[i]}: ${monthlyValues[k]}` : null))
-          .filter(Boolean);
-        linhasResumo.push(`• Consumo informado (mês a mês): ${mesesPreenchidos.join(', ') || 'nenhum mês preenchido'}`);
-      }
-
-      if (equipments.length > 0) {
-        const listaEq = equipments.map(eq => {
-          const qtd = eq.quantity > 1 ? ` (x${eq.quantity})` : '';
-          const detalhe = eq.catalog.unit === 'km'
-            ? `${eq.kmPerMonth || 0} km/mês`
-            : `${eq.hoursPerDay}h/dia, ${eq.daysPerMonth}d/mês`;
-          return `${eq.catalog.label}${qtd} — ${detalhe}`;
-        });
-        linhasResumo.push(`• Equipamentos adicionais: ${listaEq.join('; ')}`);
-      } else {
-        linhasResumo.push('• Equipamentos adicionais: nenhum');
-      }
-
-      if (panelDelta !== 0) {
-        linhasResumo.push(`• Ajuste manual de placas: ${panelDelta > 0 ? '+' : ''}${panelDelta} em relação à recomendação`);
-      }
-
-      linhasResumo.push(`• Cidade usada para irradiância: ${selectedCity.cidade}/${selectedCity.uf}`);
-      linhasResumo.push(`• Resultado mostrado: ${results.panelCount} placas, ${results.powerKwp.toFixed(2)} kWp, geração média ${results.avgGen} kWh/mês`);
+      // Estrutura completa de tudo que a pessoa usou como base na simulação
+      const dadosSimulacao = {
+        modo_consumo: consumptionMode as 'average' | 'monthly',
+        consumo_medio_informado: consumptionMode === 'average' ? parseFloat(avgConsumption) || 0 : null,
+        consumo_mensal_informado: consumptionMode === 'monthly'
+          ? MONTH_KEYS.reduce((acc, k) => {
+              if (monthlyValues[k] > 0) acc[k] = monthlyValues[k];
+              return acc;
+            }, {} as Record<string, number>)
+          : null,
+        equipamentos_adicionais: equipments.map(eq => ({
+          nome: eq.catalog.label,
+          quantidade: eq.quantity,
+          ...(eq.catalog.unit === 'km'
+            ? { km_por_mes: eq.kmPerMonth || 0 }
+            : { horas_por_dia: eq.hoursPerDay, dias_por_mes: eq.daysPerMonth }),
+        })),
+        ajuste_manual_placas: panelDelta,
+        cidade_irradiancia: `${selectedCity.cidade}/${selectedCity.uf}`,
+        resultado: {
+          placas: results.panelCount,
+          potencia_kwp: Number(results.powerKwp.toFixed(2)),
+          geracao_media_kwh: results.avgGen,
+        },
+      };
 
       const leadData = {
         nome: leadName.trim(), telefone: leadPhone.trim(),
@@ -239,7 +233,7 @@ export default function PublicSimulator() {
         consumo_kwh: effectiveAvg + equipmentMonthlyKwh,
         resultado_placas: results.panelCount,
         resultado_potencia_kwp: results.powerKwp,
-        observacoes: linhasResumo.join('\n'),
+        dados_simulacao: dadosSimulacao,
       };
       await supabase.from('leads').insert(leadData);
       supabase.functions.invoke('notify-lead', { body: leadData }).catch(() => {});

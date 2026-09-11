@@ -17,6 +17,18 @@ interface Lead {
   resultado_potencia_kwp: number;
   status: string;
   observacoes: string | null;
+  dados_simulacao: {
+    modo_consumo: 'average' | 'monthly';
+    consumo_medio_informado: number | null;
+    consumo_mensal_informado: Record<string, number> | null;
+    equipamentos_adicionais: Array<{
+      nome: string; quantidade: number;
+      km_por_mes?: number; horas_por_dia?: number; dias_por_mes?: number;
+    }>;
+    ajuste_manual_placas: number;
+    cidade_irradiancia: string;
+    resultado: { placas: number; potencia_kwp: number; geracao_media_kwh: number };
+  } | null;
   atribuido_para: string | null;
   criado_em: string;
   atualizado_em: string;
@@ -259,6 +271,47 @@ export default function LeadsTab() {
               <p>{editLead.telefone} — {editLead.cidade}/{editLead.uf}</p>
               <p>{editLead.consumo_kwh} kWh/mês — {editLead.resultado_placas} placas</p>
             </div>
+            {editLead.dados_simulacao && (
+              <div className="text-xs space-y-1.5 p-3 rounded-lg border border-border bg-background">
+                <p className="font-semibold text-muted-foreground uppercase tracking-wide text-[10px] mb-1.5">
+                  Base da simulação (não editável)
+                </p>
+                {editLead.dados_simulacao.modo_consumo === 'average' ? (
+                  <p>Consumo: média de {editLead.dados_simulacao.consumo_medio_informado} kWh/mês</p>
+                ) : (
+                  <p>
+                    Consumo (mês a mês):{' '}
+                    {Object.entries(editLead.dados_simulacao.consumo_mensal_informado || {})
+                      .map(([m, v]) => `${m}: ${v}`).join(', ') || '—'}
+                  </p>
+                )}
+                {editLead.dados_simulacao.equipamentos_adicionais.length > 0 ? (
+                  <p>
+                    Equipamentos: {editLead.dados_simulacao.equipamentos_adicionais.map(eq => {
+                      const qtd = eq.quantidade > 1 ? ` (x${eq.quantidade})` : '';
+                      const detalhe = eq.km_por_mes !== undefined
+                        ? `${eq.km_por_mes} km/mês`
+                        : `${eq.horas_por_dia}h/dia, ${eq.dias_por_mes}d/mês`;
+                      return `${eq.nome}${qtd} — ${detalhe}`;
+                    }).join('; ')}
+                  </p>
+                ) : (
+                  <p>Equipamentos: nenhum</p>
+                )}
+                {editLead.dados_simulacao.ajuste_manual_placas !== 0 && (
+                  <p>
+                    Ajuste manual de placas: {editLead.dados_simulacao.ajuste_manual_placas > 0 ? '+' : ''}
+                    {editLead.dados_simulacao.ajuste_manual_placas}
+                  </p>
+                )}
+                <p>Cidade (irradiância): {editLead.dados_simulacao.cidade_irradiancia}</p>
+                <p>
+                  Resultado mostrado: {editLead.dados_simulacao.resultado.placas} placas,{' '}
+                  {editLead.dados_simulacao.resultado.potencia_kwp} kWp, geração média{' '}
+                  {editLead.dados_simulacao.resultado.geracao_media_kwh} kWh/mês
+                </p>
+              </div>
+            )}
             <div className="space-y-3">
               <div>
                 <label className="block text-sm font-medium mb-1">Status</label>
