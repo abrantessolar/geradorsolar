@@ -273,7 +273,7 @@ export default function ProposalPage() {
       geracao_mensal: selectedCard.dimensioning.monthlyGeneration,
       consumo_mensal: selectedCard.dimensioning.avgMonthlyKwh,
       consumo_informado: selectedCard.dimensioning.avgBase,
-      excedente_kwh: selectedCard.dimensioning.surplus,
+      excedente_kwh: selectedCard.dimensioning.monthlyGeneration - selectedCard.dimensioning.avgBase,
       potencia_kwp: selectedCard.dimensioning.powerKwp,
       qtd_inversores: qtdInversores,
       marca_inversor: selectedCard.inverterBrand || selectedCard.inverter?.brand || '',
