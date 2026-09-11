@@ -462,8 +462,8 @@ function CardFatura({ valor, legenda, nota }: { valor: string; legenda: string; 
 // ────────────────────────────────────────────────────────────
 export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: PropostaTemplateData }>(
   ({ data }, ref) => {
-    const fotos = (data.fotos_portfolio || []).slice(0, 30);
-    const slots = Array.from({ length: 30 }, (_, i) => fotos[i]);
+    const fotos = (data.fotos_portfolio || []).slice(0, 35);
+    const slots = Array.from({ length: 35 }, (_, i) => fotos[i]);
 
     const faturaAntes  = data.consumo_informado * data.tarifa_kwh;
     const faturaDepois = Math.max(faturaAntes * 0.16, 65.24);
@@ -548,7 +548,7 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: `${mm(2.4)}px` }}>
-              {[0, 1, 2, 3, 4, 5].map(linha => (
+              {[0, 1, 2, 3, 4, 5, 6].map(linha => (
                 <div key={linha} style={{ display: 'flex', gap: `${mm(2.4)}px` }}>
                   {[0, 1, 2, 3, 4].map(col => (
                     <div key={col} style={{ flex: 1 }}>

@@ -128,8 +128,8 @@ async function optimizeImage(url: string, maxSide = 400, quality = 0.55): Promis
 }
 
 /**
- * Busca até 30 fotos do portfólio (Supabase ou fallback) e retorna
- * thumbnails 400×400 q55 em data-URL. A página 2 da proposta usa 30 slots.
+ * Busca até 35 fotos do portfólio (Supabase ou fallback) e retorna
+ * thumbnails 400×400 q55 em data-URL. A página 2 da proposta usa 35 slots.
  */
 export async function fetchPortfolioPhotosOptimized(): Promise<string[]> {
   let urls: string[] = [];
@@ -139,13 +139,13 @@ export async function fetchPortfolioPhotosOptimized(): Promise<string[]> {
       .select('url')
       .eq('ativo', true)
       .order('ordem', { ascending: true })
-      .limit(30);
+      .limit(35);
     if (data && data.length > 0) urls = data.map((d) => d.url);
   } catch {
     // ignore
   }
   if (urls.length === 0) urls = [...FALLBACK_PHOTOS];
-  urls = urls.slice(0, 30);
+  urls = urls.slice(0, 35);
 
   const optimized = await Promise.all(urls.map((u) => optimizeImage(u, 400, 0.55)));
   return optimized.filter(Boolean);
