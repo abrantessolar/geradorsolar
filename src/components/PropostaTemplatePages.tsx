@@ -18,7 +18,7 @@ import capaIlustracao from '@/assets/proposta-template/capa-ilustracao.jpg';
 import mapaImg from '@/assets/proposta-template/mapa-localizacao.jpg';
 import faturaImg from '@/assets/proposta-template/fatura-elektro.png';
 import fachadaImg from '@/assets/proposta-template/fachada-empresa.jpg';
-import instalacoesImg from '@/assets/proposta-template/instalacoes.png';
+import instalacoesImg from '@/assets/proposta-template/instalacoes.jpg';
 
 import { formatCurrency, formatNumber } from '@/data/calculations';
 
