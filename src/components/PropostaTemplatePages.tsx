@@ -406,9 +406,9 @@ function KpiCapa({ valor, unidade, rotulo, primeiro }: { valor: string; unidade:
   );
 }
 
-function CardFatura({ valor, legenda }: { valor: string; legenda: string }) {
+function CardFatura({ valor, legenda, legendaColor }: { valor: string; legenda: string; legendaColor?: string }) {
   return (
-    <div style={{ flex: 1 }}>
+    <div style={{ width: '38%' }}>
       <div style={{ position: 'relative', width: '100%' }}>
         <img src={faturaImg} crossOrigin="anonymous" alt=""
              style={{ width: '100%', display: 'block' }} />
@@ -421,7 +421,7 @@ function CardFatura({ valor, legenda }: { valor: string; legenda: string }) {
       </div>
       <div style={{
         marginTop: `${mm(3)}px`, textAlign: 'center',
-        fontSize: `${fs(14.2)}px`, color: VERDE, fontWeight: 600,
+        fontSize: `${fs(14.2)}px`, color: legendaColor || VERDE, fontWeight: 600,
       }}>{legenda}</div>
     </div>
   );
@@ -602,9 +602,13 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
             <Eyebrow>Retorno financeiro</Eyebrow>
             <Title>Antes e depois</Title>
 
-            <div style={{ display: 'flex', gap: `${mm(8)}px`, marginTop: `${mm(6)}px`, marginBottom: `${mm(8)}px` }}>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: `${mm(8)}px`, marginTop: `${mm(6)}px`, marginBottom: `${mm(8)}px` }}>
               <CardFatura valor={fmtMoney(faturaAntes)} legenda="Hoje, sem energia solar" />
-              <CardFatura valor={fmtMoney(faturaDepois)} legenda="Com o sistema instalado" />
+              <CardFatura
+                valor={fmtMoney(faturaDepois)}
+                legenda="Com o sistema instalado (considerando 60% do fio B atual)"
+                legendaColor={MUTED}
+              />
             </div>
 
             <H3>O que está incluído</H3>
@@ -627,7 +631,7 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
                 <TableHead>Garantias</TableHead>
                 <Row label="Módulos — desempenho / fabricação" value="30 / 15 anos" />
                 <Row label="Inversor" value="10 anos" />
-                <Row label="Estrutura e mão de obra" value="10 / 5 anos" last />
+                <Row label="Instalação e acompanhamento" value="3 anos" last />
               </div>
             </div>
 

@@ -225,7 +225,11 @@ export default function ProposalPage() {
       if (!v) return 0;
       return typeof v === 'number' ? v : (v as any).perMonth || 0;
     };
-    const inverterPower = selectedCard.inverterModel || (selectedCard.inverter ? `${selectedCard.inverter.power} kW` : '');
+    const inverterKw = selectedCard.inverter?.power;
+    const inverterModelLabel = selectedCard.inverterModel || (selectedCard.inverter ? selectedCard.inverter.model : '') || '';
+    const inverterPower = inverterKw && !inverterModelLabel.includes(`${inverterKw}`)
+      ? `${inverterModelLabel} — ${inverterKw} kW`.trim()
+      : inverterModelLabel;
     const panelPower = selectedCard.panelPowerLabel || (selectedCard.panel ? `${selectedCard.panel.power} Wp` : '');
     const qtdInversores = selectedCard.line === 'premium' ? selectedCard.microCount : 1;
 
