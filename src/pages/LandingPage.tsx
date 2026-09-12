@@ -12,7 +12,7 @@ import commercialSystemImage from '@/assets/sistema-comercial-industrial.jpeg.as
 import residentialSystemImage from '@/assets/sistema-residencial.jpeg.asset.json';
 import agriculturalSystemImage from '@/assets/sistema-agricola.png.asset.json';
 import heroImage from '@/assets/sede-tres-lagoas-solar.png.asset.json';
-import footerLogo from '@/assets/logo-rodape-transparente.png';
+import footerLogo from '@/assets/logo-rodape-novo.png.asset.json';
 
 import logoImg from '@/assets/logo.png';
 const LOGO_URL = logoImg;
@@ -431,7 +431,7 @@ export default function LandingPage() {
         <div className="container">
           <div className="grid md:grid-cols-4 gap-12">
             <div>
-              <img src={footerLogo} alt="Logo Três Lagoas Solar energia solar" className="h-20 w-auto mb-4" width={196} height={80} loading="lazy" />
+              <img src={footerLogo.url} alt="Logo Três Lagoas Solar energia solar" className="h-20 w-auto mb-4" width={196} height={80} loading="lazy" />
               <p className="text-background/60 text-sm leading-relaxed">
                 Energia solar eficiente e sustentável para residências, comércios e propriedades rurais.
               </p>
