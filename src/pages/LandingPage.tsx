@@ -10,7 +10,7 @@ import OndeEstamos from '@/components/OndeEstamos';
 import { SERVICOS } from '@/data/servicos';
 import commercialSystemImage from '@/assets/sistema-comercial-industrial.jpeg.asset.json';
 import residentialSystemImage from '@/assets/sistema-residencial.jpeg.asset.json';
-import agriculturalSystemImage from '@/assets/sistema-agricola.png.asset.json';
+import agriculturalSystemImage from '@/assets/sistema-agricola.webp.asset.json';
 
 import logoImg from '@/assets/logo.png';
 const LOGO_URL = logoImg;
