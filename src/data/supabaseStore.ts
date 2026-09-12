@@ -1,7 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import type { AdminSettings, Kit, Proposal, SocialProof, Seller, Distributor } from './types';
 import { CA_MATERIAL_TABLE_DEFAULT, DEFAULT_CARD_RATES } from './types';
-import { saveKits, saveSocialProofs } from './store';
+import { saveKits, saveSocialProofs, getSettings, saveSettings } from './store';
 
 // ─── VENDEDORES ───
 export async function getVendedoresDB(): Promise<Seller[]> {
@@ -64,6 +64,48 @@ export async function getSettingsDB(): Promise<AdminSettings | null> {
 
 export async function saveSettingsDB(s: AdminSettings) {
   await saveConfigDB('admin_settings', s);
+}
+
+// ─── MINIATURAS DE EQUIPAMENTO (chave separada de admin_settings) ───
+// Fica fora do blob grande de configurações de proposito: as outras abas
+// do Admin (Precificacao, Config Geral, Distribuidoras, Provas Sociais)
+// cada uma guarda sua propria copia local de AdminSettings e a resalva
+// inteira ao clicar em Salvar. Se as imagens vivessem dentro desse blob,
+// qualquer uma dessas abas salvando com uma copia desatualizada apagaria
+// as imagens cadastradas depois. Com chave propria, isso nao acontece.
+export interface EquipmentImages {
+  inverterBrandImages: Record<string, string>;
+  microInverterBrandImages: Record<string, string>;
+  panelImage: string;
+}
+
+export async function getEquipmentImagesDB(): Promise<EquipmentImages | null> {
+  const val = await getConfigDB('equipment_images');
+  if (val) return val as EquipmentImages;
+  // Fallback: dados podem ter ficado na localizacao antiga (dentro de
+  // admin_settings), de antes dessa chave separada existir.
+  const legacy = await getConfigDB('admin_settings');
+  if (legacy && (legacy.inverterBrandImages || legacy.microInverterBrandImages || legacy.panelImage)) {
+    return {
+      inverterBrandImages: legacy.inverterBrandImages || {},
+      microInverterBrandImages: legacy.microInverterBrandImages || {},
+      panelImage: legacy.panelImage || '',
+    };
+  }
+  return null;
+}
+
+export async function saveEquipmentImagesDB(images: EquipmentImages) {
+  await saveConfigDB('equipment_images', images);
+}
+
+// Busca do banco e mescla no settings local (sem tocar nos outros campos)
+export async function syncEquipmentImagesFromDB(): Promise<EquipmentImages | null> {
+  const images = await getEquipmentImagesDB();
+  if (images) {
+    saveSettings({ ...getSettings(), ...images });
+  }
+  return images;
 }
 
 // ─── PROPOSTAS ───

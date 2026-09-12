@@ -30,7 +30,7 @@ import LeadNotification from "@/components/LeadNotification";
 import NotFound from "@/pages/NotFound";
 import { EnergiaProvider } from "@/contexts/EnergiaContext";
 import { saveSettings } from "@/data/store";
-import { getSettingsDB, syncKitsFromDB, syncSocialProofsFromDB } from "@/data/supabaseStore";
+import { getSettingsDB, syncKitsFromDB, syncSocialProofsFromDB, syncEquipmentImagesFromDB } from "@/data/supabaseStore";
 import EnergiaLogin from "@/pages/energia/EnergiaLogin";
 import EnergiaCadastro from "@/pages/energia/EnergiaCadastro";
 import EnergiaDashboard from "@/pages/energia/EnergiaDashboard";
@@ -138,6 +138,10 @@ function useSyncFromDB() {
           timeout.then(() => { throw new Error('timeout'); }),
         ]);
         if (dbSettings) saveSettings(dbSettings);
+        // Roda DEPOIS do saveSettings(dbSettings) acima de proposito: essa chamada
+        // mescla as imagens por cima do settings recem-aplicado, garantindo que
+        // o blob de admin_settings (que nao carrega mais esses campos) nunca as apague.
+        await syncEquipmentImagesFromDB();
       } catch {
         // offline, erro de rede, ou timeout: segue com o que já está no localStorage
       } finally {

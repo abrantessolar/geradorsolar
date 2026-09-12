@@ -4,7 +4,6 @@ import { Plus, Edit2, X, Save, Power, PowerOff, Trash2, SunMedium, Zap, Image as
 import { toast } from 'sonner';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { getSettings, saveSettings, getKits } from '@/data/store';
-import { getSettingsDB, saveSettingsDB } from '@/data/supabaseStore';
 
 interface EquipmentRow {
   id: string;
@@ -448,7 +447,7 @@ function BrandImageManager({
     if (!key) return;
     setUploadingBrand(key);
     const ext = file.name.split('.').pop();
-    const url = await uploadTo(file, `${pathPrefix}-${key.toLowerCase().replace(/\s+/g, '-')}.${ext}`);
+    const url = await uploadTo(file, `${pathPrefix}-${key.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}.${ext}`);
     setUploadingBrand(null);
     if (!url) return;
     await persist({ ...settings, [field]: { ...(settings[field] || {}), [key]: url } });
@@ -536,12 +535,19 @@ function MiniaturasSection() {
   const persist = async (next: typeof settings) => {
     setSettingsState(next);
     saveSettings(next);
-    try { await saveSettingsDB(next); } catch { /* segue local se offline */ }
+    try {
+      const { saveEquipmentImagesDB } = await import('@/data/supabaseStore');
+      await saveEquipmentImagesDB({
+        inverterBrandImages: next.inverterBrandImages || {},
+        microInverterBrandImages: next.microInverterBrandImages || {},
+        panelImage: next.panelImage || '',
+      });
+    } catch { /* segue local se offline */ }
   };
 
   const uploadTo = async (file: File, path: string): Promise<string | null> => {
-    const { error } = await supabase.storage.from('site-content').upload(path, file, { upsert: true });
-    if (error) { toast.error('Erro ao fazer upload da imagem'); return null; }
+    const { error } = await supabase.storage.from('site-content').upload(path, file);
+    if (error) { toast.error('Erro ao fazer upload: ' + error.message); return null; }
     const { data } = supabase.storage.from('site-content').getPublicUrl(path);
     return data.publicUrl;
   };
@@ -549,7 +555,7 @@ function MiniaturasSection() {
   const handlePanelUpload = async (file: File) => {
     setUploadingPanel(true);
     const ext = file.name.split('.').pop();
-    const url = await uploadTo(file, `equipamentos/placa-padrao.${ext}`);
+    const url = await uploadTo(file, `equipamentos/placa-padrao-${Date.now()}.${ext}`);
     setUploadingPanel(false);
     if (!url) return;
     await persist({ ...settings, panelImage: url });
