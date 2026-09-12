@@ -16,7 +16,7 @@ interface Props {
   potencia: number; // kW para inversor, Wp para placa
   marca: string;
   modelo: string;
-  onPick: (marca: string, modelo: string) => void;
+  onPick: (marca: string, modelo: string, potencia?: number) => void;
   disabled?: boolean;
 }
 
@@ -74,7 +74,7 @@ export default function EquipmentCombobox({ kind, potencia, marca, modelo, onPic
     : 'Selecione marca / modelo';
 
   const handlePick = (it: Item) => {
-    onPick(it.marca, it.modelo);
+    onPick(it.marca, it.modelo, it.potencia);
     setOpen(false);
     setQuery('');
   };
@@ -105,7 +105,7 @@ export default function EquipmentCombobox({ kind, potencia, marca, modelo, onPic
         if (error) throw error;
       }
       toast.success('Cadastrado!');
-      onPick(newMarca, newModelo);
+      onPick(newMarca, newModelo, potencia);
       await load();
       setOpen(false);
       setQuery('');

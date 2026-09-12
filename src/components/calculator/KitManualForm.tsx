@@ -26,7 +26,7 @@ export const defaultKit = (qtdPlacas: number): KitData => ({
   marcaInversor: '', modeloInversor: '',
   potenciaInversorKw: 0, qtdInversores: 1,
   marcaPlaca: '', modeloPlaca: '',
-  potenciaPlacaWp: 570, qtdPlacas,
+  potenciaPlacaWp: 0, qtdPlacas,
   custoKit: 0,
   precoVendaManual: null,
 });
@@ -153,7 +153,10 @@ export default function KitManualForm({ kit, onChange, isAuthenticated }: Props)
               potencia={kit.potenciaInversorKw}
               marca={kit.marcaInversor}
               modelo={kit.modeloInversor}
-              onPick={(marca, modelo) => update({ marcaInversor: marca, modeloInversor: modelo })}
+              onPick={(marca, modelo, potencia) => update({
+                marcaInversor: marca, modeloInversor: modelo,
+                ...(potencia ? { potenciaInversorKw: potencia } : {}),
+              })}
             />
           </div>
           <div>
@@ -184,7 +187,10 @@ export default function KitManualForm({ kit, onChange, isAuthenticated }: Props)
               potencia={kit.potenciaPlacaWp}
               marca={kit.marcaPlaca}
               modelo={kit.modeloPlaca}
-              onPick={(marca, modelo) => update({ marcaPlaca: marca, modeloPlaca: modelo })}
+              onPick={(marca, modelo, potencia) => update({
+                marcaPlaca: marca, modeloPlaca: modelo,
+                ...(potencia ? { potenciaPlacaWp: potencia } : {}),
+              })}
             />
           </div>
           <div>
