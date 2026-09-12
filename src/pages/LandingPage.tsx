@@ -11,10 +11,11 @@ import { SERVICOS } from '@/data/servicos';
 import commercialSystemImage from '@/assets/sistema-comercial-industrial.jpeg.asset.json';
 import residentialSystemImage from '@/assets/sistema-residencial.jpeg.asset.json';
 import agriculturalSystemImage from '@/assets/sistema-agricola.png.asset.json';
+import heroImage from '@/assets/sede-tres-lagoas-solar.png.asset.json';
 
 import logoImg from '@/assets/logo.png';
 const LOGO_URL = logoImg;
-const HERO_BG = 'https://static.wixstatic.com/media/c2ae0d_0fc9044d218948a585d2170345d4ce87~mv2.jpg';
+const HERO_BG = heroImage.url;
 const MISSION_IMG = 'https://static.wixstatic.com/media/11062b_bdefce897daa4bafad009726c2eae2df~mv2.jpg';
 
 const SOLUTIONS = [
