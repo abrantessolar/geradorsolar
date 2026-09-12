@@ -8,6 +8,7 @@ import LazyImage from '@/components/LazyImage';
 import Diferenciais from '@/components/Diferenciais';
 import OndeEstamos from '@/components/OndeEstamos';
 import { SERVICOS } from '@/data/servicos';
+import commercialSystemImage from '@/assets/sistema-comercial-industrial.jpeg.asset.json';
 
 import logoImg from '@/assets/logo.png';
 const LOGO_URL = logoImg;
@@ -26,7 +27,7 @@ const SOLUTIONS = [
   },
   {
     title: 'SISTEMAS COMERCIAIS',
-    image: 'https://static.wixstatic.com/media/c2ae0d_a5032014b84c4287889fcf5fe1522b78~mv2.jpg',
+    image: commercialSystemImage.url,
     alt: 'Sistema solar comercial Três Lagoas Solar',
     text: 'Ajudamos empresas a adotar soluções de energia solar personalizadas, visando reduzir custos operacionais e diminuir a pegada de carbono.',
     btn: 'Fale Conosco',
