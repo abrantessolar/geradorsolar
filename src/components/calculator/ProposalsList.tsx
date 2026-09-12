@@ -109,7 +109,7 @@ export default function ProposalsList() {
           {Object.entries(STATUS_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
         </select>
         <select className="solar-input text-sm py-1.5 w-36" value={filterLine} onChange={e => setFilterLine(e.target.value)}>
-          <option value="">Todas linhas</option>
+          <option value="">Todos os tipos</option>
           {Object.entries(LINE_NAMES).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
         </select>
         <select className="solar-input text-sm py-1.5 w-36" value={filterSeller} onChange={e => setFilterSeller(e.target.value)}>
@@ -127,7 +127,7 @@ export default function ProposalsList() {
           <table className="w-full text-sm">
             <thead><tr className="border-b border-border text-left text-muted-foreground">
               <th className="py-2 px-2">Nº</th><th className="py-2 px-2">Cliente</th><th className="py-2 px-2">Vendedor</th>
-              <th className="py-2 px-2">Data</th><th className="py-2 px-2">Linha</th><th className="py-2 px-2">Valor</th>
+              <th className="py-2 px-2">Data</th><th className="py-2 px-2">Tipo</th><th className="py-2 px-2">Valor</th>
               <th className="py-2 px-2">CET</th><th className="py-2 px-2">Status</th><th className="py-2 px-2">Atualização</th><th className="py-2 px-2">Ações</th>
             </tr></thead>
             <tbody>

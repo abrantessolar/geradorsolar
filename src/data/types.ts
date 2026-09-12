@@ -174,8 +174,8 @@ export const AVAILABILITY_FEE: Record<string, number> = {
 };
 
 export const LINE_NAMES: Record<string, string> = {
-  excellence: 'TLS Plus — Opção 1',
-  premium: 'TLS Prime Micro — Opção 2',
+  excellence: 'Inversor String',
+  premium: 'Micro Inversor',
 };
 
 export const LINE_SUBS: Record<string, string> = {
