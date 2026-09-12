@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { MessageCircle, Phone, Mail, MapPin, Facebook, Instagram, ChevronDown, X, Sun, Zap, Leaf, Tractor, Building, Home, ArrowRight } from 'lucide-react';
+import { MessageCircle, Phone, Mail, MapPin, Facebook, Instagram, ChevronDown, X, Sun, Zap, Leaf, Tractor, Building, Home, ArrowRight, Award, ShieldCheck } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import PublicSimulator from '@/components/PublicSimulator';
 import LazyImage from '@/components/LazyImage';
@@ -318,6 +318,59 @@ export default function LandingPage() {
 
       {/* ─── DIFERENCIAIS ─── */}
       <Diferenciais />
+
+      {/* ─── PADRÃO DE QUALIDADE (Tier 1 Bloomberg / PVEL) ─── */}
+      <section id="qualidade" className="py-20 md:py-28 bg-card">
+        <div className="container">
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} className="text-center mb-16">
+            <span className="inline-block px-4 py-1 rounded-full bg-secondary/10 text-secondary text-xs font-bold uppercase tracking-widest mb-4">
+              Nosso critério de qualidade
+            </span>
+            <h2 className="text-3xl md:text-4xl font-black text-primary mb-4">
+              Equipamentos com histórico real de mercado
+            </h2>
+            <p className="text-foreground/60 max-w-2xl mx-auto text-lg">
+              Damos total preferência a equipamentos com histórico consolidado de desempenho.
+              Usamos dois indicadores internacionais independentes como norteadores na hora de escolher
+              o que instalamos: <strong>Tier 1 Bloomberg</strong> e <strong>Top Performer PVEL</strong>.
+            </p>
+          </motion.div>
+
+          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} className="solar-card p-8">
+              <div className="w-12 h-12 rounded-lg bg-secondary flex items-center justify-center mb-4">
+                <Award className="w-6 h-6 text-secondary-foreground" />
+              </div>
+              <h3 className="text-xl font-bold text-primary mb-2">Tier 1 Bloomberg</h3>
+              <p className="text-foreground/70 text-sm leading-relaxed">
+                Uma classificação da Bloomberg New Energy Finance que reúne os fabricantes de painéis
+                solares com solidez financeira comprovada, capacidade de produção verticalizada e
+                histórico de operação bancável — ou seja, empresas que dificilmente vão deixar de
+                existir e sumir com a garantia do seu equipamento.
+              </p>
+            </motion.div>
+
+            <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={{ ...fadeUp, visible: { ...fadeUp.visible, transition: { duration: 0.6, delay: 0.15 } } }} className="solar-card p-8">
+              <div className="w-12 h-12 rounded-lg bg-secondary flex items-center justify-center mb-4">
+                <ShieldCheck className="w-6 h-6 text-secondary-foreground" />
+              </div>
+              <h3 className="text-xl font-bold text-primary mb-2">Top Performer PVEL</h3>
+              <p className="text-foreground/70 text-sm leading-relaxed">
+                O PVEL (PV Evolution Labs) é um laboratório independente que testa módulos solares em
+                condições reais de estresse (calor, umidade, ciclos térmicos) ao longo de vários anos.
+                Só uma fração dos fabricantes testados recebe o selo "Top Performer" em todas as
+                categorias avaliadas.
+              </p>
+            </motion.div>
+          </div>
+
+          <p className="text-center text-foreground/50 text-sm max-w-2xl mx-auto mt-10">
+            Esses dois indicadores não substituem nossa própria análise técnica — são um ponto de
+            partida que nos ajuda a evitar equipamentos sem lastro de mercado, protegendo o
+            investimento e a garantia do seu sistema a longo prazo.
+          </p>
+        </div>
+      </section>
 
       {/* ─── SERVIÇOS ESPECIALIZADOS ─── */}
       <section id="servicos" className="py-20 md:py-28">
