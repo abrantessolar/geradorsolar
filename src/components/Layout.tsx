@@ -20,8 +20,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const hasAnyGestor = permissions.gestor_obras || permissions.gestor_clientes || permissions.gestor_materiais || permissions.gestor_equipamentos;
 
   const navItems = [
+    ...(permissions.calculadora ? [{ path: '/orcamentos', label: 'Calculadora', icon: Calculator, badge: 0, iconClassName: 'text-accent' }] : []),
     ...(permissions.estoque ? [{ path: '/estoque', label: 'Estoque', icon: Package, badge: 0 }] : []),
-    ...(permissions.calculadora ? [{ path: '/orcamentos', label: 'Calculadora', icon: Calculator, badge: 0 }] : []),
     ...(hasAnyGestor || permissions.gestor_clientes ? [{ path: '/clientes', label: 'Clientes', icon: Users, badge: posVendaCount }] : []),
     ...(permissions.gestor_custos ? [{ path: '/custos', label: 'Custos', icon: DollarSign, badge: 0 }] : []),
     { path: '/ferramentas', label: 'Ferramentas', icon: Wrench, badge: 0 },
@@ -52,7 +52,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                       : 'text-foreground hover:bg-muted'
                   }`}
                 >
-                  <item.icon className="w-4 h-4" />
+                  <item.icon className={`w-4 h-4 ${(item as any).iconClassName || ''}`} />
                   {item.label}
                   {item.badge > 0 && (
                     <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center">
@@ -93,7 +93,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                     : 'text-foreground hover:bg-muted'
                 }`}
               >
-                <item.icon className="w-4 h-4" />
+                <item.icon className={`w-4 h-4 ${(item as any).iconClassName || ''}`} />
                 {item.label}
               </Link>
             ))}
