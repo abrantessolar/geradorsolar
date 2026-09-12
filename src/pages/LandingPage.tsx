@@ -10,6 +10,7 @@ import OndeEstamos from '@/components/OndeEstamos';
 import { SERVICOS } from '@/data/servicos';
 import commercialSystemImage from '@/assets/sistema-comercial-industrial.jpeg.asset.json';
 import residentialSystemImage from '@/assets/sistema-residencial.jpeg.asset.json';
+import agriculturalSystemImage from '@/assets/sistema-agricola.png.asset.json';
 
 import logoImg from '@/assets/logo.png';
 const LOGO_URL = logoImg;
@@ -37,7 +38,7 @@ const SOLUTIONS = [
   },
   {
     title: 'SISTEMAS AGRÍCOLAS',
-    image: 'https://static.wixstatic.com/media/c2ae0d_00abcb22b6d74820b004da41552f658c~mv2.png',
+    image: agriculturalSystemImage.url,
     alt: 'Energia solar rural Mato Grosso do Sul',
     text: 'Nossos sistemas solares são adaptados para atender às necessidades energéticas de propriedades rurais, proporcionando autonomia e eficiência energética. Conciliamos energia solar com rede e geradores à diesel!',
     btn: 'Agro Atendimento',
