@@ -26,7 +26,7 @@ export const defaultKit = (qtdPlacas: number): KitData => ({
   marcaInversor: '', modeloInversor: '',
   potenciaInversorKw: 0, qtdInversores: 1,
   marcaPlaca: '', modeloPlaca: '',
-  potenciaPlacaWp: 0, qtdPlacas,
+  potenciaPlacaWp: 570, qtdPlacas,
   custoKit: 0,
   precoVendaManual: null,
 });
