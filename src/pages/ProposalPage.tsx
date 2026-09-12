@@ -209,12 +209,14 @@ export default function ProposalPage() {
       return typeof v === 'number' ? v : (v as any).perMonth || 0;
     };
     const inverterKw = selectedCard.inverter?.power;
-    const inverterModelLabel = selectedCard.inverterModel || (selectedCard.inverter ? selectedCard.inverter.model : '') || '';
+    const inverterModelLabel = proposal.inverterModel || selectedCard.inverterModel || (selectedCard.inverter ? selectedCard.inverter.model : '') || '';
     const inverterPower = inverterKw
       ? `${inverterModelLabel} - ${inverterKw} kW`.trim()
       : inverterModelLabel;
-    const panelPower = selectedCard.panelPowerLabel || (selectedCard.panel ? `${selectedCard.panel.power} Wp` : '');
+    const panelPower = proposal.panelPowerLabel || selectedCard.panelPowerLabel || (selectedCard.panel ? `${selectedCard.panel.power} Wp` : '');
     const qtdInversores = selectedCard.line === 'premium' ? selectedCard.microCount : 1;
+    const inverterBrandResolved = proposal.inverterBrand || selectedCard.inverterBrand || selectedCard.inverter?.brand || '';
+    const panelBrandResolved = proposal.panelBrand || selectedCard.panelBrand || selectedCard.panel?.brand || '';
 
     // Fluxo de caixa: 5/10/15/20/25 anos — reusa cashflowData (financiamento padrão)
     const monthlyBill = selectedCard.dimensioning.avgMonthlyKwh * proposal.clientData.kwhPrice;
@@ -265,12 +267,12 @@ export default function ProposalPage() {
       excedente_kwh: selectedCard.dimensioning.monthlyGeneration - selectedCard.dimensioning.avgBase,
       potencia_kwp: selectedCard.dimensioning.powerKwp,
       qtd_inversores: qtdInversores,
-      marca_inversor: selectedCard.inverterBrand || selectedCard.inverter?.brand || '',
+      marca_inversor: inverterBrandResolved,
       potencia_inversor: inverterPower,
       num_placas: selectedCard.panelCount,
-      marca_placa: selectedCard.panelBrand || selectedCard.panel?.brand || '',
+      marca_placa: panelBrandResolved,
       potencia_placa: panelPower,
-      imagem_inversor: (selectedCard.line === 'premium' ? settings.microInverterBrandImages : settings.inverterBrandImages)?.[(selectedCard.inverterBrand || selectedCard.inverter?.brand || '').trim().toUpperCase()],
+      imagem_inversor: (selectedCard.line === 'premium' ? settings.microInverterBrandImages : settings.inverterBrandImages)?.[inverterBrandResolved.trim().toUpperCase()],
       imagem_placa: settings.panelImage || undefined,
       usa_microinversor: selectedCard.line === 'premium',
       preco_vista: selectedCard.totalPrice,
@@ -715,7 +717,7 @@ export default function ProposalPage() {
               <p className="text-2xl font-bold text-primary">{formatCurrency(selectedCard.totalPrice)}</p>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-1 text-sm">
-              <div><span className="text-muted-foreground">Placas: </span><span className="font-medium">{selectedCard.panelCount}× {selectedCard.panelBrand || selectedCard.panel?.brand}</span></div>
+              <div><span className="text-muted-foreground">Placas: </span><span className="font-medium">{selectedCard.panelCount}× {proposal.panelBrand || selectedCard.panelBrand || selectedCard.panel?.brand}</span></div>
               <div><span className="text-muted-foreground">Potência: </span><span className="font-medium">{formatNumber(selectedCard.dimensioning.powerKwp)} kWp</span></div>
               <div><span className="text-muted-foreground">Geração/mês: </span><span className="font-medium">{formatNumber(selectedCard.dimensioning.monthlyGeneration, 0)} kWh</span></div>
               <div><span className="text-muted-foreground">Excedente: </span><span className="font-medium">{formatNumber(selectedCard.dimensioning.surplus, 0)} kWh</span></div>
