@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Plus, Edit2, X, Save, Power, PowerOff, Trash2, SunMedium, Zap, Image as ImageIcon, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { getSettings, saveSettings } from '@/data/store';
+import { getSettings, saveSettings, getKits } from '@/data/store';
 import { getSettingsDB, saveSettingsDB } from '@/data/supabaseStore';
 
 interface EquipmentRow {
@@ -425,7 +425,7 @@ function CalculadoraSection() {
 
 /* ─── MINIATURAS (imagens usadas na proposta comercial) ─── */
 function BrandImageManager({
-  title, description, field, settings, persist, uploadTo, pathPrefix,
+  title, description, field, settings, persist, uploadTo, pathPrefix, realBrands,
 }: {
   title: string;
   description: string;
@@ -434,10 +434,14 @@ function BrandImageManager({
   persist: (next: ReturnType<typeof getSettings>) => Promise<void>;
   uploadTo: (file: File, path: string) => Promise<string | null>;
   pathPrefix: string;
+  realBrands: string[];
 }) {
   const [novaMarca, setNovaMarca] = useState('');
   const [uploadingBrand, setUploadingBrand] = useState<string | null>(null);
   const brands = Object.entries(settings[field] || {});
+  const cadastradas = new Set(brands.map(([m]) => m));
+  const semImagem = realBrands.filter(b => !cadastradas.has(b));
+  const orfas = brands.filter(([m]) => realBrands.length > 0 && !realBrands.includes(m));
 
   const handleBrandUpload = async (marca: string, file: File) => {
     const key = marca.trim().toUpperCase();
@@ -469,6 +473,9 @@ function BrandImageManager({
               <img src={url as string} alt={marca} className="w-full h-full object-contain p-2" />
             </div>
             <p className="text-xs font-semibold truncate">{marca}</p>
+            {realBrands.length > 0 && !realBrands.includes(marca) && (
+              <p className="text-[10px] text-destructive font-medium">⚠ não usada em nenhum kit ativo</p>
+            )}
             <div className="flex items-center justify-center gap-2 mt-1">
               <label className="text-xs text-primary hover:underline cursor-pointer">
                 Trocar
@@ -481,6 +488,22 @@ function BrandImageManager({
           </div>
         ))}
       </div>
+
+      {semImagem.length > 0 && (
+        <div className="mb-4 p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
+          <p className="text-xs font-medium text-amber-800 dark:text-amber-300 mb-2">
+            Marcas usadas em kits ativos que ainda não têm miniatura — clique pra preencher o nome certinho:
+          </p>
+          <div className="flex flex-wrap gap-1.5">
+            {semImagem.map(b => (
+              <button key={b} onClick={() => setNovaMarca(b)}
+                className="text-xs px-2.5 py-1 rounded-full bg-amber-100 dark:bg-amber-900 text-amber-800 dark:text-amber-200 hover:bg-amber-200 dark:hover:bg-amber-800 font-medium">
+                {b}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="flex items-end gap-2 max-w-md">
         <div className="flex-1">
@@ -502,6 +525,13 @@ function BrandImageManager({
 function MiniaturasSection() {
   const [settings, setSettingsState] = useState(getSettings());
   const [uploadingPanel, setUploadingPanel] = useState(false);
+  const kits = getKits();
+  const inverterBrands = Array.from(new Set(
+    kits.filter(k => k.type === 'inversor' && k.line !== 'premium' && k.active).map(k => k.brand.trim().toUpperCase())
+  )).sort();
+  const microInverterBrands = Array.from(new Set(
+    kits.filter(k => k.type === 'inversor' && k.line === 'premium' && k.active).map(k => k.brand.trim().toUpperCase())
+  )).sort();
 
   const persist = async (next: typeof settings) => {
     setSettingsState(next);
@@ -536,6 +566,7 @@ function MiniaturasSection() {
         persist={persist}
         uploadTo={uploadTo}
         pathPrefix="equipamentos/inversor"
+        realBrands={inverterBrands}
       />
 
       <div className="border-t border-border pt-6">
@@ -547,6 +578,7 @@ function MiniaturasSection() {
           persist={persist}
           uploadTo={uploadTo}
           pathPrefix="equipamentos/microinversor"
+          realBrands={microInverterBrands}
         />
       </div>
 
