@@ -1,4 +1,4 @@
-import { AdminSettings, Kit, Proposal, SocialProof, PriceTableEntry, CA_MATERIAL_TABLE_DEFAULT, DEFAULT_CARD_RATES } from './types';
+import { AdminSettings, Kit, Proposal, SocialProof, CA_MATERIAL_TABLE_DEFAULT, DEFAULT_CARD_RATES } from './types';
 import { getMonthlyIrradiance, getDefaultIrradiance, getAverageIrradiance } from './irradiancia';
 
 const STORAGE_KEYS = {
@@ -7,7 +7,6 @@ const STORAGE_KEYS = {
   proposals: 'tls_proposals',
   socialProofs: 'tls_social_proofs',
   adminAuth: 'tls_admin_auth',
-  priceTable: 'tls_price_table',
 };
 
 const DEFAULT_DISTRIBUTORS = [
@@ -123,8 +122,6 @@ export function saveProposal(p: Proposal) {
   saveProposals(all);
 }
 
-export function getPriceTable(): PriceTableEntry[] { return load(STORAGE_KEYS.priceTable, []); }
-export function savePriceTable(t: PriceTableEntry[]) { save(STORAGE_KEYS.priceTable, t); }
 
 export function getSocialProofs(): SocialProof[] { return load(STORAGE_KEYS.socialProofs, []); }
 export function saveSocialProofs(s: SocialProof[]) { save(STORAGE_KEYS.socialProofs, s); }

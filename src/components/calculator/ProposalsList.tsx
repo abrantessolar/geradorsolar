@@ -80,9 +80,8 @@ export default function ProposalsList() {
   };
 
   const handleArchive = async (id: string) => {
-    const { updatePropostaStatusDB, addHistoricoDB } = await import('@/data/supabaseStore');
+    const { updatePropostaStatusDB } = await import('@/data/supabaseStore');
     await updatePropostaStatusDB(id, 'arquivada');
-    await addHistoricoDB(id, 'arquivada', session?.user?.id || null, {});
     toast.success('Proposta arquivada');
     loadProposals();
   };

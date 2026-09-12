@@ -1,7 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
-import type { AdminSettings, Kit, Proposal, SocialProof, PriceTableEntry, Seller, Distributor } from './types';
+import type { AdminSettings, Kit, Proposal, SocialProof, Seller, Distributor } from './types';
 import { CA_MATERIAL_TABLE_DEFAULT, DEFAULT_CARD_RATES } from './types';
-import { saveKits, savePriceTable, saveSocialProofs } from './store';
+import { saveKits, saveSocialProofs } from './store';
 
 // ─── VENDEDORES ───
 export async function getVendedoresDB(): Promise<Seller[]> {
@@ -132,26 +132,6 @@ export async function updatePropostaStatusDB(id: string, status: string) {
 
 export async function markPropostaViewedDB(id: string) {
   await supabase.from('propostas').update({ visualizado_em: new Date().toISOString(), status: 'visualizada' }).eq('id', id);
-  await addHistoricoDB(id, 'visualizada_cliente', null, { timestamp: new Date().toISOString() });
-}
-
-// ─── HISTÓRICO ───
-export async function addHistoricoDB(propostaId: string, acao: string, usuarioId: string | null, detalhes?: any) {
-  await supabase.from('historico_propostas' as any).insert({
-    proposta_id: propostaId,
-    acao,
-    usuario_id: usuarioId,
-    detalhes: detalhes || {},
-  });
-}
-
-export async function getHistoricoDB(propostaId: string) {
-  const { data } = await supabase
-    .from('historico_propostas' as any)
-    .select('*')
-    .eq('proposta_id', propostaId)
-    .order('criado_em', { ascending: false });
-  return data || [];
 }
 
 export async function duplicatePropostaDB(originalId: string, userId: string | null): Promise<string | null> {
@@ -159,18 +139,7 @@ export async function duplicatePropostaDB(originalId: string, userId: string | n
   if (!original) return null;
   const newProposal = { ...original, id: crypto.randomUUID(), status: 'enviada' as const, cetApplied: null };
   const newId = await savePropostaDB(newProposal as any);
-  await addHistoricoDB(newId, 'criada', userId, { origem: 'duplicacao', proposta_original: originalId });
   return newId;
-}
-
-// ─── TABELA DE PREÇOS ───
-export async function getPriceTableDB(): Promise<PriceTableEntry[]> {
-  const val = await getConfigDB('price_table');
-  return (val as PriceTableEntry[]) || [];
-}
-
-export async function savePriceTableDB(table: PriceTableEntry[]) {
-  await saveConfigDB('price_table', table);
 }
 
 // ─── PROVAS SOCIAIS ───
@@ -310,15 +279,6 @@ export async function syncKitsFromDB(): Promise<Kit[]> {
     saveKits(kits);
   }
   return kits;
-}
-
-// Load price table from DB and sync to localStorage
-export async function syncPriceTableFromDB(): Promise<PriceTableEntry[]> {
-  const table = await getPriceTableDB();
-  if (table.length > 0) {
-    savePriceTable(table);
-  }
-  return table;
 }
 
 // Load social proofs (depoimentos) from DB and sync to localStorage

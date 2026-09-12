@@ -30,7 +30,7 @@ import LeadNotification from "@/components/LeadNotification";
 import NotFound from "@/pages/NotFound";
 import { EnergiaProvider } from "@/contexts/EnergiaContext";
 import { saveSettings } from "@/data/store";
-import { getSettingsDB, syncKitsFromDB, syncPriceTableFromDB, syncSocialProofsFromDB } from "@/data/supabaseStore";
+import { getSettingsDB, syncKitsFromDB, syncSocialProofsFromDB } from "@/data/supabaseStore";
 import EnergiaLogin from "@/pages/energia/EnergiaLogin";
 import EnergiaCadastro from "@/pages/energia/EnergiaCadastro";
 import EnergiaDashboard from "@/pages/energia/EnergiaDashboard";
@@ -134,7 +134,7 @@ function useSyncFromDB() {
     const sync = async () => {
       try {
         const [dbSettings] = await Promise.race([
-          Promise.all([getSettingsDB(), syncKitsFromDB(), syncPriceTableFromDB(), syncSocialProofsFromDB()]),
+          Promise.all([getSettingsDB(), syncKitsFromDB(), syncSocialProofsFromDB()]),
           timeout.then(() => { throw new Error('timeout'); }),
         ]);
         if (dbSettings) saveSettings(dbSettings);

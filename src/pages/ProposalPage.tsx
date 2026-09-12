@@ -1,8 +1,8 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import logoTls from '@/assets/logo.png';
 import { useState, useMemo, useEffect, useRef } from 'react';
-import { getProposals, saveProposal, getSettings, getSocialProofs, lookupIrradiation, getPriceTable } from '@/data/store';
-import { getPropostaByIdDB, markPropostaViewedDB, getSettingsDB, addHistoricoDB, savePropostaDB } from '@/data/supabaseStore';
+import { getProposals, saveProposal, getSettings, getSocialProofs, lookupIrradiation } from '@/data/store';
+import { getPropostaByIdDB, markPropostaViewedDB, getSettingsDB, savePropostaDB } from '@/data/supabaseStore';
 import { getCidadesIrradianciaDB } from '@/data/supabaseStore';
 import {
   formatCurrency, formatNumber, calcInstallments, calcDimensioning,
@@ -10,7 +10,6 @@ import {
   calcMicroInverterCount, calcCardInstallments, calcEquipmentMonthly, calcCostBreakdown,
 } from '@/data/calculations';
 import { MONTH_LABELS, MONTH_KEYS, SEASONAL_FACTORS, LINE_NAMES } from '@/data/types';
-import type { PriceTableLineDetails } from '@/data/types';
 import { Download, Share2, Edit, ArrowLeft, Zap, MessageCircle, AlertTriangle, Eye, CheckCircle2 } from 'lucide-react';
 import { gerarPropostaPDF, downloadPropostaPDF, fetchPortfolioPhotosOptimized } from '@/lib/generatePropostaPDF';
 import { PropostaTemplatePages, type PropostaTemplateData } from '@/components/PropostaTemplatePages';
@@ -141,18 +140,11 @@ export default function ProposalPage() {
         };
       }
       
-      const priceTable = getPriceTable();
-      const ptEntries = priceTable.filter(e => e[line] !== null && e[line]! > 0 && e.panels >= finalPanels);
-      ptEntries.sort((a, b) => a.panels - b.panels);
-      const ptEntry = ptEntries.find(e => e.panels === finalPanels) || ptEntries[0] || null;
-      const ptDetails = (ptEntry?.details as any)?.[line] as PriceTableLineDetails | undefined;
-
       const panel = findPanel(line);
       const panelPowerKwp = (panel?.power || 570) / 1000;
-      const usedPanels = ptEntry ? ptEntry.panels : finalPanels;
+      const usedPanels = finalPanels;
       const inverter = findInverterForPanels(line, usedPanels, panelPowerKwp);
       const powerKwp = usedPanels * panelPowerKwp;
-      const hasPriceTableCost = ptEntry && ptEntry[line] !== null && ptEntry[line]! > 0;
       const costBreakdown = calcCostBreakdown(inverter, panel, usedPanels, line);
       const totalPrice = costBreakdown.salePrice;
       const dim = calcDimensioning(
@@ -161,11 +153,8 @@ export default function ProposalPage() {
       );
       const isPremium = line === 'premium';
       const microCount = isPremium ? calcMicroInverterCount(usedPanels) : 0;
-      const ptInverterPower = ptDetails?.inverterPower ? parseFloat(ptDetails.inverterPower) : null;
-      const ptPanelPower = ptDetails?.panelPower ? parseFloat(ptDetails.panelPower) : null;
-      const effectiveInverterKw = ptInverterPower || inverter?.power || 0;
-      const effectivePanelWp = ptPanelPower || panel?.power || 570;
-      const effectivePanelKwp = effectivePanelWp / 1000;
+      const effectiveInverterKw = inverter?.power || 0;
+      const effectivePanelKwp = (panel?.power || 570) / 1000;
       const maxPanels = isPremium ? 999 : Math.floor((effectiveInverterKw * 1.5) / effectivePanelKwp);
       const panelsRemaining = isPremium ? 999 : maxPanels - usedPanels;
       const monthlyGeneration = powerKwp * irradiation * 30 * (1 - settings.systemLoss / 100);
@@ -176,10 +165,10 @@ export default function ProposalPage() {
       return {
         line, inverter, panel, panelCount: usedPanels, totalPrice, maxPanels, panelsRemaining, microCount,
         installments, cardInstallments, costBreakdown,
-        inverterBrand: ptDetails?.inverterBrand || inverter?.brand || '',
-        inverterModel: ptDetails?.inverterPower ? `${ptDetails.inverterPower} kW` : inverter?.model || '',
-        panelBrand: ptDetails?.panelBrand || panel?.brand || '',
-        panelPowerLabel: ptDetails?.panelPower ? `${ptDetails.panelPower} Wp` : `${panel?.power || 570} Wp`,
+        inverterBrand: inverter?.brand || '',
+        inverterModel: inverter?.model || '',
+        panelBrand: panel?.brand || '',
+        panelPowerLabel: `${panel?.power || 570} Wp`,
         dimensioning: { ...dim, panelCount: usedPanels, powerKwp, monthlyGeneration, surplus },
       };
     });
@@ -333,7 +322,6 @@ export default function ProposalPage() {
       downloadPropostaPDF(blob, data.cliente_nome, data.geracao_mensal);
       toast.dismiss(toastId);
       toast.success('PDF gerado com sucesso!');
-      addHistoricoDB(id || '', 'pdf_baixado', session?.user?.id || null, {});
     } catch (err) {
       toast.dismiss(toastId);
       toast.error('Erro ao gerar PDF');
@@ -421,8 +409,6 @@ export default function ProposalPage() {
 
       setProposal(updated);
       await savePropostaDB(updated);
-      const { addHistoricoDB: addHist } = await import('@/data/supabaseStore');
-      await addHist(id || '', 'editada', session?.user?.id || null, { origem: 'edicao_pontual' });
       toast.success('Alterações salvas!');
       setEditingProposal(false);
       handlePreviewPDF();
