@@ -48,13 +48,6 @@ const SOLUTIONS = [
   },
 ];
 
-const STATIC_PARTNER_NAMES = ['Parceiro fabricante de inversores solares', 'Parceiro distribuidor de equipamentos solares', 'Parceiro financiamento energia solar'];
-const STATIC_PARTNERS = [
-  'https://static.wixstatic.com/media/c2ae0d_e25309823c3f4aaa8742595e14b12485~mv2.png',
-  'https://static.wixstatic.com/media/c2ae0d_b930ee5eefab44e8ad6967703ce7b914~mv2.png',
-  'https://static.wixstatic.com/media/c2ae0d_cd3adde29feb4f6ba61eccb1f0e321e1~mv2.png',
-];
-
 const STATIC_PORTFOLIO = [
   'https://static.wixstatic.com/media/c2ae0d_6c371c31aaf648c7be252aaff996c7f1~mv2.jpg',
   'https://static.wixstatic.com/media/c2ae0d_6ee05018660840b5a51c119a569c78cf~mv2.jpg',
@@ -84,16 +77,11 @@ export default function LandingPage() {
 
   // Dynamic content from database
   const [portfolioPhotos, setPortfolioPhotos] = useState<{ url: string; descricao: string | null }[]>([]);
-  const [partnerLogos, setPartnerLogos] = useState<{ url: string; nome: string; url_site: string | null }[]>([]);
 
   useEffect(() => {
     supabase.from('fotos_portfolio').select('url, descricao').eq('ativo', true).order('ordem')
       .then(({ data }) => {
         if (data && data.length > 0) setPortfolioPhotos(data as any);
-      });
-    supabase.from('logos_parceiros').select('url, nome, url_site').eq('ativo', true).order('ordem')
-      .then(({ data }) => {
-        if (data && data.length > 0) setPartnerLogos(data as any);
       });
   }, []);
 
@@ -106,8 +94,6 @@ export default function LandingPage() {
 
   const portfolio = portfolioPhotos.length > 0 ? portfolioPhotos.map(p => p.url) : STATIC_PORTFOLIO;
   const portfolioDescs = portfolioPhotos.length > 0 ? portfolioPhotos.map(p => p.descricao) : null;
-  const partners = partnerLogos.length > 0 ? partnerLogos : STATIC_PARTNERS.map((url, i) => ({ url, nome: STATIC_PARTNER_NAMES[i], url_site: null }));
-
   const scrollToSimulator = () => {
     simulatorRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -367,32 +353,6 @@ export default function LandingPage() {
                 </Link>
               </motion.div>
             ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ─── PARCEIROS ─── */}
-      <section className="py-16 bg-card border-y border-border/30">
-        <div className="container">
-          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} className="text-center mb-10">
-            <h2 className="text-2xl md:text-3xl font-black text-primary">NOSSOS PARCEIROS</h2>
-          </motion.div>
-          <div className="flex items-center justify-center gap-12 flex-wrap">
-            {partners.map((p, i) => {
-              const img = (
-                <LazyImage
-                  key={i}
-                  src={p.url}
-                  alt={p.nome}
-                  className="h-16 md:h-20 w-auto object-contain grayscale hover:grayscale-0 transition-all duration-300"
-                  wrapperClassName="h-16 md:h-20"
-                  skeleton={false}
-                  width={200}
-                  height={80}
-                />
-              );
-              return p.url_site ? <a key={i} href={p.url_site} target="_blank" rel="noopener noreferrer">{img}</a> : <div key={i}>{img}</div>;
-            })}
           </div>
         </div>
       </section>
