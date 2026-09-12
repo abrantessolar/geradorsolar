@@ -156,7 +156,7 @@ export default function LandingPage() {
           className={`absolute inset-0 bg-cover bg-center transition-opacity duration-700 ${heroLoaded ? 'opacity-100' : 'opacity-0'}`}
           style={{ backgroundImage: `url(${HERO_BG})` }}
         />
-        <div className="absolute inset-0 bg-muted-foreground/80" />
+        <div className="absolute inset-0 bg-muted-foreground/70" />
         <div className="relative z-10 text-center px-4 max-w-4xl mx-auto">
           <motion.div initial="hidden" animate="visible" variants={fadeUp}>
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-secondary/20 backdrop-blur-sm border border-secondary/30 text-secondary mb-6">
