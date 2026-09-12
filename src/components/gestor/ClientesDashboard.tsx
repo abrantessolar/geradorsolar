@@ -43,6 +43,7 @@ export default function ClientesDashboard({
     }).length;
 
     const kwpPendente = activeNonFrozen.reduce((sum, p) => sum + calcKwp(p.qtd_placas, p.potencia_placa), 0);
+    const placasPendente = activeNonFrozen.reduce((sum, p) => sum + (p.qtd_placas || 0), 0);
 
     const allWithDates = [...projetos].filter(p => p.data_instalacao && p.data_fechamento);
     const avgDays = allWithDates.length > 0
@@ -58,6 +59,7 @@ export default function ClientesDashboard({
       aguardando: waitingInstall.length,
       instaladosEsteMes,
       kwpPendente: kwpPendente.toFixed(1),
+      placasPendente,
       tempoMedio: avgDays,
       atrasados: atrasados.length,
     };
@@ -125,7 +127,7 @@ export default function ClientesDashboard({
           { label: 'Projetos Ativos', value: stats.totalAtivos, icon: ClipboardList, color: 'text-primary' },
           { label: 'Aguardando', value: stats.aguardando, icon: Truck, color: 'text-amber-600' },
           { label: 'Instalados (mês)', value: stats.instaladosEsteMes, icon: CheckCircle, color: 'text-green-600' },
-          { label: 'kWp Pendente', value: stats.kwpPendente, icon: BarChart3, color: 'text-blue-600' },
+          { label: 'kWp Pendente', value: stats.kwpPendente, sub: `${stats.placasPendente} placas`, icon: BarChart3, color: 'text-blue-600' },
           { label: 'Tempo Médio', value: `${stats.tempoMedio}d`, icon: Clock, color: 'text-muted-foreground' },
           { label: 'Atrasados (>30d)', value: stats.atrasados, icon: AlertTriangle, color: 'text-destructive' },
         ].map(c => (
@@ -134,7 +136,10 @@ export default function ClientesDashboard({
               <c.icon className="w-4 h-4" />
             </div>
             <div className="min-w-0">
-              <p className="text-lg sm:text-xl font-bold leading-tight">{c.value}</p>
+              <p className="text-lg sm:text-xl font-bold leading-tight">
+                {c.value}
+                {c.sub && <span className="text-xs font-normal text-muted-foreground ml-1">({c.sub})</span>}
+              </p>
               <p className="text-[10px] sm:text-xs text-muted-foreground truncate">{c.label}</p>
             </div>
           </div>

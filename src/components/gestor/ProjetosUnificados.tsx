@@ -432,6 +432,7 @@ export default function ProjetosUnificados({
                     </div>
                     <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
                       <div><span className="text-muted-foreground">Placas:</span> {p.qtd_placas || '—'}x {p.marca_placa || ''} {p.potencia_placa || ''}W</div>
+                      <div><span className="text-muted-foreground">Inversor:</span> {p.qtd_inversores || 1} {p.marca_inversor || '—'} {p.potencia_inversor || ''}kW</div>
                       <div><span className="text-muted-foreground">Instalador:</span> {p.instalador || '—'}</div>
                     </div>
                     <div className="flex gap-1.5 items-center pt-1 border-t border-border/50 flex-wrap">
@@ -517,8 +518,8 @@ export default function ProjetosUnificados({
                   <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
                     <div><span className="text-muted-foreground">Instalação:</span> {c.instalado_em ? fmtDateBR(c.instalado_em) : '—'}</div>
                     <div><span className="text-muted-foreground">KWp:</span> {c.kwp ? Number(c.kwp).toFixed(2) : calcKwp(c.qtd_placas, c.potencia_placa)}</div>
-                    <div><span className="text-muted-foreground">Placas:</span> {c.qtd_placas || '—'}</div>
-                    <div><span className="text-muted-foreground">Inversor:</span> {c.marca_inversor || '—'}</div>
+                    <div><span className="text-muted-foreground">Placas:</span> {c.qtd_placas || '—'} {c.marca_placa || ''} {c.potencia_placa || ''}W</div>
+                    <div><span className="text-muted-foreground">Inversor:</span> {c.qtd_inversores || 1} {c.marca_inversor || '—'} {c.potencia_inversor || ''}kW</div>
                     <div className="col-span-2"><span className="text-muted-foreground">Instalador:</span> {c.instalador || '—'}</div>
                   </div>
                    <div className="flex gap-1.5 items-center pt-1 border-t border-border/50">
