@@ -9,6 +9,7 @@ import Diferenciais from '@/components/Diferenciais';
 import OndeEstamos from '@/components/OndeEstamos';
 import { SERVICOS } from '@/data/servicos';
 import commercialSystemImage from '@/assets/sistema-comercial-industrial.jpeg.asset.json';
+import residentialSystemImage from '@/assets/sistema-residencial.jpeg.asset.json';
 
 import logoImg from '@/assets/logo.png';
 const LOGO_URL = logoImg;
@@ -18,7 +19,7 @@ const MISSION_IMG = 'https://static.wixstatic.com/media/11062b_bdefce897daa4bafa
 const SOLUTIONS = [
   {
     title: 'SISTEMAS RESIDENCIAIS',
-    image: 'https://static.wixstatic.com/media/c2ae0d_22207624d8e94b8c924339ec7f85d44c~mv2.png',
+    image: residentialSystemImage.url,
     alt: 'Instalação de painéis solares residencial em Três Lagoas',
     text: 'Nossos sistemas solares residenciais são projetados para fornecer energia limpa e renovável para residências de todos os tamanhos, reduzindo a dependência da rede elétrica convencional.',
     btn: 'Solicitar Orçamento',
