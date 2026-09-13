@@ -2,9 +2,10 @@ import { useEffect, useMemo, useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { getConfigDB } from '@/data/supabaseStore';
 import { toast } from 'sonner';
-import { Loader2, Search, CalendarClock, CalendarDays, Save, List, Users, ChevronDown, ChevronRight } from 'lucide-react';
+import { Loader2, Search, CalendarClock, CalendarDays, Save, List, Users, ChevronDown, ChevronRight, PlayCircle } from 'lucide-react';
 import {
   type TarefaPosVenda, type TarefaTipo, TIPO_LABEL, sincronizarDiaLeitura,
+  ativarPosVendaProjeto, ativarPosVendaCliente,
 } from '@/lib/posvendaTarefas';
 import TarefaPosVendaItem from './TarefaPosVendaItem';
 import PosVendaControles from './PosVendaControles';
@@ -465,6 +466,158 @@ export default function PosVendaAgenda() {
       )}
       </>
       )}
+
+      <PosVendaNaoIniciados />
+    </div>
+  );
+}
+
+/* ─── CLIENTES SEM PÓS-VENDA INICIADO ─── */
+const OPCOES_INICIO: { valor: number | undefined; label: string }[] = [
+  { valor: undefined, label: 'Desde o início (mês 1)' },
+  { valor: 6, label: 'A partir do mês 6' },
+  { valor: 12, label: 'A partir do mês 12 (1 ano)' },
+  { valor: 15, label: 'A partir do mês 15' },
+  { valor: 18, label: 'A partir do mês 18' },
+  { valor: 24, label: 'A partir do mês 24 (2 anos)' },
+];
+
+interface NaoIniciadoItem {
+  key: string;
+  nome: string;
+  dataInstalacao: string;
+  diaLeitura: number | null;
+  dataNascimento: string | null;
+  owner: { projetoId?: string; clienteBaseId?: string };
+}
+
+function LinhaNaoIniciado({ item, onAtivado }: { item: NaoIniciadoItem; onAtivado: () => void }) {
+  const [apartirDoMes, setApartirDoMes] = useState<number | undefined>(undefined);
+  const [busy, setBusy] = useState(false);
+
+  const dias = Math.round((Date.now() - new Date(item.dataInstalacao + 'T00:00:00').getTime()) / 86400000);
+
+  const ativar = async () => {
+    if (!confirm(`Iniciar pós-venda de ${item.nome}${apartirDoMes ? ` a partir do mês ${apartirDoMes}` : ''}?`)) return;
+    setBusy(true);
+    try {
+      const fn = item.owner.projetoId ? ativarPosVendaProjeto : ativarPosVendaCliente;
+      const res = await fn({
+        ...(item.owner.projetoId ? { projetoId: item.owner.projetoId } : { clienteBaseId: item.owner.clienteBaseId! }),
+        dataInstalacao: new Date(item.dataInstalacao + 'T00:00:00'),
+        diaLeitura: item.diaLeitura,
+        dataNascimento: item.dataNascimento ? new Date(item.dataNascimento + 'T00:00:00') : null,
+        apartirDoMes,
+      } as any);
+      if (res.created > 0) toast.success(`Pós-venda iniciado! ${res.created} lembrete(s) criado(s).`);
+      else toast.info('Nenhum lembrete a criar (todos os itens escolhidos já ficaram no passado).');
+      onAtivado();
+    } catch (e: any) {
+      toast.error('Erro ao ativar: ' + (e?.message || e));
+    } finally { setBusy(false); }
+  };
+
+  return (
+    <div className="flex flex-wrap items-center gap-2 p-3 rounded-lg border border-border bg-card/40">
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-semibold text-foreground truncate">{item.nome}</p>
+        <p className="text-xs text-muted-foreground">
+          Instalado em {fmtDateBR2(item.dataInstalacao)} · {dias} dia{dias === 1 ? '' : 's'} atrás
+        </p>
+      </div>
+      <select
+        value={apartirDoMes ?? ''}
+        onChange={e => setApartirDoMes(e.target.value ? Number(e.target.value) : undefined)}
+        className="solar-input py-1.5 text-xs"
+      >
+        {OPCOES_INICIO.map(o => <option key={o.label} value={o.valor ?? ''}>{o.label}</option>)}
+      </select>
+      <button onClick={ativar} disabled={busy} className="solar-btn-primary text-xs py-1.5 px-3 flex items-center gap-1.5 disabled:opacity-50">
+        {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <PlayCircle className="w-3.5 h-3.5" />}
+        Iniciar pós-venda
+      </button>
+    </div>
+  );
+}
+
+function fmtDateBR2(iso: string): string {
+  const [y, m, d] = iso.split('-');
+  return `${d}/${m}/${y}`;
+}
+
+export function PosVendaNaoIniciados() {
+  const [itens, setItens] = useState<NaoIniciadoItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [busca, setBusca] = useState('');
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    const [{ data: projs }, { data: clis }, { data: tarefasP }, { data: tarefasC }] = await Promise.all([
+      supabase.from('projetos' as any).select('id, nome_completo, razao_social, data_instalacao, dia_leitura, data_nascimento').not('data_instalacao', 'is', null),
+      supabase.from('clientes_base' as any).select('id, nome_completo, instalado_em, dia_leitura, data_nascimento').not('instalado_em', 'is', null),
+      supabase.from('tarefas_posvenda' as any).select('projeto_id').not('projeto_id', 'is', null),
+      supabase.from('tarefas_posvenda' as any).select('cliente_base_id').not('cliente_base_id', 'is', null),
+    ]);
+
+    const projComTarefa = new Set(((tarefasP || []) as any[]).map(t => t.projeto_id));
+    const cliComTarefa = new Set(((tarefasC || []) as any[]).map(t => t.cliente_base_id));
+
+    const lista: NaoIniciadoItem[] = [
+      ...((projs || []) as any[])
+        .filter(p => !projComTarefa.has(p.id))
+        .map(p => ({
+          key: `p:${p.id}`,
+          nome: p.nome_completo || p.razao_social || 'Cliente',
+          dataInstalacao: p.data_instalacao,
+          diaLeitura: p.dia_leitura ?? null,
+          dataNascimento: p.data_nascimento || null,
+          owner: { projetoId: p.id as string },
+        })),
+      ...((clis || []) as any[])
+        .filter(c => !cliComTarefa.has(c.id))
+        .map(c => ({
+          key: `c:${c.id}`,
+          nome: c.nome_completo || 'Cliente',
+          dataInstalacao: c.instalado_em,
+          diaLeitura: c.dia_leitura ?? null,
+          dataNascimento: c.data_nascimento || null,
+          owner: { clienteBaseId: c.id as string },
+        })),
+    ].sort((a, b) => a.dataInstalacao.localeCompare(b.dataInstalacao)); // mais antigos primeiro
+
+    setItens(lista);
+    setLoading(false);
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  const filtrados = useMemo(() => {
+    const termo = busca.trim().toLowerCase();
+    return termo ? itens.filter(i => i.nome.toLowerCase().includes(termo)) : itens;
+  }, [itens, busca]);
+
+  if (loading) return null;
+  if (itens.length === 0) return null;
+
+  return (
+    <div className="space-y-3 pt-6 mt-6 border-t border-border">
+      <div className="flex items-center gap-2 text-primary">
+        <PlayCircle className="w-5 h-5" />
+        <h2 className="text-base font-bold">Pós-venda não iniciado</h2>
+        <span className="text-xs text-muted-foreground">({itens.length})</span>
+      </div>
+      <p className="text-xs text-muted-foreground">
+        Clientes com instalação registrada mas sem nenhum lembrete de pós-venda criado ainda.
+      </p>
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+        <input value={busca} onChange={e => setBusca(e.target.value)} placeholder="Buscar por cliente" className="solar-input pl-9 w-full" />
+      </div>
+      <div className="space-y-2">
+        {filtrados.map(item => (
+          <LinhaNaoIniciado key={item.key} item={item} onAtivado={load} />
+        ))}
+      </div>
     </div>
   );
 }

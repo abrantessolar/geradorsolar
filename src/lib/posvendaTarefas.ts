@@ -159,13 +159,17 @@ export function construirTarefas(opts: {
   diaLeitura: number | null;
   dataNascimento?: Date | null;
   onlyFuture?: boolean;
+  /** Ignora itens do plano ancorados antes deste mês (ex: 6 = pula os lembretes de 1, 2 e 3 meses). */
+  apartirDoMes?: number;
 }): TarefaRow[] {
-  const { dataInstalacao, diaLeitura, dataNascimento, onlyFuture } = opts;
+  const { dataInstalacao, diaLeitura, dataNascimento, onlyFuture, apartirDoMes } = opts;
   const temLeitura = diaLeitura != null;
   const dia = diaLeitura ?? dataInstalacao.getDate();
   const hojeISO = toISODate(new Date());
 
-  let rows: TarefaRow[] = PLANO.map((p) => {
+  let rows: TarefaRow[] = PLANO
+    .filter((p) => (apartirDoMes ? (p.conta ?? 0) >= apartirDoMes : true))
+    .map((p) => {
     // Lembretes mensais sem dia de leitura definido ficam aguardando.
     const aguardando = p.conta != null && !temLeitura;
     const data = aguardando ? dataInstalacao : dataDoItem(p, dataInstalacao, dia);
@@ -253,8 +257,9 @@ export async function ativarPosVendaCliente(opts: {
   dataInstalacao: Date;
   diaLeitura: number | null;
   dataNascimento?: Date | null;
+  apartirDoMes?: number;
 }): Promise<AtivacaoResultado> {
-  const { clienteBaseId, dataInstalacao, diaLeitura, dataNascimento } = opts;
+  const { clienteBaseId, dataInstalacao, diaLeitura, dataNascimento, apartirDoMes } = opts;
 
   // Evita duplicar
   const { count } = await supabase
@@ -263,7 +268,7 @@ export async function ativarPosVendaCliente(opts: {
     .eq('cliente_base_id', clienteBaseId);
   if ((count || 0) > 0) return { created: 0, proximo: null };
 
-  const base = construirTarefas({ dataInstalacao, diaLeitura, dataNascimento, onlyFuture: true });
+  const base = construirTarefas({ dataInstalacao, diaLeitura, dataNascimento, onlyFuture: true, apartirDoMes });
   if (base.length === 0) return { created: 0, proximo: null };
 
   const rows = base.map((r) => ({ ...r, cliente_base_id: clienteBaseId }));
@@ -289,8 +294,9 @@ export async function ativarPosVendaProjeto(opts: {
   dataInstalacao: Date;
   diaLeitura: number | null;
   dataNascimento?: Date | null;
+  apartirDoMes?: number;
 }): Promise<AtivacaoResultado> {
-  const { projetoId, dataInstalacao, diaLeitura, dataNascimento } = opts;
+  const { projetoId, dataInstalacao, diaLeitura, dataNascimento, apartirDoMes } = opts;
 
   // Evita duplicar
   const { count } = await supabase
@@ -299,7 +305,7 @@ export async function ativarPosVendaProjeto(opts: {
     .eq('projeto_id', projetoId);
   if ((count || 0) > 0) return { created: 0, proximo: null };
 
-  const base = construirTarefas({ dataInstalacao, diaLeitura, dataNascimento, onlyFuture: true });
+  const base = construirTarefas({ dataInstalacao, diaLeitura, dataNascimento, onlyFuture: true, apartirDoMes });
   if (base.length === 0) return { created: 0, proximo: null };
 
   const rows = base.map((r) => ({ ...r, projeto_id: projetoId }));
