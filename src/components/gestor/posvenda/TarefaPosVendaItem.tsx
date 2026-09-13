@@ -93,7 +93,9 @@ export default function TarefaPosVendaItem({
 
   const salvarObs = async () => {
     if (obs === (tarefa.observacao || '')) return;
-    await supabase.from('tarefas_posvenda' as any).update({ observacao: obs || null }).eq('id', tarefa.id);
+    const { error } = await supabase.from('tarefas_posvenda' as any).update({ observacao: obs || null }).eq('id', tarefa.id);
+    if (error) { toast.error('Erro ao salvar observação: ' + error.message); return; }
+    toast.success('Observação salva.');
   };
 
   const abrirWhatsApp = () => {
@@ -102,7 +104,8 @@ export default function TarefaPosVendaItem({
   };
 
   const toggleVisivel = async () => {
-    await supabase.from('tarefas_posvenda' as any).update({ visivel_cliente: !tarefa.visivel_cliente }).eq('id', tarefa.id);
+    const { error } = await supabase.from('tarefas_posvenda' as any).update({ visivel_cliente: !tarefa.visivel_cliente }).eq('id', tarefa.id);
+    if (error) { toast.error('Erro ao atualizar: ' + error.message); return; }
     onChanged();
   };
 
