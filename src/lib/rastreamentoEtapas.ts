@@ -1,7 +1,7 @@
 // Estrutura fixa dos 3 fluxos de rastreamento de obra.
 // Compartilhada entre o Kanban interno e a página pública.
 
-export type CampoEspecial = 'local_entrega' | 'numero_fila' | 'data_agendamento' | 'data_operacao';
+export type CampoEspecial = 'local_entrega' | 'numero_fila';
 
 export interface EtapaDef {
   etapa: number;
@@ -32,6 +32,7 @@ export const FLUXOS: FluxoDef[] = [
       { etapa: 2, titulo: 'Projeto protocolado' },
       { etapa: 3, titulo: 'Projeto aprovado' },
       { etapa: 4, titulo: 'Projeto aprovado com troca', condicional: true },
+      { etapa: 5, titulo: 'Troca do medidor', condicional: true },
     ],
   },
   {
@@ -53,13 +54,10 @@ export const FLUXOS: FluxoDef[] = [
     coluna: 'instalacao',
     etapas: [
       { etapa: 1, titulo: 'Aguardando instalação', campo: 'numero_fila' },
-      { etapa: 2, titulo: 'Instalação agendada', campo: 'data_agendamento' },
       { etapa: 3, titulo: 'Instalação finalizada' },
-      { etapa: 4, titulo: 'Explicar funcionamento, chaves de segurança, DPS e afins' },
       { etapa: 5, titulo: 'Conectar logger no WiFi' },
       { etapa: 6, titulo: 'Criar planta no monitoramento' },
-      { etapa: 7, titulo: 'Adicionar datalogger' },
-      { etapa: 8, titulo: 'Apresentar app de monitoramento ao cliente' },
+      { etapa: 8, titulo: 'Explicar funcionamento, chaves de segurança, DPS e apresentar o app de monitoramento ao cliente' },
     ],
   },
 ];
@@ -85,7 +83,6 @@ export const CAMPOS_CANONICOS: CampoCanonicoDef[] = [
   { fluxo: 2, etapa: 1, tipo: 'fornecedor', coluna: 'distribuidor' },
   { fluxo: 2, etapa: 4, tipo: 'local', coluna: 'local_entrega' },
   { fluxo: 3, etapa: 1, tipo: 'int', coluna: 'numero_fila' },
-  { fluxo: 3, etapa: 2, tipo: 'date', coluna: 'data_agendamento' },
   { fluxo: 3, etapa: 3, tipo: 'data_auto', coluna: 'data_instalacao' },
   { fluxo: 3, etapa: 5, tipo: 'wifi', coluna: 'wifi_nome' },
   { fluxo: 3, etapa: 6, tipo: 'planta', coluna: 'nome_planta' },
@@ -142,7 +139,7 @@ export function colunaAtual(rows: RastreamentoRow[]): string {
   const done = (fluxo: number, etapa: number) =>
     rows.some(r => r.fluxo === fluxo && r.etapa === etapa && r.concluido);
 
-  if (done(3, 4)) return 'concluido';
+  if (done(3, 8)) return 'concluido';
   // Está em "instalação" se qualquer etapa do fluxo 3 começou ou os fluxos anteriores concluíram
   const f3Started = rows.some(r => r.fluxo === 3 && r.concluido);
   const f2Started = rows.some(r => r.fluxo === 2 && r.concluido);

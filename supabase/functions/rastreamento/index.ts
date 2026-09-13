@@ -24,15 +24,15 @@ function err(message: string, status = 400) {
 
 // Labels dos fluxos (espelho de src/lib/rastreamentoEtapas.ts)
 const FLUXOS: Record<number, { titulo: string; icone: string; etapas: Record<number, string> }> = {
-  1: { titulo: "Homologação", icone: "📄", etapas: { 1: "Documentação recebida", 2: "Projeto protocolado", 3: "Projeto aprovado", 4: "Projeto aprovado com troca" } },
+  1: { titulo: "Homologação", icone: "📄", etapas: { 1: "Documentação recebida", 2: "Projeto protocolado", 3: "Projeto aprovado", 4: "Projeto aprovado com troca", 5: "Troca do medidor" } },
   2: { titulo: "Equipamentos", icone: "📦", etapas: { 1: "Pedido de compra realizado", 2: "Equipamento pago", 3: "Em transporte", 4: "Material entregue" } },
-  3: { titulo: "Instalação", icone: "⚡", etapas: { 1: "Aguardando instalação", 2: "Instalação agendada", 3: "Instalação finalizada", 4: "Explicar funcionamento, chaves de segurança, DPS e afins", 5: "Conectar logger no WiFi", 6: "Criar planta no monitoramento", 7: "Adicionar datalogger", 8: "Apresentar app de monitoramento ao cliente" } },
+  3: { titulo: "Instalação", icone: "⚡", etapas: { 1: "Aguardando instalação", 3: "Instalação finalizada", 5: "Conectar logger no WiFi", 6: "Criar planta no monitoramento", 8: "Explicar funcionamento, chaves de segurança, DPS e apresentar o app de monitoramento ao cliente" } },
 };
 
 async function getProjetoByCodigo(codigo: string) {
   const { data } = await supabase
     .from("projetos")
-    .select("id, nome_completo, razao_social, codigo_rastreamento")
+    .select("id, nome_completo, razao_social, codigo_rastreamento, numero_fila")
     .eq("codigo_rastreamento", codigo)
     .maybeSingle();
   return data;
@@ -49,10 +49,13 @@ async function handleGet(codigo: string) {
     .order("fluxo")
     .order("etapa");
 
+  const trocaRow4 = (rows || []).find((r: any) => r.fluxo === 1 && r.etapa === 4);
+  const trocaAtiva = !!trocaRow4?.campo_extra?.ativada;
   const visiveis = (rows || []).filter((r: any) => {
     if (!r.visivel_cliente) return false;
-    // etapa condicional (fluxo 1 etapa 4) só aparece se ativada
-    if (r.fluxo === 1 && r.etapa === 4 && !(r.campo_extra?.ativada)) return false;
+    // etapas condicionais de troca (fluxo 1, etapas 4 e 5) só aparecem se ativadas
+    // (o estado "ativada" mora sempre na linha da etapa 4, mesmo para decidir a etapa 5)
+    if (r.fluxo === 1 && (r.etapa === 4 || r.etapa === 5) && !trocaAtiva) return false;
     return true;
   });
 
@@ -74,20 +77,8 @@ async function handleGet(codigo: string) {
     (r: any) => r.fluxo === 3 && r.etapa === 3 && r.concluido
   );
 
-  // Tarefas de pós-venda visíveis ao cliente
-  const { data: posvendaRows } = await supabase
-    .from("tarefas_posvenda")
-    .select("descricao, tipo, data_programada, concluido")
-    .eq("projeto_id", projeto.id)
-    .eq("visivel_cliente", true)
-    .order("data_programada");
-
-  const posvenda = (posvendaRows || []).map((t: any) => ({
-    descricao: t.descricao,
-    tipo: t.tipo,
-    data_programada: t.data_programada,
-    concluido: t.concluido,
-  }));
+  // Pós-venda não é exibido no link público do cliente (decisão do time).
+  const posvenda: unknown[] = [];
 
   const { data: avaliacao } = await supabase
     .from("avaliacoes_clientes")
@@ -102,6 +93,7 @@ async function handleGet(codigo: string) {
     fluxos,
     posvenda,
     sistema_operacao: sistemaOperacao,
+    numero_fila: projeto.numero_fila ?? null,
     avaliacao: avaliacao || null,
   });
 }

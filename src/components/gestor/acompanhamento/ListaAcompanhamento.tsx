@@ -8,7 +8,7 @@ import { getConfigDB } from '@/data/supabaseStore';
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
 import LinkRastreamentoModal from './LinkRastreamentoModal';
 import KitPrecoModal from './KitPrecoModal';
-import { gerarTarefasPosVenda, type TarefaPosVenda } from '@/lib/posvendaTarefas';
+import { type TarefaPosVenda } from '@/lib/posvendaTarefas';
 import { loadTemplatesMap } from '@/components/gestor/posvenda/PosVendaAgenda';
 import TarefaPosVendaItem from '@/components/gestor/posvenda/TarefaPosVendaItem';
 
@@ -59,7 +59,7 @@ function etapasVisiveis(fluxo: number, rows: RastreamentoRow[]): EtapaDef[] {
     const trocaAtiva = !!troca?.campo_extra?.ativada;
     return def.etapas.filter(e => {
       if (e.etapa === 3) return !trocaAtiva; // "Aprovado" some quando troca ativa
-      if (e.etapa === 4) return trocaAtiva;  // "Aprovado com troca" só aparece ativado
+      if (e.etapa === 4 || e.etapa === 5) return trocaAtiva;  // "Aprovado com troca" + "Troca do medidor" só aparecem ativados
       return true;
     });
   }
@@ -218,28 +218,12 @@ export default function ListaAcompanhamento() {
       if (proj) setKitProjeto(proj);
     }
 
-    // "Instalação finalizada" (fluxo 3, etapa 3) → grava data_instalacao e gera o pós-venda
+    // "Instalação finalizada" (fluxo 3, etapa 3) → grava data_instalacao
+    // (pós-venda NÃO é mais gerado automaticamente aqui — início manual, via
+    // botão "Ativar pós-venda"/"Reativar pós-venda" quando o time decidir)
     if (concluido && fluxo === 3 && etapa === 3) {
-      const proj = projetos.find(p => p.id === projetoId);
       const hoje = new Date();
       await supabase.from('projetos' as any).update({ data_instalacao: hoje.toISOString().slice(0, 10) }).eq('id', projetoId);
-      try {
-        const criadas = await gerarTarefasPosVenda({
-          projetoId,
-          dataInstalacao: hoje,
-          diaLeitura: proj?.dia_leitura ?? null,
-          dataNascimento: proj?.data_nascimento ? new Date(proj.data_nascimento + 'T00:00:00') : null,
-          usuarioId: session?.user?.id,
-        });
-        if (criadas > 0) {
-          toast.success(`Pós-venda iniciado! ${criadas} lembretes criados para 3 anos.`);
-          const { data: tarefas } = await supabase.from('tarefas_posvenda' as any)
-            .select('*').eq('projeto_id', projetoId).order('data_programada', { ascending: true });
-          setTarefasByProjeto(prev => ({ ...prev, [projetoId]: (tarefas || []) as any }));
-        }
-      } catch (e: any) {
-        toast.error('Erro ao gerar pós-venda: ' + (e.message || e));
-      }
     }
 
     if (concluido) await verificarConclusao(projetoId, novasRows);
@@ -254,7 +238,14 @@ export default function ListaAcompanhamento() {
   // Atualiza apenas campo_extra (sem mexer no concluido) — para campos editáveis
   const updateExtra = async (projetoId: string, fluxo: number, etapa: number, extra: Record<string, any>) => {
     const row = getRow(projetoId, fluxo, etapa);
-    if (!row) return;
+    if (!row) {
+      // Etapa condicional ainda não tem linha criada (ex: "Ativar troca" na primeira vez) — cria agora.
+      const { error } = await supabase.from('rastreamento_obras' as any)
+        .insert({ projeto_id: projetoId, fluxo, etapa, visivel_cliente: true, concluido: false, campo_extra: extra });
+      if (error) { toast.error(error.message); return; }
+      await refetchProjeto(projetoId);
+      return;
+    }
     const campo_extra = { ...(row.campo_extra || {}), ...extra };
     const { error } = await supabase.from('rastreamento_obras' as any).update({ campo_extra }).eq('id', row.id);
     if (error) { toast.error(error.message); return; }
@@ -646,12 +637,6 @@ function EtapaCheck({
     }
     // Campo de entrega (fluxo 2, etapa 4) → mini modal inline
     if (fluxo === 2 && etapaDef.etapa === 4) { setPedindoEntrega(true); return; }
-    // Agendamento (fluxo 3, etapa 2) → grava data de hoje como padrão na coluna canônica
-    if (fluxo === 3 && etapaDef.etapa === 2) {
-      await commitCheck(projetoId, fluxo, etapaDef.etapa, true);
-      await updateProjetoCampo(projetoId, { data_agendamento: new Date().toISOString().slice(0, 10) });
-      return;
-    }
     // WiFi do logger (fluxo 3, etapa 5) → mini modal inline
     if (fluxo === 3 && etapaDef.etapa === 5) {
       setWifiNomeInput(wifiNome || '');
@@ -727,17 +712,6 @@ function EtapaCheck({
             />
           </span>
         )}
-        {/* Data agendamento (fluxo 3, etapa 2) */}
-        {fluxo === 3 && etapaDef.etapa === 2 && concluido && (
-          <input
-            type="date"
-            className="solar-input py-0.5 text-xs"
-            value={dataAgendamento ?? ce.data_agendamento ?? ''}
-            onChange={ev => updateProjetoCampo(projetoId, { data_agendamento: ev.target.value || null })}
-          />
-        )}
-        {/* Data agendada exibida também no resumo (fluxo 3, etapa 2) */}
-
         {/* Local de entrega marcado (fluxo 2, etapa 4) */}
         {fluxo === 2 && etapaDef.etapa === 4 && concluido && (localEntrega || ce.local_entrega) && (
           <span className="text-[11px] text-muted-foreground">({(localEntrega || ce.local_entrega) === 'empresa' ? 'TLS Solar' : 'Cliente'})</span>

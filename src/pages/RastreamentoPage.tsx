@@ -2,7 +2,7 @@ import { useParams } from 'react-router-dom';
 import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import logoTls from '@/assets/logo.png';
-import { Check, Lock, Loader2, Star, MapPin, Calendar, Hash, Zap, ExternalLink, MessageCircle, Heart, Building2, Home, HelpCircle } from 'lucide-react';
+import { Check, Lock, Loader2, Star, MapPin, Calendar, Hash, ExternalLink, MessageCircle, Heart, Building2, Home, HelpCircle } from 'lucide-react';
 import { fmtDateBR } from '@/lib/dateUtils';
 import { toast } from 'sonner';
 import FaqSection from '@/components/faq/FaqSection';
@@ -31,6 +31,7 @@ interface RastreamentoData {
   fluxos: FluxoCli[];
   posvenda?: PosVendaCli[];
   sistema_operacao: boolean;
+  numero_fila: number | null;
   avaliacao: { nota: number; comentario: string | null } | null;
 }
 
@@ -346,7 +347,7 @@ function FluxoTimeline({ fluxo }: { fluxo: FluxoCli }) {
                 {e.concluido && e.data_conclusao && (
                   <p className="text-xs text-muted-foreground">{fmtDateBR(e.data_conclusao)}</p>
                 )}
-                <EtapaExtra fluxo={fluxo.fluxo} etapa={e} status={status} />
+                <EtapaExtra fluxo={fluxo.fluxo} etapa={e} status={status} numeroFila={data.numero_fila} />
               </div>
             </li>
           );
@@ -356,7 +357,7 @@ function FluxoTimeline({ fluxo }: { fluxo: FluxoCli }) {
   );
 }
 
-function EtapaExtra({ fluxo, etapa, status }: { fluxo: number; etapa: EtapaCli; status: string }) {
+function EtapaExtra({ fluxo, etapa, status, numeroFila }: { fluxo: number; etapa: EtapaCli; status: string; numeroFila: number | null }) {
   const ce = etapa.campo_extra || {};
 
   // Fluxo 2 etapa 4 — local de entrega
@@ -369,27 +370,11 @@ function EtapaExtra({ fluxo, etapa, status }: { fluxo: number; etapa: EtapaCli; 
       </p>
     );
   }
-  // Fluxo 3 etapa 1 — fila
-  if (fluxo === 3 && etapa.etapa === 1 && !etapa.concluido && ce.numero_fila) {
+  // Fluxo 3 etapa 1 — fila (só mostra se o número foi realmente informado)
+  if (fluxo === 3 && etapa.etapa === 1 && !etapa.concluido && numeroFila != null) {
     return (
       <p className="text-xs text-foreground/80 mt-1 inline-flex items-center gap-1">
-        <Hash className="w-3.5 h-3.5" /> Você está na posição Nº {ce.numero_fila} da nossa fila de instalações
-      </p>
-    );
-  }
-  // Fluxo 3 etapa 2 — data agendada
-  if (fluxo === 3 && etapa.etapa === 2 && ce.data_agendamento) {
-    return (
-      <p className="text-xs text-foreground/80 mt-1 inline-flex items-center gap-1">
-        <Calendar className="w-3.5 h-3.5" /> Sua instalação está agendada para {fmtDateBR(ce.data_agendamento)}
-      </p>
-    );
-  }
-  // Fluxo 3 etapa 4 — operação
-  if (fluxo === 3 && etapa.etapa === 4 && etapa.concluido && ce.data_operacao) {
-    return (
-      <p className="text-xs text-green-700 dark:text-green-400 mt-1 inline-flex items-center gap-1 font-medium">
-        <Zap className="w-3.5 h-3.5" /> Seu sistema entrou em operação em {fmtDateBR(ce.data_operacao)}
+        <Hash className="w-3.5 h-3.5" /> Você está na posição Nº {numeroFila} da nossa fila de instalações
       </p>
     );
   }
