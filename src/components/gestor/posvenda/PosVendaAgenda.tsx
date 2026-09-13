@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { getConfigDB } from '@/data/supabaseStore';
 import { toast } from 'sonner';
-import { Loader2, Search, CalendarClock, CalendarDays, Save } from 'lucide-react';
+import { Loader2, Search, CalendarClock, CalendarDays, Save, List, Users, ChevronDown, ChevronRight } from 'lucide-react';
 import {
   type TarefaPosVenda, type TarefaTipo, TIPO_LABEL, sincronizarDiaLeitura,
 } from '@/lib/posvendaTarefas';
@@ -103,6 +103,8 @@ export default function PosVendaAgenda() {
   const [busca, setBusca] = useState('');
   const [filtroData, setFiltroData] = useState<FiltroData>('pendentes');
   const [filtroTipo, setFiltroTipo] = useState<TarefaTipo | 'todos'>('todos');
+  const [visao, setVisao] = useState<'lista' | 'cliente'>('lista');
+  const [clienteAberto, setClienteAberto] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -192,6 +194,52 @@ export default function PosVendaAgenda() {
     return arr;
   }, [filtradas]);
 
+  // Resumo por cliente (visão "Por cliente") — usa TODAS as tarefas (não só as filtradas
+  // por data/tipo), respeitando apenas a busca por nome.
+  const resumoClientes = useMemo(() => {
+    const termo = busca.trim().toLowerCase();
+    const base = termo ? tarefas.filter(t => t._nome.toLowerCase().includes(termo)) : tarefas;
+
+    const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+    const map = new Map<string, TarefaComProjeto[]>();
+    for (const t of base) {
+      const key = t.projeto_id ? `p:${t.projeto_id}` : t.cliente_base_id ? `c:${t.cliente_base_id}` : `?:${t.id}`;
+      const arr = map.get(key) || [];
+      arr.push(t);
+      map.set(key, arr);
+    }
+
+    const linhas = Array.from(map.entries()).map(([key, itens]) => {
+      const header = itens[0];
+      const total = itens.length;
+      const done = itens.filter(t => t.concluido).length;
+      const pendentesOrdenadas = itens
+        .filter(t => !t.concluido && !(t as any).aguardando_leitura)
+        .sort((a, b) => a.data_programada.localeCompare(b.data_programada));
+      const aguardandoLeitura = itens.some(t => !t.concluido && (t as any).aguardando_leitura);
+      const proxima = pendentesOrdenadas[0] || null;
+      const fase = proxima ? proxima.fase : Math.max(...itens.map(t => t.fase));
+
+      let diffDias: number | null = null;
+      if (proxima) {
+        const dt = new Date(proxima.data_programada + 'T00:00:00');
+        diffDias = Math.round((dt.getTime() - hoje.getTime()) / 86400000);
+      }
+
+      // Ordenação: atrasadas primeiro (mais negativas primeiro), depois hoje/futuras,
+      // aguardando leitura no fim, tudo concluído por último.
+      let sortKey: string;
+      if (proxima) sortKey = `0_${proxima.data_programada}`;
+      else if (aguardandoLeitura) sortKey = '1_aguardando';
+      else sortKey = '2_concluido';
+
+      return { key, header, total, done, fase, proxima, diffDias, aguardandoLeitura, itens, sortKey };
+    });
+
+    linhas.sort((a, b) => a.sortKey.localeCompare(b.sortKey));
+    return linhas;
+  }, [tarefas, busca]);
+
   if (loading) return <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
 
   const filtrosData: { key: FiltroData; label: string }[] = [
@@ -208,14 +256,104 @@ export default function PosVendaAgenda() {
       <div className="flex items-center gap-2 text-primary">
         <CalendarClock className="w-5 h-5" />
         <h2 className="text-base font-bold">Agenda de Pós-venda</h2>
-        <span className="text-xs text-muted-foreground">({filtradas.length})</span>
+        <span className="text-xs text-muted-foreground">({visao === 'lista' ? filtradas.length : resumoClientes.length})</span>
+        <div className="ml-auto flex items-center gap-1 bg-muted rounded-lg p-0.5">
+          <button
+            onClick={() => setVisao('lista')}
+            className={`inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-md transition-colors ${visao === 'lista' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+          >
+            <List className="w-3.5 h-3.5" /> Lista de tarefas
+          </button>
+          <button
+            onClick={() => setVisao('cliente')}
+            className={`inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-md transition-colors ${visao === 'cliente' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+          >
+            <Users className="w-3.5 h-3.5" /> Por cliente
+          </button>
+        </div>
       </div>
 
-      <div className="space-y-3">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <input value={busca} onChange={e => setBusca(e.target.value)} placeholder="Buscar por cliente" className="solar-input pl-9 w-full" />
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+        <input value={busca} onChange={e => setBusca(e.target.value)} placeholder="Buscar por cliente" className="solar-input pl-9 w-full" />
+      </div>
+
+      {visao === 'cliente' ? (
+        <div className="space-y-2">
+          {resumoClientes.length === 0 && <p className="text-sm text-muted-foreground text-center py-10">Nenhum cliente encontrado.</p>}
+          {resumoClientes.map(r => {
+            const owner = r.header.projeto_id ? { projetoId: r.header.projeto_id } : { clienteBaseId: r.header.cliente_base_id! };
+            const aberto = clienteAberto === r.key;
+            const atrasada = r.diffDias != null && r.diffDias < 0;
+            const hojeFlag = r.diffDias === 0;
+            return (
+              <div key={r.key} className="rounded-xl border border-border bg-card/40 overflow-hidden">
+                <button
+                  onClick={() => setClienteAberto(aberto ? null : r.key)}
+                  className="w-full flex items-center gap-3 p-3 text-left hover:bg-muted/30"
+                >
+                  {aberto ? <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" /> : <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />}
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-foreground truncate">{r.header._nome}</p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      Fase {r.fase} · {r.done}/{r.total} concluídas
+                      {r.proxima && <> · Próxima: {r.proxima.descricao}</>}
+                      {!r.proxima && r.aguardandoLeitura && <> · Aguardando dia de leitura</>}
+                      {!r.proxima && !r.aguardandoLeitura && <> · Tudo concluído</>}
+                    </p>
+                  </div>
+                  {r.proxima && (
+                    <span className={`shrink-0 text-xs font-medium px-2 py-1 rounded-full ${
+                      atrasada ? 'bg-destructive/10 text-destructive'
+                      : hojeFlag ? 'bg-amber-500/10 text-amber-700 dark:text-amber-400'
+                      : 'bg-green-600/10 text-green-700 dark:text-green-400'
+                    }`}>
+                      {atrasada ? `atrasada ${Math.abs(r.diffDias!)}d` : hojeFlag ? 'hoje' : `em ${r.diffDias}d`}
+                    </span>
+                  )}
+                  {!r.proxima && r.aguardandoLeitura && (
+                    <span className="shrink-0 text-xs font-medium px-2 py-1 rounded-full bg-muted text-muted-foreground">⏳</span>
+                  )}
+                </button>
+                {aberto && (
+                  <div className="p-3 pt-0 space-y-2 border-t border-border/50">
+                    <div className="flex flex-wrap items-center gap-2 pt-3">
+                      <DiaLeituraEditor
+                        owner={owner}
+                        valorAtual={r.header._dia_leitura}
+                        instaladoEm={r.header._instalado_em}
+                        onChanged={load}
+                      />
+                      <PosVendaControles
+                        owner={owner}
+                        dataInstalacao={r.header._instalado_em}
+                        diaLeitura={r.header._dia_leitura}
+                        onChanged={load}
+                        compact
+                      />
+                    </div>
+                    {r.itens.map(t => (
+                      <TarefaPosVendaItem
+                        key={t.id}
+                        tarefa={t}
+                        nome={t._nome}
+                        telefone={t._telefone}
+                        templateText={templates[t.template_key || ''] || ''}
+                        googleLink={googleLink}
+                        instaladoEm={t._instalado_em}
+                        diaLeitura={t._dia_leitura}
+                        onChanged={load}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
+      ) : (
+      <>
+      <div className="space-y-3">
         <div className="flex flex-wrap items-center gap-2">
           {filtrosData.map(f => (
             <button key={f.key} onClick={() => setFiltroData(f.key)}
@@ -324,6 +462,8 @@ export default function PosVendaAgenda() {
             );
           })}
         </div>
+      )}
+      </>
       )}
     </div>
   );
