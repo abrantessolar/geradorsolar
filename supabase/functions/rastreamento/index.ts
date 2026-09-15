@@ -62,7 +62,7 @@ async function handleGet(codigo: string) {
   // Monta fluxos para o cliente
   const fluxos = [1, 2, 3].map((f) => {
     const etapas = visiveis
-      .filter((r: any) => r.fluxo === f)
+      .filter((r: any) => r.fluxo === f && FLUXOS[f].etapas[r.etapa] != null)
       .map((r: any) => ({
         etapa: r.etapa,
         titulo: FLUXOS[f].etapas[r.etapa],

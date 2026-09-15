@@ -144,7 +144,7 @@ export default function RastreamentoPage() {
 
       <main className="max-w-2xl mx-auto px-4 py-6 space-y-6">
         {data.fluxos.map((f) => (
-          <FluxoTimeline key={f.fluxo} fluxo={f} />
+          <FluxoTimeline key={f.fluxo} fluxo={f} numeroFila={data.numero_fila} />
         ))}
 
         {/* Pós-venda visível ao cliente */}
@@ -302,7 +302,7 @@ export default function RastreamentoPage() {
   );
 }
 
-function FluxoTimeline({ fluxo }: { fluxo: FluxoCli }) {
+function FluxoTimeline({ fluxo, numeroFila }: { fluxo: FluxoCli; numeroFila: number | null }) {
   // primeira etapa não concluída = "em andamento"
   const firstPendingIdx = useMemo(() => fluxo.etapas.findIndex((e) => !e.concluido), [fluxo]);
 
@@ -347,7 +347,7 @@ function FluxoTimeline({ fluxo }: { fluxo: FluxoCli }) {
                 {e.concluido && e.data_conclusao && (
                   <p className="text-xs text-muted-foreground">{fmtDateBR(e.data_conclusao)}</p>
                 )}
-                <EtapaExtra fluxo={fluxo.fluxo} etapa={e} status={status} numeroFila={data.numero_fila} />
+                <EtapaExtra fluxo={fluxo.fluxo} etapa={e} status={status} numeroFila={numeroFila} />
               </div>
             </li>
           );
