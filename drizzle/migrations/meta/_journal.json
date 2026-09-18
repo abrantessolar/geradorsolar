@@ -8,6 +8,13 @@
       "when": 1789747923782,
       "tag": "0000_create_equipamentos_simulador_hibrido",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1789748784601,
+      "tag": "0001_add_peak_power_to_hybrid_equipment",
+      "breakpoints": true
     }
   ]
 }

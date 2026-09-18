@@ -929,6 +929,7 @@ export type Database = {
           nome: string
           ordem: number
           potencia_kw: number
+          potencia_pico_kw: number | null
           selecionado_padrao: boolean
           tempo_padrao: number | null
           tipo: string
@@ -947,6 +948,7 @@ export type Database = {
           nome: string
           ordem?: number
           potencia_kw: number
+          potencia_pico_kw?: number | null
           selecionado_padrao?: boolean
           tempo_padrao?: number | null
           tipo: string
@@ -965,6 +967,7 @@ export type Database = {
           nome?: string
           ordem?: number
           potencia_kw?: number
+          potencia_pico_kw?: number | null
           selecionado_padrao?: boolean
           tempo_padrao?: number | null
           tipo?: string
