@@ -1,14 +1,17 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Battery, Plus, Minus, ChevronDown, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Battery, Plus, Minus, ChevronDown, AlertTriangle, Settings2, Loader2 } from 'lucide-react';
 import {
   ComposedChart, Area, Line, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, CartesianGrid,
 } from 'recharts';
 import {
-  CATALOGO_HIBRIDO, SELECIONADOS_PADRAO, CAPACIDADES_BATERIA_KWH,
-  GERACAO_DIARIA_TOTAL, NOME_DIA, ORDEM_DIAS, type ItemCatalogo,
+  CATALOGO_HIBRIDO as CATALOGO_FALLBACK, SELECIONADOS_PADRAO as SELECIONADOS_FALLBACK, CAPACIDADES_BATERIA_KWH,
+  GERACAO_DIARIA_TOTAL, NOME_DIA, ORDEM_DIAS, type ItemCatalogo, type CategoriaCatalogo,
 } from '@/data/catalogoSimuladorHibrido';
 import { calcularSimulacaoHibrida, type ConfigItem, type ItemSelecionado } from '@/lib/simuladorHibrido';
+import { getEquipamentosHibridoDB, agruparPorCategoria } from '@/data/supabaseEquipamentosHibrido';
+import GerenciarCatalogoHibrido from '@/components/ferramentas/GerenciarCatalogoHibrido';
+import { toast } from 'sonner';
 
 /** Modo de exibição — 'interno' (equipe, hoje) vs 'publico' (cliente, ainda sem rota ligada).
  *  Mantido como prop pra não precisar reescrever a tela quando a versão pública for ligada. */
@@ -43,12 +46,33 @@ export default function SimuladorHibridoPage({ modo = 'interno' }: { modo?: Modo
   const [placas, setPlacas] = useState(10);
   const [capacidadeBateria, setCapacidadeBateria] = useState(CAPACIDADES_BATERIA_KWH[1]);
   const [socInicial, setSocInicial] = useState(50);
-  const [selecionados, setSelecionados] = useState<Set<string>>(new Set(SELECIONADOS_PADRAO));
+  const [selecionados, setSelecionados] = useState<Set<string>>(new Set(SELECIONADOS_FALLBACK));
   const [configs, setConfigs] = useState<Record<string, ConfigItem>>({});
+  const [catalogo, setCatalogo] = useState<CategoriaCatalogo[]>(CATALOGO_FALLBACK);
+  const [carregandoCatalogo, setCarregandoCatalogo] = useState(true);
+  const [gerenciarAberto, setGerenciarAberto] = useState(false);
+
+  const carregarCatalogo = async () => {
+    setCarregandoCatalogo(true);
+    try {
+      const rows = await getEquipamentosHibridoDB(true);
+      if (rows.length > 0) {
+        setCatalogo(agruparPorCategoria(rows));
+        setSelecionados(new Set(rows.filter(r => r.selecionado_padrao).map(r => r.id)));
+      }
+      // se vier vazio, mantém o catálogo fixo do código como rede de segurança
+    } catch (e: any) {
+      toast.error('Não consegui carregar o catálogo do banco — usando a lista padrão do sistema.');
+    } finally {
+      setCarregandoCatalogo(false);
+    }
+  };
+
+  useEffect(() => { carregarCatalogo(); }, []);
 
   const potenciaKwp = placas * 0.6;
 
-  const todosItens = useMemo(() => CATALOGO_HIBRIDO.flatMap(c => c.itens), []);
+  const todosItens = useMemo(() => catalogo.flatMap(c => c.itens), [catalogo]);
 
   const getConfig = (item: ItemCatalogo): ConfigItem => {
     const c = configs[item.id];
@@ -155,10 +179,20 @@ export default function SimuladorHibridoPage({ modo = 'interno' }: { modo?: Modo
           </div>
 
           <div className="solar-card p-5">
-            <h2 className="font-bold text-primary mb-1">Equipamentos</h2>
+            <div className="flex items-center justify-between mb-1">
+              <h2 className="font-bold text-primary">Equipamentos</h2>
+              {modo === 'interno' && (
+                <button onClick={() => setGerenciarAberto(true)} className="text-xs text-primary hover:underline flex items-center gap-1">
+                  <Settings2 className="w-3.5 h-3.5" /> Gerenciar catálogo
+                </button>
+              )}
+            </div>
             <p className="text-xs text-muted-foreground mb-3">Marque o que o cliente tem. Itens com tempo ajustável mostram um campo extra.</p>
+            {carregandoCatalogo && (
+              <p className="text-xs text-muted-foreground flex items-center gap-1.5 mb-2"><Loader2 className="w-3.5 h-3.5 animate-spin" /> Carregando catálogo...</p>
+            )}
             <div className="space-y-1">
-              {CATALOGO_HIBRIDO.map(grupo => {
+              {catalogo.map(grupo => {
                 const temSelecionado = grupo.itens.some(i => selecionados.has(i.id));
                 return (
                   <details key={grupo.categoria} open={temSelecionado} className="border-b border-border pb-1">
@@ -267,6 +301,13 @@ export default function SimuladorHibridoPage({ modo = 'interno' }: { modo?: Modo
           </div>
         </div>
       </div>
+
+      {gerenciarAberto && (
+        <GerenciarCatalogoHibrido
+          onClose={() => setGerenciarAberto(false)}
+          onSalvo={carregarCatalogo}
+        />
+      )}
     </div>
   );
 }
