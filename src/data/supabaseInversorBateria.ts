@@ -22,7 +22,7 @@ function mapInversorRow(r: any): InversorHibrido {
     mpptTensaoMaxV: r.mppt_tensao_max_v != null ? Number(r.mppt_tensao_max_v) : null,
     correnteMaxCargaBateriaA: r.corrente_max_carga_bateria_a != null ? Number(r.corrente_max_carga_bateria_a) : null,
     protocoloComunicacao: r.protocolo_comunicacao, bateriasCompativeis: r.baterias_compativeis,
-    ativo: r.ativo,
+    garantiaAnos: r.garantia_anos, ativo: r.ativo,
   };
 }
 
@@ -34,6 +34,7 @@ export interface InversorForm {
   tensaoSaida: TensaoSaida;
   numMppt: string; mpptTensaoMinV: string; mpptTensaoMaxV: string;
   correnteMaxCargaBateriaA: string; protocoloComunicacao: string; bateriasCompativeis: string;
+  garantiaAnos: string;
 }
 
 export function inversorFormVazio(): InversorForm {
@@ -44,6 +45,7 @@ export function inversorFormVazio(): InversorForm {
     tensaoSaida: 'bivolt',
     numMppt: '', mpptTensaoMinV: '', mpptTensaoMaxV: '',
     correnteMaxCargaBateriaA: '', protocoloComunicacao: '', bateriasCompativeis: '',
+    garantiaAnos: '10',
   };
 }
 
@@ -58,6 +60,7 @@ export function inversorParaForm(i: InversorHibrido): InversorForm {
     mpptTensaoMaxV: i.mpptTensaoMaxV != null ? String(i.mpptTensaoMaxV) : '',
     correnteMaxCargaBateriaA: i.correnteMaxCargaBateriaA != null ? String(i.correnteMaxCargaBateriaA) : '',
     protocoloComunicacao: i.protocoloComunicacao || '', bateriasCompativeis: i.bateriasCompativeis || '',
+    garantiaAnos: i.garantiaAnos != null ? String(i.garantiaAnos) : '',
   };
 }
 
@@ -82,6 +85,7 @@ export async function saveInversorHibridoDB(form: InversorForm): Promise<void> {
     corrente_max_carga_bateria_a: num(form.correnteMaxCargaBateriaA),
     protocolo_comunicacao: form.protocoloComunicacao.trim() || null,
     baterias_compativeis: form.bateriasCompativeis.trim() || null,
+    garantia_anos: int(form.garantiaAnos),
     atualizado_em: new Date().toISOString(),
   };
   if (form.id) {
@@ -124,7 +128,7 @@ function mapBateriaRow(r: any): BateriaHibrida {
     correnteMaxDescargaPicoA: r.corrente_max_descarga_pico_a != null ? Number(r.corrente_max_descarga_pico_a) : null,
     dodPct: Number(r.dod_pct ?? 90), quimica: r.quimica, ciclosVida: r.ciclos_vida,
     empilhavel: r.empilhavel, maxUnidadesParalelo: r.max_unidades_paralelo,
-    ativo: r.ativo,
+    garantiaAnos: r.garantia_anos, ativo: r.ativo,
   };
 }
 
@@ -135,6 +139,7 @@ export interface BateriaForm {
   correnteMaxDescargaContinuaA: string; correnteMaxDescargaPicoA: string;
   dodPct: string; quimica: string; ciclosVida: string;
   empilhavel: boolean; maxUnidadesParalelo: string;
+  garantiaAnos: string;
 }
 
 export function bateriaFormVazio(): BateriaForm {
@@ -144,6 +149,7 @@ export function bateriaFormVazio(): BateriaForm {
     correnteMaxDescargaContinuaA: '', correnteMaxDescargaPicoA: '',
     dodPct: '90', quimica: 'LiFePO4', ciclosVida: '',
     empilhavel: false, maxUnidadesParalelo: '',
+    garantiaAnos: '10',
   };
 }
 
@@ -155,6 +161,7 @@ export function bateriaParaForm(b: BateriaHibrida): BateriaForm {
     correnteMaxDescargaPicoA: b.correnteMaxDescargaPicoA != null ? String(b.correnteMaxDescargaPicoA) : '',
     dodPct: String(b.dodPct), quimica: b.quimica || '', ciclosVida: b.ciclosVida != null ? String(b.ciclosVida) : '',
     empilhavel: b.empilhavel, maxUnidadesParalelo: b.maxUnidadesParalelo != null ? String(b.maxUnidadesParalelo) : '',
+    garantiaAnos: b.garantiaAnos != null ? String(b.garantiaAnos) : '',
   };
 }
 
@@ -171,6 +178,7 @@ export async function saveBateriaHibridoDB(form: BateriaForm): Promise<void> {
     ciclos_vida: int(form.ciclosVida),
     empilhavel: form.empilhavel,
     max_unidades_paralelo: int(form.maxUnidadesParalelo),
+    garantia_anos: int(form.garantiaAnos),
     atualizado_em: new Date().toISOString(),
   };
   if (form.id) {

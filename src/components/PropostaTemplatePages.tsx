@@ -73,6 +73,19 @@ export interface PropostaTemplateData {
   fluxo_caixa: CashflowRow[];
   fotos_portfolio: string[];
   observacoes?: string;
+  // Bateria / inversor híbrido — só presente quando hibrida === true. Todo
+  // uso desses campos abaixo (páginas 3 e 4) é condicional a esse flag, então
+  // uma proposta ongrid comum (hibrida undefined) renderiza igual a sempre.
+  hibrida?: boolean;
+  bateria_marca?: string;
+  bateria_modelo?: string;
+  bateria_capacidade_kwh?: number;
+  bateria_garantia_anos?: number;
+  bateria_imagem?: string;
+  inversor_hibrido_marca?: string;
+  inversor_hibrido_modelo?: string;
+  inversor_hibrido_garantia_anos?: number;
+  inversor_hibrido_imagem?: string;
 }
 
 // ────────────────────────────────────────────────────────────
@@ -593,6 +606,14 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
                   linha1={`${data.num_placas} × ${data.potencia_placa}`}
                   linha2={data.marca_placa}
                 />
+                {data.hibrida && data.bateria_marca && (
+                  <EquipmentBox
+                    img={data.bateria_imagem}
+                    fallbackImg={inversorFallback}
+                    linha1={data.bateria_marca}
+                    linha2={`${data.bateria_modelo || ''}${data.bateria_capacidade_kwh ? ` — ${data.bateria_capacidade_kwh} kWh` : ''}`}
+                  />
+                )}
               </div>
             </div>
 
@@ -671,6 +692,12 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
                 <Row label="Inversor" value="10 anos" />
                 {data.usa_microinversor && (
                   <Row label="Micro inversor" value="12 anos" />
+                )}
+                {data.hibrida && data.inversor_hibrido_marca && (
+                  <Row label="Inversor híbrido" value={data.inversor_hibrido_garantia_anos ? `${data.inversor_hibrido_garantia_anos} anos` : '—'} />
+                )}
+                {data.hibrida && data.bateria_marca && (
+                  <Row label="Bateria" value={data.bateria_garantia_anos ? `${data.bateria_garantia_anos} anos` : '—'} />
                 )}
                 <Row label="Instalação e acompanhamento" value="3 anos" last />
               </div>

@@ -24,6 +24,7 @@ export interface InversorHibrido {
   protocoloComunicacao: string | null;
   bateriasCompativeis: string | null;
 
+  garantiaAnos: number | null;
   ativo: boolean;
 }
 
@@ -46,6 +47,7 @@ export interface BateriaHibrida {
   empilhavel: boolean;
   maxUnidadesParalelo: number | null;
 
+  garantiaAnos: number | null;
   ativo: boolean;
 }
 

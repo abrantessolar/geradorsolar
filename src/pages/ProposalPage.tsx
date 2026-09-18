@@ -16,6 +16,8 @@ import { PropostaTemplatePages, type PropostaTemplateData } from '@/components/P
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import PDFCanvasViewer from '@/components/PDFCanvasViewer';
+import { getInversoresHibridoDB, getBateriasHibridoDB } from '@/data/supabaseInversorBateria';
+import type { InversorHibrido, BateriaHibrida } from '@/data/equipamentosHibrido';
 
 
 // Ciclo de vida da proposta
@@ -37,8 +39,11 @@ export default function ProposalPage() {
   const [editForm, setEditForm] = useState({
     inverterBrand: '', inverterModel: '', panelBrand: '', panelPowerLabel: '',
     totalPrice: '', observacoes: '',
+    hibrida: false, bateriaId: '', inversorHibridoId: '',
   });
   const [savingEdit, setSavingEdit] = useState(false);
+  const [inversoresHibrido, setInversoresHibrido] = useState<InversorHibrido[]>([]);
+  const [bateriasHibrido, setBateriasHibrido] = useState<BateriaHibrida[]>([]);
   const proposalContentRef = useRef<HTMLDivElement>(null);
   const templateContainerRef = useRef<HTMLDivElement>(null);
   const settings = getSettings();
@@ -57,6 +62,12 @@ export default function ProposalPage() {
     };
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
+  }, [isAuthenticated]);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    getInversoresHibridoDB(true).then(setInversoresHibrido).catch(() => {});
+    getBateriasHibridoDB(true).then(setBateriasHibrido).catch(() => {});
   }, [isAuthenticated]);
 
   useEffect(() => {
@@ -273,6 +284,19 @@ export default function ProposalPage() {
       marca_placa: panelBrandResolved,
       potencia_placa: panelPower,
       imagem_inversor: (selectedCard.line === 'premium' ? settings.microInverterBrandImages : settings.inverterBrandImages)?.[inverterBrandResolved.trim().toUpperCase()],
+      // Bateria/inversor híbrido — só populado quando proposal.hibrida === true.
+      // O template (PropostaTemplatePages) só renderiza esses dados sob esse flag,
+      // então propostas ongrid (hibrida undefined/false) não mudam em nada.
+      hibrida: proposal.hibrida,
+      bateria_marca: proposal.bateriaMarca,
+      bateria_modelo: proposal.bateriaModelo,
+      bateria_capacidade_kwh: proposal.bateriaCapacidadeKwh,
+      bateria_garantia_anos: proposal.bateriaGarantiaAnos,
+      bateria_imagem: proposal.bateriaMiniaturaUrl,
+      inversor_hibrido_marca: proposal.inversorHibridoMarca,
+      inversor_hibrido_modelo: proposal.inversorHibridoModelo,
+      inversor_hibrido_garantia_anos: proposal.inversorHibridoGarantiaAnos,
+      inversor_hibrido_imagem: proposal.inversorHibridoMiniaturaUrl,
       imagem_placa: settings.panelImage || undefined,
       usa_microinversor: selectedCard.line === 'premium',
       preco_vista: selectedCard.totalPrice,
@@ -385,6 +409,9 @@ export default function ProposalPage() {
       panelPowerLabel: proposal.panelPowerLabel || selectedCard?.panelPowerLabel || '',
       totalPrice: String(selectedCard?.totalPrice ?? proposal.totalPrice ?? ''),
       observacoes: proposal.observacoes || '',
+      hibrida: proposal.hibrida || false,
+      bateriaId: proposal.bateriaId || '',
+      inversorHibridoId: proposal.inversorHibridoId || '',
     });
     setEditingProposal(true);
   };
@@ -395,6 +422,9 @@ export default function ProposalPage() {
       const novoPreco = parseFloat(editForm.totalPrice.replace(',', '.')) || selectedCard.totalPrice;
       const precoMudou = novoPreco !== selectedCard.totalPrice;
 
+      const bateria = editForm.hibrida ? bateriasHibrido.find(b => b.id === editForm.bateriaId) : undefined;
+      const inversorHib = editForm.hibrida ? inversoresHibrido.find(i => i.id === editForm.inversorHibridoId) : undefined;
+
       const updated = {
         ...proposal,
         inverterBrand: editForm.inverterBrand,
@@ -402,6 +432,18 @@ export default function ProposalPage() {
         panelBrand: editForm.panelBrand,
         panelPowerLabel: editForm.panelPowerLabel,
         observacoes: editForm.observacoes.trim() || undefined,
+        hibrida: editForm.hibrida,
+        bateriaId: bateria?.id,
+        bateriaMarca: bateria?.marca,
+        bateriaModelo: bateria?.modelo,
+        bateriaCapacidadeKwh: bateria?.capacidadeKwh,
+        bateriaGarantiaAnos: bateria?.garantiaAnos ?? undefined,
+        bateriaMiniaturaUrl: bateria?.miniaturaUrl ?? undefined,
+        inversorHibridoId: inversorHib?.id,
+        inversorHibridoMarca: inversorHib?.marca,
+        inversorHibridoModelo: inversorHib?.modelo,
+        inversorHibridoGarantiaAnos: inversorHib?.garantiaAnos ?? undefined,
+        inversorHibridoMiniaturaUrl: inversorHib?.miniaturaUrl ?? undefined,
         ...(precoMudou ? {
           totalPrice: novoPreco,
           installmentValues: calcInstallments(novoPreco),
@@ -686,6 +728,34 @@ export default function ProposalPage() {
                       onChange={e => setEditForm(f => ({ ...f, totalPrice: e.target.value }))} />
                     <p className="text-[11px] text-muted-foreground mt-1">Alterar recalcula parcelas automaticamente.</p>
                   </div>
+                </div>
+
+                <div>
+                  <label className="flex items-center gap-2 text-sm font-medium mb-2">
+                    <input type="checkbox" checked={editForm.hibrida} className="accent-primary"
+                      onChange={e => setEditForm(f => ({ ...f, hibrida: e.target.checked }))} />
+                    Proposta híbrida (inclui bateria)
+                  </label>
+                  {editForm.hibrida && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pl-6 border-l-2 border-border ml-1">
+                      <div>
+                        <label className="block text-xs font-medium mb-1 text-muted-foreground">Inversor híbrido</label>
+                        <select className="solar-input py-2 text-sm" value={editForm.inversorHibridoId}
+                          onChange={e => setEditForm(f => ({ ...f, inversorHibridoId: e.target.value }))}>
+                          <option value="">Selecione...</option>
+                          {inversoresHibrido.map(i => <option key={i.id} value={i.id}>{i.marca} {i.modelo}</option>)}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium mb-1 text-muted-foreground">Bateria</label>
+                        <select className="solar-input py-2 text-sm" value={editForm.bateriaId}
+                          onChange={e => setEditForm(f => ({ ...f, bateriaId: e.target.value }))}>
+                          <option value="">Selecione...</option>
+                          {bateriasHibrido.map(b => <option key={b.id} value={b.id}>{b.marca} {b.modelo} — {b.capacidadeKwh} kWh</option>)}
+                        </select>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div>

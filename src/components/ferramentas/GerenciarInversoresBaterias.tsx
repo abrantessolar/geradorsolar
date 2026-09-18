@@ -252,6 +252,11 @@ export default function GerenciarInversoresBaterias({ onClose, onSalvo, abaInici
               <input className="solar-input text-sm" value={formInv.bateriasCompativeis} onChange={e => setFormInv({ ...formInv, bateriasCompativeis: e.target.value })} placeholder="Ex: Pylontech US series, Deye BOS-G" />
             </div>
 
+            <div>
+              <label className="block text-xs font-medium mb-1">Garantia (anos)</label>
+              <input type="text" inputMode="numeric" className="solar-input text-sm w-32" value={formInv.garantiaAnos} onChange={e => setFormInv({ ...formInv, garantiaAnos: e.target.value })} />
+            </div>
+
             <div className="flex justify-end gap-2 pt-2">
               <button onClick={fechandoForm} className="solar-btn-outline text-sm py-2 px-4" disabled={saving}>Cancelar</button>
               <button onClick={salvarInversor} className="solar-btn-primary text-sm py-2 px-4 flex items-center gap-1.5" disabled={saving}><Save className="w-4 h-4" /> {saving ? 'Salvando...' : 'Salvar'}</button>
@@ -312,6 +317,11 @@ export default function GerenciarInversoresBaterias({ onClose, onSalvo, abaInici
               </div>
               <div><label className="block text-xs font-medium mb-1">Ciclos de vida</label><input type="text" inputMode="numeric" className="solar-input text-sm" value={formBat.ciclosVida} onChange={e => setFormBat({ ...formBat, ciclosVida: e.target.value })} /></div>
               <div><label className="block text-xs font-medium mb-1">Máx. unidades em paralelo</label><input type="text" inputMode="numeric" className="solar-input text-sm" value={formBat.maxUnidadesParalelo} onChange={e => setFormBat({ ...formBat, maxUnidadesParalelo: e.target.value })} disabled={!formBat.empilhavel} /></div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium mb-1">Garantia (anos)</label>
+              <input type="text" inputMode="numeric" className="solar-input text-sm w-32" value={formBat.garantiaAnos} onChange={e => setFormBat({ ...formBat, garantiaAnos: e.target.value })} />
             </div>
 
             <label className="flex items-center gap-2 text-sm">

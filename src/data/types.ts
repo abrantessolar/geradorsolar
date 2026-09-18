@@ -141,6 +141,22 @@ export interface Proposal {
   numero_proposta?: string;
   // Campos editáveis pontualmente na tela da proposta (overrides do operador)
   observacoes?: string;
+  // Bateria / inversor híbrido (opcional — só quando a proposta inclui bateria).
+  // Nunca preenchido em proposta ongrid comum; todo consumo desses campos no
+  // template é condicional a `hibrida === true`, então propostas existentes
+  // (sem esses campos) renderizam exatamente como sempre renderizaram.
+  hibrida?: boolean;
+  bateriaId?: string;
+  bateriaMarca?: string;
+  bateriaModelo?: string;
+  bateriaCapacidadeKwh?: number;
+  bateriaGarantiaAnos?: number;
+  bateriaMiniaturaUrl?: string;
+  inversorHibridoId?: string;
+  inversorHibridoMarca?: string;
+  inversorHibridoModelo?: string;
+  inversorHibridoGarantiaAnos?: number;
+  inversorHibridoMiniaturaUrl?: string;
 }
 
 export interface DimensioningResult {
