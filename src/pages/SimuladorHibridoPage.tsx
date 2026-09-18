@@ -5,12 +5,17 @@ import {
   ComposedChart, Area, Line, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, CartesianGrid,
 } from 'recharts';
 import {
-  CATALOGO_HIBRIDO as CATALOGO_FALLBACK, SELECIONADOS_PADRAO as SELECIONADOS_FALLBACK, CAPACIDADES_BATERIA_KWH,
+  CATALOGO_HIBRIDO as CATALOGO_FALLBACK, SELECIONADOS_PADRAO as SELECIONADOS_FALLBACK,
   GERACAO_DIARIA_TOTAL, NOME_DIA, ORDEM_DIAS, type ItemCatalogo, type CategoriaCatalogo,
 } from '@/data/catalogoSimuladorHibrido';
 import { calcularSimulacaoHibrida, type ConfigItem, type ItemSelecionado } from '@/lib/simuladorHibrido';
 import { getEquipamentosHibridoDB, agruparPorCategoria } from '@/data/supabaseEquipamentosHibrido';
+import { getInversoresHibridoDB, getBateriasHibridoDB } from '@/data/supabaseInversorBateria';
+import type { InversorHibrido, BateriaHibrida } from '@/data/equipamentosHibrido';
 import GerenciarCatalogoHibrido from '@/components/ferramentas/GerenciarCatalogoHibrido';
+import GerenciarInversoresBaterias from '@/components/ferramentas/GerenciarInversoresBaterias';
+import { getKits } from '@/data/store';
+import type { Kit } from '@/data/types';
 import { toast } from 'sonner';
 
 /** Modo de exibição — 'interno' (equipe, hoje) vs 'publico' (cliente, ainda sem rota ligada).
@@ -44,13 +49,52 @@ function Stepper({ value, onChange, min = 0, max, step = 1 }: { value: number; o
 
 export default function SimuladorHibridoPage({ modo = 'interno' }: { modo?: Modo }) {
   const [placas, setPlacas] = useState(10);
-  const [capacidadeBateria, setCapacidadeBateria] = useState(CAPACIDADES_BATERIA_KWH[1]);
+  const [placaId, setPlacaId] = useState<string>('');
   const [socInicial, setSocInicial] = useState(50);
   const [selecionados, setSelecionados] = useState<Set<string>>(new Set(SELECIONADOS_FALLBACK));
   const [configs, setConfigs] = useState<Record<string, ConfigItem>>({});
   const [catalogo, setCatalogo] = useState<CategoriaCatalogo[]>(CATALOGO_FALLBACK);
   const [carregandoCatalogo, setCarregandoCatalogo] = useState(true);
   const [gerenciarAberto, setGerenciarAberto] = useState(false);
+
+  const [inversores, setInversores] = useState<InversorHibrido[]>([]);
+  const [baterias, setBaterias] = useState<BateriaHibrida[]>([]);
+  const [inversorId, setInversorId] = useState<string>('');
+  const [bateriaId, setBateriaId] = useState<string>('');
+  const [qtdBateria, setQtdBateria] = useState(1);
+  const [gerenciarEquipAberto, setGerenciarEquipAberto] = useState(false);
+
+  const carregarInversoresBaterias = async () => {
+    try {
+      const [inv, bat] = await Promise.all([getInversoresHibridoDB(true), getBateriasHibridoDB(true)]);
+      setInversores(inv);
+      setBaterias(bat);
+      setInversorId(prev => prev || inv[0]?.id || '');
+      setBateriaId(prev => prev || bat[0]?.id || '');
+    } catch (e: any) {
+      toast.error('Não consegui carregar inversores/baterias do banco.');
+    }
+  };
+
+  useEffect(() => { carregarInversoresBaterias(); }, []);
+
+  // Placas: puxa do catálogo real da calculadora (equipamentos_kits), não um valor fixo.
+  const placasDisponiveis = useMemo(() => {
+    const todas = getKits().filter(k => k.type === 'placa' && k.active);
+    const porModelo = new Map<string, Kit>();
+    todas.forEach(k => { const chave = `${k.brand}__${k.model}__${k.power}`; if (!porModelo.has(chave)) porModelo.set(chave, k); });
+    return Array.from(porModelo.values());
+  }, []);
+  useEffect(() => {
+    if (!placaId && placasDisponiveis.length > 0) setPlacaId(placasDisponiveis[0].id);
+  }, [placasDisponiveis, placaId]);
+  const placaSelecionada = placasDisponiveis.find(p => p.id === placaId) || null;
+
+  const inversorSelecionado = inversores.find(i => i.id === inversorId) || null;
+  const bateriaSelecionada = baterias.find(b => b.id === bateriaId) || null;
+
+  const capacidadeNominalTotalKwh = bateriaSelecionada ? bateriaSelecionada.capacidadeKwh * qtdBateria : 0;
+  const capacidadeUtilKwh = bateriaSelecionada ? capacidadeNominalTotalKwh * (bateriaSelecionada.dodPct / 100) : 0;
 
   const carregarCatalogo = async () => {
     setCarregandoCatalogo(true);
@@ -70,7 +114,7 @@ export default function SimuladorHibridoPage({ modo = 'interno' }: { modo?: Modo
 
   useEffect(() => { carregarCatalogo(); }, []);
 
-  const potenciaKwp = placas * 0.6;
+  const potenciaKwp = placaSelecionada ? (placaSelecionada.power / 1000) * placas : 0;
 
   const todosItens = useMemo(() => catalogo.flatMap(c => c.itens), [catalogo]);
 
@@ -105,17 +149,43 @@ export default function SimuladorHibridoPage({ modo = 'interno' }: { modo?: Modo
 
   const resultado = useMemo(() => calcularSimulacaoHibrida({
     potenciaKwp,
-    capacidadeBateriaKwh: capacidadeBateria,
+    capacidadeBateriaKwh: capacidadeUtilKwh,
     socInicialPct: socInicial,
     itensSelecionados,
-  }), [potenciaKwp, capacidadeBateria, socInicial, itensSelecionados]);
+  }), [potenciaKwp, capacidadeUtilKwh, socInicial, itensSelecionados]);
+
+  // ── Checagens de compatibilidade e dimensionamento ──
+  const avisos: string[] = [];
+  if (inversorSelecionado && bateriaSelecionada) {
+    if (inversorSelecionado.tipoTensaoBateria !== bateriaSelecionada.tipoTensao) {
+      avisos.push(`Incompatível: o inversor trabalha em ${inversorSelecionado.tipoTensaoBateria === 'low_voltage' ? 'Low Voltage' : 'High Voltage'} e a bateria é ${bateriaSelecionada.tipoTensao === 'low_voltage' ? 'Low Voltage' : 'High Voltage'}.`);
+    } else if (inversorSelecionado.tipoTensaoBateria === 'low_voltage' && inversorSelecionado.tensaoBateriaV != null && bateriaSelecionada.tensaoNominalV != null && inversorSelecionado.tensaoBateriaV !== bateriaSelecionada.tensaoNominalV) {
+      avisos.push(`Tensão nominal diferente: inversor espera ${inversorSelecionado.tensaoBateriaV}V, bateria é ${bateriaSelecionada.tensaoNominalV}V.`);
+    }
+  }
+  if (inversorSelecionado?.potenciaFvMaxKwp != null && potenciaKwp > inversorSelecionado.potenciaFvMaxKwp) {
+    avisos.push(`As placas (${potenciaKwp.toFixed(2)} kWp) excedem o limite de entrada FV do inversor (${inversorSelecionado.potenciaFvMaxKwp} kWp).`);
+  }
+  const limitePicoInversor = inversorSelecionado?.potenciaPicoKw ?? inversorSelecionado?.potenciaNominalKw ?? null;
+  const limitePicoBateria = (bateriaSelecionada?.correnteMaxDescargaPicoA != null && bateriaSelecionada?.tensaoNominalV != null)
+    ? (bateriaSelecionada.correnteMaxDescargaPicoA * bateriaSelecionada.tensaoNominalV * qtdBateria) / 1000
+    : null;
+  if (limitePicoInversor != null && resultado.picoMaximoAcumuladoKw > limitePicoInversor) {
+    avisos.push(`O pico máximo acumulado (${resultado.picoMaximoAcumuladoKw.toFixed(2)} kW) excede a capacidade de surto do inversor (${limitePicoInversor.toFixed(2)} kW).`);
+  }
+  if (limitePicoBateria != null && resultado.picoMaximoAcumuladoKw > limitePicoBateria) {
+    avisos.push(`O pico máximo acumulado (${resultado.picoMaximoAcumuladoKw.toFixed(2)} kW) excede a descarga de pico da bateria (${limitePicoBateria.toFixed(2)} kW).`);
+  }
+
+  const consumoMedioKw = resultado.consumoDiarioTotalKwh / 24;
+  const autonomiaHoras = consumoMedioKw > 0 ? capacidadeUtilKwh / consumoMedioKw : 0;
 
   const dadosGrafico = resultado.pontos.map(p => ({
     label: p.label,
     'Geração (kW)': p.geracaoKw,
     'Consumo (kW)': p.consumoKw,
     'Carga da bateria (kWh)': p.socKwh,
-    'Capacidade máxima': capacidadeBateria,
+    'Capacidade máxima': capacidadeUtilKwh,
   }));
 
   const totalVindoDaRede = resultado.pontos.reduce((a, p) => a + p.vindoDaRedeKwh, 0);
@@ -156,17 +226,55 @@ export default function SimuladorHibridoPage({ modo = 'interno' }: { modo?: Modo
           <div className="solar-card p-5 space-y-4">
             <h2 className="font-bold text-primary">Sistema</h2>
             <div>
-              <label className="block text-sm font-medium mb-1.5">Quantidade de placas (600 Wp cada)</label>
+              <label className="block text-sm font-medium mb-1.5">Placa</label>
+              <select value={placaId} onChange={e => setPlacaId(e.target.value)} className="solar-input">
+                <option value="">Selecione...</option>
+                {placasDisponiveis.map(p => <option key={p.id} value={p.id}>{p.brand} {p.model} — {p.power} Wp</option>)}
+              </select>
+              {placasDisponiveis.length === 0 && <p className="text-xs text-muted-foreground mt-1">Nenhuma placa ativa no catálogo da calculadora.</p>}
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1.5">Quantidade de placas</label>
               <Stepper value={placas} onChange={setPlacas} min={1} max={200} />
               <p className="text-xs text-muted-foreground mt-1">{potenciaKwp.toFixed(2)} kWp instalado</p>
             </div>
-            <div>
-              <label className="block text-sm font-medium mb-1.5">Capacidade da bateria</label>
-              <select value={capacidadeBateria} onChange={e => setCapacidadeBateria(Number(e.target.value))} className="solar-input">
-                {CAPACIDADES_BATERIA_KWH.map(c => <option key={c} value={c}>{c} kWh</option>)}
-              </select>
-              <p className="text-xs text-muted-foreground mt-1">Tabela provisória — trocar pelos SKUs reais depois.</p>
+
+            <div className="flex items-center justify-between">
+              <label className="block text-sm font-medium">Inversor híbrido</label>
+              {modo === 'interno' && (
+                <button onClick={() => setGerenciarEquipAberto(true)} className="text-xs text-primary hover:underline flex items-center gap-1">
+                  <Settings2 className="w-3.5 h-3.5" /> Gerenciar
+                </button>
+              )}
             </div>
+            <select value={inversorId} onChange={e => setInversorId(e.target.value)} className="solar-input">
+              <option value="">Selecione...</option>
+              {inversores.map(i => <option key={i.id} value={i.id}>{i.marca} {i.modelo} — {i.potenciaNominalKw} kW</option>)}
+            </select>
+            {inversores.length === 0 && <p className="text-xs text-muted-foreground -mt-2">Nenhum inversor cadastrado ainda.</p>}
+
+            <div>
+              <label className="block text-sm font-medium mb-1.5">Bateria</label>
+              <select value={bateriaId} onChange={e => setBateriaId(e.target.value)} className="solar-input">
+                <option value="">Selecione...</option>
+                {baterias.map(b => <option key={b.id} value={b.id}>{b.marca} {b.modelo} — {b.capacidadeKwh} kWh</option>)}
+              </select>
+              {baterias.length === 0 && <p className="text-xs text-muted-foreground mt-1">Nenhuma bateria cadastrada ainda.</p>}
+            </div>
+
+            {bateriaSelecionada?.empilhavel && (
+              <div>
+                <label className="block text-sm font-medium mb-1.5">Unidades de bateria (empilhadas)</label>
+                <Stepper value={qtdBateria} onChange={setQtdBateria} min={1} max={bateriaSelecionada.maxUnidadesParalelo || 10} />
+              </div>
+            )}
+
+            {bateriaSelecionada && (
+              <p className="text-xs text-muted-foreground">
+                {capacidadeNominalTotalKwh.toFixed(1)} kWh nominal × DoD {bateriaSelecionada.dodPct}% = <strong className="text-foreground">{capacidadeUtilKwh.toFixed(1)} kWh útil</strong>
+              </p>
+            )}
+
             <div>
               <label className="block text-sm font-medium mb-1.5">Carga inicial da bateria (%)</label>
               <input
@@ -273,6 +381,13 @@ export default function SimuladorHibridoPage({ modo = 'interno' }: { modo?: Modo
             </div>
           </div>
 
+          {avisos.length > 0 && (
+            <div className="p-4 rounded-xl bg-destructive/10 border border-destructive/40 space-y-1.5">
+              <p className="text-xs font-bold text-destructive flex items-center gap-1.5"><AlertTriangle className="w-3.5 h-3.5" /> Verificar compatibilidade</p>
+              {avisos.map((a, i) => <p key={i} className="text-xs text-destructive/90">• {a}</p>)}
+            </div>
+          )}
+
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             <div className="solar-card p-4">
               <p className="text-xs text-muted-foreground">Consumo diário estimado</p>
@@ -296,6 +411,13 @@ export default function SimuladorHibridoPage({ modo = 'interno' }: { modo?: Modo
               <p className="text-lg font-bold text-amber-600 dark:text-amber-400">{resultado.picoMaximoAcumuladoKw.toFixed(2)} kW</p>
               <p className="text-[10px] text-muted-foreground">Cenário conservador — todos partindo juntos, com surto</p>
             </div>
+            {bateriaSelecionada && (
+              <div className="solar-card p-4">
+                <p className="text-xs text-muted-foreground">Autonomia estimada</p>
+                <p className="text-lg font-bold text-foreground">{autonomiaHoras >= 24 ? `${(autonomiaHoras / 24).toFixed(1)} dias` : `${autonomiaHoras.toFixed(1)} h`}</p>
+                <p className="text-[10px] text-muted-foreground">Só bateria, sem geração, no consumo médio</p>
+              </div>
+            )}
           </div>
 
           {resultado.itensComPico.length > 0 && (
@@ -329,6 +451,13 @@ export default function SimuladorHibridoPage({ modo = 'interno' }: { modo?: Modo
         <GerenciarCatalogoHibrido
           onClose={() => setGerenciarAberto(false)}
           onSalvo={carregarCatalogo}
+        />
+      )}
+
+      {gerenciarEquipAberto && (
+        <GerenciarInversoresBaterias
+          onClose={() => setGerenciarEquipAberto(false)}
+          onSalvo={carregarInversoresBaterias}
         />
       )}
     </div>
