@@ -61,6 +61,9 @@ export interface ItemTempoAjustavel extends ItemBase {
 export type ItemCatalogo = (ItemFixo | ItemTempoAjustavel) & {
   /** Presente só no Veículo Elétrico — km/dia rodados padrão. */
   kmDia?: number;
+  /** Potência de pico/partida (kW), quando aplicável (motores, compressores).
+   *  Undefined = sem surto conhecido, usa a potência nominal (`pot`). */
+  picoKw?: number;
 };
 
 export interface CategoriaCatalogo {

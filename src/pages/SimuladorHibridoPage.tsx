@@ -253,7 +253,7 @@ export default function SimuladorHibridoPage({ modo = 'interno' }: { modo?: Modo
           <div className="solar-card p-5">
             <h2 className="font-bold text-primary mb-1">Geração, consumo e carga da bateria</h2>
             <p className="text-xs text-muted-foreground mb-4">
-              72 horas contínuas — geração e consumo em kW (eixo esquerdo), carga da bateria em kWh (eixo direito).
+              72 horas contínuas — geração, consumo e carga da bateria na mesma escala (kW/kWh), pra comparar diretamente.
               Sobe com sobra de geração, desce quando o consumo é maior; ao zerar, o consumo passa a vir da rede.
             </p>
             <div style={{ width: '100%', height: 340 }}>
@@ -261,14 +261,13 @@ export default function SimuladorHibridoPage({ modo = 'interno' }: { modo?: Modo
                 <ComposedChart data={dadosGrafico} margin={{ left: 0, right: 8, top: 4, bottom: 4 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
                   <XAxis dataKey="label" tick={{ fontSize: 10 }} interval={5} />
-                  <YAxis yAxisId="esq" tick={{ fontSize: 11 }} label={{ value: 'kW', angle: -90, position: 'insideLeft', fontSize: 11 }} />
-                  <YAxis yAxisId="dir" orientation="right" tick={{ fontSize: 11 }} domain={[0, 'dataMax']} label={{ value: 'kWh (bateria)', angle: 90, position: 'insideRight', fontSize: 11 }} />
+                  <YAxis tick={{ fontSize: 11 }} label={{ value: 'kW / kWh', angle: -90, position: 'insideLeft', fontSize: 11 }} />
                   <Tooltip contentStyle={{ fontSize: 12 }} />
                   <Legend wrapperStyle={{ fontSize: 12 }} />
-                  <Area yAxisId="esq" type="monotone" dataKey="Geração (kW)" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.15} strokeWidth={2} dot={false} />
-                  <Area yAxisId="esq" type="monotone" dataKey="Consumo (kW)" stroke="hsl(var(--destructive))" fill="hsl(var(--destructive))" fillOpacity={0.1} strokeWidth={2} dot={false} />
-                  <Area yAxisId="dir" type="monotone" dataKey="Carga da bateria (kWh)" stroke="hsl(var(--secondary))" fill="hsl(var(--secondary))" fillOpacity={0.25} strokeWidth={2} dot={false} />
-                  <Line yAxisId="dir" type="monotone" dataKey="Capacidade máxima" stroke="#bdbaa8" strokeDasharray="4 4" strokeWidth={1} dot={false} />
+                  <Area type="monotone" dataKey="Geração (kW)" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.15} strokeWidth={2} dot={false} />
+                  <Area type="monotone" dataKey="Consumo (kW)" stroke="hsl(var(--destructive))" fill="hsl(var(--destructive))" fillOpacity={0.1} strokeWidth={2} dot={false} />
+                  <Area type="monotone" dataKey="Carga da bateria (kWh)" stroke="hsl(var(--secondary))" fill="hsl(var(--secondary))" fillOpacity={0.25} strokeWidth={2} dot={false} />
+                  <Line type="monotone" dataKey="Capacidade máxima" stroke="#bdbaa8" strokeDasharray="4 4" strokeWidth={1} dot={false} />
                 </ComposedChart>
               </ResponsiveContainer>
             </div>
@@ -287,7 +286,31 @@ export default function SimuladorHibridoPage({ modo = 'interno' }: { modo?: Modo
               <p className="text-xs text-muted-foreground">Vindo da rede (72h)</p>
               <p className="text-lg font-bold text-foreground">{totalVindoDaRede.toFixed(2)} kWh</p>
             </div>
+            <div className="solar-card p-4">
+              <p className="text-xs text-muted-foreground">Potência nominal acumulada</p>
+              <p className="text-lg font-bold text-foreground">{resultado.potenciaNominalAcumuladaKw.toFixed(2)} kW</p>
+              <p className="text-[10px] text-muted-foreground">Todos ligados ao mesmo tempo, sem surto</p>
+            </div>
+            <div className="solar-card p-4 border-amber-500/40 border">
+              <p className="text-xs text-muted-foreground">Pico máximo acumulado</p>
+              <p className="text-lg font-bold text-amber-600 dark:text-amber-400">{resultado.picoMaximoAcumuladoKw.toFixed(2)} kW</p>
+              <p className="text-[10px] text-muted-foreground">Cenário conservador — todos partindo juntos, com surto</p>
+            </div>
           </div>
+
+          {resultado.itensComPico.length > 0 && (
+            <div className="solar-card p-4">
+              <p className="text-xs font-semibold text-foreground mb-2">Equipamentos com potência de pico cadastrada</p>
+              <div className="space-y-1">
+                {resultado.itensComPico.map(i => (
+                  <div key={i.id} className="flex justify-between text-xs text-muted-foreground">
+                    <span>{i.nome}{i.qtd > 1 ? ` (×${i.qtd})` : ''}</span>
+                    <span className="font-medium text-foreground">{(i.picoKw * i.qtd).toFixed(2)} kW de pico</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 flex gap-2">
             <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />

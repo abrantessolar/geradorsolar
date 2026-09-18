@@ -1,11 +1,39 @@
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { Plus, Edit2, Power, PowerOff, X, Save, Trash2 } from 'lucide-react';
+import type { Janela } from '@/data/catalogoSimuladorHibrido';
 import {
   getEquipamentosHibridoDB, saveEquipamentoHibridoDB, toggleAtivoEquipamentoHibridoDB,
   deleteEquipamentoHibridoDB, rowParaForm, formVazio,
   type EquipamentoHibridoRow, type EquipamentoHibridoForm,
 } from '@/data/supabaseEquipamentosHibrido';
+
+/** Expande [inicio,fim) (fim pode passar de 23 pra indicar virada de dia) num conjunto de horas 0-23. */
+function janelaParaHoras(janela: Janela): Set<number> {
+  const horas = new Set<number>();
+  janela.forEach(([ini, fim]) => {
+    for (let h = ini; h < fim; h++) horas.add(((h % 24) + 24) % 24);
+  });
+  return horas;
+}
+
+/** Junta um conjunto de horas marcadas em faixas contínuas [inicio,fim), preservando virada de meia-noite. */
+function horasParaJanela(horasSet: Set<number>): Janela {
+  if (horasSet.size === 0) return [];
+  if (horasSet.size === 24) return [[0, 24]];
+  let gap = 0;
+  for (let h = 0; h < 24; h++) { if (!horasSet.has(h)) { gap = h; break; } }
+  const janela: Janela = [];
+  let inicioAtual: number | null = null;
+  for (let passo = 0; passo <= 24; passo++) {
+    const h = gap + passo;
+    const marcado = passo < 24 && horasSet.has(h % 24);
+    if (marcado && inicioAtual === null) inicioAtual = h;
+    if (!marcado && inicioAtual !== null) { janela.push([inicioAtual, h]); inicioAtual = null; }
+  }
+  return janela;
+}
+
 
 export default function GerenciarCatalogoHibrido({ onClose, onSalvo }: { onClose: () => void; onSalvo: () => void }) {
   const [rows, setRows] = useState<EquipamentoHibridoRow[]>([]);
@@ -72,10 +100,11 @@ export default function GerenciarCatalogoHibrido({ onClose, onSalvo }: { onClose
     }
   };
 
-  const atualizarJanela = (idx: number, campo: 0 | 1, valor: number) => {
+  const toggleHora = (h: number) => {
     if (!form) return;
-    const nova = form.janela.map((par, i) => (i === idx ? ([campo === 0 ? valor : par[0], campo === 1 ? valor : par[1]] as [number, number]) : par));
-    setForm({ ...form, janela: nova });
+    const horas = janelaParaHoras(form.janela);
+    if (horas.has(h)) horas.delete(h); else horas.add(h);
+    setForm({ ...form, janela: horasParaJanela(horas) });
   };
 
   return (
@@ -102,7 +131,9 @@ export default function GerenciarCatalogoHibrido({ onClose, onSalvo }: { onClose
                     {rows.filter(r => r.categoria === cat).map(r => (
                       <div key={r.id} className={`flex items-center gap-2 py-1.5 border-b border-border/50 text-sm ${!r.ativo ? 'opacity-50' : ''}`}>
                         <span className="flex-1 truncate">{r.nome}</span>
-                        <span className="text-xs text-muted-foreground w-16 text-right">{r.potencia_kw} kW</span>
+                        <span className="text-xs text-muted-foreground w-24 text-right">
+                          {r.potencia_kw} kW{r.potencia_pico_kw != null && <span className="text-amber-600 dark:text-amber-400"> ⚡{r.potencia_pico_kw}</span>}
+                        </span>
                         <button onClick={() => setForm(rowParaForm(r))} className="p-1.5 rounded text-primary hover:bg-primary/10" title="Editar">
                           <Edit2 className="w-3.5 h-3.5" />
                         </button>
@@ -186,28 +217,35 @@ export default function GerenciarCatalogoHibrido({ onClose, onSalvo }: { onClose
             </div>
 
             <div>
+              <label className="block text-xs font-medium mb-1">Potência de pico/partida (kW) — só se souber o dado real (placa do motor/compressor)</label>
+              <input type="text" inputMode="decimal" className="solar-input text-sm" value={form.potenciaPicoKw} onChange={e => setForm({ ...form, potenciaPicoKw: e.target.value })} placeholder="Deixe em branco = sem surto conhecido" />
+            </div>
+
+            <div>
               <label className="block text-xs font-medium mb-1.5">
-                Janela de uso (horários em que o equipamento fica ligado, 0-23h — pode ter mais de uma faixa)
+                Janela de uso (clique nas horas em que o equipamento fica ligado)
               </label>
-              <div className="space-y-2">
-                {form.janela.map((par, idx) => (
-                  <div key={idx} className="flex items-center gap-2 text-sm">
-                    <span className="text-xs text-muted-foreground">de</span>
-                    <input type="number" min={0} max={27} className="solar-input text-sm w-20" value={par[0]} onChange={e => atualizarJanela(idx, 0, Number(e.target.value))} />
-                    <span className="text-xs text-muted-foreground">até</span>
-                    <input type="number" min={0} max={27} className="solar-input text-sm w-20" value={par[1]} onChange={e => atualizarJanela(idx, 1, Number(e.target.value))} />
-                    <span className="text-xs text-muted-foreground">h</span>
-                    {form.janela.length > 1 && (
-                      <button onClick={() => setForm({ ...form, janela: form.janela.filter((_, i) => i !== idx) })} className="text-destructive text-xs ml-2">Remover</button>
-                    )}
-                  </div>
-                ))}
-                <button onClick={() => setForm({ ...form, janela: [...form.janela, [18, 19]] })} className="text-xs text-primary hover:underline">
-                  + Adicionar outra faixa de horário
-                </button>
+              <div className="grid grid-cols-6 sm:grid-cols-8 gap-1.5">
+                {Array.from({ length: 24 }, (_, h) => h).map(h => {
+                  const marcado = janelaParaHoras(form.janela).has(h);
+                  return (
+                    <button
+                      key={h}
+                      type="button"
+                      onClick={() => toggleHora(h)}
+                      className={`text-xs py-1.5 rounded-md border transition-colors ${
+                        marcado
+                          ? 'bg-primary text-primary-foreground border-primary'
+                          : 'bg-background text-muted-foreground border-input hover:bg-muted'
+                      }`}
+                    >
+                      {String(h).padStart(2, '0')}h
+                    </button>
+                  );
+                })}
               </div>
-              <p className="text-[11px] text-muted-foreground mt-1">
-                Pra passar da meia-noite, use números acima de 23 (ex: 19 até 27 = das 19h às 03h).
+              <p className="text-[11px] text-muted-foreground mt-1.5">
+                {form.janela.length === 0 ? 'Nenhum horário marcado.' : `${janelaParaHoras(form.janela).size} hora(s) marcada(s).`} Faixas que passam da meia-noite (ex: 22h às 02h) são detectadas automaticamente.
               </p>
             </div>
 

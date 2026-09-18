@@ -13,6 +13,7 @@ export interface EquipamentoHibridoRow {
   unidade_tempo: 'h' | 'min' | null;
   tempo_padrao: number | null;
   km_dia: number | null;
+  potencia_pico_kw: number | null;
   selecionado_padrao: boolean;
   ordem: number;
   ativo: boolean;
@@ -31,6 +32,7 @@ export interface EquipamentoHibridoForm {
   unidadeTempo: 'h' | 'min';
   tempoPadrao: string;
   kmDia: string;
+  potenciaPicoKw: string;
   selecionadoPadrao: boolean;
 }
 
@@ -54,6 +56,7 @@ export async function saveEquipamentoHibridoDB(form: EquipamentoHibridoForm): Pr
     unidade_tempo: form.tipo === 'tempo_ajustavel' ? form.unidadeTempo : null,
     tempo_padrao: form.tipo === 'tempo_ajustavel' ? (parseFloat(form.tempoPadrao.replace(',', '.')) || null) : null,
     km_dia: form.kmDia.trim() ? (parseFloat(form.kmDia.replace(',', '.')) || null) : null,
+    potencia_pico_kw: form.potenciaPicoKw.trim() ? (parseFloat(form.potenciaPicoKw.replace(',', '.')) || null) : null,
     selecionado_padrao: form.selecionadoPadrao,
     atualizado_em: new Date().toISOString(),
   };
@@ -86,8 +89,8 @@ export function agruparPorCategoria(rows: EquipamentoHibridoRow[]): CategoriaCat
   const mapa = new Map<string, ItemCatalogo[]>();
   for (const r of rows) {
     const item: ItemCatalogo = r.tipo === 'fixo'
-      ? { id: r.id, nome: r.nome, pot: r.potencia_kw, janela: r.janela, tipo: 'fixo', fator: r.fator_servico ?? 1, horas: r.horas_dia ?? 0, kmDia: r.km_dia ?? undefined }
-      : { id: r.id, nome: r.nome, pot: r.potencia_kw, janela: r.janela, tipo: 'tempo_ajustavel', unidade: r.unidade_tempo ?? 'h', padrao: r.tempo_padrao ?? 0, kmDia: r.km_dia ?? undefined };
+      ? { id: r.id, nome: r.nome, pot: r.potencia_kw, janela: r.janela, tipo: 'fixo', fator: r.fator_servico ?? 1, horas: r.horas_dia ?? 0, kmDia: r.km_dia ?? undefined, picoKw: r.potencia_pico_kw ?? undefined }
+      : { id: r.id, nome: r.nome, pot: r.potencia_kw, janela: r.janela, tipo: 'tempo_ajustavel', unidade: r.unidade_tempo ?? 'h', padrao: r.tempo_padrao ?? 0, kmDia: r.km_dia ?? undefined, picoKw: r.potencia_pico_kw ?? undefined };
     if (!mapa.has(r.categoria)) mapa.set(r.categoria, []);
     mapa.get(r.categoria)!.push(item);
   }
@@ -107,6 +110,7 @@ export function rowParaForm(r: EquipamentoHibridoRow): EquipamentoHibridoForm {
     unidadeTempo: r.unidade_tempo ?? 'h',
     tempoPadrao: r.tempo_padrao != null ? String(r.tempo_padrao) : '1',
     kmDia: r.km_dia != null ? String(r.km_dia) : '',
+    potenciaPicoKw: r.potencia_pico_kw != null ? String(r.potencia_pico_kw) : '',
     selecionadoPadrao: r.selecionado_padrao,
   };
 }
@@ -123,6 +127,7 @@ export function formVazio(categoriaSugerida?: string): EquipamentoHibridoForm {
     unidadeTempo: 'h',
     tempoPadrao: '1',
     kmDia: '',
+    potenciaPicoKw: '',
     selecionadoPadrao: false,
   };
 }

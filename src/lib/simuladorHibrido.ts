@@ -61,6 +61,14 @@ export interface ResultadoSimulacao {
   /** kWh/dia por item selecionado — útil pra depurar/exibir detalhamento. */
   consumoPorItem: Record<string, number>;
   consumoDiarioTotalKwh: number;
+  /** Soma da potência nominal de todos os itens selecionados, como se ligassem tudo ao mesmo tempo. */
+  potenciaNominalAcumuladaKw: number;
+  /** Cenário conservador: soma da potência de PICO (quando conhecida; nominal quando não) de
+   *  todos os itens selecionados, como se todos partissem/ligassem simultaneamente. Útil pra
+   *  garantir que o inversor aguenta o pior caso de corrente de partida acumulada. */
+  picoMaximoAcumuladoKw: number;
+  /** Detalhamento por item que tem potência de pico própria cadastrada (motores/compressores). */
+  itensComPico: { id: string; nome: string; picoKw: number; qtd: number }[];
 }
 
 export function calcularSimulacaoHibrida(params: {
@@ -80,6 +88,23 @@ export function calcularSimulacaoHibrida(params: {
     for (let h = 0; h < 24; h++) consumoHora[h] += mapa[h] || 0;
   });
   const consumoDiarioTotalKwh = Object.values(consumoPorItem).reduce((a, b) => a + b, 0);
+
+  // Potência nominal e de pico acumuladas — cenário "tudo ligado ao mesmo tempo",
+  // usado pra checar se o inversor aguenta o pior caso, não pra curva hora-a-hora.
+  let potenciaNominalAcumuladaKw = 0;
+  let picoMaximoAcumuladoKw = 0;
+  const itensComPico: { id: string; nome: string; picoKw: number; qtd: number }[] = [];
+  itensSelecionados.forEach(({ item, config }) => {
+    const qtd = config.qtd ?? 1;
+    const nominal = item.pot * qtd;
+    potenciaNominalAcumuladaKw += nominal;
+    if (item.picoKw != null) {
+      picoMaximoAcumuladoKw += item.picoKw * qtd;
+      itensComPico.push({ id: item.id, nome: item.nome, picoKw: item.picoKw, qtd });
+    } else {
+      picoMaximoAcumuladoKw += nominal;
+    }
+  });
 
   // Geração hora-a-hora por tipo de dia, escalada pela potência instalada
   const geracaoHora = (tipo: TipoDia) => {
@@ -125,5 +150,5 @@ export function calcularSimulacaoHibrida(params: {
     };
   });
 
-  return { pontos, consumoPorItem, consumoDiarioTotalKwh };
+  return { pontos, consumoPorItem, consumoDiarioTotalKwh, potenciaNominalAcumuladaKw, picoMaximoAcumuladoKw, itensComPico };
 }
