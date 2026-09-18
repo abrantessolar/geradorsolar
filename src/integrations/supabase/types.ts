@@ -915,6 +915,63 @@ export type Database = {
         }
         Relationships: []
       }
+      equipamentos_simulador_hibrido: {
+        Row: {
+          ativo: boolean
+          atualizado_em: string
+          categoria: string
+          criado_em: string
+          fator_servico: number | null
+          horas_dia: number | null
+          id: string
+          janela: Json
+          km_dia: number | null
+          nome: string
+          ordem: number
+          potencia_kw: number
+          selecionado_padrao: boolean
+          tempo_padrao: number | null
+          tipo: string
+          unidade_tempo: string | null
+        }
+        Insert: {
+          ativo?: boolean
+          atualizado_em?: string
+          categoria: string
+          criado_em?: string
+          fator_servico?: number | null
+          horas_dia?: number | null
+          id: string
+          janela: Json
+          km_dia?: number | null
+          nome: string
+          ordem?: number
+          potencia_kw: number
+          selecionado_padrao?: boolean
+          tempo_padrao?: number | null
+          tipo: string
+          unidade_tempo?: string | null
+        }
+        Update: {
+          ativo?: boolean
+          atualizado_em?: string
+          categoria?: string
+          criado_em?: string
+          fator_servico?: number | null
+          horas_dia?: number | null
+          id?: string
+          janela?: Json
+          km_dia?: number | null
+          nome?: string
+          ordem?: number
+          potencia_kw?: number
+          selecionado_padrao?: boolean
+          tempo_padrao?: number | null
+          tipo?: string
+          unidade_tempo?: string | null
+        }
+        Relationships: []
+      }
       estoque: {
         Row: {
           atualizado_em: string
