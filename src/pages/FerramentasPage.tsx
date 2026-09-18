@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Calculator, Wrench, ChevronRight, Sun, BatteryCharging, Waves } from 'lucide-react';
+import { Calculator, Wrench, ChevronRight, Sun, BatteryCharging, Waves, Battery } from 'lucide-react';
 
 const tools = [
   {
@@ -25,6 +25,12 @@ const tools = [
     icon: Waves,
     title: 'Dimensionamento de Bombeamento',
     desc: 'Placas solares para bomba, por CV',
+  },
+  {
+    to: '/ferramentas/simulador-hibrido',
+    icon: Battery,
+    title: 'Simulador Híbrido — 3 dias',
+    desc: 'Geração, consumo e carga da bateria em 72h (nublado/típico/limpo)',
   },
 ];
 

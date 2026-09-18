@@ -21,6 +21,7 @@ import Ren1000Page from "@/pages/Ren1000Page";
 import OffgridPage from "@/pages/OffgridPage";
 import BackupPage from "@/pages/BackupPage";
 import BombeamentoPage from "@/pages/BombeamentoPage";
+import SimuladorHibridoPage from "@/pages/SimuladorHibridoPage";
 import ClientesPage from "@/pages/ClientesPage";
 import RastreamentoPage from "@/pages/RastreamentoPage";
 import FaqPage from "@/pages/FaqPage";
@@ -230,6 +231,11 @@ const App = () => {
             <Route path="/ferramentas/bombeamento" element={
               <ProtectedRoute>
                 <SeoNoIndex /><Layout><BombeamentoPage /></Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/ferramentas/simulador-hibrido" element={
+              <ProtectedRoute>
+                <SeoNoIndex /><Layout><SimuladorHibridoPage modo="interno" /></Layout>
               </ProtectedRoute>
             } />
             <Route path="/energia" element={<div><SeoNoIndex /><EnergiaProvider><EnergiaLogin /></EnergiaProvider></div>} />
