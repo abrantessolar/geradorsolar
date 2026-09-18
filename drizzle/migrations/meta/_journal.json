@@ -15,6 +15,13 @@
       "when": 1789748784601,
       "tag": "0001_add_peak_power_to_hybrid_equipment",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1789775503291,
+      "tag": "0002_create_hybrid_inverter_battery_catalogs",
+      "breakpoints": true
     }
   ]
 }

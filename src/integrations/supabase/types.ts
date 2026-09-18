@@ -774,6 +774,72 @@ export type Database = {
           },
         ]
       }
+      equipamentos_bateria_hibrida: {
+        Row: {
+          ativo: boolean
+          atualizado_em: string
+          capacidade_kwh: number
+          ciclos_vida: number | null
+          corrente_max_descarga_continua_a: number | null
+          corrente_max_descarga_pico_a: number | null
+          criado_em: string
+          dod_pct: number
+          empilhavel: boolean
+          garantia_anos: number | null
+          id: string
+          marca: string
+          max_unidades_paralelo: number | null
+          miniatura_url: string | null
+          modelo: string
+          ordem: number
+          quimica: string | null
+          tensao_nominal_v: number | null
+          tipo_tensao: string
+        }
+        Insert: {
+          ativo?: boolean
+          atualizado_em?: string
+          capacidade_kwh: number
+          ciclos_vida?: number | null
+          corrente_max_descarga_continua_a?: number | null
+          corrente_max_descarga_pico_a?: number | null
+          criado_em?: string
+          dod_pct?: number
+          empilhavel?: boolean
+          garantia_anos?: number | null
+          id: string
+          marca: string
+          max_unidades_paralelo?: number | null
+          miniatura_url?: string | null
+          modelo: string
+          ordem?: number
+          quimica?: string | null
+          tensao_nominal_v?: number | null
+          tipo_tensao: string
+        }
+        Update: {
+          ativo?: boolean
+          atualizado_em?: string
+          capacidade_kwh?: number
+          ciclos_vida?: number | null
+          corrente_max_descarga_continua_a?: number | null
+          corrente_max_descarga_pico_a?: number | null
+          criado_em?: string
+          dod_pct?: number
+          empilhavel?: boolean
+          garantia_anos?: number | null
+          id?: string
+          marca?: string
+          max_unidades_paralelo?: number | null
+          miniatura_url?: string | null
+          modelo?: string
+          ordem?: number
+          quimica?: string | null
+          tensao_nominal_v?: number | null
+          tipo_tensao?: string
+        }
+        Relationships: []
+      }
       equipamentos_calculadora: {
         Row: {
           ativo: boolean
@@ -813,6 +879,78 @@ export type Database = {
           nome?: string
           potencia_kw?: number
           tipo_medicao?: string
+        }
+        Relationships: []
+      }
+      equipamentos_inversor_hibrido: {
+        Row: {
+          ativo: boolean
+          atualizado_em: string
+          baterias_compativeis: string | null
+          corrente_max_carga_bateria_a: number | null
+          criado_em: string
+          garantia_anos: number | null
+          id: string
+          marca: string
+          miniatura_url: string | null
+          modelo: string
+          mppt_tensao_max_v: number | null
+          mppt_tensao_min_v: number | null
+          num_mppt: number | null
+          ordem: number
+          potencia_fv_max_kwp: number | null
+          potencia_nominal_kw: number
+          potencia_pico_kw: number | null
+          protocolo_comunicacao: string | null
+          tensao_bateria_v: number | null
+          tensao_saida: string
+          tipo_tensao_bateria: string
+        }
+        Insert: {
+          ativo?: boolean
+          atualizado_em?: string
+          baterias_compativeis?: string | null
+          corrente_max_carga_bateria_a?: number | null
+          criado_em?: string
+          garantia_anos?: number | null
+          id: string
+          marca: string
+          miniatura_url?: string | null
+          modelo: string
+          mppt_tensao_max_v?: number | null
+          mppt_tensao_min_v?: number | null
+          num_mppt?: number | null
+          ordem?: number
+          potencia_fv_max_kwp?: number | null
+          potencia_nominal_kw: number
+          potencia_pico_kw?: number | null
+          protocolo_comunicacao?: string | null
+          tensao_bateria_v?: number | null
+          tensao_saida: string
+          tipo_tensao_bateria: string
+        }
+        Update: {
+          ativo?: boolean
+          atualizado_em?: string
+          baterias_compativeis?: string | null
+          corrente_max_carga_bateria_a?: number | null
+          criado_em?: string
+          garantia_anos?: number | null
+          id?: string
+          marca?: string
+          miniatura_url?: string | null
+          modelo?: string
+          mppt_tensao_max_v?: number | null
+          mppt_tensao_min_v?: number | null
+          num_mppt?: number | null
+          ordem?: number
+          potencia_fv_max_kwp?: number | null
+          potencia_nominal_kw?: number
+          potencia_pico_kw?: number | null
+          protocolo_comunicacao?: string | null
+          tensao_bateria_v?: number | null
+          tensao_saida?: string
+          tipo_tensao_bateria?: string
         }
         Relationships: []
       }
