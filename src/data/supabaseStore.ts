@@ -314,54 +314,6 @@ export async function getEquipamentosDB(): Promise<Kit[]> {
   }));
 }
 
-// ─── PLACAS (equipamentos_kits, tipo='placa') — gerenciamento (o catálogo
-// real usado tanto pelas propostas ongrid quanto pelo Simulador Híbrido) ───
-export async function getPlacasKitDB(soAtivas = false): Promise<Kit[]> {
-  let query = supabase.from('equipamentos_kits').select('*').eq('tipo', 'placa').order('marca').order('modelo');
-  if (soAtivas) query = query.eq('ativo', true);
-  const { data, error } = await query;
-  if (error) throw error;
-  return (data || []).map(d => ({
-    id: d.id, line: d.linha as Kit['line'], type: 'placa' as const,
-    brand: d.marca || '', model: d.modelo || '', power: Number(d.potencia) || 0,
-    warranty: d.garantia || 0, costPrice: Number(d.preco_custo) || 0,
-    minPower: Number(d.potencia_min) || 0, maxPower: Number(d.potencia_max) || 999, active: d.ativo,
-  }));
-}
-
-export interface PlacaKitForm {
-  id?: string; line: Kit['line']; brand: string; model: string;
-  power: string; warranty: string; costPrice: string;
-}
-
-export async function savePlacaKitDB(form: PlacaKitForm): Promise<void> {
-  const payload = {
-    linha: form.line, tipo: 'placa',
-    marca: form.brand.trim(), modelo: form.model.trim(),
-    potencia: parseFloat(form.power.replace(',', '.')) || 0,
-    garantia: parseInt(form.warranty, 10) || 0,
-    preco_custo: parseFloat(form.costPrice.replace(',', '.')) || 0,
-    potencia_min: 0, potencia_max: 999,
-  };
-  if (form.id) {
-    const { error } = await supabase.from('equipamentos_kits').update(payload).eq('id', form.id);
-    if (error) throw error;
-  } else {
-    const { error } = await supabase.from('equipamentos_kits').insert({ ...payload, ativo: true });
-    if (error) throw error;
-  }
-}
-
-export async function toggleAtivoPlacaKitDB(id: string, ativo: boolean): Promise<void> {
-  const { error } = await supabase.from('equipamentos_kits').update({ ativo }).eq('id', id);
-  if (error) throw error;
-}
-
-export async function deletePlacaKitDB(id: string): Promise<void> {
-  const { error } = await supabase.from('equipamentos_kits').delete().eq('id', id);
-  if (error) throw error;
-}
-
 // Load kits from DB and sync to localStorage so calculation functions work
 export async function syncKitsFromDB(): Promise<Kit[]> {
   const kits = await getEquipamentosDB();

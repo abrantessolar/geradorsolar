@@ -14,8 +14,7 @@ import { getInversoresHibridoDB, getBateriasHibridoDB } from '@/data/supabaseInv
 import type { InversorHibrido, BateriaHibrida } from '@/data/equipamentosHibrido';
 import GerenciarCatalogoHibrido from '@/components/ferramentas/GerenciarCatalogoHibrido';
 import GerenciarInversoresBaterias from '@/components/ferramentas/GerenciarInversoresBaterias';
-import { getKits } from '@/data/store';
-import type { Kit } from '@/data/types';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 /** Modo de exibição — 'interno' (equipe, hoje) vs 'publico' (cliente, ainda sem rota ligada).
@@ -78,16 +77,22 @@ export default function SimuladorHibridoPage({ modo = 'interno' }: { modo?: Modo
 
   useEffect(() => { carregarInversoresBaterias(); }, []);
 
-  // Placas: puxa do catálogo real da calculadora (equipamentos_kits), não um valor fixo.
-  const placasDisponiveis = useMemo(() => {
-    const todas = getKits().filter(k => k.type === 'placa' && k.active);
-    const porModelo = new Map<string, Kit>();
-    todas.forEach(k => { const chave = `${k.brand}__${k.model}__${k.power}`; if (!porModelo.has(chave)) porModelo.set(chave, k); });
-    return Array.from(porModelo.values());
-  }, []);
-  useEffect(() => {
-    if (!placaId && placasDisponiveis.length > 0) setPlacaId(placasDisponiveis[0].id);
-  }, [placasDisponiveis, placaId]);
+  // Placas: puxa do catálogo real do Admin (equipamentos_placas — Admin → Equipamentos → Placas),
+  // o mesmo que você já usa/edita por lá. Não é o catálogo de kits/preço da calculadora ongrid.
+  interface PlacaOpcao { id: string; brand: string; model: string; power: number }
+  const [placasDisponiveis, setPlacasDisponiveis] = useState<PlacaOpcao[]>([]);
+  const carregarPlacas = async () => {
+    try {
+      const { data, error } = await supabase.from('equipamentos_placas' as any).select('*').eq('ativo', true).order('marca').order('modelo');
+      if (error) throw error;
+      const opcoes = ((data || []) as any[]).map(p => ({ id: p.id, brand: p.marca, model: p.modelo, power: Number(p.potencia_wp) || 0 }));
+      setPlacasDisponiveis(opcoes);
+      setPlacaId(prev => prev || opcoes[0]?.id || '');
+    } catch {
+      toast.error('Não consegui carregar as placas cadastradas no Admin.');
+    }
+  };
+  useEffect(() => { carregarPlacas(); }, []);
   const placaSelecionada = placasDisponiveis.find(p => p.id === placaId) || null;
 
   const inversorSelecionado = inversores.find(i => i.id === inversorId) || null;
@@ -228,17 +233,20 @@ export default function SimuladorHibridoPage({ modo = 'interno' }: { modo?: Modo
               <h2 className="font-bold text-primary">Sistema</h2>
               {modo === 'interno' && (
                 <button onClick={() => setGerenciarEquipAberto(true)} className="text-xs text-primary hover:underline flex items-center gap-1 font-medium">
-                  <Settings2 className="w-3.5 h-3.5" /> Gerenciar placas/inversores/baterias
+                  <Settings2 className="w-3.5 h-3.5" /> Gerenciar inversores/baterias
                 </button>
               )}
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1.5">Placa</label>
+              <div className="flex items-center justify-between">
+                <label className="block text-sm font-medium mb-1.5">Placa</label>
+                <Link to="/admin" className="text-xs text-primary hover:underline">Gerenciar</Link>
+              </div>
               <select value={placaId} onChange={e => setPlacaId(e.target.value)} className="solar-input">
                 <option value="">Selecione...</option>
                 {placasDisponiveis.map(p => <option key={p.id} value={p.id}>{p.brand} {p.model} — {p.power} Wp</option>)}
               </select>
-              {placasDisponiveis.length === 0 && <p className="text-xs text-muted-foreground mt-1">Nenhuma placa ativa no catálogo da calculadora.</p>}
+              {placasDisponiveis.length === 0 && <p className="text-xs text-muted-foreground mt-1">Nenhuma placa ativa cadastrada (Admin → Equipamentos → Placas).</p>}
             </div>
             <div>
               <label className="block text-sm font-medium mb-1.5">Quantidade de placas</label>

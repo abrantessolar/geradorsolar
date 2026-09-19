@@ -69,6 +69,10 @@ export default function EquipmentTab() {
 function PlacasSection() {
   const [items, setItems] = useState<PlacaRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [editItem, setEditItem] = useState<PlacaRow | null>(null);
+  const [form, setForm] = useState({ marca: '', modelo: '', potencia_wp: '' });
+  const [saving, setSaving] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -77,6 +81,23 @@ function PlacasSection() {
     setLoading(false);
   };
   useEffect(() => { load(); }, []);
+
+  const openNew = () => { setEditItem(null); setForm({ marca: '', modelo: '', potencia_wp: '' }); setShowForm(true); };
+  const openEdit = (item: PlacaRow) => { setEditItem(item); setForm({ marca: item.marca, modelo: item.modelo, potencia_wp: String(item.potencia_wp) }); setShowForm(true); };
+
+  const handleSave = async () => {
+    if (!form.marca.trim() || !form.modelo.trim() || !form.potencia_wp) { toast.error('Preencha marca, modelo e potência.'); return; }
+    setSaving(true);
+    const payload = { marca: form.marca.trim(), modelo: form.modelo.trim(), potencia_wp: parseFloat(form.potencia_wp.replace(',', '.')) || 0 };
+    const { error } = editItem
+      ? await supabase.from('equipamentos_placas' as any).update(payload).eq('id', editItem.id)
+      : await supabase.from('equipamentos_placas' as any).insert({ ...payload, ativo: true });
+    setSaving(false);
+    if (error) { toast.error('Erro: ' + error.message); return; }
+    toast.success(editItem ? 'Placa atualizada!' : 'Placa cadastrada!');
+    setShowForm(false);
+    load();
+  };
 
   const handleDelete = async (item: PlacaRow) => {
     if (!confirm(`Excluir placa "${item.marca} ${item.modelo} ${item.potencia_wp}Wp"?\n\nAtenção: isso pode afetar projetos que usam esta placa.`)) return;
@@ -96,7 +117,12 @@ function PlacasSection() {
     <div className="solar-card p-6 space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-bold text-primary">Placas Solares Cadastradas</h2>
-        <span className="text-sm text-muted-foreground">{items.length} cadastradas</span>
+        <div className="flex items-center gap-3">
+          <span className="text-sm text-muted-foreground">{items.length} cadastradas</span>
+          <button onClick={openNew} className="solar-btn-primary text-sm py-2 px-4 flex items-center gap-1.5">
+            <Plus className="w-4 h-4" /> Nova placa
+          </button>
+        </div>
       </div>
 
       {loading ? (
@@ -126,6 +152,9 @@ function PlacasSection() {
                   </td>
                   <td className="py-2 px-2">
                     <div className="flex gap-1">
+                      <button onClick={() => openEdit(item)} className="p-1 rounded text-primary hover:bg-primary/10" title="Editar">
+                        <Edit2 className="w-4 h-4" />
+                      </button>
                       <button onClick={() => toggleActive(item)}
                         className={`p-1 rounded ${item.ativo ? 'text-destructive hover:bg-destructive/10' : 'text-green-700 hover:bg-green-50'}`}
                         title={item.ativo ? 'Desativar' : 'Reativar'}>
@@ -143,6 +172,32 @@ function PlacasSection() {
               )}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {showForm && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowForm(false)}>
+          <div className="bg-card rounded-xl p-6 max-w-sm w-full space-y-4" onClick={e => e.stopPropagation()}>
+            <h3 className="text-lg font-bold text-primary">{editItem ? 'Editar placa' : 'Nova placa'}</h3>
+            <div>
+              <label className="block text-xs font-medium mb-1">Marca</label>
+              <input className="solar-input text-sm" value={form.marca} onChange={e => setForm(f => ({ ...f, marca: e.target.value }))} placeholder="Ex: Astronergy" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium mb-1">Modelo</label>
+              <input className="solar-input text-sm" value={form.modelo} onChange={e => setForm(f => ({ ...f, modelo: e.target.value }))} placeholder="Ex: CHSM-580M" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium mb-1">Potência (Wp)</label>
+              <input type="text" inputMode="decimal" className="solar-input text-sm" value={form.potencia_wp} onChange={e => setForm(f => ({ ...f, potencia_wp: e.target.value }))} />
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <button onClick={() => setShowForm(false)} className="solar-btn-outline text-sm py-2 px-4" disabled={saving}>Cancelar</button>
+              <button onClick={handleSave} className="solar-btn-primary text-sm py-2 px-4 flex items-center gap-1.5" disabled={saving}>
+                <Save className="w-4 h-4" /> {saving ? 'Salvando...' : 'Salvar'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
