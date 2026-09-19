@@ -224,7 +224,14 @@ export default function SimuladorHibridoPage({ modo = 'interno' }: { modo?: Modo
         {/* CONFIGURAÇÃO */}
         <div className="space-y-5">
           <div className="solar-card p-5 space-y-4">
-            <h2 className="font-bold text-primary">Sistema</h2>
+            <div className="flex items-center justify-between">
+              <h2 className="font-bold text-primary">Sistema</h2>
+              {modo === 'interno' && (
+                <button onClick={() => setGerenciarEquipAberto(true)} className="text-xs text-primary hover:underline flex items-center gap-1 font-medium">
+                  <Settings2 className="w-3.5 h-3.5" /> Gerenciar placas/inversores/baterias
+                </button>
+              )}
+            </div>
             <div>
               <label className="block text-sm font-medium mb-1.5">Placa</label>
               <select value={placaId} onChange={e => setPlacaId(e.target.value)} className="solar-input">
@@ -239,13 +246,8 @@ export default function SimuladorHibridoPage({ modo = 'interno' }: { modo?: Modo
               <p className="text-xs text-muted-foreground mt-1">{potenciaKwp.toFixed(2)} kWp instalado</p>
             </div>
 
-            <div className="flex items-center justify-between">
-              <label className="block text-sm font-medium">Inversor híbrido</label>
-              {modo === 'interno' && (
-                <button onClick={() => setGerenciarEquipAberto(true)} className="text-xs text-primary hover:underline flex items-center gap-1">
-                  <Settings2 className="w-3.5 h-3.5" /> Gerenciar
-                </button>
-              )}
+            <div>
+              <label className="block text-sm font-medium mb-1.5">Inversor híbrido</label>
             </div>
             <select value={inversorId} onChange={e => setInversorId(e.target.value)} className="solar-input">
               <option value="">Selecione...</option>
