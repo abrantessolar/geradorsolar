@@ -88,16 +88,17 @@ export default function CalculatorPage() {
     }
   );
 
-  const [units, setUnits] = useState<(ConsumerUnit & { mode: ConsumptionMode; monthlyValues: MonthlyConsumption })[]>(() => {
+  const [units, setUnits] = useState<(ConsumerUnit & { mode: ConsumptionMode; monthlyValues: MonthlyConsumption; estimatedMonths?: Partial<Record<string, boolean>> })[]>(() => {
     if (ep?.consumerUnits && ep.consumerUnits.length > 0) {
       return ep.consumerUnits.map((u: any) => ({
         id: u.id, name: u.name, averageKwh: u.averageKwh,
         mode: u.monthlyValues ? 'monthly' as const : 'average' as const,
         monthlyValues: u.monthlyValues || emptyMonthly(),
+        estimatedMonths: {},
       }));
     }
     const defaultKwh = prefillLead?.avgKwh || 350;
-    return [{ id: '1', name: 'Principal', averageKwh: defaultKwh, mode: 'average' as const, monthlyValues: emptyMonthly() }];
+    return [{ id: '1', name: 'Principal', averageKwh: defaultKwh, mode: 'average' as const, monthlyValues: emptyMonthly(), estimatedMonths: {} }];
   });
   const [equipment, setEquipment] = useState<(EquipmentItem & { quantity?: number })[]>(ep?.equipment || []);
   const [eqOpen, setEqOpen] = useState(false);
@@ -327,7 +328,9 @@ export default function CalculatorPage() {
   const handleEstimate = (unitIdx: number) => {
     setUnits(prev => prev.map((u, i) => {
       if (i !== unitIdx) return u;
-      return { ...u, monthlyValues: estimateFullConsumption(u.monthlyValues) };
+      const eraVazio: Partial<Record<string, boolean>> = {};
+      MONTH_KEYS.forEach(k => { if (!u.monthlyValues[k] || u.monthlyValues[k] <= 0) eraVazio[k] = true; });
+      return { ...u, monthlyValues: estimateFullConsumption(u.monthlyValues), estimatedMonths: eraVazio };
     }));
   };
 
@@ -632,20 +635,32 @@ export default function CalculatorPage() {
               ) : (
                 <>
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-                    {MONTH_KEYS.map((k, mi) => (
-                      <div key={k}>
-                        <label className="block text-xs font-medium mb-1">{MONTH_LABELS[mi]}</label>
-                        <input className="solar-input text-sm" type="number" placeholder="kWh"
-                          value={u.monthlyValues[k] || ''}
-                          onChange={e => {
-                            const val = parseFloat(e.target.value) || 0;
-                            setUnits(prev => prev.map(x => x.id === u.id
-                              ? { ...x, monthlyValues: { ...x.monthlyValues, [k]: val } }
-                              : x
-                            ));
-                          }} />
-                      </div>
-                    ))}
+                    {MONTH_KEYS.map((k, mi) => {
+                      const estimado = !!u.estimatedMonths?.[k];
+                      return (
+                        <div key={k}>
+                          <label className="block text-xs font-medium mb-1 flex items-center gap-1">
+                            {MONTH_LABELS[mi]}
+                            {estimado && <span className="text-[10px] font-normal text-muted-foreground">(estimado)</span>}
+                          </label>
+                          <input
+                            className={`solar-input text-sm ${estimado ? 'bg-muted/60 text-muted-foreground border-dashed' : ''}`}
+                            type="number" placeholder="kWh"
+                            value={u.monthlyValues[k] || ''}
+                            onChange={e => {
+                              const val = parseFloat(e.target.value) || 0;
+                              setUnits(prev => prev.map(x => x.id === u.id
+                                ? {
+                                    ...x,
+                                    monthlyValues: { ...x.monthlyValues, [k]: val },
+                                    estimatedMonths: { ...x.estimatedMonths, [k]: false },
+                                  }
+                                : x
+                              ));
+                            }} />
+                        </div>
+                      );
+                    })}
                   </div>
                   <button onClick={() => handleEstimate(i)} className="solar-btn-outline text-sm py-2 px-4">
                     Estimar meses faltantes
