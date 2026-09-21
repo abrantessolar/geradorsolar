@@ -22,6 +22,13 @@
       "when": 1789775503291,
       "tag": "0002_create_hybrid_inverter_battery_catalogs",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1789992007970,
+      "tag": "0003_create_propostas_hibridas",
+      "breakpoints": true
     }
   ]
 }
