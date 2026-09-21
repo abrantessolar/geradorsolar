@@ -116,6 +116,12 @@ export interface Proposal {
   id: string;
   clientData: ClientData;
   consumption: MonthlyConsumption;
+  // Quais meses de `consumption` vieram de estimativa (média ou "estimar
+  // meses faltantes"), não digitados diretamente — usado só pra diferenciar
+  // visualmente no gráfico da proposta. Opcional: propostas antigas sem esse
+  // campo continuam funcionando, só sem a marcação (mesmo comportamento de
+  // antes, nada quebra).
+  estimatedMonths?: Partial<Record<string, boolean>>;
   consumerUnits: ConsumerUnit[];
   equipment: EquipmentItem[];
   selectedLine: 'acesso' | 'excellence' | 'premium';

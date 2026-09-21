@@ -246,13 +246,18 @@ export default function ProposalPage() {
     const paybackAnos = economiaMensal > 0 ? selectedCard.totalPrice / (economiaMensal * 12) : 0;
 
     // Dados mensais (12 meses) — geração x consumo
-    const savedDataConsumption = (proposal.dados_completos || proposal)?.consumption;
+    const savedData = proposal.dados_completos || proposal;
+    const savedDataConsumption = savedData?.consumption;
     const consumoReal: Record<string, number> | undefined = proposal.consumption || savedDataConsumption;
+    const estimatedMonths: Partial<Record<string, boolean>> | undefined = proposal.estimatedMonths || savedData?.estimatedMonths;
     const dadosMensais = MONTH_KEYS.map((k, i) => {
       const irrMonth = monthlyIrr ? monthlyIrr[i] : irradiation * SEASONAL_FACTORS[k];
       const gen = selectedCard.dimensioning.powerKwp * irrMonth * 30 * (1 - settings.systemLoss / 100);
       const cons = consumoReal?.[k] ?? (selectedCard.dimensioning.avgBase * SEASONAL_FACTORS[k]);
-      return { mes: MONTH_LABELS[i], geracao: Math.round(gen), consumo: Math.round(cons) };
+      // Estimado se marcado explicitamente, ou se não há consumo real algum
+      // pra esse mês (proposta antiga sem o campo, ou sem consumoReal de todo).
+      const estimado = !!estimatedMonths?.[k] || consumoReal?.[k] == null;
+      return { mes: MONTH_LABELS[i], geracao: Math.round(gen), consumo: Math.round(cons), consumoEstimado: estimado };
     });
 
     return {

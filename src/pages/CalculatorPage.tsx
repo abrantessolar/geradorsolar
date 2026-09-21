@@ -215,6 +215,19 @@ export default function CalculatorPage() {
     return result;
   }, [units]);
 
+  // Mês é "estimado" no agregado se QUALQUER UC contribuiu com um valor não
+  // digitado nele (modo Média = sempre; modo Mês a mês = só se veio do botão
+  // "Estimar meses faltantes"). Viaja junto com a proposta pro gráfico saber.
+  const estimatedMonthsCombined = useMemo<Partial<Record<string, boolean>>>(() => {
+    const result: Partial<Record<string, boolean>> = {};
+    units.forEach(u => {
+      MONTH_KEYS.forEach(k => {
+        if (u.mode === 'average' || u.estimatedMonths?.[k]) result[k] = true;
+      });
+    });
+    return result;
+  }, [units]);
+
   // Try local first, then async DB lookup
   const localLookup = lookupIrradiation(client.state, client.city);
   const [dbIrr, setDbIrr] = useState<{ value: number; found: boolean; monthly: number[] | null } | null>(null);
@@ -402,7 +415,7 @@ export default function CalculatorPage() {
     const proposal: Proposal = {
       id: editMode && editProposalId ? editProposalId : crypto.randomUUID(),
       clientData: { ...client, id: editMode ? (ep?.clientData?.id || crypto.randomUUID()) : crypto.randomUUID() },
-      consumption, consumerUnits: consumerUnitsForProposal, equipment,
+      consumption, estimatedMonths: estimatedMonthsCombined, consumerUnits: consumerUnitsForProposal, equipment,
       selectedLine: card.line,
       selectedKit: {
         inverter: { id: 'custom', line: card.line as any, type: 'inversor', brand: kit.marcaInversor, model: kit.modeloInversor, power: kit.potenciaInversorKw, warranty: 10, costPrice: 0, minPower: 0, maxPower: 999, active: true },
