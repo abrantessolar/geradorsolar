@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { ArrowLeft, Battery, Plus, Minus, ChevronDown, AlertTriangle, Settings2, Loader2 } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { ArrowLeft, Battery, Plus, Minus, ChevronDown, AlertTriangle, Settings2, Loader2, FileText } from 'lucide-react';
 import {
   ComposedChart, Area, Line, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, CartesianGrid,
 } from 'recharts';
@@ -15,6 +15,7 @@ import type { InversorHibrido, BateriaHibrida } from '@/data/equipamentosHibrido
 import GerenciarCatalogoHibrido from '@/components/ferramentas/GerenciarCatalogoHibrido';
 import GerenciarInversoresBaterias from '@/components/ferramentas/GerenciarInversoresBaterias';
 import { supabase } from '@/integrations/supabase/client';
+import { criarPropostaHibridaDB } from '@/data/supabasePropostaHibrida';
 import { toast } from 'sonner';
 
 /** Modo de exibição — 'interno' (equipe, hoje) vs 'publico' (cliente, ainda sem rota ligada).
@@ -47,6 +48,12 @@ function Stepper({ value, onChange, min = 0, max, step = 1 }: { value: number; o
 }
 
 export default function SimuladorHibridoPage({ modo = 'interno' }: { modo?: Modo }) {
+  const navigate = useNavigate();
+  const [gerarPropostaAberto, setGerarPropostaAberto] = useState(false);
+  const [propostaClienteNome, setPropostaClienteNome] = useState('');
+  const [propostaClienteCidade, setPropostaClienteCidade] = useState('');
+  const [propostaPreco, setPropostaPreco] = useState('');
+  const [gerandoProposta, setGerandoProposta] = useState(false);
   const [placas, setPlacas] = useState(10);
   const [placaId, setPlacaId] = useState<string>('');
   const [socInicial, setSocInicial] = useState(50);
@@ -184,6 +191,41 @@ export default function SimuladorHibridoPage({ modo = 'interno' }: { modo?: Modo
 
   const consumoMedioKw = resultado.consumoDiarioTotalKwh / 24;
   const autonomiaHoras = consumoMedioKw > 0 ? capacidadeUtilKwh / consumoMedioKw : 0;
+
+  const gerarProposta = async () => {
+    if (!propostaClienteNome.trim()) { toast.error('Informe o nome do cliente.'); return; }
+    if (!placaSelecionada || !inversorSelecionado || !bateriaSelecionada) {
+      toast.error('Selecione placa, inversor híbrido e bateria antes de gerar a proposta.');
+      return;
+    }
+    setGerandoProposta(true);
+    try {
+      const id = await criarPropostaHibridaDB({
+        clienteNome: propostaClienteNome.trim(),
+        clienteCidade: propostaClienteCidade.trim() || undefined,
+        placaId: placaSelecionada.id, placaMarca: placaSelecionada.brand, placaModelo: placaSelecionada.model,
+        placaPotenciaWp: placaSelecionada.power, qtdPlacas: placas, potenciaKwp,
+        inversorHibridoId: inversorSelecionado.id, inversorHibridoMarca: inversorSelecionado.marca,
+        inversorHibridoModelo: inversorSelecionado.modelo, inversorHibridoImagem: inversorSelecionado.miniaturaUrl,
+        inversorHibridoGarantiaAnos: inversorSelecionado.garantiaAnos,
+        bateriaId: bateriaSelecionada.id, bateriaMarca: bateriaSelecionada.marca, bateriaModelo: bateriaSelecionada.modelo,
+        bateriaCapacidadeKwh: bateriaSelecionada.capacidadeKwh, bateriaQtd: qtdBateria, bateriaImagem: bateriaSelecionada.miniaturaUrl,
+        bateriaGarantiaAnos: bateriaSelecionada.garantiaAnos,
+        consumoDiarioKwh: resultado.consumoDiarioTotalKwh,
+        geracaoNubladoKwhDia: GERACAO_DIARIA_TOTAL.nublado * potenciaKwp,
+        geracaoTipicoKwhDia: GERACAO_DIARIA_TOTAL.tipico * potenciaKwp,
+        geracaoLimpoKwhDia: GERACAO_DIARIA_TOTAL.limpo * potenciaKwp,
+        autonomiaHoras,
+        precoTotal: propostaPreco.trim() ? parseFloat(propostaPreco.replace(',', '.')) : null,
+      });
+      toast.success('Proposta gerada!');
+      navigate(`/proposta-hibrida/${id}`);
+    } catch (e: any) {
+      toast.error('Erro ao gerar proposta: ' + (e?.message || e));
+    } finally {
+      setGerandoProposta(false);
+    }
+  };
 
   const dadosGrafico = resultado.pontos.map(p => ({
     label: p.label,
@@ -444,6 +486,15 @@ export default function SimuladorHibridoPage({ modo = 'interno' }: { modo?: Modo
             </div>
           )}
 
+          {modo === 'interno' && (
+            <button
+              onClick={() => setGerarPropostaAberto(true)}
+              className="solar-btn-primary w-full py-3 flex items-center justify-center gap-2 font-semibold"
+            >
+              <FileText className="w-4 h-4" /> Gerar proposta comercial (híbrida)
+            </button>
+          )}
+
           <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 flex gap-2">
             <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
             <p className="text-xs text-muted-foreground">
@@ -469,6 +520,36 @@ export default function SimuladorHibridoPage({ modo = 'interno' }: { modo?: Modo
           onClose={() => setGerenciarEquipAberto(false)}
           onSalvo={carregarInversoresBaterias}
         />
+      )}
+
+      {gerarPropostaAberto && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setGerarPropostaAberto(false)}>
+          <div className="bg-card rounded-xl p-6 max-w-sm w-full space-y-4" onClick={e => e.stopPropagation()}>
+            <h3 className="text-lg font-bold text-primary">Gerar proposta comercial</h3>
+            <div>
+              <label className="block text-xs font-medium mb-1">Nome do cliente</label>
+              <input className="solar-input text-sm" value={propostaClienteNome} onChange={e => setPropostaClienteNome(e.target.value)} />
+            </div>
+            <div>
+              <label className="block text-xs font-medium mb-1">Cidade (opcional)</label>
+              <input className="solar-input text-sm" value={propostaClienteCidade} onChange={e => setPropostaClienteCidade(e.target.value)} />
+            </div>
+            <div>
+              <label className="block text-xs font-medium mb-1">Preço total (R$, opcional)</label>
+              <input type="text" inputMode="decimal" className="solar-input text-sm" value={propostaPreco} onChange={e => setPropostaPreco(e.target.value)} placeholder="Deixe em branco para 'Sob consulta'" />
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              Usa a placa, inversor híbrido e bateria selecionados acima, e a geração/autonomia já calculadas.
+            </p>
+            <div className="flex justify-end gap-2 pt-2">
+              <button onClick={() => setGerarPropostaAberto(false)} className="solar-btn-outline text-sm py-2 px-4" disabled={gerandoProposta}>Cancelar</button>
+              <button onClick={gerarProposta} className="solar-btn-primary text-sm py-2 px-4 flex items-center gap-1.5" disabled={gerandoProposta}>
+                {gerandoProposta ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
+                {gerandoProposta ? 'Gerando...' : 'Gerar proposta'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
