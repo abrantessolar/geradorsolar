@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Loader2, Download, Save } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { getPropostaHibridaByIdDB, marcarVisualizadaHibridaDB, updatePropostaHibridaDB } from '@/data/supabasePropostaHibrida';
+import { getPropostaHibridaByAccessDB, marcarVisualizadaHibridaDB, updatePropostaHibridaDB } from '@/data/supabasePropostaHibrida';
 import type { PropostaHibrida } from '@/data/propostaHibridaTypes';
 import PropostaHibridaTemplatePage from '@/components/PropostaHibridaTemplatePage';
 import { gerarPropostaHibridaPDF, downloadPropostaHibridaPDF } from '@/lib/generatePropostaHibridaPDF';
@@ -11,7 +11,8 @@ import PDFCanvasViewer from '@/components/PDFCanvasViewer';
 
 export default function ProposalHibridaPage() {
   const { id } = useParams();
-  const { isAuthenticated } = useAuth();
+  const { session } = useAuth();
+  const isAuthenticated = Boolean(session);
   const [proposta, setProposta] = useState<PropostaHibrida | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
@@ -27,7 +28,7 @@ export default function ProposalHibridaPage() {
     (async () => {
       if (!id) { setNotFound(true); setLoading(false); return; }
       try {
-        const p = await getPropostaHibridaByIdDB(id);
+        const p = await getPropostaHibridaByAccessDB(id, isAuthenticated);
         if (!p) { setNotFound(true); setLoading(false); return; }
         setProposta(p);
         setPrecoForm(p.precoTotal != null ? String(p.precoTotal) : '');
@@ -59,7 +60,7 @@ export default function ProposalHibridaPage() {
     setSalvando(true);
     try {
       const preco = precoForm.trim() ? parseFloat(precoForm.replace(',', '.')) : null;
-      await updatePropostaHibridaDB(id, { precoTotal: preco, observacoes: obsForm.trim() || null });
+      await updatePropostaHibridaDB(proposta.id, { precoTotal: preco, observacoes: obsForm.trim() || null });
       setProposta({ ...proposta, precoTotal: preco, observacoes: obsForm.trim() || null });
       toast.success('Alterações salvas!');
       setEditando(false);
