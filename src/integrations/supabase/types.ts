@@ -2421,9 +2421,62 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_proposta_hibrida_public: {
+        Args: { _codigo: string }
+        Returns: {
+          atualizado_em: string
+          autonomia_horas: number | null
+          bateria_capacidade_kwh: number | null
+          bateria_garantia_anos: number | null
+          bateria_id: string | null
+          bateria_imagem: string | null
+          bateria_marca: string | null
+          bateria_modelo: string | null
+          bateria_qtd: number | null
+          cliente_cidade: string | null
+          cliente_nome: string
+          cliente_telefone: string | null
+          codigo_acesso: string | null
+          consumo_diario_kwh: number | null
+          criado_em: string
+          geracao_limpo_kwh_dia: number | null
+          geracao_nublado_kwh_dia: number | null
+          geracao_tipico_kwh_dia: number | null
+          id: string
+          inversor_hibrido_garantia_anos: number | null
+          inversor_hibrido_id: string | null
+          inversor_hibrido_imagem: string | null
+          inversor_hibrido_marca: string | null
+          inversor_hibrido_modelo: string | null
+          numero_proposta: string | null
+          observacoes: string | null
+          placa_id: string | null
+          placa_marca: string | null
+          placa_modelo: string | null
+          placa_potencia_wp: number | null
+          potencia_kwp: number | null
+          preco_total: number | null
+          qtd_placas: number | null
+          responsavel_email: string | null
+          responsavel_nome: string | null
+          responsavel_telefone: string | null
+          status: string
+          visualizado_em: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "propostas_hibridas"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       has_panel_access: { Args: { _user_id: string }; Returns: boolean }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_orcamentista: { Args: { _user_id: string }; Returns: boolean }
+      marcar_proposta_hibrida_visualizada: {
+        Args: { _codigo: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

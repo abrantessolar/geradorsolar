@@ -43,6 +43,13 @@
       "when": 1790279217126,
       "tag": "0005_bind_selected_storage_writes_to_owner",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1790279243951,
+      "tag": "0006_secure_public_hybrid_proposal_access",
+      "breakpoints": true
     }
   ]
 }
