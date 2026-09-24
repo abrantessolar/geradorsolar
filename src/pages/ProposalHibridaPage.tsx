@@ -11,7 +11,8 @@ import PDFCanvasViewer from '@/components/PDFCanvasViewer';
 
 export default function ProposalHibridaPage() {
   const { id } = useParams();
-  const { isAuthenticated } = useAuth();
+  const { session } = useAuth();
+  const isAuthenticated = Boolean(session);
   const [proposta, setProposta] = useState<PropostaHibrida | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
