@@ -57,13 +57,16 @@ export async function criarPropostaHibridaDB(input: NovaPropostaHibrida): Promis
     autonomia_horas: input.autonomiaHoras ?? null,
     preco_total: input.precoTotal ?? null, observacoes: input.observacoes || null,
   };
-  const { data, error } = await supabase.from('propostas_hibridas' as any).insert(payload).select('id').single();
+  const { data, error } = await supabase.from('propostas_hibridas' as any).insert(payload).select('codigo_acesso').single();
   if (error) throw error;
-  return (data as any).id;
+  return (data as any).codigo_acesso;
 }
 
-export async function getPropostaHibridaByIdDB(id: string): Promise<PropostaHibrida | null> {
-  const { data, error } = await supabase.from('propostas_hibridas' as any).select('*').eq('id', id).maybeSingle();
+export async function getPropostaHibridaByAccessDB(accessCode: string, authenticated: boolean): Promise<PropostaHibrida | null> {
+  const query = authenticated
+    ? supabase.from('propostas_hibridas' as any).select('*').or(`id.eq.${accessCode},codigo_acesso.eq.${accessCode}`).maybeSingle()
+    : (supabase.rpc as any)('get_proposta_hibrida_public', { _codigo: accessCode }).maybeSingle();
+  const { data, error } = await query;
   if (error) throw error;
   return data ? mapRow(data) : null;
 }
@@ -77,6 +80,6 @@ export async function updatePropostaHibridaDB(id: string, patch: Partial<NovaPro
   if (error) throw error;
 }
 
-export async function marcarVisualizadaHibridaDB(id: string): Promise<void> {
-  await supabase.from('propostas_hibridas' as any).update({ visualizado_em: new Date().toISOString(), status: 'visualizada' }).eq('id', id);
+export async function marcarVisualizadaHibridaDB(accessCode: string): Promise<void> {
+  await (supabase.rpc as any)('marcar_proposta_hibrida_visualizada', { _codigo: accessCode });
 }
