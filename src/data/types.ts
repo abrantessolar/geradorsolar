@@ -276,4 +276,7 @@ export const DEFAULT_CARD_RATES = [
   { installments: 16, rate: 20.67 },
   { installments: 17, rate: 21.88 },
   { installments: 18, rate: 23.08 },
+  { installments: 19, rate: 0 },
+  { installments: 20, rate: 0 },
+  { installments: 21, rate: 0 },
 ];

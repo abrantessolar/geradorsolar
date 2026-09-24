@@ -96,7 +96,17 @@ export function getSettings(): AdminSettings {
   const s = load(STORAGE_KEYS.settings, DEFAULT_SETTINGS);
   if (!s.irradiationEntries) s.irradiationEntries = DEFAULT_SETTINGS.irradiationEntries;
   if (!s.caMaterialTable) s.caMaterialTable = DEFAULT_SETTINGS.caMaterialTable;
-  if (!s.creditCardRates) s.creditCardRates = DEFAULT_CARD_RATES;
+  if (!s.creditCardRates) {
+    s.creditCardRates = DEFAULT_CARD_RATES;
+  } else {
+    // Preenche parcelas novas (ex: 19/20/21x) que ainda não existem na tabela
+    // já salva, sem tocar nas taxas que já foram preenchidas antes.
+    const existentes = new Set(s.creditCardRates.map((r: any) => r.installments));
+    const faltando = DEFAULT_CARD_RATES.filter(r => !existentes.has(r.installments));
+    if (faltando.length > 0) {
+      s.creditCardRates = [...s.creditCardRates, ...faltando].sort((a: any, b: any) => a.installments - b.installments);
+    }
+  }
   if (!s.distributors) s.distributors = DEFAULT_DISTRIBUTORS;
   if (!s.defaultDistributor) s.defaultDistributor = 'ELEKTRO';
   if (s.installationPricePerPanel === undefined) s.installationPricePerPanel = 100;
