@@ -258,12 +258,13 @@ Deno.serve(async (req) => {
     if (!panelAccess) {
       return new Response(JSON.stringify({ error: "Sem permissão" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
+    const { data: isAdmin } = await supabase.rpc("is_admin", { _user_id: user.id });
 
     const { data: projeto, error: projetoError } = await supabase
       .from("projetos")
       .select("*, equipamentos_placas(marca, modelo, potencia_wp), equipamentos_inversores(marca, modelo, potencia_kw)")
       .eq("id", projeto_id)
-      .or(`usuario_id.eq.${user.id},usuario_id.is.null`)
+      .or(isAdmin ? `usuario_id.eq.${user.id},usuario_id.neq.${user.id},usuario_id.is.null` : `usuario_id.eq.${user.id}`)
       .single();
 
     if (projetoError || !projeto) {

@@ -388,9 +388,9 @@ serve(async (req) => {
 
       if (action === "admin_upsert") {
         const t = payload.tabela;
-        const row = pickAllowedRow(t, payload.row);
         const allowed = ["energia_premios","energia_etapas","energia_campanhas","energia_indicadores","energia_config"];
         if (!allowed.includes(t)) return err("Tabela não permitida");
+        const row = pickAllowedRow(t, payload.row);
         if (!row || Object.keys(row).length === 0) return err("Dados inválidos");
         const onConflict = t === "energia_config" ? "chave" : "id";
         const { data, error } = await supabase.from(t).upsert(row, { onConflict }).select();
