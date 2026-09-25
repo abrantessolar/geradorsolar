@@ -5,6 +5,17 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const PERMISSION_KEYS = [
+  'calculadora', 'gestor_obras', 'gestor_clientes', 'gestor_materiais',
+  'gestor_equipamentos', 'gestor_custos', 'estoque', 'admin',
+  'importar_dados', 'sincronizar_sheets', 'zerar_base', 'posvenda', 'leads',
+] as const;
+
+function allowedPermissions(value: unknown): Record<string, boolean> {
+  const source = value && typeof value === 'object' ? value as Record<string, unknown> : {};
+  return Object.fromEntries(PERMISSION_KEYS.map((key) => [key, source[key] === true]));
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -62,7 +73,8 @@ Deno.serve(async (req) => {
         });
       }
 
-      const effectiveRole = role || 'vendedor';
+      const safePermissions = allowedPermissions(permissions);
+      const effectiveRole = ['admin', 'gestor', 'orcamentista', 'vendedor'].includes(role) ? role : 'vendedor';
       const isAdminRole = effectiveRole === 'admin';
 
       await supabaseAdmin.from('user_profiles').insert({
@@ -78,7 +90,7 @@ Deno.serve(async (req) => {
       if (permissions && !isAdminRole) {
         await supabaseAdmin.from('user_permissions').insert({
           user_id: data.user.id,
-          ...permissions,
+          ...safePermissions,
         });
       } else {
         // Admin gets all permissions
@@ -87,8 +99,8 @@ Deno.serve(async (req) => {
           calculadora: true, gestor_obras: true, gestor_clientes: true,
           gestor_materiais: true, gestor_equipamentos: true, gestor_custos: true,
           estoque: true, admin: true, importar_dados: true, sincronizar_sheets: true, zerar_base: true,
-          posvenda: permissions?.posvenda ?? false,
-          leads: permissions?.leads ?? false,
+          posvenda: safePermissions.posvenda,
+          leads: safePermissions.leads,
         });
       }
 
@@ -120,14 +132,15 @@ Deno.serve(async (req) => {
 
       // Update permissions
       if (permissions) {
-        const isAdminRole = role === 'admin' || permissions.admin;
+        const safePermissions = allowedPermissions(permissions);
+        const isAdminRole = role === 'admin' || safePermissions.admin;
         const permData = isAdminRole ? {
           calculadora: true, gestor_obras: true, gestor_clientes: true,
           gestor_materiais: true, gestor_equipamentos: true, gestor_custos: true,
           estoque: true, admin: true, importar_dados: true, sincronizar_sheets: true, zerar_base: true,
-          posvenda: permissions?.posvenda ?? false,
-          leads: permissions?.leads ?? false,
-        } : permissions;
+          posvenda: safePermissions.posvenda,
+          leads: safePermissions.leads,
+        } : safePermissions;
 
         const { data: existingPerm } = await supabaseAdmin.from('user_permissions').select('id').eq('user_id', user_id).maybeSingle();
         if (existingPerm) {

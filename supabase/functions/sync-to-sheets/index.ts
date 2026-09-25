@@ -161,8 +161,28 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     );
 
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return new Response(JSON.stringify({ error: 'Não autorizado' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+    const token = authHeader.slice(7);
+    const { data: { user } } = await supabaseAdmin.auth.getUser(token);
+    if (!user) {
+      return new Response(JSON.stringify({ error: 'Não autorizado' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+    const { data: panelAccess } = await supabaseAdmin.rpc('has_panel_access', { _user_id: user.id });
+    if (!panelAccess) {
+      return new Response(JSON.stringify({ error: 'Sem permissão' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
     const body = await req.json();
     const { project_id, sync_all, delete_id, sheet } = body;
+    const { data: syncPermission } = await supabaseAdmin.from('user_permissions').select('sincronizar_sheets').eq('user_id', user.id).eq('sincronizar_sheets', true).maybeSingle();
+    const canSyncAll = Boolean(syncPermission);
+    if (sync_all && !canSyncAll) return new Response(JSON.stringify({ error: 'Sem permissão para sincronização completa' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    if (sheet && !['Obras', 'Clientes'].includes(sheet)) {
+      return new Response(JSON.stringify({ error: 'Planilha não permitida' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
 
     const sheetsId = Deno.env.get('GOOGLE_SHEETS_ID');
     const serviceAccountJson = Deno.env.get('GOOGLE_SERVICE_ACCOUNT');
@@ -178,6 +198,11 @@ Deno.serve(async (req) => {
 
     // ── DELETE ROW FROM SHEET ──
     if (delete_id && sheet) {
+      if (!canSyncAll) {
+        const sourceTable = sheet === 'Obras' ? 'projetos' : 'clientes_base';
+        const { data: owned } = await supabaseAdmin.from(sourceTable).select('id').eq('id', delete_id).eq('usuario_id', user.id).maybeSingle();
+        if (!owned) return new Response(JSON.stringify({ error: 'Sem permissão para excluir esta linha' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
       try {
         await ensureSheet(sheetsUrl, accessToken, sheet);
         const existingResp = await fetch(`${sheetsUrl}/values/'${sheet}'!A:A`, {
@@ -222,7 +247,12 @@ Deno.serve(async (req) => {
     // ── SYNC OBRAS ──
     let queryObras = supabaseAdmin.from('projetos')
       .select('*, equipamentos_placas!projetos_placa_id_fkey(marca, modelo, potencia_wp), equipamentos_inversores!projetos_inversor_id_fkey(marca, modelo, potencia_kw)');
-    if (!sync_all && project_id) queryObras = queryObras.eq('id', project_id);
+    if (!sync_all && project_id) {
+      queryObras = queryObras.eq('id', project_id);
+      if (!canSyncAll) queryObras = queryObras.eq('usuario_id', user.id);
+    } else if (!sync_all) {
+      return new Response(JSON.stringify({ error: 'project_id obrigatório' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
     const { data: projetos, error: errP } = await queryObras;
     if (errP) throw errP;
 
@@ -257,7 +287,9 @@ Deno.serve(async (req) => {
     }
 
     // ── SYNC CLIENTES ──
-    const { data: clientesData } = await supabaseAdmin.from('clientes_base').select('*');
+    let queryClientes = supabaseAdmin.from('clientes_base').select('*');
+    if (!canSyncAll) queryClientes = queryClientes.eq('usuario_id', user.id);
+    const { data: clientesData } = await queryClientes;
 
     const clientesRows = (clientesData || []).map((c: any) => [
       c.id, c.nome_completo || '', c.cpf || '', c.endereco || '', c.telefone || '',

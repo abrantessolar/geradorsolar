@@ -1,0 +1,2 @@
+Sanitize all persisted or user-controlled HTML at both save and render boundaries because shared previews and public pages must not execute scripts.
+Privileged edge functions must authenticate callers, enforce backend access checks, and allowlist writable fields because service credentials bypass row policies.

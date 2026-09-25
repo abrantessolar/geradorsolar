@@ -246,10 +246,25 @@ Deno.serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Não autorizado" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    const { data: { user } } = await supabase.auth.getUser(authHeader.slice(7));
+    if (!user) {
+      return new Response(JSON.stringify({ error: "Não autorizado" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    const { data: panelAccess } = await supabase.rpc("has_panel_access", { _user_id: user.id });
+    if (!panelAccess) {
+      return new Response(JSON.stringify({ error: "Sem permissão" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    const { data: isAdmin } = await supabase.rpc("is_admin", { _user_id: user.id });
+
     const { data: projeto, error: projetoError } = await supabase
       .from("projetos")
       .select("*, equipamentos_placas(marca, modelo, potencia_wp), equipamentos_inversores(marca, modelo, potencia_kw)")
       .eq("id", projeto_id)
+      .or(isAdmin ? `usuario_id.eq.${user.id},usuario_id.neq.${user.id},usuario_id.is.null` : `usuario_id.eq.${user.id}`)
       .single();
 
     if (projetoError || !projeto) {

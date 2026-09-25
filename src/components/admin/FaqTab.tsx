@@ -3,6 +3,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { FAQ_SETORES, getSetor, type FaqItem } from '@/lib/faqSetores';
 import { Plus, Edit2, Trash2, X, Save, Bold, List, Link as LinkIcon, Eye, EyeOff, GripVertical } from 'lucide-react';
 import { toast } from 'sonner';
+import DOMPurify from 'dompurify';
+
+const sanitizeFaq = (html: string) => DOMPurify.sanitize(html, {
+  ALLOWED_TAGS: ['strong', 'b', 'em', 'i', 'ul', 'ol', 'li', 'a', 'br', 'p'],
+  ALLOWED_ATTR: ['href', 'target', 'rel'],
+});
 
 const EMPTY: Partial<FaqItem> = {
   setor: 'geral',
@@ -181,7 +187,7 @@ function FaqForm({ item, onClose, onSaved }: { item: Partial<FaqItem>; onClose: 
     const payload = {
       setor: form.setor || 'geral',
       pergunta: form.pergunta.trim(),
-      resposta: form.resposta.trim(),
+      resposta: sanitizeFaq(form.resposta.trim()),
       visivel_cliente: !!form.visivel_cliente,
       visivel_site: !!form.visivel_site,
       ativo: !!form.ativo,
@@ -265,7 +271,7 @@ function FaqForm({ item, onClose, onSaved }: { item: Partial<FaqItem>; onClose: 
             {form.resposta && (
               <div className="mt-2 rounded-lg border border-border bg-muted/30 p-3">
                 <p className="text-[11px] uppercase tracking-wide text-muted-foreground mb-1">Pré-visualização</p>
-                <div className="text-sm text-muted-foreground leading-relaxed faq-content" dangerouslySetInnerHTML={{ __html: form.resposta }} />
+                <div className="text-sm text-muted-foreground leading-relaxed faq-content" dangerouslySetInnerHTML={{ __html: sanitizeFaq(form.resposta) }} />
               </div>
             )}
           </div>
