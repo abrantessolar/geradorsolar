@@ -13,11 +13,12 @@ import residentialSystemImage from '@/assets/sistema-residencial.jpeg.asset.json
 import agriculturalSystemImage from '@/assets/sistema-agricola.png.asset.json';
 import heroImage from '@/assets/sede-tres-lagoas-solar.png.asset.json';
 import footerLogo from '@/assets/logo-rodape-novo.png.asset.json';
+import missionImage from '@/assets/instalacao-inversor-tres-lagoas.png.asset.json';
 
 import logoImg from '@/assets/logo.png';
 const LOGO_URL = logoImg;
 const HERO_BG = heroImage.url;
-const MISSION_IMG = 'https://static.wixstatic.com/media/11062b_bdefce897daa4bafad009726c2eae2df~mv2.jpg';
+const MISSION_IMG = missionImage.url;
 
 const SOLUTIONS = [
   {
@@ -237,7 +238,7 @@ export default function LandingPage() {
             <div className="relative">
               <LazyImage
                 src={MISSION_IMG}
-                alt="Instalação de painéis solares residencial em Três Lagoas"
+                alt="Técnico da Três Lagoas Solar instalando inversor solar"
                 className="rounded-2xl shadow-2xl w-full object-cover aspect-[4/3]"
                 wrapperClassName="rounded-2xl aspect-[4/3]"
                 width={800}
