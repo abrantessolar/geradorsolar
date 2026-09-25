@@ -481,7 +481,7 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
     const faturaDepois = Math.max(faturaAntes * 0.16, 65.24);
     const cobertura    = data.consumo_informado > 0 ? (data.geracao_mensal / data.consumo_informado) * 100 : 0;
 
-    const cartao = [3, 6, 12, 18]
+    const cartao = [10, 12, 18, 21]
       .map(m => (data.cartao_parcelas || []).find(c => c.meses === m))
       .filter((c): c is { meses: number; valor: number } => Boolean(c));
 
