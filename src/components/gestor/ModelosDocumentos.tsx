@@ -8,6 +8,7 @@ import Underline from '@tiptap/extension-underline';
 import TextAlign from '@tiptap/extension-text-align';
 import Highlight from '@tiptap/extension-highlight';
 import Image from '@tiptap/extension-image';
+import DOMPurify from 'dompurify';
 
 type Modelo = { id: string; tipo: string; conteudo_html: string; atualizado_em: string };
 
@@ -76,6 +77,11 @@ function replaceWithSample(html: string): string {
   });
   return result;
 }
+
+const sanitizeTemplate = (html: string) => DOMPurify.sanitize(html, {
+  USE_PROFILES: { html: true },
+  ADD_ATTR: ['style', 'class'],
+});
 
 function EditorToolbar({ editor }: { editor: any }) {
   if (!editor) return null;
@@ -170,10 +176,10 @@ export default function ModelosDocumentos() {
     if (!editing) return;
     setSaving(true);
     await supabase.from('modelos_documentos' as any).update({
-      conteudo_html: editHtml,
+      conteudo_html: sanitizeTemplate(editHtml),
       atualizado_em: new Date().toISOString(),
     }).eq('id', editing.id);
-    setModelos(prev => prev.map(m => m.id === editing.id ? { ...m, conteudo_html: editHtml, atualizado_em: new Date().toISOString() } : m));
+    setModelos(prev => prev.map(m => m.id === editing.id ? { ...m, conteudo_html: sanitizeTemplate(editHtml), atualizado_em: new Date().toISOString() } : m));
     setEditing(null);
     setSaving(false);
     toast.success('Modelo salvo!');
@@ -190,7 +196,7 @@ export default function ModelosDocumentos() {
         const mammoth = await import('mammoth');
         const arrayBuffer = await file.arrayBuffer();
         const result = await mammoth.convertToHtml({ arrayBuffer });
-        const html = result.value;
+        const html = sanitizeTemplate(result.value);
 
         if (existingId) {
           await supabase.from('modelos_documentos' as any).update({
@@ -219,7 +225,7 @@ export default function ModelosDocumentos() {
       const mammoth = await import('mammoth');
       const arrayBuffer = await file.arrayBuffer();
       const result = await mammoth.convertToHtml({ arrayBuffer });
-      setEditHtml(result.value);
+      setEditHtml(sanitizeTemplate(result.value));
       toast.success('Documento convertido! Revise e salve.');
     } catch (err) {
       toast.error('Erro ao converter .docx');
@@ -272,7 +278,7 @@ export default function ModelosDocumentos() {
           <TipTapEditor key={editing.id} content={editHtml} onUpdate={setEditHtml} />
         ) : (
           <div className="border border-border rounded-lg p-8 bg-white text-black prose max-w-none shadow-sm"
-            dangerouslySetInnerHTML={{ __html: replaceWithSample(editHtml) }} />
+            dangerouslySetInnerHTML={{ __html: sanitizeTemplate(replaceWithSample(editHtml)) }} />
         )}
 
         <div className="flex justify-end gap-2">

@@ -7,8 +7,9 @@ import { defaultEtapasSeed } from '@/lib/rastreamentoEtapas';
 const BASE_URL = 'https://treslagoassolar.com.br';
 
 function genCodigo() {
-  const rand = () => Math.random().toString(36).slice(2).toUpperCase();
-  return `TLS-${rand().slice(0, 4)}-${rand().slice(0, 3)}`;
+  const bytes = crypto.getRandomValues(new Uint8Array(16));
+  const token = Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('').toUpperCase();
+  return `TLS-${token.slice(0, 12)}-${token.slice(12, 24)}`;
 }
 
 export default function LinkRastreamentoModal({ projeto, onClose, onGenerated }: {

@@ -2,6 +2,12 @@ import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { FAQ_SETORES, getSetor, type FaqItem } from '@/lib/faqSetores';
 import { Search, ChevronDown, Loader2 } from 'lucide-react';
+import DOMPurify from 'dompurify';
+
+const sanitizeFaq = (html: string) => DOMPurify.sanitize(html, {
+  ALLOWED_TAGS: ['strong', 'b', 'em', 'i', 'ul', 'ol', 'li', 'a', 'br', 'p'],
+  ALLOWED_ATTR: ['href', 'target', 'rel'],
+});
 
 interface Props {
   /** 'cliente' = link de acompanhamento; 'site' = página pública /faq */
@@ -121,7 +127,7 @@ export default function FaqSection({ contexto, busca = false }: Props) {
                 {open && (
                   <div
                     className="px-4 pb-4 pt-0 text-sm text-muted-foreground leading-relaxed faq-content"
-                    dangerouslySetInnerHTML={{ __html: item.resposta }}
+                    dangerouslySetInnerHTML={{ __html: sanitizeFaq(item.resposta) }}
                   />
                 )}
               </div>

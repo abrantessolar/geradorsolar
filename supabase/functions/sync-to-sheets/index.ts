@@ -161,8 +161,29 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     );
 
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return new Response(JSON.stringify({ error: 'Não autorizado' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+    const token = authHeader.slice(7);
+    const { data: { user } } = await supabaseAdmin.auth.getUser(token);
+    if (!user) {
+      return new Response(JSON.stringify({ error: 'Não autorizado' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+    const { data: panelAccess } = await supabaseAdmin.rpc('has_panel_access', { _user_id: user.id });
+    if (!panelAccess) {
+      return new Response(JSON.stringify({ error: 'Sem permissão' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
     const body = await req.json();
     const { project_id, sync_all, delete_id, sheet } = body;
+    if (sync_all) {
+      const { data: canSyncAll } = await supabaseAdmin.from('user_permissions').select('sincronizar_sheets').eq('user_id', user.id).eq('sincronizar_sheets', true).maybeSingle();
+      if (!canSyncAll) return new Response(JSON.stringify({ error: 'Sem permissão para sincronização completa' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+    if (sheet && !['Obras', 'Clientes'].includes(sheet)) {
+      return new Response(JSON.stringify({ error: 'Planilha não permitida' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
 
     const sheetsId = Deno.env.get('GOOGLE_SHEETS_ID');
     const serviceAccountJson = Deno.env.get('GOOGLE_SERVICE_ACCOUNT');

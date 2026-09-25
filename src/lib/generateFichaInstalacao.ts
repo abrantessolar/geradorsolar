@@ -1,4 +1,5 @@
 import html2pdf from 'html2pdf.js';
+import DOMPurify from 'dompurify';
 import { supabase } from '@/integrations/supabase/client';
 
 type ProjetoData = {
@@ -190,7 +191,10 @@ export async function generateFichaInstalacao(projeto: ProjetoData) {
 
   // Create element, render PDF
   const container = document.createElement('div');
-  container.innerHTML = html;
+  container.innerHTML = DOMPurify.sanitize(html, {
+    USE_PROFILES: { html: true },
+    ADD_ATTR: ['style', 'crossorigin'],
+  });
   document.body.appendChild(container);
 
   const nomeArquivo = `Ficha_${nome.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0, 10)}.pdf`;

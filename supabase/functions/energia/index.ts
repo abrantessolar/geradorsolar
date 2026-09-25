@@ -12,7 +12,7 @@ const supabase = createClient(
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
 );
 
-const ADMIN_SECRET = Deno.env.get("EV_ADMIN_JWT_SECRET") || "change-me-please-now";
+const ADMIN_SECRET = Deno.env.get("EV_ADMIN_JWT_SECRET");
 
 // ---------- helpers ----------
 function json(body: unknown, status = 200) {
@@ -41,6 +41,7 @@ function b64urlDecode(s: string) {
 }
 
 async function signToken(payload: any): Promise<string> {
+  if (!ADMIN_SECRET) throw new Error("Admin authentication is not configured");
   const header = b64url(JSON.stringify({ alg: "HS256", typ: "JWT" }));
   const body = b64url(JSON.stringify(payload));
   const data = `${header}.${body}`;
@@ -49,6 +50,7 @@ async function signToken(payload: any): Promise<string> {
 }
 async function verifyToken(token: string): Promise<any | null> {
   try {
+    if (!ADMIN_SECRET) return null;
     const [h, b, s] = token.split(".");
     if (!h || !b || !s) return null;
     const expected = await sha256(`${h}.${b}` + ADMIN_SECRET);
@@ -62,6 +64,27 @@ async function verifyToken(token: string): Promise<any | null> {
 }
 
 const onlyDigits = (s: string) => (s || "").replace(/\D/g, "");
+
+const ADMIN_UPSERT_FIELDS: Record<string, string[]> = {
+  energia_premios: ["id", "nome", "imagem_url", "pontos_necessarios", "ordem", "ativo"],
+  energia_etapas: ["id", "nome", "ordem", "pontos_minimos", "premio_id", "icone"],
+  energia_campanhas: ["id", "nome", "inicio", "fim", "multiplicador", "ativa"],
+  energia_indicadores: ["id", "nome", "cpf", "data_nascimento", "telefone", "email", "aparece_ranking", "eh_cliente", "cidade", "onboarding_visto"],
+  energia_config: ["chave", "valor"],
+};
+
+function pickAllowedRow(table: string, value: unknown): Record<string, unknown> | null {
+  if (!value || typeof value !== "object") return null;
+  const source = value as Record<string, unknown>;
+  return Object.fromEntries(ADMIN_UPSERT_FIELDS[table].filter((key) => source[key] !== undefined).map((key) => [key, source[key]]));
+}
+
+function detectedImageType(bytes: Uint8Array): string | null {
+  if (bytes.length >= 8 && bytes.slice(0, 8).every((b, i) => b === [137,80,78,71,13,10,26,10][i])) return "image/png";
+  if (bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) return "image/jpeg";
+  if (bytes.length >= 12 && new TextDecoder().decode(bytes.slice(0, 4)) === "RIFF" && new TextDecoder().decode(bytes.slice(8, 12)) === "WEBP") return "image/webp";
+  return null;
+}
 
 async function checkClient(indicador_id: string, cpf: string) {
   const { data } = await supabase
@@ -365,9 +388,10 @@ serve(async (req) => {
 
       if (action === "admin_upsert") {
         const t = payload.tabela;
-        const row = payload.row;
+        const row = pickAllowedRow(t, payload.row);
         const allowed = ["energia_premios","energia_etapas","energia_campanhas","energia_indicadores","energia_config"];
         if (!allowed.includes(t)) return err("Tabela não permitida");
+        if (!row || Object.keys(row).length === 0) return err("Dados inválidos");
         const onConflict = t === "energia_config" ? "chave" : "id";
         const { data, error } = await supabase.from(t).upsert(row, { onConflict }).select();
         if (error) return err(error.message);
@@ -473,10 +497,16 @@ serve(async (req) => {
       if (action === "admin_upload_premio_image") {
         const { filename, content_base64, content_type } = payload;
         if (!filename || !content_base64) return err("Arquivo obrigatório");
+        if (typeof content_base64 !== "string" || content_base64.length > 7_000_000) return err("Imagem excede o limite de 5 MB");
         const bin = Uint8Array.from(atob(content_base64), c => c.charCodeAt(0));
-        const path = `${Date.now()}_${filename.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
+        if (bin.byteLength > 5_000_000) return err("Imagem excede o limite de 5 MB");
+        const detectedType = detectedImageType(bin);
+        if (!detectedType || content_type !== detectedType) return err("Use uma imagem PNG, JPEG ou WebP válida");
+        const extension = detectedType === "image/png" ? "png" : detectedType === "image/jpeg" ? "jpg" : "webp";
+        const safeBase = filename.replace(/\.[^.]+$/, "").replace(/[^a-zA-Z0-9_-]/g, "_").slice(0, 80) || "premio";
+        const path = `${Date.now()}_${safeBase}.${extension}`;
         const { error: upErr } = await supabase.storage.from("energia-premios")
-          .upload(path, bin, { contentType: content_type || "image/png", upsert: true });
+          .upload(path, bin, { contentType: detectedType, upsert: false });
         if (upErr) return err(upErr.message);
         const { data: pub } = supabase.storage.from("energia-premios").getPublicUrl(path);
         return json({ url: pub.publicUrl });
