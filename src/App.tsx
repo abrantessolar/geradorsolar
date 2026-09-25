@@ -23,6 +23,7 @@ import OffgridPage from "@/pages/OffgridPage";
 import BackupPage from "@/pages/BackupPage";
 import BombeamentoPage from "@/pages/BombeamentoPage";
 import SimuladorHibridoPage from "@/pages/SimuladorHibridoPage";
+import SimuladorCartaoPage from "@/pages/SimuladorCartaoPage";
 import ClientesPage from "@/pages/ClientesPage";
 import RastreamentoPage from "@/pages/RastreamentoPage";
 import FaqPage from "@/pages/FaqPage";
@@ -238,6 +239,11 @@ const App = () => {
             <Route path="/ferramentas/simulador-hibrido" element={
               <ProtectedRoute>
                 <SeoNoIndex /><Layout><SimuladorHibridoPage modo="interno" /></Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/ferramentas/simulador-cartao" element={
+              <ProtectedRoute>
+                <SeoNoIndex /><Layout><SimuladorCartaoPage /></Layout>
               </ProtectedRoute>
             } />
             <Route path="/energia" element={<div><SeoNoIndex /><EnergiaProvider><EnergiaLogin /></EnergiaProvider></div>} />

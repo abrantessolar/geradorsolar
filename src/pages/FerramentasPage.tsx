@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Calculator, Wrench, ChevronRight, Sun, BatteryCharging, Waves, Battery } from 'lucide-react';
+import { Calculator, Wrench, ChevronRight, Sun, BatteryCharging, Waves, Battery, CreditCard } from 'lucide-react';
 
 const tools = [
   {
@@ -31,6 +31,12 @@ const tools = [
     icon: Battery,
     title: 'Simulador Híbrido — 3 dias',
     desc: 'Geração, consumo e carga da bateria em 72h (nublado/típico/limpo)',
+  },
+  {
+    to: '/ferramentas/simulador-cartao',
+    icon: CreditCard,
+    title: 'Simulador de Cartão',
+    desc: 'Simula o parcelamento (Visa/Master) e gera imagem pra enviar ao cliente',
   },
 ];
 
