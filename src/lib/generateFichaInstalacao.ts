@@ -1,6 +1,7 @@
 import html2pdf from 'html2pdf.js';
 import DOMPurify from 'dompurify';
 import { supabase } from '@/integrations/supabase/client';
+import { gerarPaginaLayoutFicha } from '@/lib/fichaLayoutPage';
 
 type ProjetoData = {
   id: string;
@@ -199,14 +200,35 @@ export async function generateFichaInstalacao(projeto: ProjetoData) {
 
   const nomeArquivo = `Ficha_${nome.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0, 10)}.pdf`;
 
-  await (html2pdf as any)().set({
+  const opcoesPdf = {
     margin: 15,
     filename: nomeArquivo,
     image: { type: 'jpeg', quality: 0.95 },
     html2canvas: { scale: 0.95, useCORS: true, logging: false },
     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
     pagebreak: { mode: ['avoid-all', 'css', 'legacy'] },
-  }).from(container.firstElementChild as HTMLElement).save();
+  };
+  const elementoFicha = container.firstElementChild as HTMLElement;
 
-  document.body.removeChild(container);
+  try {
+    // Gera a ficha (igual sempre) e anexa, como ÚLTIMA página, a folha de
+    // medição e posicionamento (Layout), com o nome do cliente já escrito.
+    let pdf: any = null;
+    await (html2pdf as any)().set(opcoesPdf).from(elementoFicha).toPdf().get('pdf').then((p: any) => { pdf = p; });
+    if (!pdf) throw new Error('Documento PDF indisponível');
+    try {
+      const paginaLayout = await gerarPaginaLayoutFicha(nome);
+      pdf.addPage();
+      pdf.addImage(paginaLayout, 'JPEG', 0, 0, 210, 297, undefined, 'FAST');
+    } catch (e) {
+      // A ficha nunca deixa de baixar por causa da página extra.
+      console.error('Página de layout não foi adicionada à ficha:', e);
+    }
+    pdf.save(nomeArquivo);
+  } catch (e) {
+    console.error('Falha ao montar a ficha com a página de layout, gerando sem ela:', e);
+    await (html2pdf as any)().set(opcoesPdf).from(elementoFicha).save();
+  } finally {
+    document.body.removeChild(container);
+  }
 }
