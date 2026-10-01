@@ -13,6 +13,7 @@ import CalculatorPage from "@/pages/CalculatorPage";
 import AdminPage from "@/pages/AdminPage";
 import ProposalPage from "@/pages/ProposalPage";
 import ProposalHibridaPage from "@/pages/ProposalHibridaPage";
+import ProposalPlacaPage from "@/pages/ProposalPlacaPage";
 import ResetPasswordPage from "@/pages/ResetPasswordPage";
 import GestorPage from "@/pages/GestorPage";
 import EstoquePage from "@/pages/EstoquePage";
@@ -24,6 +25,7 @@ import BackupPage from "@/pages/BackupPage";
 import BombeamentoPage from "@/pages/BombeamentoPage";
 import SimuladorHibridoPage from "@/pages/SimuladorHibridoPage";
 import SimuladorCartaoPage from "@/pages/SimuladorCartaoPage";
+import PropostaPlacaFerramentaPage from "@/pages/PropostaPlacaFerramentaPage";
 import ClientesPage from "@/pages/ClientesPage";
 import RastreamentoPage from "@/pages/RastreamentoPage";
 import FaqPage from "@/pages/FaqPage";
@@ -183,6 +185,7 @@ const App = () => {
             <Route path="/unauthorized" element={<div><SeoNoIndex /><UnauthorizedPage /></div>} />
             <Route path="/proposta/:id" element={<div><SeoNoIndex /><ProposalPage /></div>} />
             <Route path="/proposta-hibrida/:id" element={<div><SeoNoIndex /><ProposalHibridaPage /></div>} />
+            <Route path="/proposta-placa/:codigo" element={<div><SeoNoIndex /><ProposalPlacaPage /></div>} />
             <Route path="/reset-password" element={<div><SeoNoIndex /><ResetPasswordPage /></div>} />
             <Route path="/acompanhar/:codigo" element={<div><SeoNoIndex /><RastreamentoPage /></div>} />
             <Route path="/orcamentos" element={
@@ -244,6 +247,11 @@ const App = () => {
             <Route path="/ferramentas/simulador-cartao" element={
               <ProtectedRoute>
                 <SeoNoIndex /><Layout><SimuladorCartaoPage /></Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/ferramentas/proposta-placa" element={
+              <ProtectedRoute>
+                <SeoNoIndex /><Layout><PropostaPlacaFerramentaPage /></Layout>
               </ProtectedRoute>
             } />
             <Route path="/energia" element={<div><SeoNoIndex /><EnergiaProvider><EnergiaLogin /></EnergiaProvider></div>} />

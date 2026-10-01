@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Calculator, Wrench, ChevronRight, Sun, BatteryCharging, Waves, Battery, CreditCard } from 'lucide-react';
+import { Calculator, Wrench, ChevronRight, Sun, BatteryCharging, Waves, Battery, CreditCard, PanelTop } from 'lucide-react';
 
 const tools = [
   {
@@ -37,6 +37,12 @@ const tools = [
     icon: CreditCard,
     title: 'Simulador de Cartão',
     desc: 'Simula o parcelamento (Visa/Master) e gera imagem pra enviar ao cliente',
+  },
+  {
+    to: '/ferramentas/proposta-placa',
+    icon: PanelTop,
+    title: 'Proposta de Placa Avulsa',
+    desc: 'Proposta comercial só de módulos fotovoltaicos, sem inversor',
   },
 ];
 
