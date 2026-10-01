@@ -14,7 +14,8 @@ import PDFCanvasViewer from '@/components/PDFCanvasViewer';
 
 export default function ProposalPlacaPage() {
   const { codigo } = useParams();
-  const { isAuthenticated } = useAuth();
+  const { session } = useAuth();
+  const isAuthenticated = Boolean(session);
   const [proposta, setProposta] = useState<PropostaPlaca | null>(null);
   const [fotosPortfolio, setFotosPortfolio] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
