@@ -2063,6 +2063,90 @@ export type Database = {
         }
         Relationships: []
       }
+      propostas_placa: {
+        Row: {
+          atualizado_em: string
+          cartao_parcelas: Json | null
+          cliente_cidade: string | null
+          cliente_nome: string
+          cliente_telefone: string | null
+          cliente_uf: string | null
+          codigo_acesso: string | null
+          criado_em: string
+          geracao_media_kwh: number | null
+          geracao_mensal_kwh: Json | null
+          id: string
+          numero_proposta: string | null
+          observacoes: string | null
+          placa_id: string | null
+          placa_imagem: string | null
+          placa_marca: string | null
+          placa_modelo: string | null
+          placa_potencia_wp: number | null
+          potencia_kwp: number | null
+          preco_avista: number
+          qtd_placas: number
+          responsavel_nome: string | null
+          responsavel_telefone: string | null
+          status: string
+          visualizado_em: string | null
+        }
+        Insert: {
+          atualizado_em?: string
+          cartao_parcelas?: Json | null
+          cliente_cidade?: string | null
+          cliente_nome: string
+          cliente_telefone?: string | null
+          cliente_uf?: string | null
+          codigo_acesso?: string | null
+          criado_em?: string
+          geracao_media_kwh?: number | null
+          geracao_mensal_kwh?: Json | null
+          id?: string
+          numero_proposta?: string | null
+          observacoes?: string | null
+          placa_id?: string | null
+          placa_imagem?: string | null
+          placa_marca?: string | null
+          placa_modelo?: string | null
+          placa_potencia_wp?: number | null
+          potencia_kwp?: number | null
+          preco_avista: number
+          qtd_placas: number
+          responsavel_nome?: string | null
+          responsavel_telefone?: string | null
+          status?: string
+          visualizado_em?: string | null
+        }
+        Update: {
+          atualizado_em?: string
+          cartao_parcelas?: Json | null
+          cliente_cidade?: string | null
+          cliente_nome?: string
+          cliente_telefone?: string | null
+          cliente_uf?: string | null
+          codigo_acesso?: string | null
+          criado_em?: string
+          geracao_media_kwh?: number | null
+          geracao_mensal_kwh?: Json | null
+          id?: string
+          numero_proposta?: string | null
+          observacoes?: string | null
+          placa_id?: string | null
+          placa_imagem?: string | null
+          placa_marca?: string | null
+          placa_modelo?: string | null
+          placa_potencia_wp?: number | null
+          potencia_kwp?: number | null
+          preco_avista?: number
+          qtd_placas?: number
+          responsavel_nome?: string | null
+          responsavel_telefone?: string | null
+          status?: string
+          visualizado_em?: string | null
+        }
+        Relationships: []
+      }
       rastreamento_historico: {
         Row: {
           acao: string
@@ -2470,10 +2554,50 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      get_proposta_placa_public: {
+        Args: { _codigo: string }
+        Returns: {
+          atualizado_em: string
+          cartao_parcelas: Json | null
+          cliente_cidade: string | null
+          cliente_nome: string
+          cliente_telefone: string | null
+          cliente_uf: string | null
+          codigo_acesso: string | null
+          criado_em: string
+          geracao_media_kwh: number | null
+          geracao_mensal_kwh: Json | null
+          id: string
+          numero_proposta: string | null
+          observacoes: string | null
+          placa_id: string | null
+          placa_imagem: string | null
+          placa_marca: string | null
+          placa_modelo: string | null
+          placa_potencia_wp: number | null
+          potencia_kwp: number | null
+          preco_avista: number
+          qtd_placas: number
+          responsavel_nome: string | null
+          responsavel_telefone: string | null
+          status: string
+          visualizado_em: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "propostas_placa"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       has_panel_access: { Args: { _user_id: string }; Returns: boolean }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_orcamentista: { Args: { _user_id: string }; Returns: boolean }
       marcar_proposta_hibrida_visualizada: {
+        Args: { _codigo: string }
+        Returns: undefined
+      }
+      marcar_proposta_placa_visualizada: {
         Args: { _codigo: string }
         Returns: undefined
       }
