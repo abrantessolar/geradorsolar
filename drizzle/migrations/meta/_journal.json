@@ -50,6 +50,13 @@
       "when": 1790279243951,
       "tag": "0006_secure_public_hybrid_proposal_access",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1790822396679,
+      "tag": "0007_create_propostas_placa",
+      "breakpoints": true
     }
   ]
 }
