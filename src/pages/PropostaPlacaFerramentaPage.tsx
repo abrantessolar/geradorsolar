@@ -8,11 +8,14 @@ import { lookupIrradiation } from '@/data/store';
 import { calcCardInstallments } from '@/data/calculations';
 import { SEASONAL_FACTORS, MONTH_KEYS, BRAZILIAN_STATES } from '@/data/types';
 import { criarPropostaPlacaDB } from '@/data/supabasePropostaPlaca';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface PlacaOpcao { id: string; brand: string; model: string; power: number }
+interface Vendedor { user_id: string; nome: string; telefone: string | null; role: string }
 
 export default function PropostaPlacaFerramentaPage() {
   const navigate = useNavigate();
+  const { profile } = useAuth();
   const [placas, setPlacas] = useState<PlacaOpcao[]>([]);
   const [placaId, setPlacaId] = useState('');
   const [qtd, setQtd] = useState(10);
@@ -23,6 +26,26 @@ export default function PropostaPlacaFerramentaPage() {
   const [precoAvista, setPrecoAvista] = useState('');
   const [observacoes, setObservacoes] = useState('');
   const [gerando, setGerando] = useState(false);
+
+  const [vendedores, setVendedores] = useState<Vendedor[]>([]);
+  const [responsavelNome, setResponsavelNome] = useState('');
+
+  useEffect(() => {
+    supabase.from('user_profiles' as any).select('user_id, nome, telefone, role, ativo')
+      .in('role', ['vendedor', 'orcamentista', 'admin', 'gestor']).eq('ativo', true).order('nome')
+      .then(({ data, error }) => {
+        if (error) return;
+        const lista = (data || []) as Vendedor[];
+        setVendedores(lista);
+        if (!responsavelNome && lista.length > 0) {
+          const proprio = profile ? lista.find(v => v.user_id === profile.user_id) : null;
+          setResponsavelNome(proprio?.nome || lista[0].nome);
+        }
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile]);
+
+  const responsavelSelecionado = vendedores.find(v => v.nome === responsavelNome) || null;
 
   useEffect(() => {
     supabase.from('equipamentos_placas' as any).select('*').eq('ativo', true).order('marca').order('modelo')
@@ -71,6 +94,7 @@ export default function PropostaPlacaFerramentaPage() {
       const { codigoAcesso } = await criarPropostaPlacaDB({
         clienteNome: clienteNome.trim(), clienteCidade: cidade.trim() || undefined, clienteUf: uf,
         clienteTelefone: telefone.trim() || undefined,
+        responsavelNome: responsavelNome || undefined, responsavelTelefone: responsavelSelecionado?.telefone || undefined,
         placaId: placaSelecionada.id, placaMarca: placaSelecionada.brand, placaModelo: placaSelecionada.model,
         placaPotenciaWp: placaSelecionada.power, placaImagem: null,
         qtdPlacas: qtd, potenciaKwp,
@@ -131,6 +155,14 @@ export default function PropostaPlacaFerramentaPage() {
         </div>
 
         <div>
+          <label className="block text-sm font-medium mb-1.5">Responsável pela proposta</label>
+          <select className="solar-input" value={responsavelNome} onChange={e => setResponsavelNome(e.target.value)}>
+            {vendedores.length === 0 && <option value="">Carregando...</option>}
+            {vendedores.map(v => <option key={v.user_id} value={v.nome}>{v.nome}</option>)}
+          </select>
+        </div>
+
+        <div>
           <label className="block text-sm font-medium mb-1.5">Placa</label>
           <select className="solar-input" value={placaId} onChange={e => setPlacaId(e.target.value)}>
             <option value="">Selecione...</option>
@@ -142,7 +174,12 @@ export default function PropostaPlacaFerramentaPage() {
         <div>
           <label className="block text-sm font-medium mb-1.5">Quantidade de placas</label>
           <input type="number" min={1} className="solar-input" value={qtd} onChange={e => setQtd(parseInt(e.target.value) || 1)} />
-          {potenciaKwp > 0 && <p className="text-xs text-muted-foreground mt-1">{potenciaKwp.toFixed(2)} kWp · geração média estimada: {geracaoMedia ? `${geracaoMedia.toFixed(0)} kWh/mês` : '—'}</p>}
+          {potenciaKwp > 0 && (
+            <p className="text-xs text-muted-foreground mt-1">
+              {potenciaKwp.toFixed(2)} kWp · geração média da proposta: {geracaoMedia ? `${geracaoMedia.toFixed(0)} kWh/mês` : '—'}
+              {geracaoMedia && qtd > 0 && ` · geração média por placa: ${(geracaoMedia / qtd).toFixed(0)} kWh/mês`}
+            </p>
+          )}
         </div>
 
         <div>

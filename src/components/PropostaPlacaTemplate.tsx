@@ -252,7 +252,8 @@ function PaginaModulos({ data }: { data: PropostaPlaca }) {
         <div style={{ display: 'flex', gap: `${mm(4)}px`, marginBottom: `${mm(6)}px` }}>
           <StatBox valor={`${data.qtdPlacas}`} label="Quantidade proposta" />
           <StatBox valor={`${(data.potenciaKwp ?? 0).toFixed(2)} kWp`} label="Potência total" />
-          <StatBox valor={`${(data.geracaoMediaKwh ?? 0).toFixed(0)} kWh`} label="Geração média mensal" />
+          <StatBox valor={`${data.qtdPlacas > 0 ? ((data.geracaoMediaKwh ?? 0) / data.qtdPlacas).toFixed(0) : '—'} kWh`} label="Geração média por placa" />
+          <StatBox valor={`${(data.geracaoMediaKwh ?? 0).toFixed(0)} kWh`} label="Geração média da proposta" />
         </div>
 
         <div style={{ display: 'flex', gap: `${mm(6)}px`, marginBottom: `${mm(6)}px` }}>
@@ -300,7 +301,8 @@ function PaginaModulos({ data }: { data: PropostaPlaca }) {
         </div>
 
         <p style={{ fontSize: `${fs(9.5)}px`, color: MUTED, borderLeft: `2px solid ${OURO}`, paddingLeft: `${mm(3.5)}px`, lineHeight: 1.5 }}>
-          Este valor refere-se exclusivamente aos módulos fotovoltaicos. A geração estimada acima só se concretiza com inversor, estrutura de fixação e instalação corretamente dimensionados — não inclusos nesta proposta.
+          Este valor contempla os módulos fotovoltaicos, estrutura de fixação, instalação e adequação/homologação do sistema junto à concessionária considerando esta ampliação — valor final instalado,
+          utilizando o inversor já existente do cliente. Este orçamento não afirma compatibilidade entre os módulos propostos e o inversor existente; a compatibilidade técnica deve ser validada antes da execução.
         </p>
         {data.observacoes && (
           <p style={{ fontSize: `${fs(9.5)}px`, color: MUTED, marginTop: `${mm(2)}px` }}>{data.observacoes}</p>
