@@ -2,6 +2,7 @@ import html2pdf from 'html2pdf.js';
 import DOMPurify from 'dompurify';
 import { supabase } from '@/integrations/supabase/client';
 import { gerarPaginaLayoutFicha } from '@/lib/fichaLayoutPage';
+import { gerarPaginaTermoResponsabilidadeFicha } from '@/lib/fichaTermoResponsabilidade';
 
 type ProjetoData = {
   id: string;
@@ -221,8 +222,15 @@ export async function generateFichaInstalacao(projeto: ProjetoData) {
       pdf.addPage();
       pdf.addImage(paginaLayout, 'JPEG', 0, 0, 210, 297, undefined, 'FAST');
     } catch (e) {
-      // A ficha nunca deixa de baixar por causa da página extra.
+      // A ficha nunca deixa de baixar por causa de uma página extra.
       console.error('Página de layout não foi adicionada à ficha:', e);
+    }
+    try {
+      const paginaTermo = await gerarPaginaTermoResponsabilidadeFicha();
+      pdf.addPage();
+      pdf.addImage(paginaTermo, 'JPEG', 0, 0, 210, 297, undefined, 'FAST');
+    } catch (e) {
+      console.error('Termo de responsabilidade não foi adicionado à ficha:', e);
     }
     pdf.save(nomeArquivo);
   } catch (e) {
