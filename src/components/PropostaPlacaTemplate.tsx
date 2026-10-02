@@ -62,8 +62,8 @@ function Header({ numero }: { numero: string | null }) {
       display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: `1px solid ${LINHA}`,
     }}>
       <img src={logoColor} crossOrigin="anonymous" alt="Três Lagoas Solar" style={{ height: `${mm(9)}px`, width: 'auto', display: 'block' }} />
-      <div style={{ textAlign: 'right', fontSize: `${fs(10.2)}px`, color: MUTED, lineHeight: 1.5 }}>
-        Proposta
+      <div style={{ textAlign: 'right', fontSize: `${fs(10.7)}px`, color: MUTED, lineHeight: 1.5 }}>
+        Proposta de aumento de placas
         <b style={{ display: 'block', fontSize: `${fs(12.7)}px`, color: VERDE, fontWeight: 600 }}>{numero}</b>
       </div>
     </div>
@@ -75,7 +75,7 @@ function Footer({ num }: { num: string }) {
     <div style={{
       flexShrink: 0, height: `${mm(13)}px`, padding: `0 ${mm(16)}px`,
       display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: `1px solid ${LINHA}`,
-      fontSize: `${fs(9.7)}px`, color: MUTED,
+      fontSize: `${fs(10.7)}px`, color: MUTED,
     }}>
       <span>Três Lagoas Solar · Três Lagoas, MS · {ENDERECO.cnpj}</span>
       <span style={{ fontWeight: 600, color: VERDE, fontSize: `${fs(10.7)}px` }}>{num}</span>
@@ -136,7 +136,7 @@ function StatBox({ valor, label }: { valor: string; label: string }) {
   return (
     <div style={{ flex: 1, background: BEGE, borderRadius: `${mm(3)}px`, padding: `${mm(5)}px`, textAlign: 'center' }}>
       <p style={{ fontSize: `${fs(18)}px`, fontWeight: 700, color: VERDE }}>{valor}</p>
-      <p style={{ fontSize: `${fs(9)}px`, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.04em', marginTop: `${mm(1)}px` }}>{label}</p>
+      <p style={{ fontSize: `${fs(10.7)}px`, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.04em', marginTop: `${mm(1)}px` }}>{label}</p>
     </div>
   );
 }
@@ -148,7 +148,7 @@ function PaginaCapa({ data }: { data: PropostaPlaca }) {
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: `${mm(16)}px ${mm(16)}px ${mm(12)}px`, position: 'relative' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: `${mm(10)}px` }}>
           <img src={logoColor} crossOrigin="anonymous" alt="Três Lagoas Solar" style={{ height: `${mm(14)}px`, width: 'auto', display: 'block' }} />
-          <div style={{ textAlign: 'right', fontSize: `${fs(10.2)}px`, color: MUTED, lineHeight: 1.5 }}>
+          <div style={{ textAlign: 'right', fontSize: `${fs(10.7)}px`, color: MUTED, lineHeight: 1.5 }}>
             Proposta comercial
             <b style={{ display: 'block', fontSize: `${fs(12.7)}px`, color: VERDE, fontWeight: 600 }}>
               {data.numeroProposta} · {hoje()}
@@ -176,7 +176,7 @@ function PaginaCapa({ data }: { data: PropostaPlaca }) {
           <KpiCapa valor={`${fmtInt(data.geracaoMediaKwh ?? 0)} `} unidade="kWh" rotulo="Geração média mensal" />
         </div>
 
-        <div style={{ marginTop: `${mm(6)}px`, fontSize: `${fs(9.7)}px`, color: MUTED, display: 'flex', justifyContent: 'space-between' }}>
+        <div style={{ marginTop: `${mm(6)}px`, fontSize: `${fs(10.7)}px`, color: MUTED, display: 'flex', justifyContent: 'space-between' }}>
           <span>Três Lagoas Solar Ltda. · {ENDERECO.cnpj}</span>
           <span>treslagoassolar.com.br</span>
         </div>
@@ -230,7 +230,7 @@ function Barra({ valor, altura, max }: { valor: number; altura: number; max: num
     <div style={{ flex: 1, height: `${(altura / max) * 100}%`, background: VERDE, borderRadius: '2px 2px 0 0', position: 'relative' }}>
       <span style={{
         position: 'absolute', top: `${mm(1.5)}px`, left: 0, right: 0, textAlign: 'center',
-        fontSize: `${fs(8.5)}px`, fontWeight: 700, color: WHITE, transform: 'rotate(-90deg)', transformOrigin: 'center',
+        fontSize: `${fs(10.7)}px`, fontWeight: 700, color: WHITE, transform: 'rotate(-90deg)', transformOrigin: 'center',
         whiteSpace: 'nowrap',
       }}>{fmtInt(valor)}</span>
     </div>
@@ -277,7 +277,7 @@ function PaginaModulos({ data }: { data: PropostaPlaca }) {
               {geracao.map((v, i) => <Barra key={i} valor={v} altura={v} max={max} />)}
             </div>
             <div style={{ display: 'flex', gap: `${mm(1.5)}px`, marginBottom: `${mm(5)}px` }}>
-              {MONTH_LABELS.map(m => <div key={m} style={{ flex: 1, textAlign: 'center', fontSize: `${fs(8.5)}px`, color: MUTED }}>{m}</div>)}
+              {MONTH_LABELS.map(m => <div key={m} style={{ flex: 1, textAlign: 'center', fontSize: `${fs(10.7)}px`, color: MUTED }}>{m}</div>)}
             </div>
           </>
         )}
@@ -295,17 +295,17 @@ function PaginaModulos({ data }: { data: PropostaPlaca }) {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: VERDE, color: WHITE, borderRadius: `${mm(3)}px`, padding: `${mm(4)}px ${mm(5)}px`, marginBottom: `${mm(4)}px` }}>
           <div>
             <p style={{ fontSize: `${fs(12)}px`, fontWeight: 700 }}>À vista</p>
-            <p style={{ fontSize: `${fs(9.5)}px`, opacity: 0.85 }}>{data.qtdPlacas} módulos {data.placaMarca} {data.placaModelo} · PIX ou transferência</p>
+            <p style={{ fontSize: `${fs(10.7)}px`, opacity: 0.85 }}>{data.qtdPlacas} módulos {data.placaMarca} {data.placaModelo} · PIX ou transferência</p>
           </div>
           <p style={{ fontSize: `${fs(20)}px`, fontWeight: 700 }}>{formatCurrency(data.precoAvista)}</p>
         </div>
 
-        <p style={{ fontSize: `${fs(9.5)}px`, color: MUTED, borderLeft: `2px solid ${OURO}`, paddingLeft: `${mm(3.5)}px`, lineHeight: 1.5 }}>
+        <p style={{ fontSize: `${fs(10.2)}px`, color: MUTED, borderLeft: `2px solid ${OURO}`, paddingLeft: `${mm(3.5)}px`, lineHeight: 1.5 }}>
           Este valor contempla os módulos fotovoltaicos, estrutura de fixação, instalação e adequação/homologação do sistema junto à concessionária considerando esta ampliação — valor final instalado,
           utilizando o inversor já existente do cliente. Este orçamento não afirma compatibilidade entre os módulos propostos e o inversor existente; a compatibilidade técnica deve ser validada antes da execução.
         </p>
         {data.observacoes && (
-          <p style={{ fontSize: `${fs(9.5)}px`, color: MUTED, marginTop: `${mm(2)}px` }}>{data.observacoes}</p>
+          <p style={{ fontSize: `${fs(10.2)}px`, color: MUTED, marginTop: `${mm(2)}px` }}>{data.observacoes}</p>
         )}
       </Body>
       <Footer num="03" />
