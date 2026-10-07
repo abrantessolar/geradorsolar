@@ -71,6 +71,13 @@ export interface PropostaTemplateData {
   economia_mensal: number;
   payback_anos: number;
   tarifa_kwh: number;
+  /**
+   * Fatura mínima mensal após a instalação (custo de disponibilidade da concessionária),
+   * já calculada a partir do consumo mínimo real da ligação do cliente (30/50/100 kWh —
+   * mono/bi/trifásica) × tarifa vigente. Vem pronta do ProposalPage; se ausente (proposta
+   * antiga), cai no fallback antigo (16% da fatura atual, mín. R$ 65,24).
+   */
+  fatura_minima?: number;
   dados_mensais: MonthlyRow[];
   fluxo_caixa: CashflowRow[];
   fotos_portfolio: string[];
@@ -478,7 +485,9 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
     const slots = Array.from({ length: 35 }, (_, i) => fotos[i]);
 
     const faturaAntes  = data.consumo_informado * data.tarifa_kwh;
-    const faturaDepois = Math.max(faturaAntes * 0.16, 65.24);
+    // Fatura depois = custo de disponibilidade real (consumo mínimo da ligação × tarifa vigente).
+    // Fallback (propostas antigas sem o campo) mantém a conta anterior.
+    const faturaDepois = data.fatura_minima ?? Math.max(faturaAntes * 0.16, 65.24);
     const cobertura    = data.consumo_informado > 0 ? (data.geracao_mensal / data.consumo_informado) * 100 : 0;
 
     const cartao = [10, 12, 18, 21]

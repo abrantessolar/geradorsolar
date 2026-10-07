@@ -220,7 +220,10 @@ export default function ProposalPage() {
 
     // Fluxo de caixa: 5/10/15/20/25 anos — reusa cashflowData (financiamento padrão)
     const monthlyBill = selectedCard.dimensioning.avgMonthlyKwh * proposal.clientData.kwhPrice;
-    const minFee = Math.max(80, monthlyBill * 0.15);
+    // Tarifa mínima real: consumo mínimo da ligação do cliente (30/50/100 kWh — mono/bi/trifásica,
+    // rastreado em client.networkType) × tarifa vigente. Substitui o floor genérico (max(80, 15%))
+    // que não acompanhava o tipo de ligação real nem a tarifa atual.
+    const minFee = selectedCard.dimensioning.availabilityFee * proposal.clientData.kwhPrice;
     const periodos = [5, 10, 15, 20, 25];
     const fluxo = periodos.map((years) => {
       let accWithout = 0;
@@ -293,6 +296,7 @@ export default function ProposalPage() {
       economia_mensal: economiaMensal,
       payback_anos: paybackAnos,
       tarifa_kwh: tarifa,
+      fatura_minima: minFee,
       dados_mensais: dadosMensais,
       fluxo_caixa: fluxo,
       fotos_portfolio: pdfPortfolioPhotos,
