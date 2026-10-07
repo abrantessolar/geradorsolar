@@ -725,6 +725,25 @@ function CompanyTab() {
         <button onClick={addDistributor} className="solar-btn-outline text-sm py-2 px-3 flex items-center gap-1"><Plus className="w-4 h-4" /> Nova distribuidora</button>
       </div>
 
+      <div className="space-y-3 border-t border-border pt-6">
+        <h3 className="font-semibold text-primary">Fio B (fatura mínima da proposta)</h3>
+        <p className="text-xs text-muted-foreground max-w-prose">
+          Usado para calcular a "fatura depois" impressa na proposta comercial: custo de
+          disponibilidade da ligação (mínimo em kWh × tarifa) + o % do Fio B ainda não
+          compensado sobre o consumo acima do mínimo, conforme a Lei 14.300. O percentual
+          escalona todo ano — <strong>atualize aqui em janeiro</strong>: 15% (2023) → 30%
+          (2024) → 45% (2025) → 60% (2026) → sobe até 2028.
+        </p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-md">
+          <div><label className="block text-sm font-medium mb-1">Fio B (R$/kWh)</label>
+            <input className="solar-input" type="number" step="0.01" value={settings.fioBValorKwh}
+              onChange={e => update('fioBValorKwh', parseFloat(e.target.value) || 0)} /></div>
+          <div><label className="block text-sm font-medium mb-1">% não compensado (ano vigente)</label>
+            <input className="solar-input" type="number" step="1" value={settings.fioBPercentual}
+              onChange={e => update('fioBPercentual', parseFloat(e.target.value) || 0)} /></div>
+        </div>
+      </div>
+
       <RastreamentoConfigSection />
       <WhatsAppTemplatesSection />
     </div>

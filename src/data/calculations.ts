@@ -69,6 +69,33 @@ export function calcDimensioning(
   };
 }
 
+/**
+ * Fatura mínima mensal real após a instalação (impressa na proposta comercial como
+ * "fatura depois"), considerando:
+ *  1) o custo de disponibilidade da ligação (consumo mínimo faturável × tarifa — 30/50/100 kWh
+ *     para mono/bi/trifásica, já rastreado via AVAILABILITY_FEE/networkType), e
+ *  2) o Fio B (TUSD) não compensado sobre a energia que seria compensada acima do mínimo,
+ *     conforme o escalonamento da Lei 14.300 (15% em 2023 → ... → 60% em 2026 → sobe até 2028).
+ *
+ * Sem o Fio B, a conta batia só no mínimo da ligação e superestimava a economia — na prática,
+ * a economia média fica em torno de 70-75%, não perto de 100%, por causa desse componente.
+ *
+ * `avgMonthlyKwh` é o consumo médio mensal do cliente (sem os acréscimos de equipamentos
+ * adicionais da calculadora, i.e. o mesmo valor usado como "consumo_informado" na proposta).
+ */
+export function calcFaturaMinima(
+  availabilityFee: number,
+  kwhPrice: number,
+  avgMonthlyKwh: number,
+  fioBValorKwh: number,
+  fioBPercentual: number,
+): number {
+  const custoDisponibilidade = availabilityFee * kwhPrice;
+  const energiaCompensada = Math.max(0, avgMonthlyKwh - availabilityFee);
+  const fioBNaoCompensado = (fioBPercentual / 100) * fioBValorKwh * energiaCompensada;
+  return custoDisponibilidade + fioBNaoCompensado;
+}
+
 export function findBestInverter(line: string, powerKwp: number): Kit | null {
   const kits = getKits().filter(k => k.line === line && k.type === 'inversor' && k.active);
   kits.sort((a, b) => a.power - b.power);

@@ -101,6 +101,14 @@ export interface AdminSettings {
   microInverterBrandImages?: Record<string, string>;
   /** Miniatura única para placas (qualquer marca). */
   panelImage?: string;
+  /** Valor do componente Fio B (TUSD) da distribuidora, em R$/kWh — vem da resolução homologatória da ANEEL. */
+  fioBValorKwh: number;
+  /**
+   * % do Fio B NÃO compensado no ano vigente, conforme escalonamento da Lei 14.300 (geração
+   * distribuída homologada após 07/01/2023): 15% (2023) → 30% (2024) → 45% (2025) → 60% (2026) →
+   * sobe até 2028. Precisa ser atualizado manualmente todo ano aqui em Configurações.
+   */
+  fioBPercentual: number;
 }
 
 export interface SocialProof {

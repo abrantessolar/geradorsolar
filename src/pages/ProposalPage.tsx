@@ -8,6 +8,7 @@ import {
   formatCurrency, formatNumber, calcInstallments, calcDimensioning,
   findInverterForPanels, findPanel, maxPanelsForInverter,
   calcMicroInverterCount, calcCardInstallments, calcEquipmentMonthly, calcCostBreakdown,
+  calcFaturaMinima,
 } from '@/data/calculations';
 import { MONTH_LABELS, MONTH_KEYS, SEASONAL_FACTORS, LINE_NAMES } from '@/data/types';
 import { Download, Share2, Edit, ArrowLeft, Zap, MessageCircle, AlertTriangle, Eye, CheckCircle2 } from 'lucide-react';
@@ -220,10 +221,17 @@ export default function ProposalPage() {
 
     // Fluxo de caixa: 5/10/15/20/25 anos — reusa cashflowData (financiamento padrão)
     const monthlyBill = selectedCard.dimensioning.avgMonthlyKwh * proposal.clientData.kwhPrice;
-    // Tarifa mínima real: consumo mínimo da ligação do cliente (30/50/100 kWh — mono/bi/trifásica,
-    // rastreado em client.networkType) × tarifa vigente. Substitui o floor genérico (max(80, 15%))
-    // que não acompanhava o tipo de ligação real nem a tarifa atual.
-    const minFee = selectedCard.dimensioning.availabilityFee * proposal.clientData.kwhPrice;
+    // Tarifa mínima real: custo de disponibilidade da ligação do cliente (30/50/100 kWh —
+    // mono/bi/trifásica, rastreado em client.networkType) × tarifa vigente, MAIS o Fio B não
+    // compensado (Lei 14.300) sobre a energia acima do mínimo. Substitui o floor genérico
+    // (max(80, 15%)) que não acompanhava a ligação real, a tarifa atual nem o Fio B.
+    const minFee = calcFaturaMinima(
+      selectedCard.dimensioning.availabilityFee,
+      proposal.clientData.kwhPrice,
+      selectedCard.dimensioning.avgBase,
+      settings.fioBValorKwh,
+      settings.fioBPercentual,
+    );
     const periodos = [5, 10, 15, 20, 25];
     const fluxo = periodos.map((years) => {
       let accWithout = 0;

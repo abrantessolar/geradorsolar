@@ -54,6 +54,8 @@ const DEFAULT_SETTINGS: AdminSettings = {
   inverterBrandImages: {},
   microInverterBrandImages: {},
   panelImage: '',
+  fioBValorKwh: 0.19,
+  fioBPercentual: 60,
 };
 
 const DEFAULT_KITS: Kit[] = [
@@ -114,6 +116,8 @@ export function getSettings(): AdminSettings {
   if (s.trunkCablePrice === undefined) s.trunkCablePrice = 300;
   if (s.homologationDays === undefined) s.homologationDays = 10;
   if (s.surplusFactor === undefined) s.surplusFactor = 20;
+  if (s.fioBValorKwh === undefined) s.fioBValorKwh = DEFAULT_SETTINGS.fioBValorKwh;
+  if (s.fioBPercentual === undefined) s.fioBPercentual = DEFAULT_SETTINGS.fioBPercentual;
   if (s.sellers && s.sellers.length > 0 && typeof s.sellers[0] === 'string') {
     s.sellers = (s.sellers as unknown as string[]).map((name, i) => ({
       id: String(i + 1), name, phone: '', email: '', active: true,
