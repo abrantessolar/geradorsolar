@@ -191,8 +191,11 @@ export default function ListaAcompanhamento() {
       const { error } = await supabase.from('rastreamento_obras' as any).update(patch).eq('id', row.id);
       if (error) { toast.error(error.message); return; }
     } else {
+      // upsert (não insert): se outro clique/aba já criou a linha entre o momento em que
+      // lemos o estado local e agora, evita duplicate key em (projeto_id, fluxo, etapa)
+      // e grava o valor certo em vez de falhar.
       const { error } = await supabase.from('rastreamento_obras' as any)
-        .insert({ projeto_id: projetoId, fluxo, etapa, visivel_cliente: true, ...patch });
+        .upsert({ projeto_id: projetoId, fluxo, etapa, visivel_cliente: true, ...patch }, { onConflict: 'projeto_id,fluxo,etapa' });
       if (error) { toast.error(error.message); return; }
     }
 
@@ -240,8 +243,9 @@ export default function ListaAcompanhamento() {
     const row = getRow(projetoId, fluxo, etapa);
     if (!row) {
       // Etapa condicional ainda não tem linha criada (ex: "Ativar troca" na primeira vez) — cria agora.
+      // upsert evita duplicate key se a linha já tiver sido criada por outro clique/aba nesse meio-tempo.
       const { error } = await supabase.from('rastreamento_obras' as any)
-        .insert({ projeto_id: projetoId, fluxo, etapa, visivel_cliente: true, concluido: false, campo_extra: extra });
+        .upsert({ projeto_id: projetoId, fluxo, etapa, visivel_cliente: true, concluido: false, campo_extra: extra }, { onConflict: 'projeto_id,fluxo,etapa' });
       if (error) { toast.error(error.message); return; }
       await refetchProjeto(projetoId);
       return;
@@ -609,6 +613,7 @@ function EtapaCheck({
   const [pedindoWifi, setPedindoWifi] = useState(false);
   const [wifiNomeInput, setWifiNomeInput] = useState('');
   const [wifiSenhaInput, setWifiSenhaInput] = useState('');
+  const [salvando, setSalvando] = useState(false);
   const row = getRow(projetoId, fluxo, etapaDef.etapa);
   const concluido = !!row?.concluido;
   const ce = row?.campo_extra || {};
@@ -621,10 +626,13 @@ function EtapaCheck({
   const posteriorOk = posterior && rows.some(r => r.fluxo === fluxo && r.etapa === posterior.etapa && r.concluido);
 
   const handleClick = async () => {
+    if (salvando) return; // já tem uma gravação em andamento para esta etapa — ignora clique repetido
     if (concluido) {
       if (posteriorOk) { toast.error('Desmarque a etapa seguinte primeiro.'); return; }
       if (!window.confirm('Tem certeza? A data registrada será apagada.')) return;
+      setSalvando(true);
       await commitCheck(projetoId, fluxo, etapaDef.etapa, false);
+      setSalvando(false);
       return;
     }
     if (!anteriorOk) { toast.error('Conclua a etapa anterior primeiro.'); return; }
@@ -650,27 +658,35 @@ function EtapaCheck({
       setPedindoPlanta(true);
       return;
     }
+    setSalvando(true);
     await commitCheck(projetoId, fluxo, etapaDef.etapa, true);
+    setSalvando(false);
   };
 
   const confirmarPlanta = async () => {
     setPedindoPlanta(false);
+    setSalvando(true);
     await updateNomePlanta(projetoId, plantaInput);
     await commitCheck(projetoId, fluxo, etapaDef.etapa, true);
+    setSalvando(false);
   };
 
   const confirmarFornecedor = async () => {
     if (!fornecedorInput.trim()) { toast.error('Informe o fornecedor.'); return; }
     setPedindoFornecedor(false);
+    setSalvando(true);
     await updateFornecedor(projetoId, fornecedorInput);
     await commitCheck(projetoId, fluxo, etapaDef.etapa, true);
+    setSalvando(false);
   };
 
   const confirmarWifi = async () => {
     if (!wifiNomeInput.trim()) { toast.error('Informe o nome da rede WiFi.'); return; }
     setPedindoWifi(false);
+    setSalvando(true);
     await updateWifi(projetoId, wifiNomeInput, wifiSenhaInput);
     await commitCheck(projetoId, fluxo, etapaDef.etapa, true);
+    setSalvando(false);
   };
 
 
@@ -681,10 +697,11 @@ function EtapaCheck({
   const checkbox = (
     <button
       onClick={handleClick}
-      className={`inline-flex items-center gap-1.5 text-sm transition-colors ${concluido ? 'text-foreground' : anteriorOk ? 'text-muted-foreground hover:text-foreground' : 'text-muted-foreground/50'}`}
+      disabled={salvando}
+      className={`inline-flex items-center gap-1.5 text-sm transition-colors ${salvando ? 'opacity-60 cursor-wait' : ''} ${concluido ? 'text-foreground' : anteriorOk ? 'text-muted-foreground hover:text-foreground' : 'text-muted-foreground/50'}`}
     >
       <span className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 ${concluido ? 'bg-primary border-primary text-primary-foreground' : 'border-input'}`}>
-        {concluido && <Check className="w-3 h-3" />}
+        {salvando ? <Loader2 className="w-3 h-3 animate-spin" /> : concluido && <Check className="w-3 h-3" />}
       </span>
       {etapaDef.titulo}
     </button>
