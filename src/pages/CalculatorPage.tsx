@@ -126,7 +126,6 @@ export default function CalculatorPage() {
     };
     loadEq();
   }, []);
-  const [panelDelta, setPanelDelta] = useState(0);
   const [paymentTab, setPaymentTab] = useState<'financing' | 'card'>('financing');
   const [showCostPanel, setShowCostPanel] = useState(false);
   const [kit, setKit] = useState<KitData>(() => {
@@ -258,13 +257,33 @@ export default function CalculatorPage() {
     return baseDim.panelCount;
   }, [consumption, equipment, client.networkType, irradiation, client.kwhPrice, settings.systemLoss]);
 
-  const finalPanels = Math.max(1, basePanelCount + panelDelta);
+  // Nº de placas: fonte única de verdade é kit.qtdPlacas. Os botões +/- e o campo numérico
+  // do formulário de kit escrevem os dois ali (via setKit), então ficam sempre sincronizados
+  // — nenhum dos dois tem estado próprio que possa divergir do outro.
+  const finalPanels = kit.qtdPlacas || 0;
+  const panelDelta = finalPanels - basePanelCount;
 
-  // Sync kit panel count with calculator's recommended finalPanels
+  const prevBaseRef = useRef<number | null>(null);
   useEffect(() => {
-    setKit(prev => prev.qtdPlacas === finalPanels ? prev : { ...prev, qtdPlacas: finalPanels });
+    if (prevBaseRef.current === null) {
+      // Primeira carga: só preenche se ainda não há nº de placas definido (kit novo, do
+      // zero). Em modo de edição de proposta, kit.qtdPlacas já veio carregado com o valor
+      // salvo e não deve ser sobrescrito pela recomendação recalculada.
+      setKit(prev => (prev.qtdPlacas ? prev : { ...prev, qtdPlacas: basePanelCount }));
+    } else if (prevBaseRef.current !== basePanelCount) {
+      // A recomendação mudou (ex: consumo foi editado) — desloca a qtd atual pelo mesmo
+      // delta que o usuário já tinha aplicado, preservando o ajuste manual em vez de
+      // descartá-lo.
+      const delta = basePanelCount - prevBaseRef.current;
+      setKit(prev => ({ ...prev, qtdPlacas: Math.max(1, (prev.qtdPlacas || 0) + delta) }));
+    }
+    prevBaseRef.current = basePanelCount;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [finalPanels]);
+  }, [basePanelCount]);
+
+  const adjustPanels = (delta: number) => {
+    setKit(prev => ({ ...prev, qtdPlacas: Math.max(1, (prev.qtdPlacas || 0) + delta) }));
+  };
 
   // Compute single system card from kit
   const systemCard = useMemo(() => {
@@ -839,7 +858,7 @@ export default function CalculatorPage() {
         <h2 className="text-xl font-bold text-primary text-center">Ajustar Quantidade de Placas</h2>
         <div className="flex items-center justify-center gap-6">
           <button
-            onClick={() => setPanelDelta(d => d - 1)}
+            onClick={() => adjustPanels(-1)}
             disabled={finalPanels <= 1}
             className="w-12 h-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xl font-bold hover:bg-primary/90 disabled:opacity-40 transition-all active:scale-95"
           >
@@ -850,7 +869,7 @@ export default function CalculatorPage() {
             <p className="text-sm text-muted-foreground">placas</p>
           </div>
           <button
-            onClick={() => setPanelDelta(d => d + 1)}
+            onClick={() => adjustPanels(1)}
             className="w-12 h-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xl font-bold hover:bg-primary/90 transition-all active:scale-95"
           >
             +
@@ -874,7 +893,7 @@ export default function CalculatorPage() {
         {panelDelta !== 0 && (
           <p className="text-center text-xs text-muted-foreground">
             Mínimo recomendado: {basePanelCount} placas ({panelDelta > 0 ? '+' : ''}{panelDelta} ajuste)
-            <button onClick={() => setPanelDelta(0)} className="ml-2 text-primary underline">Resetar</button>
+            <button onClick={() => setKit(prev => ({ ...prev, qtdPlacas: basePanelCount }))} className="ml-2 text-primary underline">Resetar</button>
           </p>
         )}
       </section>
