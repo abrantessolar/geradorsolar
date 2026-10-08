@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import welcomeKing from "@/assets/energia-welcome-king.png";
+import { Sun } from "lucide-react";
 
 const KEY = "ev_welcome_seen";
 
@@ -27,49 +27,45 @@ export default function EnergiaWelcomePopup() {
         position: "fixed",
         inset: 0,
         zIndex: 9999,
-        background: "radial-gradient(circle at center, rgba(13,10,0,0.85), rgba(0,0,0,0.95))",
+        background: "rgba(10,18,30,0.55)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
         cursor: "pointer",
         padding: 16,
-        animation: "evWelcomeFade 0.4s ease-out",
+        animation: "ev-fade-in 0.3s ease-out",
       }}
     >
-      <style>{`
-        @keyframes evWelcomeFade { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes evWelcomeZoom { from { opacity: 0; transform: scale(0.85) translateY(20px); } to { opacity: 1; transform: scale(1) translateY(0); } }
-      `}</style>
       <div
+        className="ev-card"
+        onClick={e => e.stopPropagation()}
         style={{
           position: "relative",
-          maxWidth: 520,
+          maxWidth: 420,
           width: "100%",
           textAlign: "center",
-          animation: "evWelcomeZoom 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)",
+          padding: "32px 28px 28px",
+          cursor: "default",
         }}
       >
-        <img
-          src={welcomeKing}
-          alt="Bem-vindo à plataforma de premiação da Três Lagoas Solar"
-          style={{
-            width: "100%",
-            height: "auto",
-            filter: "drop-shadow(0 20px 60px rgba(245,166,35,0.4))",
-            pointerEvents: "none",
-          }}
-        />
-        <p
-          style={{
-            marginTop: 16,
-            color: "#A08060",
-            fontSize: 12,
-            letterSpacing: 2,
-            textTransform: "uppercase",
-          }}
+        <div
+          className="mx-auto mb-4 flex items-center justify-center"
+          style={{ width: 64, height: 64, borderRadius: "50%", background: "#FFF4E0" }}
         >
-          Toque em qualquer lugar para continuar
+          <Sun className="w-8 h-8" style={{ color: "#F5A623" }} />
+        </div>
+        <h2 className="text-xl font-extrabold mb-2" style={{ color: "#1A2233" }}>
+          Bem-vindo à Energia que Volta
+        </h2>
+        <p className="text-sm" style={{ color: "#6B7585" }}>
+          Indique amigos e vizinhos para a Três Lagoas Solar, acumule pontos e troque por prêmios.
         </p>
+        <button
+          onClick={close}
+          className="ev-btn-primary w-full h-11 mt-5 flex items-center justify-center"
+        >
+          Continuar
+        </button>
       </div>
     </div>
   );

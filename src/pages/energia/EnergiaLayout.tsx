@@ -2,7 +2,6 @@ import { ReactNode } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { Home, Map, Gift, ScrollText, LogOut, Trophy, Sun } from "lucide-react";
 import { useEnergia } from "@/contexts/EnergiaContext";
-import { EpicParticles, EpicMusicToggle } from "./_epic";
 
 export default function EnergiaLayout({ children }: { children: ReactNode }) {
   const { indicador, setIndicador, setCpf } = useEnergia();
@@ -12,44 +11,40 @@ export default function EnergiaLayout({ children }: { children: ReactNode }) {
 
   const tabs = [
     { to: "/energia/dashboard", icon: Home, label: "Início" },
-    { to: "/energia/trilha", icon: Map, label: "Trilha" },
-    { to: "/energia/premios", icon: Gift, label: "Relíquias" },
+    { to: "/energia/trilha", icon: Map, label: "Nível" },
+    { to: "/energia/premios", icon: Gift, label: "Prêmios" },
     { to: "/energia/indicacoes", icon: ScrollText, label: "Indicações" },
   ];
 
   return (
     <div className="ev-epic pb-10">
-      <EpicParticles />
-      <EpicMusicToggle />
-      <header className="relative z-30 px-4 py-3 flex items-center justify-between"
-        style={{ background: "linear-gradient(180deg, rgba(13,10,0,0.95), rgba(26,15,0,0.85))", borderBottom: "1px solid rgba(245,166,35,0.35)", backdropFilter: "blur(10px)" }}>
+      <header className="relative z-30 px-4 py-3 flex items-center justify-between" style={{ background: "#1A3C5E" }}>
         <div className="flex items-center gap-2">
-          <Sun className="w-6 h-6 ev-sparkle" style={{ color: "#F5A623" }} />
-          <span className="ev-font-epic font-bold tracking-wide" style={{ color: "#F5E6C8" }}>Energia que Volta</span>
+          <Sun className="w-6 h-6" style={{ color: "#F5A623" }} />
+          <span className="font-bold tracking-wide" style={{ color: "#FFFFFF" }}>Energia que Volta</span>
         </div>
         <div className="flex items-center gap-3">
-          <NavLink to="/energia/ranking" title="Hall dos Guerreiros" style={{ color: "#F5A623" }}>
+          <NavLink to="/energia/ranking" title="Ranking" style={{ color: "#F5A623" }}>
             <Trophy className="w-5 h-5" />
           </NavLink>
           {indicador && (
-            <button onClick={logout} title="Sair" style={{ color: "#A08060" }}>
+            <button onClick={logout} title="Sair" style={{ color: "#AEB9C9" }}>
               <LogOut className="w-5 h-5" />
             </button>
           )}
         </div>
       </header>
 
-      {/* Top navigation */}
-      <nav className="relative z-20"
-        style={{ background: "rgba(20,12,0,0.95)", borderBottom: "1px solid #C17F24", backdropFilter: "blur(8px)" }}>
+      {/* Navegação */}
+      <nav className="relative z-20" style={{ background: "#FFFFFF", borderBottom: "1px solid #E3E8EF" }}>
         <div className="max-w-3xl mx-auto flex overflow-x-auto ev-scroll">
           {tabs.map(t => (
             <NavLink key={t.to} to={t.to}
               className={({ isActive }) =>
-                `flex-1 min-w-[88px] flex flex-col items-center py-2.5 text-[11px] gap-1 ev-font-epic transition-all border-b-2 ${isActive ? "ev-text-glow" : ""}`
+                `flex-1 min-w-[88px] flex flex-col items-center py-2.5 text-[11px] gap-1 font-medium transition-all border-b-2 ${isActive ? "" : ""}`
               }
               style={({ isActive }) => ({
-                color: isActive ? "#F5A623" : "#A08060",
+                color: isActive ? "#F5A623" : "#6B7585",
                 borderBottomColor: isActive ? "#F5A623" : "transparent",
               })}
             >
@@ -67,7 +62,7 @@ export default function EnergiaLayout({ children }: { children: ReactNode }) {
           href="/docs/regulamento-energia-que-volta.pdf"
           target="_blank"
           rel="noopener noreferrer"
-          style={{ color: "#A08060", fontSize: 11, textDecoration: "underline" }}
+          style={{ color: "#8891A0", fontSize: 11, textDecoration: "underline" }}
         >
           Termos do Programa
         </a>

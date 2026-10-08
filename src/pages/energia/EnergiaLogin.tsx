@@ -3,7 +3,6 @@ import { useNavigate, Link } from "react-router-dom";
 import { Sun, AlertCircle, Loader2 } from "lucide-react";
 import { evCall, evMaskCpf } from "@/lib/energiaApi";
 import { useEnergia } from "@/contexts/EnergiaContext";
-import { EpicParticles } from "./_epic";
 import EnergiaWelcomePopup from "./EnergiaWelcomePopup";
 
 const maskDateBR = (v: string) => {
@@ -50,54 +49,52 @@ export default function EnergiaLogin() {
   return (
     <div className="ev-epic flex items-center justify-center px-4 py-10">
       <EnergiaWelcomePopup />
-      <EpicParticles count={24} />
-      <div className="relative z-10 max-w-md w-full ev-card ev-card-glow ev-enter p-8 space-y-5">
+      <div className="relative z-10 max-w-md w-full ev-card ev-enter p-8 space-y-5">
         <div className="text-center space-y-2">
-          <div className="mx-auto w-20 h-20 rounded-full flex items-center justify-center ev-pulse-ring"
-            style={{ background: "linear-gradient(135deg, #F5A623, #E8651A)" }}>
-            <Sun className="w-10 h-10" style={{ color: "#0D0A00" }} />
+          <div className="mx-auto w-16 h-16 rounded-full flex items-center justify-center" style={{ background: "#F5A623" }}>
+            <Sun className="w-8 h-8" style={{ color: "#1A2233" }} />
           </div>
-          <h1 className="ev-font-epic text-3xl font-black ev-text-glow" style={{ color: "#F5A623" }}>Energia que Volta</h1>
-          <p className="text-sm" style={{ color: "#A08060" }}>Bem-vindo, Indicador. Sua energia move o mundo.</p>
+          <h1 className="text-2xl font-extrabold" style={{ color: "#1A2233" }}>Energia que Volta</h1>
+          <p className="text-sm" style={{ color: "#6B7585" }}>Bem-vindo, Indicador.</p>
         </div>
 
         {error && (
           <div className="flex items-center gap-2 p-3 rounded-lg text-sm"
-            style={{ background: "rgba(232,101,26,0.18)", color: "#F5E6C8", border: "1px solid rgba(232,101,26,0.5)" }}>
+            style={{ background: "#FEE2E2", color: "#B91C1C" }}>
             <AlertCircle className="w-4 h-4" /> {error}
           </div>
         )}
 
         {notFound && (
           <div className="p-4 rounded-lg space-y-3 text-sm"
-            style={{ background: "rgba(245,166,35,0.10)", color: "#F5E6C8", border: "1px solid rgba(245,166,35,0.5)" }}>
+            style={{ background: "#FFF4E0", color: "#1A2233" }}>
             <div className="flex items-start gap-2">
               <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" style={{ color: "#F5A623" }} />
-              <span>CPF não encontrado em nossa base. Que tal se cadastrar e começar sua saga agora?</span>
+              <span>CPF não encontrado em nossa base. Que tal se cadastrar agora?</span>
             </div>
             <Link to="/energia/cadastro"
               state={{ cpf }}
               className="ev-btn-primary w-full h-11 flex items-center justify-center font-bold">
-              CRIAR MEU CADASTRO
+              Criar meu cadastro
             </Link>
           </div>
         )}
 
         <div className="space-y-3">
           <div>
-            <label className="block text-xs ev-font-epic uppercase tracking-widest mb-1" style={{ color: "#F5A623" }}>CPF</label>
+            <label className="block text-xs font-semibold mb-1" style={{ color: "#6B7585" }}>CPF</label>
             <input className="ev-input" value={cpf} placeholder="000.000.000-00" onChange={e => setCpf(evMaskCpf(e.target.value))} />
           </div>
           <div>
-            <label className="block text-xs ev-font-epic uppercase tracking-widest mb-1" style={{ color: "#F5A623" }}>Data de nascimento</label>
+            <label className="block text-xs font-semibold mb-1" style={{ color: "#6B7585" }}>Data de nascimento</label>
             <input type="tel" inputMode="numeric" autoComplete="bday" placeholder="DD/MM/AAAA" maxLength={10} className="ev-input" value={data} onChange={e => setData(maskDateBR(e.target.value))} onKeyDown={e => e.key === "Enter" && handle()} />
           </div>
-          <label className="flex items-start gap-2 cursor-pointer select-none" style={{ fontSize: 13, color: "#F5E6C8" }}>
+          <label className="flex items-start gap-2 cursor-pointer select-none" style={{ fontSize: 13, color: "#1A2233" }}>
             <input
               type="checkbox"
               checked={aceite}
               onChange={e => setAceite(e.target.checked)}
-              style={{ accentColor: "#C17F24", width: 16, height: 16, marginTop: 2, border: "1px solid #C17F24", background: "#1a0f00" }}
+              style={{ accentColor: "#F5A623", width: 16, height: 16, marginTop: 2 }}
             />
             <span>
               Li e aceito os{" "}
@@ -116,15 +113,15 @@ export default function EnergiaLogin() {
             className="ev-btn-primary w-full h-12 flex items-center justify-center gap-2"
             style={!aceite ? { opacity: 0.5, pointerEvents: "none" } : undefined}>
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-            ENTRAR NA SAGA
+            Entrar
           </button>
         </div>
 
-        <p className="text-xs text-center" style={{ color: "#A08060" }}>
+        <p className="text-xs text-center" style={{ color: "#8891A0" }}>
           Ainda não tem cadastro?{" "}
-          <Link to="/energia/cadastro" className="font-bold ev-sparkle" style={{ color: "#F5A623" }}>Cadastre-se</Link>
+          <Link to="/energia/cadastro" className="font-bold" style={{ color: "#F5A623" }}>Cadastre-se</Link>
         </p>
-        <Link to="/" className="block text-center text-xs" style={{ color: "rgba(160,128,96,0.7)" }}>← Voltar ao site</Link>
+        <Link to="/" className="block text-center text-xs" style={{ color: "#8891A0" }}>← Voltar ao site</Link>
       </div>
     </div>
   );
