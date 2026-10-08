@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Calculator, Wrench, ChevronRight, Sun, BatteryCharging, Waves, Battery, CreditCard, PanelTop } from 'lucide-react';
+import { Calculator, Wrench, ChevronRight, Sun, BatteryCharging, Waves, Battery, CreditCard, PanelTop, Banknote } from 'lucide-react';
 
 const tools = [
   {
@@ -43,6 +43,12 @@ const tools = [
     icon: PanelTop,
     title: 'Proposta de Placa Avulsa',
     desc: 'Proposta comercial só de módulos fotovoltaicos, sem inversor',
+  },
+  {
+    to: '/ferramentas/antecipacao-recebiveis',
+    icon: Banknote,
+    title: 'Antecipação de Recebíveis',
+    desc: 'Calcula quanto cobrar do cliente para sobrar o líquido desejado após antecipar no banco',
   },
 ];
 
