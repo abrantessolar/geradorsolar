@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import SeoNoIndex from '@/components/SeoNoIndex';
 import CentralEngine from '@/central/CentralEngine';
-import logoColor from '@/assets/proposta-template/logo-tls-color.png';
+import logoWhite from '@/assets/logo-central-branco.png.asset.json';
 import '@/central/central.css';
 
 /**
@@ -30,7 +30,7 @@ export default function CentralPage() {
       <SeoNoIndex />
       <div className="ca-shell">
         <div className="ca-brand">
-          <img src={logoColor} alt="Três Lagoas Solar" />
+          <img src={logoWhite.url} alt="Três Lagoas Solar" />
           Três Lagoas Solar
         </div>
         <CentralEngine />

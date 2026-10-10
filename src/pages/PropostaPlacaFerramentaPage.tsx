@@ -31,7 +31,7 @@ export default function PropostaPlacaFerramentaPage() {
   const [responsavelNome, setResponsavelNome] = useState('');
 
   useEffect(() => {
-    supabase.from('user_profiles' as any).select('user_id, nome, telefone, role, ativo')
+    supabase.from('user_profiles').select('user_id, nome, telefone, role, ativo')
       .in('role', ['vendedor', 'orcamentista', 'admin', 'gestor']).eq('ativo', true).order('nome')
       .then(({ data, error }) => {
         if (error) return;
