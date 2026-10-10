@@ -6,6 +6,8 @@ import { CentralSession, DestinationKey } from '../types';
 export function resolveDestination(session: Pick<CentralSession, 'talkNow' | 'intent' | 'customerStatus'>): DestinationKey {
   if (session.talkNow) return 'general';
 
+  if (session.intent === 'offgrid') return 'offgrid';
+
   if (session.intent === 'quote') return 'commercial';
   if (session.intent === 'upgrade') return 'commercial';
 

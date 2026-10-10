@@ -189,14 +189,30 @@ export const STEPS: Record<string, StepDef> = {
   B: {
     id: 'B', kind: 'choice', title: 'O que você quer resolver?', answerKey: 'B',
     options: [
+      // Residencial ongrid — dois botões que levam ao mesmo caminho (B_consumo) de
+      // propósito: é o perfil da maior parte dos clientes, então a redundância ajuda
+      // a pessoa se reconhecer em uma das duas frases.
       { id: 'b1', label: 'Reduzir minha conta de energia', icon: 'TrendingDown', goto: 'B_consumo', answerKey: 'B' },
       { id: 'b2', label: 'Usar mais ar-condicionado sem medo da conta', icon: 'Snowflake', goto: 'B_consumo', answerKey: 'B' },
-      { id: 'b3', label: 'Ter energia mesmo quando faltar luz', icon: 'BatteryCharging', goto: 'B_consumo', answerKey: 'B' },
-      { id: 'b4', label: 'Reduzir o custo da minha empresa', icon: 'Building2', goto: 'B_consumo', answerKey: 'B' },
       { id: 'b5', label: 'Energia para propriedade rural', icon: 'Tractor', goto: 'B_consumo', answerKey: 'B' },
+      { id: 'b4', label: 'Reduzir o custo da minha empresa', icon: 'Building2', goto: 'B_consumo', answerKey: 'B' },
+      { id: 'b7', label: 'Sou indústria ou grande consumidor (Grupo A)', icon: 'Factory', goto: 'B_grupoA', answerKey: 'B' },
+      { id: 'b9', label: 'Sistema isolado, híbrido ou fora da rede (offgrid)', icon: 'Unplug', goto: 'B_offgrid', answerKey: 'B' },
       { id: 'b6', label: 'Quero ampliar um sistema que já tenho', icon: 'ArrowUpCircle', goto: 'B_consumo', answerKey: 'B' },
-      { id: 'b7', label: 'Meu consumo é muito alto / Grupo A', icon: 'Zap', goto: 'B_grupoA', answerKey: 'B' },
       { id: 'b8', label: 'Ainda não sei. Quero descobrir o que faz sentido', icon: 'HelpCircle', goto: 'B_consumo', answerKey: 'B' },
+    ],
+  },
+
+  // Sistemas isolados/híbridos/offgrid — perfil bem diferente do residencial
+  // ongrid (backup, trailer, propriedade sem rede, bombeamento). Vai direto
+  // pro resultado, sem prioridade/empolgação, e cai num WhatsApp dedicado.
+  B_offgrid: {
+    id: 'B_offgrid', kind: 'choice', title: 'Qual desses te representa melhor?',
+    options: [
+      { id: 'boff_1', label: 'Tenho uma casa, rancho ou sítio e gostaria de um sistema de backup', icon: 'Home', goto: 'result', answerKey: 'B_offgrid', patch: { intent: 'offgrid' }, chip: 'Backup residencial/rural' },
+      { id: 'boff_2', label: 'Tenho um trailer de lanche, de viagem ou um motorhome', icon: 'Caravan', goto: 'result', answerKey: 'B_offgrid', patch: { intent: 'offgrid' }, chip: 'Trailer/motorhome' },
+      { id: 'boff_3', label: 'Moro em um local sem energia', icon: 'ZapOff', goto: 'result', answerKey: 'B_offgrid', patch: { intent: 'offgrid' }, chip: 'Local sem energia' },
+      { id: 'boff_4', label: 'Gostaria de um sistema de bombeamento', icon: 'Droplets', goto: 'result', answerKey: 'B_offgrid', patch: { intent: 'offgrid' }, chip: 'Bombeamento' },
     ],
   },
 

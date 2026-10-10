@@ -27,6 +27,14 @@ function textoPorDestino(session: CentralSession): { titulo: string; corpo: stri
     };
   }
 
+  if (destino === 'offgrid') {
+    return {
+      titulo: 'Recebemos suas informações.',
+      corpo: 'Sistemas isolados, híbridos ou fora da rede têm um atendimento dedicado. Vamos continuar por WhatsApp.',
+      botao: 'Continuar no WhatsApp',
+    };
+  }
+
   if (destino === 'customerSupport' || destino === 'externalSupport') {
     return {
       titulo: 'Entendido.',
@@ -54,6 +62,7 @@ export default function ResultScreen({ session }: { session: CentralSession }) {
         : destino === 'customerSupport' ? 'route_customer_support'
         : destino === 'externalSupport' ? 'route_external_support'
         : destino === 'supplier' ? 'route_supplier'
+        : destino === 'offgrid' ? 'route_offgrid'
         : 'route_commercial'
     );
     track('whatsapp_clicked', { destination: destino });

@@ -31,6 +31,7 @@ export type CentralEventName =
   | 'route_customer_support'
   | 'route_external_support'
   | 'route_supplier'
+  | 'route_offgrid'
   | 'whatsapp_clicked'
   | 'funnel_completed'
   | 'funnel_abandoned';

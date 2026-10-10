@@ -42,6 +42,10 @@ describe('resolveDestination — motor de roteamento (seção 31 da spec)', () =
   it('sem nenhuma informação, cai no destino geral', () => {
     expect(resolveDestination(sessaoBase())).toBe('general');
   });
+
+  it('sistema isolado/híbrido/offgrid vai para o número dedicado, mesmo com intent misto', () => {
+    expect(resolveDestination(sessaoBase({ intent: 'offgrid' }))).toBe('offgrid');
+  });
 });
 
 describe('buildWhatsAppMessage — nunca envia campos vazios, nome de atendente ou score', () => {
@@ -97,6 +101,12 @@ describe('buildWhatsAppMessage — nunca envia campos vazios, nome de atendente 
     expect(msg).toContain('encaminhar para a Raissa');
     expect(msg).toContain('R$ 1.500 e R$ 16.000');
     expect(msg).toContain('Análise de demanda contratada');
+  });
+
+  it('mensagem de sistema isolado/offgrid inclui o perfil escolhido', () => {
+    const s = sessaoBase({ intent: 'offgrid', answers: { B: 'Sistema isolado, híbrido ou fora da rede (offgrid)', B_offgrid: 'Tenho um trailer de lanche, de viagem ou um motorhome' } });
+    const msg = buildWhatsAppMessage(s);
+    expect(msg).toContain('trailer');
   });
 
   it('mensagem de fornecedor inclui dados da empresa quando presentes', () => {

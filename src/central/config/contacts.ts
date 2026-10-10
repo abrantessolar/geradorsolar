@@ -8,4 +8,5 @@ export const contacts: Record<DestinationKey, string> = {
   customerSupport: '5567996499267',
   general: '5567996448995',
   supplier: '5567998955576', // WhatsApp do Jackson
+  offgrid: '5567981555652', // Sistemas isolados/híbridos/offgrid — número dedicado
 };

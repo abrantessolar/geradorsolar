@@ -4,7 +4,7 @@
 // contacts.ts, scoring.ts, etc.) precisam. Mantido deliberadamente simples:
 // a árvore de telas inteira é dado (StepDef[]), não componentes.
 
-export type DestinationKey = 'commercial' | 'externalSupport' | 'customerSupport' | 'general' | 'supplier';
+export type DestinationKey = 'commercial' | 'externalSupport' | 'customerSupport' | 'general' | 'supplier' | 'offgrid';
 
 export type CustomerStatus = 'customer' | 'external_system' | 'new' | 'supplier' | null;
 
@@ -14,6 +14,7 @@ export type Intent =
   | 'quote' // orçamento novo (fluxo B)
   | 'upgrade' // ampliação, bateria, novo projeto para quem já tem sistema
   | 'supplier_offer'
+  | 'offgrid' // sistema isolado/híbrido/fora da rede — vai para um número dedicado
   | null;
 
 export interface LeadData {

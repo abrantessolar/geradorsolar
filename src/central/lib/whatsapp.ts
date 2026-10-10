@@ -103,6 +103,19 @@ function mensagemFornecedor(session: CentralSession): string {
   );
 }
 
+function mensagemOffgrid(session: CentralSession): string {
+  const perfil = session.answers['B_offgrid'] || '';
+
+  return linhas(
+    'Olá! 👋 Vim pela Central da Três Lagoas Solar.',
+    '',
+    perfil && `🔌 Perfil: ${perfil}`,
+    outrosDados(session, ['B', 'B_offgrid']) || null,
+    '',
+    'Gostaria de continuar por aqui.'
+  );
+}
+
 function mensagemFalarComAlguem(session: CentralSession): string {
   const resumo = outrosDados(session, []);
   return linhas(
@@ -127,6 +140,8 @@ export function buildWhatsAppMessage(session: CentralSession): string {
       return mensagemPosVenda(session);
     case 'supplier':
       return mensagemFornecedor(session);
+    case 'offgrid':
+      return mensagemOffgrid(session);
     default:
       return mensagemFalarComAlguem(session);
   }
