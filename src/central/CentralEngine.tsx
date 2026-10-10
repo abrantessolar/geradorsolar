@@ -141,7 +141,7 @@ export default function CentralEngine() {
   }
 
   const progresso = Math.min(1, (session.history.length + 1) / ESTIMATED_DEPTH);
-  const podeVoltar = session.history.length > 0 && step.id !== 'result';
+  const podeVoltar = session.history.length > 0;
   const mostrarChips = step.kind !== 'result';
 
   return (
