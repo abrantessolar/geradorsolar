@@ -64,7 +64,6 @@ export type StepKind =
   | 'choice'
   | 'scale'
   | 'text'
-  | 'lead'
   | 'video'
   | 'testimonials'
   | 'fileUpload'
@@ -117,9 +116,6 @@ export interface StepDef {
   videoKey?: string;
   /** kind 'testimonials' */
   testimonialKeys?: string[];
-  /** kind 'lead' */
-  leadFields?: Array<'nome' | 'whatsapp' | 'empresa' | 'site' | 'catalogo'>;
-  leadButtonLabel?: string;
   /** kind 'result' */
   resultVariant?: 'commercial' | 'support' | 'supplier';
 }

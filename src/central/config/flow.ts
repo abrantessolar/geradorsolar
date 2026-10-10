@@ -240,26 +240,20 @@ export const STEPS: Record<string, StepDef> = {
     subtitle: 'Muita gente começa apenas pesquisando. Quer descobrir em menos de 1 minuto se energia solar realmente faria sentido para você?',
     options: [
       { id: 'b_low_sim', label: 'Sim, quero descobrir', goto: 'B_educational' },
-      { id: 'b_low_nao', label: 'Agora não', goto: 'lead' },
+      { id: 'b_low_nao', label: 'Agora não', goto: 'result' },
     ],
   },
 
   B_educational: {
     id: 'B_educational', kind: 'info', title: 'Um jeito simples de pensar nisso',
     subtitle: 'Muitas pessoas reduzem o uso de ar-condicionado por medo da conta. Um projeto bem dimensionado pode ser pensado considerando o consumo que você gostaria de ter, e não apenas o consumo atual.',
-    next: 'lead',
+    next: 'result',
   },
 
   B_testimonials: {
     id: 'B_testimonials', kind: 'testimonials', title: 'Você está no mesmo ponto em que muitos dos nossos clientes começaram.',
     subtitle: 'Veja histórias parecidas com a sua',
-    testimonialKeys: ['residencial', 'empresa', 'hibrido'], next: 'lead',
-  },
-
-  lead: {
-    id: 'lead', kind: 'lead', title: 'Pronto. Já conseguimos entender seu perfil.',
-    subtitle: 'Para onde podemos continuar sua análise?',
-    leadFields: ['nome', 'whatsapp'], leadButtonLabel: 'RECEBER MINHA ANÁLISE', next: 'result',
+    testimonialKeys: ['residencial', 'empresa', 'hibrido'], next: 'result',
   },
 
   // ---------------------------------------------------------------------
@@ -428,11 +422,7 @@ export const STEPS: Record<string, StepDef> = {
   },
   D_apresentar: {
     id: 'D_apresentar', kind: 'text', title: 'O que você quer nos apresentar?', answerKey: 'D_apresentar',
-    placeholder: 'Escreva aqui...', next: 'leadSupplier',
-  },
-  leadSupplier: {
-    id: 'leadSupplier', kind: 'lead', title: 'Quase lá.', subtitle: 'Para continuarmos, deixe seus dados de contato.',
-    leadFields: ['nome', 'empresa', 'whatsapp', 'site', 'catalogo'], leadButtonLabel: 'ENVIAR APRESENTAÇÃO', next: 'result',
+    placeholder: 'Escreva aqui...', next: 'result',
   },
 
   // ---------------------------------------------------------------------

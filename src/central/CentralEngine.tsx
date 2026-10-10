@@ -15,7 +15,6 @@ import ExcitementScale from './components/ExcitementScale';
 import VideoStep from './components/VideoStep';
 import TestimonialCase from './components/TestimonialCase';
 import FileUpload from './components/FileUpload';
-import LeadCapture from './components/LeadCapture';
 import ResultScreen from './components/ResultScreen';
 import Progress from './components/Progress';
 import BackButton from './components/BackButton';
@@ -124,11 +123,6 @@ export default function CentralEngine() {
     goto(step.next, { videosViewed: [...session.videosViewed, 'testimonials'] });
   }
 
-  function handleLeadSubmit(lead: CentralSession['lead']) {
-    if (!step.next) return;
-    goto(step.next, { lead, completed: true });
-  }
-
   function handleBack() {
     setSession((prev) => {
       if (prev.history.length === 0) return prev;
@@ -148,7 +142,7 @@ export default function CentralEngine() {
 
   const progresso = Math.min(1, (session.history.length + 1) / ESTIMATED_DEPTH);
   const podeVoltar = session.history.length > 0 && step.id !== 'result';
-  const mostrarChips = step.kind !== 'lead' && step.kind !== 'result';
+  const mostrarChips = step.kind !== 'result';
 
   return (
     <>
@@ -223,13 +217,6 @@ export default function CentralEngine() {
               onContinue={handleTestimonialsContinue}
               onSkip={handleTestimonialsContinue}
             />
-          </QuestionScreen>
-        );
-
-      case 'lead':
-        return (
-          <QuestionScreen title={step.title} subtitle={step.subtitle}>
-            <LeadCapture fields={step.leadFields ?? ['nome', 'whatsapp']} buttonLabel={step.leadButtonLabel ?? 'Continuar'} onSubmit={handleLeadSubmit} />
           </QuestionScreen>
         );
 
