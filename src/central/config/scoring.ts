@@ -8,6 +8,9 @@ const CONSUMPTION_POINTS: Record<string, number> = {
   '600_1000': 10,
   '1000_3000': 18,
   'acima_3000': 25,
+  '250_1500': 20,
+  '1500_16000': 35,
+  'acima_16000': 45,
 };
 
 const EXCITEMENT_POINTS: Record<number, number> = {

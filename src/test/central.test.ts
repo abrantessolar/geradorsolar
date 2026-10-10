@@ -87,6 +87,18 @@ describe('buildWhatsAppMessage — nunca envia campos vazios, nome de atendente 
     expect(msg).toContain('instalado por outra empresa');
   });
 
+  it('mensagem comercial do Grupo A/B optante avisa para encaminhar à Raissa', () => {
+    const s = sessaoBase({
+      intent: 'quote',
+      consumptionRange: '1500_16000',
+      answers: { B: 'Meu consumo é muito alto / Grupo A', B_grupoA_motivo: 'Análise de demanda contratada' },
+    });
+    const msg = buildWhatsAppMessage(s);
+    expect(msg).toContain('encaminhar para a Raissa');
+    expect(msg).toContain('R$ 1.500 e R$ 16.000');
+    expect(msg).toContain('Análise de demanda contratada');
+  });
+
   it('mensagem de fornecedor inclui dados da empresa quando presentes', () => {
     const s = sessaoBase({
       customerStatus: 'supplier',

@@ -5,6 +5,9 @@ export const CONSUMPTION_LABELS: Record<string, string> = {
   '600_1000': 'conta entre R$ 600 e R$ 1.000',
   '1000_3000': 'conta entre R$ 1.000 e R$ 3.000',
   acima_3000: 'consumo acima disso (Grupo A / alto consumo)',
+  '250_1500': 'conta entre R$ 250 e R$ 1.500 (Grupo A/demanda ou B optante)',
+  '1500_16000': 'conta entre R$ 1.500 e R$ 16.000 (Grupo A/demanda ou B optante)',
+  acima_16000: 'conta acima de R$ 16.000 (Grupo A/demanda ou B optante)',
 };
 
 export const PRIORITY_LABELS: Record<string, string> = {

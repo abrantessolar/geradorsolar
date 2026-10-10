@@ -77,11 +77,11 @@ export default function CentralEngine() {
     const entryEvent = ENTRY_EVENT[option.id];
     if (entryEvent) track(entryEvent as 'entry_customer');
     if (step.id === 'A' || step.id === 'C' || step.id === 'B') track('need_selected', { stepId: step.id, optionId: option.id });
-    if (step.id === 'B_consumo') track('consumption_selected', { optionId: option.id });
+    if (step.id === 'B_consumo' || step.id === 'B_grupoA') track('consumption_selected', { optionId: option.id });
     if (step.id === 'B_priority') track('priority_selected', { optionId: option.id });
 
     const answerPatch = option.answerKey ? { answers: { ...session.answers, [option.answerKey]: option.label } } : {};
-    const consumptionPatch = step.id === 'B_consumo' ? { consumptionRange: consumptionKeyFromOption(option.id) } : {};
+    const consumptionPatch = (step.id === 'B_consumo' || step.id === 'B_grupoA') ? { consumptionRange: consumptionKeyFromOption(option.id) } : {};
     const chipPatch = option.chip ? { chips: { ...session.chips, [step.id]: option.chip } } : {};
 
     if (!entryEvent) triggerAck();
@@ -230,7 +230,10 @@ export default function CentralEngine() {
 }
 
 function consumptionKeyFromOption(optionId: string): string {
-  const map: Record<string, string> = { b_c1: '250_600', b_c2: '600_1000', b_c3: '1000_3000', b_c4: 'acima_3000' };
+  const map: Record<string, string> = {
+    b_c1: '250_600', b_c2: '600_1000', b_c3: '1000_3000', b_c4: 'acima_3000',
+    bga_1: '250_1500', bga_2: '1500_16000', bga_3: 'acima_16000',
+  };
   return map[optionId] ?? '';
 }
 

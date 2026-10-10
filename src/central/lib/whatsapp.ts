@@ -32,15 +32,21 @@ function mensagemComercial(session: CentralSession): string {
   const consumo = session.consumptionRange ? CONSUMPTION_LABELS[session.consumptionRange] : '';
   const prioridade = session.priority ? PRIORITY_LABELS[session.priority] : '';
   const empolgacao = typeof session.excitement === 'number' ? `${session.excitement}/10 (${EXCITEMENT_LABELS[session.excitement] ?? ''})` : '';
+  // Grupo A (alta tensão/demanda) ou Grupo B optante por conta alta — perfil
+  // mais técnico/corporativo, tratado diretamente pela Raissa.
+  const grupoA = Boolean(session.answers['B_grupoA_motivo']);
+  const motivoGrupoA = session.answers['B_grupoA_motivo'] || '';
 
   return linhas(
     'Olá! 👋 Vim pela Central da Três Lagoas Solar e gostaria de continuar uma análise/orçamento.',
     '',
+    grupoA && '🏢 Perfil: Grupo A (alta tensão/demanda) ou B optante — encaminhar para a Raissa.',
     interesse && `📍 Interesse: ${interesse}`,
     consumo && `⚡ Consumo/faixa da conta: ${consumo}`,
+    motivoGrupoA && `🎯 Gostaria de: ${motivoGrupoA}`,
     prioridade && `🎯 Prioridade: ${prioridade}`,
     empolgacao && `🔥 Interesse em instalar: ${empolgacao}`,
-    outrosDados(session, ['B', 'A6', 'C7', 'C8']) || null,
+    outrosDados(session, ['B', 'A6', 'C7', 'C8', 'B_grupoA_motivo']) || null,
     '',
     'Gostaria de continuar por aqui.'
   );

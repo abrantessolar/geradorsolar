@@ -14,16 +14,16 @@ export const STEPS: Record<string, StepDef> = {
     title: 'Como podemos te ajudar hoje?',
     options: [
       {
-        id: 'home_a', label: 'Já sou cliente da Três Lagoas Solar',
-        sublabel: 'Suporte, pós-venda, manutenção, monitoramento, fatura, garantia ou melhorias no sistema.',
-        icon: 'UserCheck', goto: 'A',
-        patch: { customerStatus: 'customer', entryPath: 'customer' },
-      },
-      {
         id: 'home_b', label: 'Quero um orçamento',
         sublabel: 'Descobrir qual solução faz sentido para minha casa, empresa ou propriedade.',
         icon: 'Sun', goto: 'B',
         patch: { customerStatus: 'new', intent: 'quote', entryPath: 'quote' },
+      },
+      {
+        id: 'home_a', label: 'Já sou cliente da Três Lagoas Solar',
+        sublabel: 'Suporte, pós-venda, manutenção, monitoramento, fatura, garantia ou melhorias no sistema.',
+        icon: 'UserCheck', goto: 'A',
+        patch: { customerStatus: 'customer', entryPath: 'customer' },
       },
       {
         id: 'home_c', label: 'Meu sistema foi instalado por outra empresa e preciso de ajuda',
@@ -195,8 +195,32 @@ export const STEPS: Record<string, StepDef> = {
       { id: 'b4', label: 'Reduzir o custo da minha empresa', icon: 'Building2', goto: 'B_consumo', answerKey: 'B' },
       { id: 'b5', label: 'Energia para propriedade rural', icon: 'Tractor', goto: 'B_consumo', answerKey: 'B' },
       { id: 'b6', label: 'Quero ampliar um sistema que já tenho', icon: 'ArrowUpCircle', goto: 'B_consumo', answerKey: 'B' },
-      { id: 'b7', label: 'Meu consumo é muito alto / Grupo A', icon: 'Zap', goto: 'B_consumo', answerKey: 'B' },
+      { id: 'b7', label: 'Meu consumo é muito alto / Grupo A', icon: 'Zap', goto: 'B_grupoA', answerKey: 'B' },
       { id: 'b8', label: 'Ainda não sei. Quero descobrir o que faz sentido', icon: 'HelpCircle', goto: 'B_consumo', answerKey: 'B' },
+    ],
+  },
+
+  // Grupo A (alta tensão/demanda contratada) ou Grupo B optante por conta alta —
+  // caminho mais curto e direto, sem a pergunta de prioridade/empolgação
+  // (que não fazem sentido pra esse perfil de cliente). Vai pro comercial
+  // marcado para a Raissa tratar.
+  B_grupoA: {
+    id: 'B_grupoA', kind: 'choice', title: 'Qual faixa representa melhor sua conta de energia?',
+    options: [
+      { id: 'bga_1', label: 'Minha conta fica entre R$ 250 e R$ 1.500', icon: 'Receipt', goto: 'B_grupoA_motivo', patch: { intent: 'quote' }, chip: 'Conta R$ 250–1.500' },
+      { id: 'bga_2', label: 'Minha conta fica entre R$ 1.500 e R$ 16.000', icon: 'Receipt', goto: 'B_grupoA_motivo', patch: { intent: 'quote' }, chip: 'Conta R$ 1.500–16.000' },
+      { id: 'bga_3', label: 'Minha conta fica acima de R$ 16.000', icon: 'Factory', goto: 'B_grupoA_motivo', patch: { intent: 'quote' }, chip: 'Conta acima de R$ 16.000' },
+    ],
+  },
+
+  B_grupoA_motivo: {
+    id: 'B_grupoA_motivo', kind: 'choice', title: 'O que você gostaria de fazer?', answerKey: 'B_grupoA_motivo',
+    options: [
+      { id: 'bga_m1', label: 'Fazer uma análise de viabilidade para energia solar', icon: 'Sun', goto: 'result', answerKey: 'B_grupoA_motivo', chip: 'Análise de viabilidade' },
+      { id: 'bga_m2', label: 'Tenho problemas de qualidade de fornecimento', icon: 'AlertTriangle', goto: 'result', answerKey: 'B_grupoA_motivo', chip: 'Qualidade de fornecimento' },
+      { id: 'bga_m3', label: 'Análise de demanda contratada', icon: 'Gauge', goto: 'result', answerKey: 'B_grupoA_motivo', chip: 'Demanda contratada' },
+      { id: 'bga_m4', label: 'Migração para o Grupo B', icon: 'RefreshCw', goto: 'result', answerKey: 'B_grupoA_motivo', chip: 'Migração para Grupo B' },
+      { id: 'bga_m5', label: 'Outros assuntos', icon: 'HelpCircle', goto: 'result', answerKey: 'B_grupoA_motivo' },
     ],
   },
 
