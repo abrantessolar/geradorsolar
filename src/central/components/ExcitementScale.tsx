@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import * as Icons from 'lucide-react';
 import { ScaleMilestone } from '../types';
 
 /**
@@ -32,6 +33,10 @@ export default function ExcitementScale({ milestones, onSelect }: { milestones: 
             onMouseLeave={() => setHover(null)}
             onClick={() => onSelect(m.value)}
           >
+            {m.icon && (() => {
+              const IconComp = (Icons as unknown as Record<string, Icons.LucideIcon>)[m.icon];
+              return IconComp ? <IconComp className="w-4 h-4" /> : null;
+            })()}
             <span className="ca-num">{m.value}</span>
           </button>
         ))}

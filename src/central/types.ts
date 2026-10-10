@@ -91,6 +91,8 @@ export interface OptionDef {
 export interface ScaleMilestone {
   value: number;
   label: string;
+  /** Nome de ícone lucide-react mostrado na célula/leitura deste marco. */
+  icon?: string;
   /** Rótulo curto para a barra de chips — só os marcos "quentes" costumam ter um. */
   chip?: string;
 }
