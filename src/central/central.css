@@ -21,6 +21,25 @@
   -webkit-font-smoothing: antialiased;
 }
 
+/* Tema escuro — segue o sistema do visitante por padrão; [data-theme] permite
+   forçar claro/escuro manualmente (ex.: um toggle futuro). */
+@media (prefers-color-scheme: dark) {
+  .central-app:not([data-theme="light"]) {
+    --bg:#11140C; --surface:#1A1F13; --ink:#EEF0E4; --muted:#A4AB95; --line:#2B3221; --line-strong:#3C4530;
+    --moss:#A9BC74; --moss-soft:#222A18; --gold:#E8B84B; --gold-deep:#F0C766; --gold-ink:#F0C969; --gold-soft:#2B2513;
+    --danger:#F2B8B5; --sheen:rgb(255 240 200 / .18); --cell-line:rgb(238 240 228 / .05);
+    --shadow:0 1px 2px rgb(0 0 0 / .3),0 10px 28px -16px rgb(0 0 0 / .6);
+    color-scheme: dark;
+  }
+}
+.central-app[data-theme="dark"] {
+  --bg:#11140C; --surface:#1A1F13; --ink:#EEF0E4; --muted:#A4AB95; --line:#2B3221; --line-strong:#3C4530;
+  --moss:#A9BC74; --moss-soft:#222A18; --gold:#E8B84B; --gold-deep:#F0C766; --gold-ink:#F0C969; --gold-soft:#2B2513;
+  --danger:#F2B8B5; --sheen:rgb(255 240 200 / .18); --cell-line:rgb(238 240 228 / .05);
+  --shadow:0 1px 2px rgb(0 0 0 / .3),0 10px 28px -16px rgb(0 0 0 / .6);
+  color-scheme: dark;
+}
+
 .central-app *, .central-app *::before, .central-app *::after { box-sizing: border-box; }
 .central-app button { font: inherit; }
 
