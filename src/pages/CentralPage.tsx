@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import SeoNoIndex from '@/components/SeoNoIndex';
 import CentralEngine from '@/central/CentralEngine';
-import logoWhite from '@/assets/logo-central-branco.png.asset.json';
+import logoWhite from '@/assets/logo-central-enviado.png.asset.json';
 import '@/central/central.css';
 
 /**
