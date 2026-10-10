@@ -1,9 +1,13 @@
-export default function QuestionScreen({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactNode }) {
+export default function QuestionScreen({
+  title, subtitle, eyebrow, kicker, children,
+}: { title: string; subtitle?: string; eyebrow?: string; kicker?: string; children: React.ReactNode }) {
   return (
     <div>
-      <h1 className="text-xl sm:text-2xl font-extrabold mb-2 leading-snug" style={{ color: '#1A2233' }}>{title}</h1>
-      {subtitle && <p className="text-sm mb-6" style={{ color: '#6B7585' }}>{subtitle}</p>}
-      <div className={subtitle ? '' : 'mt-5'}>{children}</div>
+      {eyebrow && <p className="ca-eyebrow">{eyebrow}</p>}
+      {kicker && <p className="ca-kicker">{kicker}</p>}
+      <h1 className="ca-title" style={{ marginBottom: subtitle ? 8 : 20 }}>{title}</h1>
+      {subtitle && <p className="ca-sub" style={{ marginBottom: 20 }}>{subtitle}</p>}
+      {children}
     </div>
   );
 }

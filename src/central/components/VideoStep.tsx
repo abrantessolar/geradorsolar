@@ -35,8 +35,8 @@ export default function VideoStep({ video, stepId, onContinue }: { video: VideoD
   };
 
   return (
-    <div className="space-y-4">
-      <div className="rounded-2xl overflow-hidden relative" style={{ background: '#1A2233' }}>
+    <div className="ca-actions">
+      <div className="ca-vp">
         <video
           ref={videoRef}
           src={video.src}
@@ -44,27 +44,26 @@ export default function VideoStep({ video, stepId, onContinue }: { video: VideoD
           muted={muted}
           playsInline
           controls
-          className="w-full aspect-video"
           onPlay={() => track('video_started', { stepId })}
           onTimeUpdate={handleTimeUpdate}
           onEnded={() => track('video_completed', { stepId })}
         />
         <button
           onClick={() => setMuted((m) => !m)}
-          className="absolute bottom-3 right-3 w-9 h-9 rounded-full flex items-center justify-center"
-          style={{ background: 'rgba(0,0,0,0.5)' }}
+          style={{ position: 'absolute', bottom: 12, right: 12, width: 36, height: 36, borderRadius: '50%', display: 'grid', placeItems: 'center', background: 'rgba(0,0,0,0.5)', border: 'none', cursor: 'pointer', zIndex: 1 }}
           aria-label={muted ? 'Ativar som' : 'Silenciar'}
         >
-          {muted ? <VolumeX className="w-4 h-4 text-white" /> : <Volume2 className="w-4 h-4 text-white" />}
+          {muted ? <VolumeX className="w-4 h-4" style={{ color: '#fff' }} /> : <Volume2 className="w-4 h-4" style={{ color: '#fff' }} />}
         </button>
       </div>
-      <div className="flex gap-3">
-        <button onClick={onContinue} className="flex-1 h-12 rounded-xl font-bold" style={{ background: '#F5A623', color: '#1A2233' }}>
+      <div className="ca-actions" style={{ flexDirection: 'row', gap: 10 }}>
+        <button onClick={onContinue} className="ca-btn ca-btn-primary" style={{ flex: 1 }}>
           Continuar
         </button>
         <button
           onClick={() => { track('video_skipped', { stepId }); onContinue(); }}
-          className="px-4 h-12 rounded-xl font-semibold" style={{ color: '#6B7585' }}
+          className="ca-btn ca-btn-text"
+          style={{ flex: 'none', width: 'auto', padding: '0 16px' }}
         >
           Pular
         </button>

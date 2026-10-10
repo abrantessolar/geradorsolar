@@ -43,6 +43,7 @@ export function createEmptySession(): CentralSession {
     intent: null,
     talkNow: false,
     answers: {},
+    chips: {},
     videosViewed: [],
     filesAttached: [],
     lead: {},

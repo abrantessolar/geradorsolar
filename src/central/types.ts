@@ -47,6 +47,8 @@ export interface CentralSession {
   consumptionRange?: string;
   priority?: 'responsabilidade' | 'preco';
   excitement?: number;
+  /** Diagnóstico acumulado mostrado como chips ("Seu diagnóstico"), chave = step id. */
+  chips: Record<string, string>;
   videosViewed: string[];
   filesAttached: string[];
   lead: LeadData;
@@ -81,6 +83,8 @@ export interface OptionDef {
   patch?: Partial<Pick<CentralSession, 'customerStatus' | 'intent' | 'priority' | 'entryPath'>>;
   /** Guarda a resposta (rótulo amigável) em session.answers[answerKey ?? step.id]. */
   answerKey?: string;
+  /** Rótulo curto mostrado na barra de "Seu diagnóstico" (chips). Omitir = não gera chip. */
+  chip?: string;
   /** Pontos de score somados ao escolher esta opção. */
   score?: number;
 }
@@ -88,6 +92,8 @@ export interface OptionDef {
 export interface ScaleMilestone {
   value: number;
   label: string;
+  /** Rótulo curto para a barra de chips — só os marcos "quentes" costumam ter um. */
+  chip?: string;
 }
 
 export interface StepDef {

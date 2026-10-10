@@ -20,6 +20,7 @@ import ResultScreen from './components/ResultScreen';
 import Progress from './components/Progress';
 import BackButton from './components/BackButton';
 import HelpNowButton from './components/HelpNowButton';
+import ChipsBar from './components/ChipsBar';
 
 // Profundidade aproximada de cada caminho, só para a barra de progresso.
 const ESTIMATED_DEPTH = 7;
@@ -31,9 +32,21 @@ const ENTRY_EVENT: Record<string, string> = {
   home_d: 'entry_supplier',
 };
 
+// Frases curtas mostradas por ~1.7s depois de cada resposta — o mesmo
+// "respiro" de confirmação do protótipo (.ca-ack), nada analítico.
+const ACKS = ['Entendido.', 'Perfeito.', 'Anotado.', 'Combinado.', 'Certo.'];
+
 export default function CentralEngine() {
   const [session, setSession] = useState<CentralSession>(() => loadSession());
   const startedTracked = useRef(false);
+  const [ack, setAck] = useState<string | null>(null);
+  const ackTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function triggerAck() {
+    if (ackTimer.current) clearTimeout(ackTimer.current);
+    setAck(ACKS[Math.floor(Math.random() * ACKS.length)]);
+    ackTimer.current = setTimeout(() => setAck(null), 1700);
+  }
 
   useEffect(() => {
     if (!startedTracked.current) {
@@ -70,18 +83,24 @@ export default function CentralEngine() {
 
     const answerPatch = option.answerKey ? { answers: { ...session.answers, [option.answerKey]: option.label } } : {};
     const consumptionPatch = step.id === 'B_consumo' ? { consumptionRange: consumptionKeyFromOption(option.id) } : {};
+    const chipPatch = option.chip ? { chips: { ...session.chips, [step.id]: option.chip } } : {};
 
-    goto(option.goto, { ...option.patch, ...answerPatch, ...consumptionPatch });
+    if (!entryEvent) triggerAck();
+    goto(option.goto, { ...option.patch, ...answerPatch, ...consumptionPatch, ...chipPatch });
   }
 
   function handleScale(value: number) {
     track(`excitement_${value}` as 'excitement_1');
     const next = step.gotoForValue ? step.gotoForValue(value) : 'result';
-    goto(next, { excitement: value });
+    const milestone = step.milestones?.find((m) => m.value === value);
+    const chipPatch = milestone?.chip ? { chips: { ...session.chips, [step.id]: milestone.chip } } : {};
+    triggerAck();
+    goto(next, { excitement: value, ...chipPatch });
   }
 
   function handleText(value: string) {
     if (!step.answerKey || !step.next) return;
+    triggerAck();
     goto(step.next, { answers: { ...session.answers, [step.answerKey]: value } });
   }
 
@@ -129,20 +148,21 @@ export default function CentralEngine() {
 
   const progresso = Math.min(1, (session.history.length + 1) / ESTIMATED_DEPTH);
   const podeVoltar = session.history.length > 0 && step.id !== 'result';
+  const mostrarChips = step.kind !== 'lead' && step.kind !== 'result';
 
   return (
-    <div className="min-h-screen pb-24" style={{ background: '#F5F7FA' }}>
-      <div className="max-w-md mx-auto px-5 pt-8">
-        {step.id !== 'home' && step.id !== 'result' && <Progress value={progresso} />}
-        {podeVoltar && <BackButton onClick={handleBack} />}
+    <>
+      {step.id !== 'home' && step.id !== 'result' && <Progress value={progresso} />}
+      <div className={`ca-ack ${ack ? 'on' : ''}`}>{ack}</div>
+      {podeVoltar && <BackButton onClick={handleBack} />}
 
-        <div key={step.id} className="animate-fade-in-up">
-          {renderStep()}
-        </div>
+      <div key={step.id} className="ca-screen">
+        {renderStep()}
+        {mostrarChips && <ChipsBar chips={session.chips} />}
       </div>
 
       {step.id !== 'result' && <HelpNowButton onClick={handleTalkNow} />}
-    </div>
+    </>
   );
 
   function renderStep() {
@@ -150,7 +170,7 @@ export default function CentralEngine() {
       case 'choice':
         return (
           <QuestionScreen title={step.title} subtitle={step.subtitle}>
-            <div className="space-y-3">
+            <div className="ca-options">
               {step.options?.map((option) => (
                 <OptionCard key={option.id} option={option} onSelect={handleOption} />
               ))}
@@ -175,7 +195,7 @@ export default function CentralEngine() {
       case 'info':
         return (
           <QuestionScreen title={step.title} subtitle={step.subtitle}>
-            <button onClick={() => step.next && goto(step.next)} className="w-full h-12 rounded-xl font-bold" style={{ background: '#F5A623', color: '#1A2233' }}>
+            <button onClick={() => step.next && goto(step.next)} className="ca-btn ca-btn-primary">
               Continuar
             </button>
           </QuestionScreen>
@@ -230,21 +250,16 @@ function consumptionKeyFromOption(optionId: string): string {
 function TextStepBody({ placeholder, onSubmit }: { placeholder?: string; onSubmit: (value: string) => void }) {
   const [value, setValue] = useState('');
   return (
-    <div className="space-y-3">
-      <textarea
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        placeholder={placeholder}
-        rows={4}
-        className="w-full rounded-xl p-4 border outline-none resize-none"
-        style={{ borderColor: '#E3E8EF', color: '#1A2233' }}
-      />
-      <button
-        disabled={value.trim().length === 0}
-        onClick={() => onSubmit(value.trim())}
-        className="w-full h-12 rounded-xl font-bold disabled:opacity-40"
-        style={{ background: '#F5A623', color: '#1A2233' }}
-      >
+    <div className="ca-actions">
+      <div className="ca-field">
+        <textarea
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          placeholder={placeholder}
+          rows={4}
+        />
+      </div>
+      <button disabled={value.trim().length === 0} onClick={() => onSubmit(value.trim())} className="ca-btn ca-btn-primary">
         Continuar
       </button>
     </div>

@@ -19,31 +19,22 @@ export default function LeadCapture({
   const valido = obrigatorios.every((f) => (lead[f] || '').trim().length > 0);
 
   return (
-    <div className="space-y-3">
+    <div className="ca-actions">
       {fields.map((field) => (
-        <div key={field}>
-          <label className="block text-[11px] font-semibold uppercase tracking-wide mb-1" style={{ color: '#6B7585' }}>
-            {FIELD_LABELS[field]}
-          </label>
+        <div key={field} className="ca-field">
+          <label>{FIELD_LABELS[field]}</label>
           <input
             type={field === 'whatsapp' ? 'tel' : 'text'}
             value={lead[field] || ''}
             onChange={(e) => setLead((l) => ({ ...l, [field]: e.target.value }))}
             placeholder={field === 'whatsapp' ? '(67) 99999-9999' : ''}
-            className="w-full h-12 rounded-xl px-4 border outline-none focus:ring-2 transition-shadow"
-            style={{ borderColor: '#E3E8EF', color: '#1A2233' }}
           />
         </div>
       ))}
-      <button
-        disabled={!valido}
-        onClick={() => { track('lead_completed'); onSubmit(lead); }}
-        className="w-full h-12 rounded-xl font-bold mt-2 transition-opacity disabled:opacity-40"
-        style={{ background: '#F5A623', color: '#1A2233' }}
-      >
+      <button disabled={!valido} onClick={() => { track('lead_completed'); onSubmit(lead); }} className="ca-btn ca-btn-primary">
         {buttonLabel}
       </button>
-      <p className="text-[11px] text-center" style={{ color: '#8891A0' }}>
+      <p className="ca-fine" style={{ textAlign: 'center' }}>
         Seus dados serão utilizados apenas para atendimento e análise da sua solicitação pela Três Lagoas Solar.
       </p>
     </div>

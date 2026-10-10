@@ -22,39 +22,32 @@ export default function FileUpload({ prompt, onDone, onSkip }: { prompt: string;
   };
 
   return (
-    <div className="space-y-4">
-      <p className="text-sm" style={{ color: '#6B7585' }}>{prompt}</p>
+    <div className="ca-actions">
+      <p className="ca-sub" style={{ margin: 0 }}>{prompt}</p>
 
       {!fileName ? (
-        <button
-          onClick={() => inputRef.current?.click()}
-          className="w-full flex flex-col items-center justify-center gap-2 py-10 rounded-2xl border-2 border-dashed transition-colors"
-          style={{ borderColor: '#E3E8EF', color: '#8891A0' }}
-        >
+        <button onClick={() => inputRef.current?.click()} className="ca-drop">
           <Upload className="w-6 h-6" />
-          <span className="text-sm font-medium">Toque para escolher um arquivo</span>
+          <strong>Toque para escolher um arquivo</strong>
         </button>
       ) : (
-        <div className="flex items-center gap-3 p-4 rounded-2xl" style={{ background: '#DCFCE7' }}>
-          <Check className="w-5 h-5 flex-shrink-0" style={{ color: '#15803D' }} />
-          <span className="text-sm font-medium flex-1 truncate" style={{ color: '#1A2233' }}>{fileName}</span>
-          <button onClick={() => setFileName(null)} aria-label="Remover"><X className="w-4 h-4" style={{ color: '#6B7585' }} /></button>
+        <div className="ca-preview">
+          <Check className="w-5 h-5" style={{ color: 'var(--gold-ink)', flexShrink: 0 }} />
+          <span style={{ flex: 1, fontWeight: 600, fontSize: 14.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{fileName}</span>
+          <button onClick={() => setFileName(null)} aria-label="Remover"><X className="w-4 h-4" style={{ color: 'var(--muted)' }} /></button>
         </div>
       )}
 
       <input ref={inputRef} type="file" accept="image/*,.pdf" className="hidden" onChange={handleChange} />
 
-      <div className="flex gap-3">
-        <button
-          onClick={() => {
-            if (fileName) { track('file_upload_completed'); onDone(fileName); } else { onSkip(); }
-          }}
-          className="flex-1 h-12 rounded-xl font-bold"
-          style={{ background: fileName ? '#F5A623' : '#F5F7FA', color: fileName ? '#1A2233' : '#8891A0' }}
-        >
-          {fileName ? 'Enviar e continuar' : 'Continuar sem arquivo'}
-        </button>
-      </div>
+      <button
+        onClick={() => {
+          if (fileName) { track('file_upload_completed'); onDone(fileName); } else { onSkip(); }
+        }}
+        className={`ca-btn ${fileName ? 'ca-btn-primary' : 'ca-btn-secondary'}`}
+      >
+        {fileName ? 'Enviar e continuar' : 'Continuar sem arquivo'}
+      </button>
     </div>
   );
 }

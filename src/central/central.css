@@ -1,0 +1,137 @@
+/* Central Inteligente — tema visual ("Diagnóstico Solar"), portado do
+   protótipo navegável aprovado para dentro do app real. Tudo escopado sob
+   .central-app para nunca vazar pro resto do site institucional. */
+
+.central-app {
+  --bg:#F7F7F1; --surface:#FFFFFF; --ink:#1D2213; --muted:#5D6550; --line:#E2E5D6; --line-strong:#C9CEB8;
+  --moss:#4A5A2A; --moss-soft:#EDF0E2; --gold:#E8B84B; --gold-deep:#D19F2C; --gold-ink:#8A6410; --gold-soft:#FBF2DA;
+  --on-gold:#1D2213; --danger:#B3261E; --sheen:rgb(255 255 255 / .6); --cell-line:rgb(29 34 19 / .06);
+  --media-a:#262F16; --media-b:#12160C; --media-ink:#F5F3EA; --media-gold:#E8B84B;
+  --display:'Bricolage Grotesque','Segoe UI',system-ui,sans-serif;
+  --body:'Figtree',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --r:14px; --ease:cubic-bezier(.2,.8,.2,1);
+  --shadow:0 1px 2px rgb(29 34 19 / .05),0 10px 28px -16px rgb(29 34 19 / .25);
+
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: 16px;
+  line-height: 1.45;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+.central-app *, .central-app *::before, .central-app *::after { box-sizing: border-box; }
+.central-app button { font: inherit; }
+
+.ca-shell { max-width: 480px; margin: 0 auto; padding: 0 16px 28px; }
+.ca-brand { display: flex; align-items: center; gap: 8px; font-family: var(--display); font-weight: 700; font-size: 15px; letter-spacing: -0.01em; padding-block: 16px 4px; }
+.ca-brand img { height: 26px; }
+
+.ca-back { all: unset; width: 36px; height: 36px; display: grid; place-items: center; border-radius: 10px; cursor: pointer; color: var(--ink); margin-left: -8px; }
+.ca-back:hover { background: var(--moss-soft); }
+
+/* Progresso — sol atravessando o arco do céu */
+.ca-horizon { display: block; width: 100%; height: 30px; margin: 4px 0 18px; overflow: visible; }
+.ca-horizon .track { fill: none; stroke: var(--line); stroke-width: 2; stroke-linecap: round; stroke-dasharray: 2 5; }
+.ca-horizon .fill { fill: none; stroke: var(--gold); stroke-width: 2.5; stroke-linecap: round; transition: stroke-dashoffset .7s var(--ease); }
+.ca-horizon .sun circle:first-child { fill: var(--gold); opacity: .22; }
+.ca-horizon .sun circle:last-child { fill: var(--gold); }
+
+.ca-ack { height: 22px; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 13.5px; font-weight: 600; color: var(--moss); opacity: 0; transform: translateY(-4px); transition: opacity .25s, transform .25s; margin-bottom: 2px; }
+.ca-ack.on { opacity: 1; transform: none; }
+
+.ca-screen { display: flex; flex-direction: column; gap: 20px; animation: ca-enter .45s var(--ease) both; }
+@keyframes ca-enter { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+
+.ca-eyebrow { margin: 0 0 -10px; font-size: 12px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; color: var(--gold-ink); }
+.ca-kicker { margin: 0 0 -8px; font-family: var(--display); font-weight: 500; font-size: 19px; color: var(--muted); }
+.ca-title { font-family: var(--display); font-weight: 700; font-size: clamp(25px, 7.2vw, 31px); line-height: 1.1; letter-spacing: -0.022em; text-wrap: balance; margin: 0; color: var(--ink); }
+.ca-sub { color: var(--muted); margin: -6px 0 0; font-size: 15.5px; max-width: 44ch; }
+
+/* Opções */
+.ca-options { display: flex; flex-direction: column; gap: 10px; }
+.ca-opt { all: unset; box-sizing: border-box; position: relative; display: flex; align-items: center; gap: 14px; width: 100%; padding: 13px 14px; min-height: 66px; background: var(--surface); border: 1.5px solid var(--line); border-radius: var(--r); cursor: pointer; transition: transform .15s, border-color .2s, background .25s; }
+.ca-opt:hover { border-color: var(--line-strong); }
+.ca-opt:active { transform: scale(.985); }
+.ca-opt .ca-ico { flex: none; width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; background: var(--moss-soft); color: var(--moss); }
+.ca-opt .ca-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; text-align: left; }
+.ca-opt .ca-lbl { font-weight: 600; font-size: 16px; line-height: 1.3; color: var(--ink); }
+.ca-opt .ca-hint { font-size: 13.5px; line-height: 1.35; color: var(--muted); }
+.ca-opt .ca-chevron { flex: none; color: var(--muted); }
+.ca-opt.ca-ghost { background: transparent; border-color: transparent; justify-content: center; color: var(--muted); font-weight: 500; min-height: 46px; }
+
+/* Botões */
+.ca-btn { all: unset; box-sizing: border-box; display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; min-height: 56px; padding: 0 20px; border-radius: var(--r); font-weight: 700; font-size: 15px; letter-spacing: .03em; cursor: pointer; text-align: center; transition: transform .15s, background .2s, opacity .2s; }
+.ca-btn:active { transform: scale(.985); }
+.ca-btn-primary { background: var(--gold); color: var(--on-gold); box-shadow: var(--shadow); }
+.ca-btn-primary:hover { background: var(--gold-deep); }
+.ca-btn-primary:disabled { opacity: .45; }
+.ca-btn-secondary { background: var(--surface); border: 1.5px solid var(--line); color: var(--ink); font-weight: 600; letter-spacing: 0; }
+.ca-btn-text { min-height: 44px; color: var(--muted); font-weight: 500; letter-spacing: 0; background: none; }
+.ca-btn-text:hover { color: var(--ink); }
+.ca-actions { display: flex; flex-direction: column; gap: 10px; }
+
+/* Escala de empolgação — módulos fotovoltaicos */
+.ca-scale-read { min-height: 56px; display: flex; align-items: center; gap: 12px; margin-bottom: 4px; }
+.ca-scale-read .ca-em-num { font-family: var(--display); font-weight: 700; font-size: 30px; line-height: 1; color: var(--gold-ink); flex: none; }
+.ca-scale-read .ca-em-txt { font-family: var(--display); font-weight: 700; font-size: 17px; line-height: 1.2; color: var(--ink); }
+.ca-scale-read .ca-em-txt.ca-idle { font-family: var(--body); font-weight: 500; font-size: 15px; color: var(--muted); }
+.ca-scale { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; align-items: end; }
+.ca-cell { all: unset; box-sizing: border-box; position: relative; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 4px; height: calc(72px + var(--i) * 12px); padding-bottom: 10px; border-radius: 10px; background: var(--bg); border: 1.5px solid var(--line); cursor: pointer; transition: border-color .25s, transform .15s; }
+.ca-cell::before { content: ""; position: absolute; inset: 0; background: linear-gradient(to top, var(--gold), transparent 110%); opacity: var(--glow, 0); transition: opacity .45s var(--ease); }
+.ca-cell::after { content: ""; position: absolute; inset: 0; background-image: linear-gradient(var(--cell-line) 1px, transparent 1px), linear-gradient(90deg, var(--cell-line) 1px, transparent 1px); background-size: 100% 14px, 50% 100%; pointer-events: none; }
+.ca-cell > * { position: relative; z-index: 1; }
+.ca-cell:active { transform: scale(.96); }
+.ca-cell.ca-sel { border-color: var(--gold); }
+.ca-cell .ca-num { font-family: var(--display); font-weight: 700; font-size: 20px; line-height: 1; color: var(--ink); }
+.ca-scale-legend { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+/* Vídeo / cases */
+.ca-vp { position: relative; overflow: hidden; width: 100%; border-radius: 16px; background: var(--media-b); color: var(--media-ink); aspect-ratio: 16/10; }
+.ca-vp video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.ca-vp-poster { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: flex-end; gap: 6px; padding: 16px; background: radial-gradient(90% 70% at 85% 8%, rgb(232 184 75 / .35), transparent 60%), linear-gradient(165deg, var(--media-a), var(--media-b)); }
+.ca-vp-cat { font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--media-gold); }
+.ca-vp-title { margin: 0; font-family: var(--display); font-weight: 700; font-size: 18px; line-height: 1.2; color: var(--media-ink); }
+.ca-vp-play { all: unset; position: absolute; left: 50%; top: 42%; transform: translate(-50%, -50%); width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center; cursor: pointer; background: rgb(255 255 255 / .94); color: var(--media-b); box-shadow: 0 8px 30px rgb(0 0 0 / .35); }
+.ca-case-list { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 8px; }
+.ca-case { all: unset; box-sizing: border-box; min-width: 0; display: flex; flex-direction: column; gap: 6px; padding: 7px 7px 9px; border-radius: 12px; border: 1.5px solid var(--line); background: var(--surface); cursor: pointer; }
+.ca-case .ca-mini { position: relative; aspect-ratio: 16/11; border-radius: 8px; overflow: hidden; background: linear-gradient(165deg, var(--media-a), var(--media-b)); display: grid; place-items: center; color: var(--media-ink); }
+.ca-case .ca-c-cat { font-size: 10.5px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--gold-ink); }
+.ca-case .ca-c-desc { font-size: 12px; line-height: 1.25; color: var(--ink); }
+
+/* Insight / card informativo */
+.ca-insight { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 22px 20px; display: flex; flex-direction: column; gap: 10px; box-shadow: var(--shadow); }
+.ca-insight .ca-tag { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; color: var(--gold-ink); }
+.ca-insight p { margin: 0; font-family: var(--display); font-weight: 500; font-size: 20px; line-height: 1.25; color: var(--ink); }
+
+/* Upload */
+.ca-drop { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 26px 16px; border: 1.5px dashed var(--line-strong); border-radius: 18px; background: var(--surface); cursor: pointer; text-align: center; transition: border-color .2s, background .2s; width: 100%; }
+.ca-drop:hover { border-color: var(--gold); background: var(--gold-soft); }
+.ca-drop svg { color: var(--gold-ink); }
+.ca-drop strong { font-size: 15px; color: var(--ink); }
+.ca-preview { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 14px; background: var(--gold-soft); border: 1.5px solid var(--gold); }
+
+/* Formulário / lead */
+.ca-field { display: flex; flex-direction: column; gap: 6px; }
+.ca-field label { font-size: 13px; font-weight: 600; color: var(--muted); letter-spacing: .04em; text-transform: uppercase; }
+.ca-field input, .ca-field textarea { font: inherit; font-size: 16px; padding: 14px 16px; min-height: 52px; border-radius: 12px; border: 1.5px solid var(--line); background: var(--surface); color: var(--ink); transition: border-color .2s; width: 100%; }
+.ca-field textarea { min-height: 110px; resize: vertical; line-height: 1.4; }
+.ca-field input:focus, .ca-field textarea:focus { outline: none; border-color: var(--moss); }
+.ca-fine { font-size: 12px; color: var(--muted); margin: 0; }
+
+/* Chips de diagnóstico acumulado */
+.ca-chips-bar { margin-top: 10px; padding-top: 14px; border-top: 1px solid var(--line); }
+.ca-chips-bar h2 { margin: 0 0 8px; font-size: 11px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); }
+.ca-chips { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.ca-chip { display: inline-flex; align-items: center; gap: 5px; font-size: 13px; font-weight: 600; padding: 5px 10px; border-radius: 999px; background: var(--moss-soft); color: var(--moss); }
+
+/* Resultado */
+.ca-done-ico { width: 56px; height: 56px; border-radius: 50%; background: var(--gold-soft); border: 2px solid var(--gold); display: grid; place-items: center; color: var(--gold-ink); margin: 0 auto 18px; }
+
+/* Botão flutuante "falar com alguém" */
+.ca-help-btn { all: unset; position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); z-index: 40; display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px; border-radius: 999px; font-size: 13.5px; font-weight: 700; cursor: pointer; background: var(--surface); color: var(--ink); border: 1px solid var(--line); box-shadow: var(--shadow); }
+
+@media (prefers-reduced-motion: reduce) {
+  .central-app *, .central-app *::before, .central-app *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}

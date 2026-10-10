@@ -2,40 +2,44 @@ import { useState } from 'react';
 import { ScaleMilestone } from '../types';
 
 /**
- * Escala de empolgação (1/3/6/9/10). Reage com uma microanimação discreta
- * conforme a nota sobe — sem nada infantil (sem confete, sem emoji gigante).
+ * Escala de empolgação como cinco módulos fotovoltaicos de alturas
+ * crescentes, que "acendem" em dourado conforme a nota sobe.
  */
 export default function ExcitementScale({ milestones, onSelect }: { milestones: ScaleMilestone[]; onSelect: (value: number) => void }) {
   const [hover, setHover] = useState<number | null>(null);
+  const atual = milestones.find((m) => m.value === hover);
 
   return (
-    <div className="space-y-2.5">
-      {milestones.map((m) => {
-        const intensidade = m.value / 10;
-        const ativo = hover === m.value;
-        return (
+    <div>
+      <div className="ca-scale-read">
+        {atual ? (
+          <>
+            <span className="ca-em-num">{atual.value}</span>
+            <span className="ca-em-txt">{atual.label}</span>
+          </>
+        ) : (
+          <span className="ca-em-txt ca-idle">Toque em uma das opções abaixo</span>
+        )}
+      </div>
+
+      <div className="ca-scale" style={{ marginBottom: 10 }}>
+        {milestones.map((m, i) => (
           <button
             key={m.value}
-            onClick={() => onSelect(m.value)}
+            className={`ca-cell ${hover === m.value ? 'ca-sel' : ''}`}
+            style={{ '--i': i, '--glow': hover === m.value ? Math.max(0.18, m.value / 14) : 0 } as React.CSSProperties}
             onMouseEnter={() => setHover(m.value)}
             onMouseLeave={() => setHover(null)}
-            className="w-full text-left flex items-center gap-3 p-4 rounded-2xl border transition-all active:scale-[0.98]"
-            style={{
-              borderColor: ativo ? '#F5A623' : '#E3E8EF',
-              background: ativo ? '#FFF8EC' : '#FFFFFF',
-              transform: ativo ? `scale(${1 + intensidade * 0.015})` : 'scale(1)',
-            }}
+            onClick={() => onSelect(m.value)}
           >
-            <span
-              className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0"
-              style={{ background: `rgba(245,166,35,${0.15 + intensidade * 0.55})`, color: '#1A2233' }}
-            >
-              {m.value}
-            </span>
-            <span className="font-medium" style={{ color: '#1A2233' }}>{m.label}</span>
+            <span className="ca-num">{m.value}</span>
           </button>
-        );
-      })}
+        ))}
+      </div>
+      <div className="ca-scale-legend">
+        <span>Só olhando</span>
+        <span>Pronto para decidir</span>
+      </div>
     </div>
   );
 }

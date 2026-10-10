@@ -20,42 +20,38 @@ export default function TestimonialCase({ cases, onContinue, onSkip }: { cases: 
   if (habilitados.length === 0) return null;
 
   return (
-    <div className="space-y-3">
+    <div className="ca-actions">
       {habilitados.map((c) => (
-        <div key={c.key} className="rounded-2xl border overflow-hidden" style={{ borderColor: '#E3E8EF' }}>
+        <div key={c.key} className="ca-vp" style={{ aspectRatio: playing === c.key ? '16/10' : undefined }}>
           {playing === c.key ? (
             <video
               src={c.src}
               poster={c.thumbnail}
               controls
               autoPlay
-              className="w-full aspect-video"
               onPlay={() => track('video_started', { stepId: `testimonial_${c.key}` })}
               onEnded={() => track('video_completed', { stepId: `testimonial_${c.key}` })}
             />
           ) : (
             <button
               onClick={() => { setPlaying(c.key); track('video_started', { stepId: `testimonial_${c.key}_open` }); }}
-              className="w-full flex items-center gap-3 p-4 text-left"
+              style={{ all: 'unset', position: 'absolute', inset: 0, cursor: 'pointer' }}
             >
-              <div className="w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: '#1A3C5E' }}>
-                <Play className="w-5 h-5 text-white" />
+              <div className="ca-vp-poster">
+                <p className="ca-vp-cat">{c.category}</p>
+                <p className="ca-vp-title">{c.title}</p>
               </div>
-              <div className="min-w-0">
-                <p className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: '#F5A623' }}>{c.category}</p>
-                <p className="font-semibold" style={{ color: '#1A2233' }}>{c.title}</p>
-                {c.description && <p className="text-sm mt-0.5" style={{ color: '#6B7585' }}>{c.description}</p>}
-              </div>
+              <span className="ca-vp-play"><Play className="w-5 h-5" /></span>
             </button>
           )}
         </div>
       ))}
 
-      <div className="flex gap-3 pt-1">
-        <button onClick={onContinue} className="flex-1 h-12 rounded-xl font-bold" style={{ background: '#F5A623', color: '#1A2233' }}>
+      <div className="ca-actions" style={{ flexDirection: 'row', gap: 10 }}>
+        <button onClick={onContinue} className="ca-btn ca-btn-primary" style={{ flex: 1 }}>
           Continuar
         </button>
-        <button onClick={() => { track('video_skipped', { stepId: 'testimonials' }); onSkip(); }} className="px-4 h-12 rounded-xl font-semibold" style={{ color: '#6B7585' }}>
+        <button onClick={() => { track('video_skipped', { stepId: 'testimonials' }); onSkip(); }} className="ca-btn ca-btn-text" style={{ flex: 'none', width: 'auto', padding: '0 16px' }}>
           Pular
         </button>
       </div>

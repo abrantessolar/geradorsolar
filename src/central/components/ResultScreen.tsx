@@ -62,17 +62,13 @@ export default function ResultScreen({ session }: { session: CentralSession }) {
   };
 
   return (
-    <div className="text-center py-6">
-      <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5" style={{ background: '#FFF4E0' }}>
-        <MessageCircle className="w-7 h-7" style={{ color: '#F5A623' }} />
+    <div style={{ textAlign: 'center', padding: '24px 0' }}>
+      <div className="ca-done-ico">
+        <MessageCircle className="w-7 h-7" />
       </div>
-      <h1 className="text-xl font-extrabold mb-2" style={{ color: '#1A2233' }}>{titulo}</h1>
-      <p className="text-sm mb-7 max-w-sm mx-auto" style={{ color: '#6B7585' }}>{corpo}</p>
-      <button
-        onClick={abrirWhatsApp}
-        className="w-full h-13 py-3.5 rounded-xl font-bold flex items-center justify-center gap-2"
-        style={{ background: '#25D366', color: '#FFFFFF' }}
-      >
+      <h1 className="ca-title" style={{ marginBottom: 8 }}>{titulo}</h1>
+      <p className="ca-sub" style={{ margin: '0 auto 28px', maxWidth: '36ch' }}>{corpo}</p>
+      <button onClick={abrirWhatsApp} className="ca-btn ca-btn-primary" style={{ background: '#25D366', color: '#fff' }}>
         <MessageCircle className="w-5 h-5" /> {botao}
       </button>
     </div>

@@ -206,19 +206,19 @@ export const STEPS: Record<string, StepDef> = {
       {
         id: 'b_c1', label: 'Minha conta fica entre R$ 250 e R$ 600',
         sublabel: 'ou eu gostaria de usar mais o ar-condicionado sem medo da conta',
-        goto: 'B_priority', patch: { intent: 'quote' },
+        goto: 'B_priority', patch: { intent: 'quote' }, chip: 'Conta R$ 250–600',
       },
-      { id: 'b_c2', label: 'Minha conta fica entre R$ 600 e R$ 1.000', goto: 'B_priority', patch: { intent: 'quote' } },
-      { id: 'b_c3', label: 'Minha conta fica entre R$ 1.000 e R$ 3.000', goto: 'B_priority', patch: { intent: 'quote' } },
-      { id: 'b_c4', label: 'Meu consumo é ainda maior', goto: 'B_priority', patch: { intent: 'quote' } },
+      { id: 'b_c2', label: 'Minha conta fica entre R$ 600 e R$ 1.000', goto: 'B_priority', patch: { intent: 'quote' }, chip: 'Conta R$ 600–1.000' },
+      { id: 'b_c3', label: 'Minha conta fica entre R$ 1.000 e R$ 3.000', goto: 'B_priority', patch: { intent: 'quote' }, chip: 'Conta R$ 1.000–3.000' },
+      { id: 'b_c4', label: 'Meu consumo é ainda maior', goto: 'B_priority', patch: { intent: 'quote' }, chip: 'Consumo acima de R$ 3.000' },
     ],
   },
 
   B_priority: {
     id: 'B_priority', kind: 'choice', title: 'Na hora de escolher quem vai instalar seu sistema, qual dessas opções combina mais com você?',
     options: [
-      { id: 'b_p1', label: 'Quero uma empresa local, responsável pela instalação e pelo pós-venda', goto: 'B_excitement', patch: { priority: 'responsabilidade' } },
-      { id: 'b_p2', label: 'Meu foco principal é conseguir o menor orçamento possível', goto: 'B_excitement', patch: { priority: 'preco' } },
+      { id: 'b_p1', label: 'Quero uma empresa local, responsável pela instalação e pelo pós-venda', goto: 'B_excitement', patch: { priority: 'responsabilidade' }, chip: 'Prefere empresa local' },
+      { id: 'b_p2', label: 'Meu foco principal é conseguir o menor orçamento possível', goto: 'B_excitement', patch: { priority: 'preco' }, chip: 'Foco no orçamento' },
     ],
   },
 
@@ -228,9 +228,9 @@ export const STEPS: Record<string, StepDef> = {
     milestones: [
       { value: 1, label: 'Só estou dando uma olhada' },
       { value: 3, label: 'Tenho curiosidade' },
-      { value: 6, label: 'Já estou considerando de verdade' },
-      { value: 9, label: 'Quero colocar solar' },
-      { value: 10, label: 'Se os números fizerem sentido, quero resolver isso' },
+      { value: 6, label: 'Já estou considerando de verdade', chip: 'Considerando de verdade' },
+      { value: 9, label: 'Quero colocar solar', chip: 'Quer colocar solar' },
+      { value: 10, label: 'Se os números fizerem sentido, quero resolver isso', chip: 'Pronto para decidir' },
     ],
     gotoForValue: (v) => (v <= 3 ? 'B_low' : 'B_testimonials'),
   },
