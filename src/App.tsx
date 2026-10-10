@@ -26,6 +26,7 @@ import BombeamentoPage from "@/pages/BombeamentoPage";
 import SimuladorHibridoPage from "@/pages/SimuladorHibridoPage";
 import SimuladorCartaoPage from "@/pages/SimuladorCartaoPage";
 import AntecipacaoRecebiveisPage from "@/pages/AntecipacaoRecebiveisPage";
+import CentralPage from "@/pages/CentralPage";
 import PropostaPlacaFerramentaPage from "@/pages/PropostaPlacaFerramentaPage";
 import ClientesPage from "@/pages/ClientesPage";
 import RastreamentoPage from "@/pages/RastreamentoPage";
@@ -260,6 +261,7 @@ const App = () => {
                 <SeoNoIndex /><Layout><AntecipacaoRecebiveisPage /></Layout>
               </ProtectedRoute>
             } />
+            <Route path="/central" element={<CentralPage />} />
             <Route path="/energia" element={<div><SeoNoIndex /><EnergiaProvider><EnergiaLogin /></EnergiaProvider></div>} />
             <Route path="/energia/cadastro" element={<div><SeoNoIndex /><EnergiaProvider><EnergiaCadastro /></EnergiaProvider></div>} />
 
