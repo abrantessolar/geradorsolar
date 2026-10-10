@@ -7,5 +7,5 @@ export const contacts: Record<DestinationKey, string> = {
   externalSupport: '5567998955576',
   customerSupport: '5567996499267',
   general: '5567996448995',
-  supplier: '5567996448995', // padrão atual — fácil de trocar se mudar no futuro
+  supplier: '5567998955576', // WhatsApp do Jackson
 };
