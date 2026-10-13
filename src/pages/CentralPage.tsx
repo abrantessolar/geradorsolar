@@ -1,8 +1,12 @@
 import { useEffect } from 'react';
+import { MapPin } from 'lucide-react';
 import SeoNoIndex from '@/components/SeoNoIndex';
 import CentralEngine from '@/central/CentralEngine';
 import logoWhite from '@/assets/logo-central-enviado.png.asset.json';
 import '@/central/central.css';
+
+const ENDERECO = 'Rua Luiz Correa da Silveira, 934 — Jardim Alvorada, Três Lagoas/MS';
+const ENDERECO_MAPS_URL = 'https://maps.app.goo.gl/oP8kGwKs1Nrr7mGg9';
 
 /**
  * Central Inteligente — "Linktree inteligente" de atendimento/qualificação.
@@ -33,6 +37,9 @@ export default function CentralPage() {
           <img src={logoWhite.url} alt="Três Lagoas Solar" />
           Três Lagoas Solar
         </div>
+        <a href={ENDERECO_MAPS_URL} target="_blank" rel="noopener noreferrer" className="ca-address">
+          <MapPin /> {ENDERECO}
+        </a>
         <CentralEngine />
       </div>
     </div>
