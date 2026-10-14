@@ -198,9 +198,18 @@ export const STEPS: Record<string, StepDef> = {
       { id: 'b4', label: 'Reduzir o custo da minha empresa', icon: 'Building2', goto: 'B_consumo', answerKey: 'B' },
       { id: 'b7', label: 'Sou indústria ou grande consumidor (Grupo A)', icon: 'Factory', goto: 'B_grupoA', answerKey: 'B' },
       { id: 'b9', label: 'Sistema isolado, híbrido ou fora da rede (offgrid)', icon: 'Unplug', goto: 'B_offgrid', answerKey: 'B' },
+      // Cotação de seguro pra quem ainda não é cliente TLS (sistema próprio ou
+      // instalado por outra empresa) — cliente já existente usa o fluxo A (A7).
+      { id: 'b10', label: 'Cotação de seguro para o meu sistema solar', icon: 'ShieldCheck', goto: 'B_seguro', answerKey: 'B' },
       { id: 'b6', label: 'Quero ampliar um sistema que já tenho', icon: 'ArrowUpCircle', goto: 'B_consumo', answerKey: 'B' },
       { id: 'b8', label: 'Ainda não sei. Quero descobrir o que faz sentido', icon: 'HelpCircle', goto: 'B_consumo', answerKey: 'B' },
     ],
+  },
+
+  B_seguro: {
+    id: 'B_seguro', kind: 'text', title: 'Conte rapidamente sobre o seu sistema.',
+    subtitle: 'Marca do inversor, potência aproximada e se foi instalado pela Três Lagoas Solar ou por outra empresa.',
+    answerKey: 'B_seguro', placeholder: 'Escreva aqui...', next: 'result',
   },
 
   // Sistemas isolados/híbridos/offgrid — perfil bem diferente do residencial

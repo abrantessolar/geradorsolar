@@ -43,7 +43,9 @@
 .central-app *, .central-app *::before, .central-app *::after { box-sizing: border-box; }
 .central-app button { font: inherit; }
 
-.ca-shell { max-width: 480px; margin: 0 auto; padding: 0 16px 28px; }
+/* padding-bottom extra para o conteúdo nunca ficar embaixo do botão
+   flutuante "Prefere falar com alguém?" (ca-help-btn, position: fixed). */
+.ca-shell { max-width: 480px; margin: 0 auto; padding: 0 16px 92px; }
 .ca-brand { display: flex; align-items: center; gap: 8px; font-family: var(--display); font-weight: 700; font-size: 15px; letter-spacing: -0.01em; padding-block: 16px 4px; }
 .ca-brand img { height: 26px; }
 
