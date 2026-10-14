@@ -206,10 +206,41 @@ export const STEPS: Record<string, StepDef> = {
     ],
   },
 
+  // Cotação de seguro — uma pergunta objetiva por tela, o essencial pra
+  // cotar. A nota fiscal só é pedida depois, na hora de contratar.
   B_seguro: {
-    id: 'B_seguro', kind: 'text', title: 'Conte rapidamente sobre o seu sistema.',
-    subtitle: 'Marca do inversor, potência aproximada e se foi instalado pela Três Lagoas Solar ou por outra empresa.',
-    answerKey: 'B_seguro', placeholder: 'Escreva aqui...', next: 'result',
+    id: 'B_seguro', kind: 'choice', title: 'O sistema é on-grid ou off-grid?', answerKey: 'B_seguro_tipo',
+    options: [
+      { id: 'bseg_tipo_on', label: 'On-grid (conectado à rede)', icon: 'Zap', goto: 'B_seguro_cep', answerKey: 'B_seguro_tipo' },
+      { id: 'bseg_tipo_off', label: 'Off-grid (isolado/híbrido)', icon: 'Unplug', goto: 'B_seguro_cep', answerKey: 'B_seguro_tipo' },
+    ],
+  },
+  B_seguro_cep: {
+    id: 'B_seguro_cep', kind: 'text', title: 'Qual é o CEP da instalação?', answerKey: 'B_seguro_cep',
+    placeholder: 'Ex.: 79600-000', next: 'B_seguro_placas',
+  },
+  B_seguro_placas: {
+    id: 'B_seguro_placas', kind: 'text', title: 'Quantas placas tem o sistema?', answerKey: 'B_seguro_placas',
+    placeholder: 'Ex.: 12 placas', next: 'B_seguro_valor',
+  },
+  B_seguro_valor: {
+    id: 'B_seguro_valor', kind: 'text', title: 'Qual foi o valor aproximado pago pelo sistema?',
+    subtitle: 'Pra cotar não precisa da nota fiscal — ela só é pedida depois, na hora de contratar o seguro.',
+    answerKey: 'B_seguro_valor', placeholder: 'Ex.: R$ 25.000', next: 'B_seguro_zona',
+  },
+  B_seguro_zona: {
+    id: 'B_seguro_zona', kind: 'choice', title: 'A instalação é urbana ou rural?', answerKey: 'B_seguro_zona',
+    options: [
+      { id: 'bseg_zona_urbano', label: 'Urbana', icon: 'Building2', goto: 'B_seguro_fixacao', answerKey: 'B_seguro_zona' },
+      { id: 'bseg_zona_rural', label: 'Rural', icon: 'Tractor', goto: 'B_seguro_fixacao', answerKey: 'B_seguro_zona' },
+    ],
+  },
+  B_seguro_fixacao: {
+    id: 'B_seguro_fixacao', kind: 'choice', title: 'O sistema está no solo ou no telhado?', answerKey: 'B_seguro_fixacao',
+    options: [
+      { id: 'bseg_fix_solo', label: 'No solo', icon: 'LandPlot', goto: 'result', answerKey: 'B_seguro_fixacao' },
+      { id: 'bseg_fix_telhado', label: 'No telhado', icon: 'Home', goto: 'result', answerKey: 'B_seguro_fixacao' },
+    ],
   },
 
   // Sistemas isolados/híbridos/offgrid — perfil bem diferente do residencial
