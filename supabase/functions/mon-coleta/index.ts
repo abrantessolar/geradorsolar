@@ -149,7 +149,18 @@ async function foxessPost(path: string, body: unknown): Promise<any> {
     headers: await foxessHeaders(path),
     body: JSON.stringify(body),
   });
-  const data = await res.json();
+  const textoBruto = await res.text();
+  let data: any;
+  try {
+    data = JSON.parse(textoBruto);
+  } catch {
+    // Diagnóstico: manda o status HTTP + os primeiros 300 caracteres da
+    // resposta (pode ser uma página de erro em HTML, um redirect, etc.)
+    // em vez de só "Unexpected end of JSON input".
+    throw new Error(
+      `FoxESS ${path} retornou algo não-JSON (HTTP ${res.status} ${res.statusText}): ${textoBruto.slice(0, 300) || "(corpo vazio)"}`
+    );
+  }
   if (data.errno && data.errno !== 0) {
     throw new Error(`FoxESS ${path} errno=${data.errno} ${data.msg ?? ""}`);
   }
