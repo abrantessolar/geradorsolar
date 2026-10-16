@@ -30,7 +30,7 @@ const supabaseAdmin = createClient(
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
 );
 
-const FOXESS_API_TOKEN = Deno.env.get("FOXESS_API_TOKEN"); // configurar em Supabase Secrets
+const FOXESS_API_TOKEN = Deno.env.get("FOXESS_API_KEY"); // nome do secret no Supabase: FOXESS_API_KEY
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -169,7 +169,7 @@ async function coletarFoxess(): Promise<{ leituras: LeituraNormalizada[]; erros:
   const erros: string[] = [];
 
   if (!FOXESS_API_TOKEN) {
-    return { leituras, erros: ["FOXESS_API_TOKEN não configurado em Secrets — pulando FoxESS"] };
+    return { leituras, erros: ["FOXESS_API_KEY não configurado em Secrets — pulando FoxESS"] };
   }
 
   let dispositivos: Array<{ sn: string; stationName?: string }> = [];
