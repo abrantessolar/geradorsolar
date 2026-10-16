@@ -1777,6 +1777,8 @@ export type Database = {
           cliente_base_id: string | null
           criado_em: string
           data_instalacao: string | null
+          estado_atual: string
+          estado_atualizado_em: string | null
           id: string
           id_externo: string
           kwp: number | null
@@ -1792,6 +1794,8 @@ export type Database = {
           cliente_base_id?: string | null
           criado_em?: string
           data_instalacao?: string | null
+          estado_atual?: string
+          estado_atualizado_em?: string | null
           id?: string
           id_externo: string
           kwp?: number | null
@@ -1807,6 +1811,8 @@ export type Database = {
           cliente_base_id?: string | null
           criado_em?: string
           data_instalacao?: string | null
+          estado_atual?: string
+          estado_atualizado_em?: string | null
           id?: string
           id_externo?: string
           kwp?: number | null
