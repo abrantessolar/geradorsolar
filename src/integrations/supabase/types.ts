@@ -1562,6 +1562,269 @@ export type Database = {
         }
         Relationships: []
       }
+      mon_chamado_eventos: {
+        Row: {
+          chamado_id: string
+          criado_em: string
+          id: string
+          mensagem: string | null
+          tipo: string
+          usuario_id: string | null
+        }
+        Insert: {
+          chamado_id: string
+          criado_em?: string
+          id?: string
+          mensagem?: string | null
+          tipo: string
+          usuario_id?: string | null
+        }
+        Update: {
+          chamado_id?: string
+          criado_em?: string
+          id?: string
+          mensagem?: string | null
+          tipo?: string
+          usuario_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mon_chamado_eventos_chamado_id_fkey"
+            columns: ["chamado_id"]
+            isOneToOne: false
+            referencedRelation: "mon_chamados"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mon_chamados: {
+        Row: {
+          aberto_em: string
+          cliente_base_id: string | null
+          etapa: string
+          id: string
+          prazo: string | null
+          resolucao: string | null
+          resolvido_em: string | null
+          responsavel: string | null
+          tipo: string
+          usina_id: string
+        }
+        Insert: {
+          aberto_em?: string
+          cliente_base_id?: string | null
+          etapa?: string
+          id?: string
+          prazo?: string | null
+          resolucao?: string | null
+          resolvido_em?: string | null
+          responsavel?: string | null
+          tipo: string
+          usina_id: string
+        }
+        Update: {
+          aberto_em?: string
+          cliente_base_id?: string | null
+          etapa?: string
+          id?: string
+          prazo?: string | null
+          resolucao?: string | null
+          resolvido_em?: string | null
+          responsavel?: string | null
+          tipo?: string
+          usina_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mon_chamados_cliente_base_id_fkey"
+            columns: ["cliente_base_id"]
+            isOneToOne: false
+            referencedRelation: "clientes_base"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mon_chamados_usina_id_fkey"
+            columns: ["usina_id"]
+            isOneToOne: false
+            referencedRelation: "mon_usinas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mon_diario: {
+        Row: {
+          data: string
+          desvio_pct: number | null
+          esperado_hsp: number | null
+          estado: string
+          id: string
+          kwh: number | null
+          kwh_por_kwp: number | null
+          mediana_cidade: number | null
+          usina_id: string
+        }
+        Insert: {
+          data: string
+          desvio_pct?: number | null
+          esperado_hsp?: number | null
+          estado?: string
+          id?: string
+          kwh?: number | null
+          kwh_por_kwp?: number | null
+          mediana_cidade?: number | null
+          usina_id: string
+        }
+        Update: {
+          data?: string
+          desvio_pct?: number | null
+          esperado_hsp?: number | null
+          estado?: string
+          id?: string
+          kwh?: number | null
+          kwh_por_kwp?: number | null
+          mediana_cidade?: number | null
+          usina_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mon_diario_usina_id_fkey"
+            columns: ["usina_id"]
+            isOneToOne: false
+            referencedRelation: "mon_usinas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mon_guias_reconexao: {
+        Row: {
+          atualizado_em: string
+          conteudo: string
+          criado_em: string
+          id: string
+          marca: string
+          modelo: string | null
+          ordem: number
+          titulo: string
+        }
+        Insert: {
+          atualizado_em?: string
+          conteudo: string
+          criado_em?: string
+          id?: string
+          marca: string
+          modelo?: string | null
+          ordem?: number
+          titulo: string
+        }
+        Update: {
+          atualizado_em?: string
+          conteudo?: string
+          criado_em?: string
+          id?: string
+          marca?: string
+          modelo?: string | null
+          ordem?: number
+          titulo?: string
+        }
+        Relationships: []
+      }
+      mon_leituras: {
+        Row: {
+          alarmes: string[]
+          coletado_em: string
+          energia_dia_kwh: number | null
+          energia_total_kwh: number | null
+          id: number
+          online: boolean
+          potencia_w: number | null
+          usina_id: string
+        }
+        Insert: {
+          alarmes?: string[]
+          coletado_em?: string
+          energia_dia_kwh?: number | null
+          energia_total_kwh?: number | null
+          id?: never
+          online?: boolean
+          potencia_w?: number | null
+          usina_id: string
+        }
+        Update: {
+          alarmes?: string[]
+          coletado_em?: string
+          energia_dia_kwh?: number | null
+          energia_total_kwh?: number | null
+          id?: never
+          online?: boolean
+          potencia_w?: number | null
+          usina_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mon_leituras_usina_id_fkey"
+            columns: ["usina_id"]
+            isOneToOne: false
+            referencedRelation: "mon_usinas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mon_usinas: {
+        Row: {
+          ativo: boolean
+          atualizado_em: string
+          cidade: string | null
+          cliente_base_id: string | null
+          criado_em: string
+          data_instalacao: string | null
+          id: string
+          id_externo: string
+          kwp: number | null
+          marca: string
+          modelo: string | null
+          sn_inversor: string | null
+          vinculo_confirmado: boolean
+        }
+        Insert: {
+          ativo?: boolean
+          atualizado_em?: string
+          cidade?: string | null
+          cliente_base_id?: string | null
+          criado_em?: string
+          data_instalacao?: string | null
+          id?: string
+          id_externo: string
+          kwp?: number | null
+          marca: string
+          modelo?: string | null
+          sn_inversor?: string | null
+          vinculo_confirmado?: boolean
+        }
+        Update: {
+          ativo?: boolean
+          atualizado_em?: string
+          cidade?: string | null
+          cliente_base_id?: string | null
+          criado_em?: string
+          data_instalacao?: string | null
+          id?: string
+          id_externo?: string
+          kwp?: number | null
+          marca?: string
+          modelo?: string | null
+          sn_inversor?: string | null
+          vinculo_confirmado?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mon_usinas_cliente_base_id_fkey"
+            columns: ["cliente_base_id"]
+            isOneToOne: false
+            referencedRelation: "clientes_base"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       movimentacoes_estoque: {
         Row: {
           criado_em: string
