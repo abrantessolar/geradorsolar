@@ -108,22 +108,11 @@ interface LeituraNormalizada {
 }
 
 // ---------- adaptador FoxESS ----------
-// FoxESS OpenAPI (foxesscloud.com/op/v0). Assinatura: md5(`${path}\r\n${token}\r\n${timestamp}`).
-//
-// Endpoints, nomes de campo e enum de `status` confirmados contra a
-// documentação pública da FoxESS (OpenApiDocument.html) em 2026-10-16 —
-// ainda NÃO testado contra uma chamada real (a conta é do tipo Retailer,
-// chave única pra Org inteira — a key existe mas a primeira chamada de
-// verdade só vai acontecer quando o agendador do GitHub Actions rodar).
-//
-// ⚠️ Pontos que ficaram ambíguos na própria doc da FoxESS, então vale
-// reconfirmar se o primeiro ciclo de coleta der erro:
-//   - domínio: a doc lista `www.foxesscloud.com`, mas um exemplo próprio
-//     usa `portal.foxesscloud.us` — contas de região diferente podem
-//     precisar de outro domínio.
-//   - a assinatura usa só o path (`/op/v1/device/real/query`), não a URL
-//     completa — é o que a maioria dos exemplos da comunidade faz, mas a
-//     doc em si fala em "url" de forma ambígua.
+// FoxESS OpenAPI (foxesscloud.com/op/v0 + op/v1). Assinatura:
+// md5(`${path}\r\n${token}\r\n${timestamp}`). Confirmado funcionando
+// contra a conta real da TLS em 2026-10-16 (84 usinas, 252 leituras no
+// primeiro ciclo) — domínio, endpoints e nomes de variável abaixo estão
+// validados, não é mais rascunho.
 const FOXESS_BASE = "https://www.foxesscloud.com";
 
 async function foxessMd5(texto: string): Promise<string> {
@@ -295,6 +284,152 @@ async function gravarLeituras(leituras: LeituraNormalizada[]): Promise<{ gravada
   return { gravadas, erros };
 }
 
+// ---------- Fase 2: avaliação de estado + fila de contato automática ----------
+// Baixo desempenho (comparação com mediana da cidade / HSP ao longo de
+// vários dias) fica pra Fase 3, quando mon_diario estiver populado com
+// histórico suficiente — por ora só offline e sem_geração, que dá pra
+// calcular com a leitura mais recente de cada usina.
+const OFFLINE_HORAS = 24;
+const SEM_GERACAO_POTENCIA_W = 50; // abaixo disso é "praticamente zero"
+const MEDIANA_MINIMA_GERANDO_W = 200; // mediana da frota acima disso = "é dia de sol agora"
+
+type EstadoUsina = "normal" | "sem_geracao" | "offline";
+
+async function atualizarChamado(usinaId: string, estado: EstadoUsina): Promise<void> {
+  if (estado === "normal") {
+    // Fecha automaticamente qualquer chamado aberto dessa usina.
+    const { data: abertos } = await supabaseAdmin
+      .from("mon_chamados")
+      .select("id")
+      .eq("usina_id", usinaId)
+      .is("resolvido_em", null);
+    for (const c of abertos ?? []) {
+      await supabaseAdmin
+        .from("mon_chamados")
+        .update({ etapa: "resolvido", resolvido_em: new Date().toISOString(), resolucao: "auto" })
+        .eq("id", c.id);
+      await supabaseAdmin.from("mon_chamado_eventos").insert({
+        chamado_id: c.id,
+        tipo: "mudanca_etapa",
+        mensagem: "Resolvido automaticamente — usina voltou a gerar normalmente.",
+      });
+    }
+    return;
+  }
+
+  // offline ou sem_geracao: no máximo um chamado aberto por usina (índice
+  // único garante isso no banco também) — se já existe, só atualiza o
+  // tipo caso o problema tenha mudado (ex.: estava offline, voltou a
+  // comunicar mas sem gerar).
+  const { data: existente } = await supabaseAdmin
+    .from("mon_chamados")
+    .select("id, tipo")
+    .eq("usina_id", usinaId)
+    .is("resolvido_em", null)
+    .maybeSingle();
+
+  if (existente) {
+    if (existente.tipo !== estado) {
+      await supabaseAdmin.from("mon_chamados").update({ tipo: estado }).eq("id", existente.id);
+    }
+    return;
+  }
+
+  const { data: usina } = await supabaseAdmin
+    .from("mon_usinas")
+    .select("cliente_base_id")
+    .eq("id", usinaId)
+    .single();
+
+  await supabaseAdmin.from("mon_chamados").insert({
+    usina_id: usinaId,
+    cliente_base_id: usina?.cliente_base_id ?? null,
+    tipo: estado,
+    etapa: "novo",
+  });
+}
+
+async function avaliarEstados(): Promise<{ atualizadas: number; erros: string[] }> {
+  const erros: string[] = [];
+  let atualizadas = 0;
+
+  const { data: usinas, error: erroUsinas } = await supabaseAdmin
+    .from("mon_usinas")
+    .select("id, estado_atual")
+    .eq("ativo", true);
+  if (erroUsinas) return { atualizadas: 0, erros: [`Falha ao listar usinas pra avaliar estado: ${erroUsinas.message}`] };
+  if (!usinas || usinas.length === 0) return { atualizadas: 0, erros: [] };
+
+  const usinaIds = usinas.map((u: any) => u.id);
+
+  // Leituras mais recentes primeiro — pega só a primeira que aparecer por
+  // usina. Volume ainda pequeno (Fase 1), não precisa de window function.
+  const { data: leituras, error: erroLeituras } = await supabaseAdmin
+    .from("mon_leituras")
+    .select("usina_id, coletado_em, potencia_w, online")
+    .in("usina_id", usinaIds)
+    .order("coletado_em", { ascending: false })
+    .limit(usinaIds.length * 3); // folga pra garantir cobrir a leitura mais recente de cada usina
+  if (erroLeituras) return { atualizadas: 0, erros: [`Falha ao buscar leituras pra avaliar estado: ${erroLeituras.message}`] };
+
+  const ultimaPorUsina = new Map<string, { coletado_em: string; potencia_w: number | null; online: boolean }>();
+  for (const l of leituras ?? []) {
+    if (!ultimaPorUsina.has(l.usina_id)) ultimaPorUsina.set(l.usina_id, l);
+  }
+
+  // Mediana de potência entre quem está comunicando agora — serve de
+  // referência pra saber se "é dia de sol": à noite a mediana cai junto
+  // com todo mundo, então ninguém é marcado como sem_geração à toa.
+  const potenciasOnline = [...ultimaPorUsina.values()]
+    .filter((l) => l.online && l.potencia_w != null)
+    .map((l) => l.potencia_w as number)
+    .sort((a, b) => a - b);
+  const medianaPotencia = potenciasOnline.length ? potenciasOnline[Math.floor(potenciasOnline.length / 2)] : 0;
+  const ehMomentoDeGeracao = medianaPotencia >= MEDIANA_MINIMA_GERANDO_W;
+
+  const agora = Date.now();
+
+  for (const usina of usinas as Array<{ id: string; estado_atual: EstadoUsina }>) {
+    const ultima = ultimaPorUsina.get(usina.id);
+    let novoEstado: EstadoUsina;
+
+    if (!ultima) {
+      novoEstado = "offline"; // nunca teve nenhuma leitura
+    } else {
+      const horasDesdeUltima = (agora - new Date(ultima.coletado_em).getTime()) / 3_600_000;
+      if (!ultima.online || horasDesdeUltima > OFFLINE_HORAS) {
+        novoEstado = "offline";
+      } else if (ehMomentoDeGeracao && (ultima.potencia_w ?? 0) < SEM_GERACAO_POTENCIA_W) {
+        novoEstado = "sem_geracao";
+      } else {
+        novoEstado = "normal";
+      }
+    }
+
+    try {
+      if (novoEstado !== usina.estado_atual) {
+        await supabaseAdmin
+          .from("mon_usinas")
+          .update({ estado_atual: novoEstado, estado_atualizado_em: new Date().toISOString() })
+          .eq("id", usina.id);
+        await atualizarChamado(usina.id, novoEstado);
+        atualizadas++;
+      } else if (novoEstado !== "normal") {
+        // Estado persistente (ex.: offline há dias) — atualiza só o
+        // carimbo de "última checagem" pro painel saber que não ficou parado.
+        await supabaseAdmin
+          .from("mon_usinas")
+          .update({ estado_atualizado_em: new Date().toISOString() })
+          .eq("id", usina.id);
+      }
+    } catch (e) {
+      erros.push(`Avaliação de estado ${usina.id}: ${e instanceof Error ? e.message : e}`);
+    }
+  }
+
+  return { atualizadas, erros };
+}
+
 // ---------- handler ----------
 serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -306,10 +441,12 @@ serve(async (req: Request) => {
   // como mais um bloco igual a este, sem afetar o que já funciona.
   const { leituras, erros: errosColeta } = await coletarFoxess();
   const { gravadas, erros: errosGravacao } = await gravarLeituras(leituras);
+  const { atualizadas: estadosAtualizados, erros: errosEstado } = await avaliarEstados();
 
   return json({
     usinas_processadas: leituras.length,
     leituras_gravadas: gravadas,
-    erros: [...errosColeta, ...errosGravacao],
+    estados_atualizados: estadosAtualizados,
+    erros: [...errosColeta, ...errosGravacao, ...errosEstado],
   });
 });

@@ -24,6 +24,8 @@ export interface MonUsina {
   cliente_base_id: string | null;
   ativo: boolean;
   vinculo_confirmado: boolean;
+  estado_atual: MonEstadoDiario;
+  estado_atualizado_em: string | null;
   criado_em: string;
   atualizado_em: string;
 }

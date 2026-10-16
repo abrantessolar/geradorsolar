@@ -1,19 +1,23 @@
 import React, { useState } from 'react';
-import { Link2 } from 'lucide-react';
+import { Link2, Activity, Phone } from 'lucide-react';
 import VinculoUsinas from './components/VinculoUsinas';
+import PainelSaude from './components/PainelSaude';
+import FilaContato from './components/FilaContato';
 
 // Central de Monitoramento TLS — módulo isolado dentro do painel do
-// gestor. Fase 1 (base) só tem a aba de vínculo usina↔cliente; as
-// próximas fases (saúde da frota, comparação, fila de contato) entram
-// como novas abas aqui, sem tocar no resto do painel.
-type MonTab = 'vinculo';
+// gestor. Fase 1 (base) trouxe a aba de vínculo usina↔cliente; Fase 2
+// acrescenta o painel de saúde da frota e a fila de contato (kanban
+// reativo, separado da agenda de lembretes de tarefas_posvenda).
+type MonTab = 'vinculo' | 'saude' | 'fila';
 
 const TABS: { key: MonTab; label: string; icon: typeof Link2 }[] = [
+  { key: 'saude', label: 'Saúde da frota', icon: Activity },
+  { key: 'fila', label: 'Fila de contato', icon: Phone },
   { key: 'vinculo', label: 'Vínculo de usinas', icon: Link2 },
 ];
 
 export default function MonitoramentoModule() {
-  const [tab, setTab] = useState<MonTab>('vinculo');
+  const [tab, setTab] = useState<MonTab>('saude');
 
   return (
     <div className="space-y-3 sm:space-y-4">
@@ -31,6 +35,8 @@ export default function MonitoramentoModule() {
         ))}
       </div>
 
+      {tab === 'saude' && <PainelSaude />}
+      {tab === 'fila' && <FilaContato />}
       {tab === 'vinculo' && <VinculoUsinas />}
     </div>
   );

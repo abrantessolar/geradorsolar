@@ -57,3 +57,47 @@ export async function marcarInativa(usinaId: string, ativo: boolean): Promise<vo
     .eq('id', usinaId);
   if (error) throw error;
 }
+
+// Painel de saúde da frota (Fase 2) — lista todas as usinas ativas com o
+// `estado_atual` já calculado pela edge function `mon-coleta` (cache em
+// mon_usinas, ver drizzle/migrations/0009_monitoramento_estado_cache.sql),
+// mais a potência da leitura mais recente de cada uma, para contexto.
+export async function listarUsinasSaude(): Promise<MonUsina[]> {
+  const { data, error } = await supabase
+    .from('mon_usinas' as any)
+    .select('*')
+    .eq('ativo', true)
+    .order('estado_atualizado_em', { ascending: false, nullsFirst: false });
+  if (error) throw error;
+  return (data ?? []) as unknown as MonUsina[];
+}
+
+export interface PotenciaRecente {
+  usina_id: string;
+  potencia_w: number | null;
+  coletado_em: string;
+}
+
+// Não dá pra pedir "a última leitura de cada usina" direto no client do
+// Supabase (sem DISTINCT ON/RPC) — então pedimos um lote recente das
+// leituras mais novas e ficamos só com a primeira ocorrência de cada
+// usina_id (a mais recente, já que vem ordenado desc).
+export async function listarPotenciasRecentes(usinaIds: string[]): Promise<Map<string, PotenciaRecente>> {
+  const mapa = new Map<string, PotenciaRecente>();
+  if (usinaIds.length === 0) return mapa;
+
+  const { data, error } = await supabase
+    .from('mon_leituras' as any)
+    .select('usina_id, potencia_w, coletado_em')
+    .in('usina_id', usinaIds)
+    .order('coletado_em', { ascending: false })
+    .limit(usinaIds.length * 3);
+  if (error) throw error;
+
+  for (const leitura of (data ?? []) as unknown as PotenciaRecente[]) {
+    if (!mapa.has(leitura.usina_id)) {
+      mapa.set(leitura.usina_id, leitura);
+    }
+  }
+  return mapa;
+}
