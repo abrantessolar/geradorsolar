@@ -16,6 +16,7 @@ import ProposalHibridaPage from "@/pages/ProposalHibridaPage";
 import ProposalPlacaPage from "@/pages/ProposalPlacaPage";
 import ResetPasswordPage from "@/pages/ResetPasswordPage";
 import GestorPage from "@/pages/GestorPage";
+import MonitoramentoPage from "@/pages/MonitoramentoPage";
 import EstoquePage from "@/pages/EstoquePage";
 import CustosPage from "@/pages/CustosPage";
 import FerramentasPage from "@/pages/FerramentasPage";
@@ -215,6 +216,11 @@ const App = () => {
               <ProtectedRoute permissionKey="gestor_custos">
                 <SeoNoIndex /><Layout><CustosPage /></Layout>
               </ProtectedRoute>
+            } />
+            <Route path="/monitoramento" element={
+              <GestorProtectedRoute>
+                <SeoNoIndex /><Layout><MonitoramentoPage /></Layout>
+              </GestorProtectedRoute>
             } />
             <Route path="/ferramentas" element={
               <ProtectedRoute>
