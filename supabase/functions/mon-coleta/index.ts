@@ -354,9 +354,24 @@ async function gravarLeituras(leituras: LeituraNormalizada[]): Promise<{ gravada
 // vários dias) fica pra Fase 3, quando mon_diario estiver populado com
 // histórico suficiente — por ora só offline e sem_geração, que dá pra
 // calcular com a leitura mais recente de cada usina.
-const OFFLINE_HORAS = 24;
+const OFFLINE_HORAS = 24; // sem nenhuma leitura por tanto tempo = problema real, mesmo de noite
 const SEM_GERACAO_POTENCIA_W = 50; // abaixo disso é "praticamente zero"
-const MEDIANA_MINIMA_GERANDO_W = 200; // mediana da frota acima disso = "é dia de sol agora"
+const MEDIANA_MINIMA_GERANDO_W = 200; // mediana da frota acima disso = "é dia de sol agora" (reforço extra, dentro da janela abaixo)
+
+// Decisão do usuário (2026-10-16): só é considerado problema a usina estar
+// offline/sem gerar DURANTE O DIA. De noite é natural não comunicar/gerar
+// (inversor dorme, sem PV), então fora da janela 7h-17h o estado é sempre
+// "normal", mesmo que a última leitura mostre offline. Horário fixo de
+// Três Lagoas/Campo Grande — Brasil não tem mais horário de verão desde
+// 2019, então UTC-4 vale o ano inteiro.
+const FUSO_CAMPO_GRANDE_HORAS = -4;
+const HORA_INICIO_JANELA_SOLAR = 7;
+const HORA_FIM_JANELA_SOLAR = 17;
+
+function dentroDaJanelaSolar(agora: Date): boolean {
+  const horaLocal = (agora.getUTCHours() + FUSO_CAMPO_GRANDE_HORAS + 24) % 24;
+  return horaLocal >= HORA_INICIO_JANELA_SOLAR && horaLocal < HORA_FIM_JANELA_SOLAR;
+}
 
 type EstadoUsina = "normal" | "sem_geracao" | "offline";
 
@@ -452,17 +467,27 @@ async function avaliarEstados(): Promise<{ atualizadas: number; erros: string[] 
   const medianaPotencia = potenciasOnline.length ? potenciasOnline[Math.floor(potenciasOnline.length / 2)] : 0;
   const ehMomentoDeGeracao = medianaPotencia >= MEDIANA_MINIMA_GERANDO_W;
 
-  const agora = Date.now();
+  const agoraDate = new Date();
+  const agora = agoraDate.getTime();
+  const dentroDoHorarioSolar = dentroDaJanelaSolar(agoraDate);
 
   for (const usina of usinas as Array<{ id: string; estado_atual: EstadoUsina }>) {
     const ultima = ultimaPorUsina.get(usina.id);
     let novoEstado: EstadoUsina;
 
     if (!ultima) {
-      novoEstado = "offline"; // nunca teve nenhuma leitura
+      // Nunca teve nenhuma leitura — problema real, não depende de horário.
+      novoEstado = "offline";
     } else {
       const horasDesdeUltima = (agora - new Date(ultima.coletado_em).getTime()) / 3_600_000;
-      if (!ultima.online || horasDesdeUltima > OFFLINE_HORAS) {
+      if (horasDesdeUltima > OFFLINE_HORAS) {
+        // Mais de 24h sem nenhuma leitura é sinal de falha real (equipamento
+        // ou conectividade), mesmo que tenha caído durante a noite.
+        novoEstado = "offline";
+      } else if (!dentroDoHorarioSolar) {
+        // Fora de 7h-17h: não comunicar/gerar é esperado, não é problema.
+        novoEstado = "normal";
+      } else if (!ultima.online) {
         novoEstado = "offline";
       } else if (ehMomentoDeGeracao && (ultima.potencia_w ?? 0) < SEM_GERACAO_POTENCIA_W) {
         novoEstado = "sem_geracao";
