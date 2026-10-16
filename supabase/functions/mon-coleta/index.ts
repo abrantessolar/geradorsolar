@@ -1,11 +1,21 @@
 // Central de Monitoramento TLS — coleta periódica (Fase 1: só FoxESS).
 //
+// Agendamento: este projeto (Lovable Cloud) não oferece pg_cron/pg_net
+// nem agendamento HTTP gerenciado pelo banco — por isso a chamada
+// periódica vem de FORA, de um workflow do GitHub Actions
+// (.github/workflows/mon-coleta-cron.yml), autenticado por um segredo
+// compartilhado (header `x-mon-cron-secret`), não por JWT do Supabase.
+// Por isso esta função tem `verify_jwt = false` em supabase/config.toml —
+// a autenticação é toda feita aqui dentro, nunca pelo gateway.
+//
 // Chamada de duas formas:
-//   1) pg_cron, a cada ~20min, com o service role key no Authorization
-//      (ver migração 0009_monitoramento_cron.sql).
+//   1) GitHub Actions, a cada ~20min, com `x-mon-cron-secret` igual ao
+//      secret MON_CRON_SECRET (cadastrado nos dois lados: Supabase
+//      Secrets e GitHub Actions Secrets — nunca no código).
 //   2) Manualmente por um usuário do painel (botão "Atualizar agora"),
-//      com o JWT do próprio usuário — só segue se ele tiver acesso ao
-//      painel (`has_panel_access`), checado abaixo via RPC.
+//      com o JWT do próprio usuário — validado de verdade aqui (já que o
+//      gateway não valida mais nada) via `supabaseAdmin.auth.getUser()`,
+//      e só segue se o usuário tiver acesso ao painel (`has_panel_access`).
 //
 // Módulo ISOLADO: só lê/escreve tabelas `mon_*` e `clientes_base` (pra
 // resolver nome na hora de sugerir vínculo — não é feito aqui, é feito no
@@ -31,6 +41,7 @@ const supabaseAdmin = createClient(
 );
 
 const FOXESS_API_TOKEN = Deno.env.get("FOXESS_API_KEY"); // nome do secret no Supabase: FOXESS_API_KEY
+const MON_CRON_SECRET = Deno.env.get("MON_CRON_SECRET"); // segredo compartilhado com o workflow do GitHub Actions
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -40,37 +51,32 @@ function json(body: unknown, status = 200) {
 }
 
 // ---------- autenticação/autorização ----------
-// O gateway de edge functions do Supabase já valida a assinatura do JWT
-// antes do handler rodar (verify_jwt = true, padrão do projeto — não há
-// override em supabase/config.toml). Então só precisamos ler as claims.
-function decodeJwtPayload(authHeader: string | null): Record<string, any> | null {
-  if (!authHeader?.startsWith("Bearer ")) return null;
-  const token = authHeader.slice(7);
-  const parts = token.split(".");
-  if (parts.length !== 3) return null;
-  try {
-    const b64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
-    const padded = b64 + "=".repeat((4 - (b64.length % 4)) % 4);
-    return JSON.parse(atob(padded));
-  } catch {
-    return null;
-  }
-}
-
+// `verify_jwt = false` nesta função (ver supabase/config.toml) — o
+// gateway NÃO valida mais nada antes de chegar aqui, então a validação
+// de verdade é toda feita abaixo, para os dois chamadores possíveis.
 async function autorizarChamada(req: Request): Promise<{ ok: true } | { ok: false; motivo: string }> {
-  const payload = decodeJwtPayload(req.headers.get("Authorization"));
-  if (!payload) return { ok: false, motivo: "sem token válido" };
-
-  if (payload.role === "service_role") return { ok: true }; // chamada do pg_cron
-
-  if (payload.role === "authenticated" && payload.sub) {
-    const { data, error } = await supabaseAdmin.rpc("has_panel_access", { _user_id: payload.sub });
-    if (error) return { ok: false, motivo: "erro ao checar permissão: " + error.message };
-    if (data === true) return { ok: true };
-    return { ok: false, motivo: "usuário sem acesso ao painel" };
+  // 1) GitHub Actions — segredo compartilhado, sem JWT nenhum.
+  const segredoRecebido = req.headers.get("x-mon-cron-secret");
+  if (MON_CRON_SECRET && segredoRecebido && segredoRecebido === MON_CRON_SECRET) {
+    return { ok: true };
   }
 
-  return { ok: false, motivo: "role não autorizada" };
+  // 2) Usuário do painel — JWT validado de verdade contra o Supabase Auth
+  // (não dá pra só decodificar sem checar assinatura, já que o gateway
+  // não verifica mais nada por conta do verify_jwt = false).
+  const authHeader = req.headers.get("Authorization");
+  const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
+  if (!token) return { ok: false, motivo: "sem token válido" };
+
+  const { data: userData, error: erroAuth } = await supabaseAdmin.auth.getUser(token);
+  if (erroAuth || !userData?.user) return { ok: false, motivo: "token inválido" };
+
+  const { data: temAcesso, error: erroRpc } = await supabaseAdmin.rpc("has_panel_access", {
+    _user_id: userData.user.id,
+  });
+  if (erroRpc) return { ok: false, motivo: "erro ao checar permissão: " + erroRpc.message };
+  if (temAcesso === true) return { ok: true };
+  return { ok: false, motivo: "usuário sem acesso ao painel" };
 }
 
 // ---------- formato padronizado (contrato comum a todos os adaptadores) ----------

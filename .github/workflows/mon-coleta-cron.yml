@@ -1,0 +1,28 @@
+name: Central de Monitoramento — coleta FoxESS
+
+# Este projeto (Lovable Cloud) não oferece pg_cron/pg_net nem agendamento
+# HTTP gerenciado pelo banco, então o agendamento da coleta periódica vem
+# de fora, por aqui. Autenticação por segredo compartilhado (não é JWT do
+# Supabase) — ver supabase/functions/mon-coleta/index.ts.
+#
+# Secrets necessários neste repositório (Settings → Secrets and
+# variables → Actions), com o MESMO valor cadastrado nos Secrets do
+# Supabase:
+#   MON_CRON_SECRET
+
+on:
+  schedule:
+    - cron: '*/20 * * * *'
+  workflow_dispatch: {} # permite rodar manualmente pela aba Actions, pra testar
+
+jobs:
+  coletar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Chamar a função mon-coleta
+        run: |
+          curl --fail-with-body -sS -X POST \
+            "https://jvlreltjfubennbtjvyq.supabase.co/functions/v1/mon-coleta" \
+            -H "Content-Type: application/json" \
+            -H "x-mon-cron-secret: ${{ secrets.MON_CRON_SECRET }}" \
+            -d '{"origem":"github-actions"}'

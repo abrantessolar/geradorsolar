@@ -80,7 +80,7 @@ CREATE TABLE public.mon_chamados (
   cliente_base_id uuid REFERENCES public.clientes_base(id) ON DELETE SET NULL,
   tipo text NOT NULL CHECK (tipo IN ('offline', 'sem_geracao', 'baixo_desempenho', 'solicitado_cliente')),
   etapa text NOT NULL DEFAULT 'novo' CHECK (etapa IN ('novo', 'contato_feito', 'aguardando_cliente', 'visita_agendada', 'resolvido')),
-  responsavel uuid REFERENCES auth.users(id) ON DELETE SET NULL,
+  responsavel uuid, -- id do usuário staff responsável (sem FK para auth.users — mesmo padrão de tarefas_posvenda.usuario_id)
   aberto_em timestamptz NOT NULL DEFAULT now(),
   resolvido_em timestamptz,
   resolucao text CHECK (resolucao IN ('auto', 'manual')),
@@ -96,7 +96,7 @@ CREATE TABLE public.mon_chamado_eventos (
   chamado_id uuid NOT NULL REFERENCES public.mon_chamados(id) ON DELETE CASCADE,
   tipo text NOT NULL CHECK (tipo IN ('contato', 'mudanca_etapa', 'observacao', 'visita_agendada')),
   mensagem text,
-  usuario_id uuid REFERENCES auth.users(id) ON DELETE SET NULL,
+  usuario_id uuid, -- sem FK para auth.users — mesmo padrão de tarefas_posvenda.usuario_id
   criado_em timestamptz NOT NULL DEFAULT now()
 );
 
@@ -159,10 +159,29 @@ CREATE POLICY "Equipe gerencia mon_guias_reconexao" ON public.mon_guias_reconexa
   USING (public.has_panel_access(auth.uid()))
   WITH CHECK (public.has_panel_access(auth.uid()));
 
--- A service role (usada pela edge function de coleta) ignora RLS por
--- padrão no Supabase — não precisa de policy própria pra `anon`/`service_role`.
+-- RLS por si só não libera acesso: o Postgres também cobra GRANT de nível
+-- de tabela (sem isso, authenticated nem chega a tentar e cai antes da
+-- policy). Mesmo padrão de tarefas_posvenda/rastreamento_obras.
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.mon_usinas TO authenticated;
+GRANT ALL ON public.mon_usinas TO service_role;
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.mon_leituras TO authenticated;
+GRANT ALL ON public.mon_leituras TO service_role;
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.mon_diario TO authenticated;
+GRANT ALL ON public.mon_diario TO service_role;
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.mon_chamados TO authenticated;
+GRANT ALL ON public.mon_chamados TO service_role;
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.mon_chamado_eventos TO authenticated;
+GRANT ALL ON public.mon_chamado_eventos TO service_role;
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.mon_guias_reconexao TO authenticated;
+GRANT ALL ON public.mon_guias_reconexao TO service_role;
 
 -- Nota de retenção (não implementada nesta fase): quando o volume de
--- mon_leituras justificar, agendar uma rotina (pg_cron) que apague linhas
--- de mon_leituras com mais de 90 dias, já que mon_diario guarda o
--- agregado permanentemente.
+-- mon_leituras justificar, criar uma rotina de limpeza (mesmo mecanismo
+-- do GitHub Actions usado pra coleta, já que este projeto não tem
+-- pg_cron) que apague linhas de mon_leituras com mais de 90 dias, já que
+-- mon_diario guarda o agregado permanentemente.

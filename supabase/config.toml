@@ -1,1 +1,8 @@
 project_id = "jvlreltjfubennbtjvyq"
+
+# mon-coleta é chamada pelo workflow do GitHub Actions sem JWT do
+# Supabase (segredo compartilhado no header x-mon-cron-secret) — por
+# isso o gateway não pode exigir JWT. A autenticação de verdade é feita
+# dentro da própria função (ver supabase/functions/mon-coleta/index.ts).
+[functions.mon-coleta]
+verify_jwt = false
