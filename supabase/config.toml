@@ -6,3 +6,9 @@ project_id = "jvlreltjfubennbtjvyq"
 # dentro da própria função (ver supabase/functions/mon-coleta/index.ts).
 [functions.mon-coleta]
 verify_jwt = false
+
+# mon-historico-teste é uma função de TESTE/descartável (ver seu próprio
+# header comment) que usa o mesmo segredo compartilhado em vez de JWT.
+# Apagar esta entrada junto quando a função for removida.
+[functions.mon-historico-teste]
+verify_jwt = false
