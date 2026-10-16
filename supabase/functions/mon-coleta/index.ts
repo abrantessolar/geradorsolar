@@ -57,8 +57,19 @@ function json(body: unknown, status = 200) {
 async function autorizarChamada(req: Request): Promise<{ ok: true } | { ok: false; motivo: string }> {
   // 1) GitHub Actions — segredo compartilhado, sem JWT nenhum.
   const segredoRecebido = req.headers.get("x-mon-cron-secret");
-  if (MON_CRON_SECRET && segredoRecebido && segredoRecebido === MON_CRON_SECRET) {
-    return { ok: true };
+  if (segredoRecebido) {
+    if (!MON_CRON_SECRET) {
+      return { ok: false, motivo: "MON_CRON_SECRET não está configurado nos Secrets desta função no Supabase" };
+    }
+    if (segredoRecebido === MON_CRON_SECRET) {
+      return { ok: true };
+    }
+    // Diagnóstico sem expor os valores: só tamanho e primeiros/últimos
+    // caracteres, o suficiente pra pegar espaço/quebra de linha a mais.
+    return {
+      ok: false,
+      motivo: `segredo recebido não bate com o configurado (recebido: ${segredoRecebido.length} caracteres, começa com "${segredoRecebido.slice(0, 4)}", termina com "${segredoRecebido.slice(-4)}"; configurado: ${MON_CRON_SECRET.length} caracteres, começa com "${MON_CRON_SECRET.slice(0, 4)}", termina com "${MON_CRON_SECRET.slice(-4)}")`,
+    };
   }
 
   // 2) Usuário do painel — JWT validado de verdade contra o Supabase Auth
@@ -66,7 +77,7 @@ async function autorizarChamada(req: Request): Promise<{ ok: true } | { ok: fals
   // não verifica mais nada por conta do verify_jwt = false).
   const authHeader = req.headers.get("Authorization");
   const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
-  if (!token) return { ok: false, motivo: "sem token válido" };
+  if (!token) return { ok: false, motivo: "nenhum x-mon-cron-secret nem Authorization recebido" };
 
   const { data: userData, error: erroAuth } = await supabaseAdmin.auth.getUser(token);
   if (erroAuth || !userData?.user) return { ok: false, motivo: "token inválido" };
