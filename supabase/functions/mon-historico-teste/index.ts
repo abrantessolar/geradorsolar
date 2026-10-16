@@ -76,8 +76,10 @@ serve(async (req) => {
   }
 
   try {
-    // 1) pega o SN de um dispositivo ativo pra usar nos testes.
-    const lista = await foxessPost("/op/v0/device/list", { currentPage: 1, pageSize: 5 });
+    // 1) pega o SN de um dispositivo ativo pra usar nos testes. pageSize=100
+    // é o valor já comprovado contra a conta real (pageSize=5 foi
+    // rejeitado com errno 40257 "Parameters do not meet expectations").
+    const lista = await foxessPost("/op/v0/device/list", { currentPage: 1, pageSize: 100 });
     const dispositivos = (lista.result as any)?.data ?? [];
     const primeiro = dispositivos[0];
     if (!primeiro) {

@@ -175,12 +175,16 @@ interface DispositivoFoxess {
 }
 
 async function listarDispositivosFoxess(): Promise<DispositivoFoxess[]> {
-  // Paginação defensiva: a frota de hoje (84 dispositivos/25 usinas) cabe
-  // numa página de 500, mas isso evita perder dispositivos silenciosamente
-  // se a frota crescer além disso.
+  // Paginação defensiva: a frota de hoje (84 dispositivos/26 usinas) cabe
+  // numa página só, mas isso evita perder dispositivos silenciosamente se
+  // a frota crescer além disso. pageSize=100 é o valor já comprovado (foi
+  // com ele que a coleta real funcionou pela primeira vez) — a FoxESS
+  // rejeita valores pequenos (confirmado: pageSize=5 deu errno 40257
+  // "Parameters do not meet expectations"), então não arriscamos outro
+  // valor sem testar.
   const todos: DispositivoFoxess[] = [];
   let pagina = 1;
-  const pageSize = 500;
+  const pageSize = 100;
   while (true) {
     const result = await foxessPost("/op/v0/device/list", { currentPage: pagina, pageSize });
     const devices = result?.data ?? [];
