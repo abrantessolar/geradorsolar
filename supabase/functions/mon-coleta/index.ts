@@ -99,14 +99,20 @@ interface LeituraNormalizada {
 // ---------- adaptador FoxESS ----------
 // FoxESS OpenAPI (foxesscloud.com/op/v0). Assinatura: md5(`${path}\r\n${token}\r\n${timestamp}`).
 //
-// ⚠️ ATENÇÃO: os nomes exatos de endpoint/variáveis abaixo seguem a
-// documentação pública da FoxESS no momento em que este adaptador foi
-// escrito, mas NÃO foram testados contra uma conta real (ainda não temos
-// a API key). Antes de ativar em produção, validar com uma chamada real:
-// os nomes de variável em `/op/v0/device/real/query` em particular
-// (`generationPower`, `todayYield`, `generation`) precisam ser
-// confirmados contra o retorno real da API — a FoxESS já mudou esses
-// nomes entre versões da plataforma.
+// Endpoints, nomes de campo e enum de `status` confirmados contra a
+// documentação pública da FoxESS (OpenApiDocument.html) em 2026-10-16 —
+// ainda NÃO testado contra uma chamada real (a conta é do tipo Retailer,
+// chave única pra Org inteira — a key existe mas a primeira chamada de
+// verdade só vai acontecer quando o agendador do GitHub Actions rodar).
+//
+// ⚠️ Pontos que ficaram ambíguos na própria doc da FoxESS, então vale
+// reconfirmar se o primeiro ciclo de coleta der erro:
+//   - domínio: a doc lista `www.foxesscloud.com`, mas um exemplo próprio
+//     usa `portal.foxesscloud.us` — contas de região diferente podem
+//     precisar de outro domínio.
+//   - a assinatura usa só o path (`/op/v1/device/real/query`), não a URL
+//     completa — é o que a maioria dos exemplos da comunidade faz, mas a
+//     doc em si fala em "url" de forma ambígua.
 const FOXESS_BASE = "https://www.foxesscloud.com";
 
 async function foxessMd5(texto: string): Promise<string> {
@@ -139,19 +145,26 @@ async function foxessPost(path: string, body: unknown): Promise<any> {
   return data.result ?? data;
 }
 
-async function listarDispositivosFoxess(): Promise<Array<{ sn: string; stationName?: string; deviceType?: string }>> {
-  // CONFIRMAR: paginação real do /op/v0/device/list (campo de página pode
-  // se chamar currentPage/pageSize ou page/limit, dependendo da versão).
+// status enum confirmado na doc: 1 = online, 2 = fault, 3 = offline.
+type FoxessStatus = 1 | 2 | 3 | null;
+
+async function listarDispositivosFoxess(): Promise<Array<{ sn: string; stationName?: string; status: FoxessStatus }>> {
   const result = await foxessPost("/op/v0/device/list", { currentPage: 1, pageSize: 100 });
-  const devices = result?.data ?? result?.rows ?? [];
-  return devices.map((d: any) => ({ sn: d.deviceSN ?? d.sn, stationName: d.stationName, deviceType: d.deviceType }));
+  const devices = result?.data ?? [];
+  return devices.map((d: any) => ({
+    sn: d.deviceSN,
+    stationName: d.stationName,
+    status: d.status ?? null,
+  }));
 }
 
-async function buscarLeituraFoxess(sn: string): Promise<LeituraNormalizada> {
-  // CONFIRMAR: nomes exatos das variáveis — ver aviso acima.
+async function buscarLeituraFoxess(
+  sn: string,
+  statusDispositivo: FoxessStatus
+): Promise<LeituraNormalizada> {
   const variaveis = ["generationPower", "todayYield", "generation"];
-  const result = await foxessPost("/op/v0/device/real/query", { sns: [sn], variables: variaveis });
-  const dados = Array.isArray(result) ? result[0] : result?.[0];
+  const resultado = await foxessPost("/op/v1/device/real/query", { sns: [sn], variables: variaveis });
+  const dados = Array.isArray(resultado) ? resultado[0] : resultado?.data?.[0];
   const porVariavel: Record<string, number | null> = {};
   for (const v of dados?.datas ?? []) {
     porVariavel[v.variable] = v.value ?? null;
@@ -161,12 +174,14 @@ async function buscarLeituraFoxess(sn: string): Promise<LeituraNormalizada> {
     marca: "foxess",
     id_externo_usina: sn,
     sn_inversor: sn,
+    // generationPower vem em kW (conferido na doc) — converte pra W pro
+    // formato padronizado da especificação.
     potencia_atual_w: porVariavel.generationPower != null ? porVariavel.generationPower * 1000 : null,
     energia_hoje_kwh: porVariavel.todayYield ?? null,
     energia_total_kwh: porVariavel.generation ?? null,
     ultima_comunicacao: new Date().toISOString(),
-    status_inversor: dados ? "comunicando" : null,
-    alarmes: [], // a consulta real-time não traz alarme; fica pra uma chamada dedicada quando precisarmos disso
+    status_inversor: statusDispositivo === 1 ? "online" : statusDispositivo === 2 ? "alarme" : statusDispositivo === 3 ? "offline" : null,
+    alarmes: statusDispositivo === 2 ? ["fault"] : [],
   };
 }
 
@@ -178,7 +193,7 @@ async function coletarFoxess(): Promise<{ leituras: LeituraNormalizada[]; erros:
     return { leituras, erros: ["FOXESS_API_KEY não configurado em Secrets — pulando FoxESS"] };
   }
 
-  let dispositivos: Array<{ sn: string; stationName?: string }> = [];
+  let dispositivos: Array<{ sn: string; stationName?: string; status: FoxessStatus }> = [];
   try {
     dispositivos = await listarDispositivosFoxess();
   } catch (e) {
@@ -188,7 +203,7 @@ async function coletarFoxess(): Promise<{ leituras: LeituraNormalizada[]; erros:
   // Cada usina falha isolada — uma falhar não derruba as outras.
   for (const dev of dispositivos) {
     try {
-      const leitura = await buscarLeituraFoxess(dev.sn);
+      const leitura = await buscarLeituraFoxess(dev.sn, dev.status);
       leitura.modelo = dev.stationName ?? null;
       leituras.push(leitura);
     } catch (e) {
@@ -244,7 +259,7 @@ async function gravarLeituras(leituras: LeituraNormalizada[]): Promise<{ gravada
         potencia_w: l.potencia_atual_w,
         energia_dia_kwh: l.energia_hoje_kwh,
         energia_total_kwh: l.energia_total_kwh,
-        online: l.status_inversor !== null,
+        online: l.status_inversor !== "offline",
         alarmes: l.alarmes,
       });
       if (erroLeitura) throw erroLeitura;
