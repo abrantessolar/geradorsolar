@@ -64,6 +64,13 @@
       "when": 1792181691401,
       "tag": "0008_monitoramento_module_corrigido",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1792187708646,
+      "tag": "0009_monitoramento_estado_cache_corrigido",
+      "breakpoints": true
     }
   ]
 }
