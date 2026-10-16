@@ -110,9 +110,17 @@ interface LeituraNormalizada {
 // ---------- adaptador FoxESS ----------
 // FoxESS OpenAPI (foxesscloud.com/op/v0 + op/v1). Assinatura:
 // md5(`${path}\r\n${token}\r\n${timestamp}`). Confirmado funcionando
-// contra a conta real da TLS em 2026-10-16 (84 usinas, 252 leituras no
-// primeiro ciclo) — domínio, endpoints e nomes de variável abaixo estão
-// validados, não é mais rascunho.
+// contra a conta real da TLS em 2026-10-16 (252 leituras no primeiro
+// ciclo) — domínio, endpoints e nomes de variável abaixo estão validados,
+// não é mais rascunho.
+//
+// Correção importante (2026-10-16): `/op/v0/device/list` lista
+// DISPOSITIVOS (um inversor/micro por linha), não usinas — por isso o
+// primeiro ciclo gravou 84 linhas em mon_usinas quando a TLS tem 25
+// usinas reais (plantas com mais de um inversor contavam várias vezes).
+// Cada dispositivo já vem com `stationID`/`stationName` (a usina de
+// verdade); agrupamos por `stationID` abaixo e tratamos a usina como a
+// unidade do painel, somando a potência/energia dos dispositivos dela.
 const FOXESS_BASE = "https://www.foxesscloud.com";
 
 async function foxessMd5(texto: string): Promise<string> {
@@ -159,40 +167,91 @@ async function foxessPost(path: string, body: unknown): Promise<any> {
 // status enum confirmado na doc: 1 = online, 2 = fault, 3 = offline.
 type FoxessStatus = 1 | 2 | 3 | null;
 
-async function listarDispositivosFoxess(): Promise<Array<{ sn: string; stationName?: string; status: FoxessStatus }>> {
-  const result = await foxessPost("/op/v0/device/list", { currentPage: 1, pageSize: 100 });
-  const devices = result?.data ?? [];
-  return devices.map((d: any) => ({
-    sn: d.deviceSN,
-    stationName: d.stationName,
-    status: d.status ?? null,
-  }));
+interface DispositivoFoxess {
+  sn: string;
+  stationID: string;
+  stationName?: string;
+  status: FoxessStatus;
 }
 
-async function buscarLeituraFoxess(
-  sn: string,
-  statusDispositivo: FoxessStatus
-): Promise<LeituraNormalizada> {
-  const variaveis = ["generationPower", "todayYield", "generation"];
-  const resultado = await foxessPost("/op/v1/device/real/query", { sns: [sn], variables: variaveis });
-  const dados = Array.isArray(resultado) ? resultado[0] : resultado?.data?.[0];
-  const porVariavel: Record<string, number | null> = {};
-  for (const v of dados?.datas ?? []) {
-    porVariavel[v.variable] = v.value ?? null;
+async function listarDispositivosFoxess(): Promise<DispositivoFoxess[]> {
+  // Paginação defensiva: a frota de hoje (84 dispositivos/25 usinas) cabe
+  // numa página de 500, mas isso evita perder dispositivos silenciosamente
+  // se a frota crescer além disso.
+  const todos: DispositivoFoxess[] = [];
+  let pagina = 1;
+  const pageSize = 500;
+  while (true) {
+    const result = await foxessPost("/op/v0/device/list", { currentPage: pagina, pageSize });
+    const devices = result?.data ?? [];
+    for (const d of devices) {
+      todos.push({ sn: d.deviceSN, stationID: d.stationID, stationName: d.stationName, status: d.status ?? null });
+    }
+    const total = result?.total ?? devices.length;
+    if (devices.length === 0 || todos.length >= total) break;
+    pagina++;
   }
+  return todos;
+}
+
+// Uma usina (station, `stationID`) pode ter mais de um inversor/micro
+// (`deviceSN`) — por isso recebe a lista de dispositivos daquela estação
+// e soma as leituras, em vez de uma leitura por dispositivo.
+async function buscarLeituraEstacaoFoxess(
+  stationID: string,
+  dispositivos: DispositivoFoxess[]
+): Promise<LeituraNormalizada> {
+  const sns = dispositivos.map((d) => d.sn);
+  const variaveis = ["generationPower", "todayYield", "generation"];
+  const resultado = await foxessPost("/op/v1/device/real/query", { sns, variables: variaveis });
+  const linhas: any[] = Array.isArray(resultado) ? resultado : resultado?.data ?? [];
+
+  let potenciaTotalW = 0;
+  let temLeituraDePotencia = false;
+  let energiaHojeKwh = 0;
+  let energiaTotalKwh = 0;
+  const alarmes: string[] = [];
+  let algumOnline = false;
+  let algumFault = false;
+  let todosOffline = true;
+
+  for (const dev of dispositivos) {
+    const linha = linhas.find((l: any) => l.deviceSN === dev.sn);
+    const porVariavel: Record<string, number | null> = {};
+    for (const v of linha?.datas ?? []) {
+      porVariavel[v.variable] = v.value ?? null;
+    }
+
+    // generationPower vem em kW (conferido na doc) — converte pra W pro
+    // formato padronizado da especificação.
+    if (porVariavel.generationPower != null) {
+      potenciaTotalW += porVariavel.generationPower * 1000;
+      temLeituraDePotencia = true;
+    }
+    energiaHojeKwh += porVariavel.todayYield ?? 0;
+    energiaTotalKwh += porVariavel.generation ?? 0;
+
+    if (dev.status === 1) algumOnline = true;
+    if (dev.status === 2) {
+      algumFault = true;
+      alarmes.push(`${dev.sn}: fault`);
+    }
+    if (dev.status !== 3) todosOffline = false;
+  }
+
+  const statusEstacao = algumFault ? "alarme" : todosOffline ? "offline" : algumOnline ? "online" : null;
 
   return {
     marca: "foxess",
-    id_externo_usina: sn,
-    sn_inversor: sn,
-    // generationPower vem em kW (conferido na doc) — converte pra W pro
-    // formato padronizado da especificação.
-    potencia_atual_w: porVariavel.generationPower != null ? porVariavel.generationPower * 1000 : null,
-    energia_hoje_kwh: porVariavel.todayYield ?? null,
-    energia_total_kwh: porVariavel.generation ?? null,
+    id_externo_usina: stationID,
+    sn_inversor: dispositivos.map((d) => d.sn).join(", "),
+    potencia_atual_w: temLeituraDePotencia ? potenciaTotalW : null,
+    energia_hoje_kwh: energiaHojeKwh,
+    energia_total_kwh: energiaTotalKwh,
     ultima_comunicacao: new Date().toISOString(),
-    status_inversor: statusDispositivo === 1 ? "online" : statusDispositivo === 2 ? "alarme" : statusDispositivo === 3 ? "offline" : null,
-    alarmes: statusDispositivo === 2 ? ["fault"] : [],
+    status_inversor: statusEstacao,
+    alarmes,
+    modelo: dispositivos[0]?.stationName ?? null,
   };
 }
 
@@ -204,21 +263,27 @@ async function coletarFoxess(): Promise<{ leituras: LeituraNormalizada[]; erros:
     return { leituras, erros: ["FOXESS_API_KEY não configurado em Secrets — pulando FoxESS"] };
   }
 
-  let dispositivos: Array<{ sn: string; stationName?: string; status: FoxessStatus }> = [];
+  let dispositivos: DispositivoFoxess[] = [];
   try {
     dispositivos = await listarDispositivosFoxess();
   } catch (e) {
     return { leituras, erros: [`Falha ao listar dispositivos FoxESS: ${e instanceof Error ? e.message : e}`] };
   }
 
-  // Cada usina falha isolada — uma falhar não derruba as outras.
+  const porEstacao = new Map<string, DispositivoFoxess[]>();
   for (const dev of dispositivos) {
+    const lista = porEstacao.get(dev.stationID) ?? [];
+    lista.push(dev);
+    porEstacao.set(dev.stationID, lista);
+  }
+
+  // Cada usina (estação) falha isolada — uma falhar não derruba as outras.
+  for (const [stationID, dispositivosDaEstacao] of porEstacao) {
     try {
-      const leitura = await buscarLeituraFoxess(dev.sn, dev.status);
-      leitura.modelo = dev.stationName ?? null;
+      const leitura = await buscarLeituraEstacaoFoxess(stationID, dispositivosDaEstacao);
       leituras.push(leitura);
     } catch (e) {
-      erros.push(`FoxESS ${dev.sn}: ${e instanceof Error ? e.message : e}`);
+      erros.push(`FoxESS estação ${stationID}: ${e instanceof Error ? e.message : e}`);
     }
   }
 
