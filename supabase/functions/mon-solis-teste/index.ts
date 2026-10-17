@@ -10,10 +10,12 @@
 // 2. inverterList — lista de inversores com detalhe (potência, energia
 //    hoje, status) em lote, pra ver se dá pra montar a coleta em tempo
 //    real sem 1 chamada por usina.
-// 3. stationMonthEnergyList — geração diária de um mês, em modo "lote"
-//    (sem passar um id de usina específica), pra ver se vem detalhado
-//    por usina ou só o agregado da conta — decide a arquitetura do
-//    backfill histórico da Solis.
+// 3. stationMonthEnergyList EM MODO ÚNICO (passando o `id` de uma usina
+//    real, obtida do resultado do passo 1) — o modo "lote" (sem id) já
+//    foi testado e confirmado que NÃO funciona ("necessary parameters
+//    are empty or invalid"). Este teste é pra descobrir o formato exato
+//    da resposta por usina (nomes dos campos, formato da data de cada
+//    dia) antes de construir o backfill de verdade.
 //
 // Autenticação da SolisCloud (bem diferente da FoxESS): cada request
 // precisa de um header Authorization = "API " + KeyId + ":" + Sign,
@@ -140,17 +142,24 @@ serve(async (req) => {
 
     await new Promise((resolve) => setTimeout(resolve, 2000));
 
-    // 3. Histórico mensal em modo "lote" (sem passar id de usina) — ver
-    // se vem detalhado por usina ou só agregado da conta. Mês de teste:
-    // o mês anterior ao atual, formato "yyyy-MM".
+    // 3. Histórico mensal de UMA usina real (id tirado do resultado do
+    // passo 1), mês anterior ao atual, formato "yyyy-MM".
+    const usinasJson = tentarJson(listaUsinas.corpoResposta) as any;
+    const primeiraUsinaId: string | null = usinasJson?.data?.page?.records?.[0]?.id ?? null;
+
     const agora = new Date();
     const mesAnterior = new Date(agora.getFullYear(), agora.getMonth() - 1, 1);
     const mesTeste = `${mesAnterior.getFullYear()}-${String(mesAnterior.getMonth() + 1).padStart(2, "0")}`;
-    const historicoMensal = await solisPost("/v1/api/stationMonthEnergyList", {
-      month: mesTeste,
-      pageNo: 1,
-      pageSize: 10,
-    });
+
+    let historicoMensal: { status: number; corpoResposta: string } | null = null;
+    if (primeiraUsinaId) {
+      historicoMensal = await solisPost("/v1/api/stationMonthEnergyList", {
+        id: primeiraUsinaId,
+        month: mesTeste,
+        pageNo: 1,
+        pageSize: 31,
+      });
+    }
 
     return json({
       userStationList: {
@@ -164,10 +173,11 @@ serve(async (req) => {
         corpo_json: tentarJson(listaInversores.corpoResposta),
       },
       stationMonthEnergyList: {
+        usina_id_testada: primeiraUsinaId,
         mes_testado: mesTeste,
-        http_status: historicoMensal.status,
-        corpo_bruto: historicoMensal.corpoResposta,
-        corpo_json: tentarJson(historicoMensal.corpoResposta),
+        http_status: historicoMensal?.status ?? null,
+        corpo_bruto: historicoMensal?.corpoResposta ?? "(pulado: não achou id de usina no passo 1)",
+        corpo_json: historicoMensal ? tentarJson(historicoMensal.corpoResposta) : null,
       },
     });
   } catch (e) {

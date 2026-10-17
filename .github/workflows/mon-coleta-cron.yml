@@ -1,4 +1,4 @@
-name: Central de Monitoramento — coleta FoxESS
+name: Central de Monitoramento — coleta FoxESS + Solis
 
 # Este projeto (Lovable Cloud) não oferece pg_cron/pg_net nem agendamento
 # HTTP gerenciado pelo banco, então o agendamento da coleta periódica vem
