@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
-import { Activity, MapPin, RefreshCw, Zap, AlertTriangle, WifiOff, Gauge } from 'lucide-react';
+import { Activity, MapPin, RefreshCw, Zap, AlertTriangle, WifiOff, Gauge, ChevronDown, ChevronRight } from 'lucide-react';
 import { listarUsinasSaude, listarPotenciasRecentes, type PotenciaRecente } from '../lib/usinas';
+import HistoricoUsina from './HistoricoUsina';
 import type { MonEstadoDiario, MonUsina } from '../types';
 
 // Central de Monitoramento TLS — Fase 2: painel de saúde da frota. Semáforo
@@ -47,6 +48,7 @@ export default function PainelSaude() {
   const [filtroMarca, setFiltroMarca] = useState<string>('');
   const [filtroCidade, setFiltroCidade] = useState<string>('');
   const [filtroEstado, setFiltroEstado] = useState<string>('');
+  const [usinaExpandida, setUsinaExpandida] = useState<string | null>(null);
 
   const carregar = async () => {
     setLoading(true);
@@ -178,39 +180,53 @@ export default function PainelSaude() {
           {filtradas.map((usina) => {
             const cfg = ESTADO_CONFIG[usina.estado_atual];
             const leitura = potencias.get(usina.id);
+            const expandida = usinaExpandida === usina.id;
             return (
-              <div
-                key={usina.id}
-                className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 p-3 rounded-lg border border-border bg-muted/30"
-              >
-                <div className="flex items-center gap-2 min-w-0 flex-1">
-                  <div className="w-9 h-9 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
-                    <Zap className="w-4 h-4" />
+              <div key={usina.id} className="rounded-lg border border-border bg-muted/30 overflow-hidden">
+                <button
+                  onClick={() => setUsinaExpandida(expandida ? null : usina.id)}
+                  className="w-full flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 p-3 text-left"
+                >
+                  <div className="flex items-center gap-2 min-w-0 flex-1">
+                    {expandida ? (
+                      <ChevronDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                    ) : (
+                      <ChevronRight className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                    )}
+                    <div className="w-9 h-9 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                      <Zap className="w-4 h-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-medium truncate">
+                        {MARCA_LABEL[usina.marca] ?? usina.marca} — {usina.modelo || usina.sn_inversor || usina.id_externo}
+                      </p>
+                      <p className="text-xs text-muted-foreground flex items-center gap-1 truncate">
+                        {usina.cidade && (
+                          <>
+                            <MapPin className="w-3 h-3 shrink-0" /> {usina.cidade}
+                          </>
+                        )}
+                        {usina.kwp ? ` • ${usina.kwp} kWp` : ''}
+                        {leitura?.potencia_w != null ? ` • ${Math.round(leitura.potencia_w)} W agora` : ''}
+                      </p>
+                    </div>
                   </div>
-                  <div className="min-w-0">
-                    <p className="font-medium truncate">
-                      {MARCA_LABEL[usina.marca] ?? usina.marca} — {usina.modelo || usina.sn_inversor || usina.id_externo}
-                    </p>
-                    <p className="text-xs text-muted-foreground flex items-center gap-1 truncate">
-                      {usina.cidade && (
-                        <>
-                          <MapPin className="w-3 h-3 shrink-0" /> {usina.cidade}
-                        </>
-                      )}
-                      {usina.kwp ? ` • ${usina.kwp} kWp` : ''}
-                      {leitura?.potencia_w != null ? ` • ${Math.round(leitura.potencia_w)} W agora` : ''}
-                    </p>
-                  </div>
-                </div>
 
-                <div className="flex flex-col items-end gap-0.5 shrink-0">
-                  <span
-                    className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium border ${cfg.badge}`}
-                  >
-                    <cfg.icon className="w-3 h-3" /> {cfg.label}
-                  </span>
-                  <span className="text-xs text-muted-foreground">{formatarHaQuanto(usina.estado_atualizado_em)}</span>
-                </div>
+                  <div className="flex flex-col items-end gap-0.5 shrink-0">
+                    <span
+                      className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium border ${cfg.badge}`}
+                    >
+                      <cfg.icon className="w-3 h-3" /> {cfg.label}
+                    </span>
+                    <span className="text-xs text-muted-foreground">{formatarHaQuanto(usina.estado_atualizado_em)}</span>
+                  </div>
+                </button>
+
+                {expandida && (
+                  <div className="px-3 pb-3 border-t border-border/50">
+                    <HistoricoUsina usinaId={usina.id} />
+                  </div>
+                )}
               </div>
             );
           })}

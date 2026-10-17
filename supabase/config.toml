@@ -12,3 +12,8 @@ verify_jwt = false
 # Apagar esta entrada junto quando a função for removida.
 [functions.mon-historico-teste]
 verify_jwt = false
+
+# mon-backfill-diario roda manualmente (workflow_dispatch), não por JWT
+# de usuário — mesmo segredo compartilhado da coleta.
+[functions.mon-backfill-diario]
+verify_jwt = false

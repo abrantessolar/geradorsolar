@@ -1,0 +1,65 @@
+name: Central de Monitoramento — backfill de histórico diário
+
+# Diferente do mon-coleta-cron.yml (tempo real, a cada 20min), este
+# workflow roda SÓ MANUALMENTE (workflow_dispatch) — é pra puxar o
+# histórico de geração desde uma data no passado até hoje, uma vez, ou
+# sempre que precisar estender o intervalo pra trás.
+#
+# Chama a edge function mon-backfill-diario uma vez por mês (ela mesma
+# processa todas as usinas daquele mês de uma vez, respeitando o limite
+# de 1 chamada/segundo da FoxESS internamente). Com ~26 usinas isso leva
+# uns 30-40s por mês — um intervalo de 2 anos leva ~20-30 minutos de
+# execução, dentro do limite do GitHub Actions (até 6h por job).
+#
+# Requer o mesmo secret MON_CRON_SECRET já cadastrado neste repositório
+# (ver mon-coleta-cron.yml).
+
+on:
+  workflow_dispatch:
+    inputs:
+      ano_inicio:
+        description: "Ano inicial (ex: 2024)"
+        required: true
+        default: "2024"
+      mes_inicio:
+        description: "Mês inicial (1-12)"
+        required: true
+        default: "1"
+      ano_fim:
+        description: "Ano final (ex: 2026)"
+        required: true
+        default: "2026"
+      mes_fim:
+        description: "Mês final (1-12)"
+        required: true
+        default: "10"
+
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Puxar histórico mês a mês
+        run: |
+          ano_inicio=${{ inputs.ano_inicio }}
+          mes_inicio=${{ inputs.mes_inicio }}
+          ano_fim=${{ inputs.ano_fim }}
+          mes_fim=${{ inputs.mes_fim }}
+
+          ano=$ano_inicio
+          mes=$mes_inicio
+          while [ "$ano" -lt "$ano_fim" ] || { [ "$ano" -eq "$ano_fim" ] && [ "$mes" -le "$mes_fim" ]; }; do
+            echo "=== Backfill $ano-$mes ==="
+            curl --fail-with-body -sS -X POST \
+              "https://jvlreltjfubennbtjvyq.supabase.co/functions/v1/mon-backfill-diario" \
+              -H "Content-Type: application/json" \
+              -H "x-mon-cron-secret: ${{ secrets.MON_CRON_SECRET }}" \
+              -d "{\"ano\":$ano,\"mes\":$mes}"
+            echo ""
+
+            mes=$((mes + 1))
+            if [ "$mes" -gt 12 ]; then
+              mes=1
+              ano=$((ano + 1))
+            fi
+            sleep 2
+          done
