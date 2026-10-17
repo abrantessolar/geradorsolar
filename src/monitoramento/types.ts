@@ -99,6 +99,9 @@ export interface LeituraNormalizada {
   energia_total_kwh: number | null;
   ultima_comunicacao: string | null;
   status_inversor: string | null;
+  // Sinal de conectividade puro, desacoplado de status_inversor (fix
+  // 2026-10-17 — ver comentário em mon-coleta/index.ts).
+  online: boolean;
   alarmes: string[];
 }
 

@@ -1,18 +1,22 @@
 import React, { useState } from 'react';
-import { Link2, Activity, Phone } from 'lucide-react';
+import { Link2, Activity, Phone, Siren } from 'lucide-react';
 import VinculoUsinas from './components/VinculoUsinas';
 import PainelSaude from './components/PainelSaude';
 import FilaContato from './components/FilaContato';
+import HistoricoAlarmes from './components/HistoricoAlarmes';
 
 // Central de Monitoramento TLS — módulo isolado dentro do painel do
 // gestor. Fase 1 (base) trouxe a aba de vínculo usina↔cliente; Fase 2
 // acrescenta o painel de saúde da frota e a fila de contato (kanban
-// reativo, separado da agenda de lembretes de tarefas_posvenda).
-type MonTab = 'vinculo' | 'saude' | 'fila';
+// reativo, separado da agenda de lembretes de tarefas_posvenda); Fase 3
+// (2026-10-17) acrescenta a aba de histórico de alarmes, unificando o
+// que antes só existia espalhado dentro de `mon_leituras`.
+type MonTab = 'vinculo' | 'saude' | 'fila' | 'alarmes';
 
 const TABS: { key: MonTab; label: string; icon: typeof Link2 }[] = [
   { key: 'saude', label: 'Saúde da frota', icon: Activity },
   { key: 'fila', label: 'Fila de contato', icon: Phone },
+  { key: 'alarmes', label: 'Alarmes', icon: Siren },
   { key: 'vinculo', label: 'Vínculo de usinas', icon: Link2 },
 ];
 
@@ -37,6 +41,7 @@ export default function MonitoramentoModule() {
 
       {tab === 'saude' && <PainelSaude />}
       {tab === 'fila' && <FilaContato />}
+      {tab === 'alarmes' && <HistoricoAlarmes />}
       {tab === 'vinculo' && <VinculoUsinas />}
     </div>
   );
