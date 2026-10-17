@@ -17,3 +17,10 @@ verify_jwt = false
 # de usuário — mesmo segredo compartilhado da coleta.
 [functions.mon-backfill-diario]
 verify_jwt = false
+
+# mon-solis-teste é uma função de TESTE/descartável (ver seu próprio
+# header comment) pra validar a autenticação HMAC-SHA1 da SolisCloud
+# antes de construir a integração de verdade (Solis, Fase 1 da nova
+# marca). Apagar esta entrada junto quando a função for removida.
+[functions.mon-solis-teste]
+verify_jwt = false
