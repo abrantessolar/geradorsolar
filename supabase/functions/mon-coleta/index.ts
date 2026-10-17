@@ -368,7 +368,10 @@ interface UsinaSolis {
   id: string; // stationId
   stationName: string | null;
   capacity: number | null;
-  cityStr: string | null;
+  countyStr: string | null; // cuidado: na hierarquia da Solis, "city" é o ESTADO
+  // (ex.: "Mato Grosso do Sul") e "county" é o MUNICÍPIO de verdade (ex.:
+  // "Tres Lagoas") — confirmado comparando um registro real em 2026-10-17.
+  // Usar countyStr pra "cidade", nunca cityStr.
 }
 
 async function listarUsinasSolis(): Promise<Map<string, UsinaSolis>> {
@@ -379,7 +382,12 @@ async function listarUsinasSolis(): Promise<Map<string, UsinaSolis>> {
     const dados = await solisPost("/v1/api/userStationList", { pageNo: pagina, pageSize });
     const registros = dados?.page?.records ?? [];
     for (const r of registros) {
-      porId.set(r.id, { id: r.id, stationName: r.stationName ?? null, capacity: r.capacity ?? null, cityStr: r.cityStr ?? null });
+      porId.set(r.id, {
+        id: r.id,
+        stationName: r.stationName ?? null,
+        capacity: r.capacity ?? null,
+        countyStr: r.countyStr ?? null,
+      });
     }
     const total = dados?.page?.total ?? registros.length;
     await new Promise((resolve) => setTimeout(resolve, SOLIS_PAUSA_MS));
@@ -508,10 +516,26 @@ async function coletarSolis(): Promise<{ leituras: LeituraNormalizada[]; erros: 
         ultima_comunicacao: new Date().toISOString(),
         status_inversor: statusUsina,
         alarmes,
-        modelo: invsDaUsina[0]?.inverterSeries ?? usina?.stationName ?? null,
-        cidade: usina?.cityStr ?? null,
+        // Prioridade invertida da FoxESS, de propósito: lá "modelo" guarda o
+        // nome do dono da usina (stationName), não o modelo do inversor — é
+        // isso que aparece no título de cada linha do painel. Mantém o mesmo
+        // padrão aqui: nome do dono primeiro, modelo do inversor só como
+        // fallback se a usina não tiver vínculo encontrado em userStationList.
+        modelo: usina?.stationName ?? invsDaUsina[0]?.inverterSeries ?? null,
+        cidade: usina?.countyStr ?? null,
         kwp: usina?.capacity ?? null,
       });
+
+      if (!usina) {
+        // Diagnóstico (2026-10-17): no primeiro teste real, algumas usinas
+        // apareceram no painel sem cidade/kWp. Hipótese: o stationId do
+        // inverterList não bateu com nenhum id do userStationList pra essas
+        // usinas (ou a própria Solis não tem esse dado cadastrado). Registra
+        // como erro não-bloqueante pra confirmar sem precisar de outro teste.
+        erros.push(
+          `Solis stationId ${stationId}: sem registro correspondente em userStationList (cidade/kWp/nome do dono ficam vazios — pode ser dado ausente na Solis ou bug de vínculo)`
+        );
+      }
     } catch (e) {
       erros.push(`Solis usina ${stationId}: ${e instanceof Error ? e.message : e}`);
     }
