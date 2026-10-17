@@ -10,12 +10,24 @@
 // 2. inverterList — lista de inversores com detalhe (potência, energia
 //    hoje, status) em lote, pra ver se dá pra montar a coleta em tempo
 //    real sem 1 chamada por usina.
-// 3. stationMonthEnergyList EM MODO ÚNICO (passando o `id` de uma usina
-//    real, obtida do resultado do passo 1) — o modo "lote" (sem id) já
-//    foi testado e confirmado que NÃO funciona ("necessary parameters
-//    are empty or invalid"). Este teste é pra descobrir o formato exato
-//    da resposta por usina (nomes dos campos, formato da data de cada
-//    dia) antes de construir o backfill de verdade.
+// 3. stationMonth (NÃO stationMonthEnergyList) de UMA usina real (id
+//    obtido do resultado do passo 1). Descoberto lendo o código-fonte da
+//    lib Python hultenvp/soliscloud_api (cliente de referência da
+//    comunidade): são dois endpoints diferentes, fáceis de confundir pelo
+//    nome —
+//      - stationMonthEnergyList: SÓ em lote, sem parâmetro de usina.
+//        Parâmetros: {pageNo, pageSize, time: "yyyy-MM"} — o nome do
+//        campo de mês é "time", não "month"! Devolve 1 linha por usina
+//        com o total do mês (sem detalhe diário).
+//      - stationMonth: é o endpoint POR USINA com detalhe diário.
+//        Parâmetros: {money: "<moeda ISO, ex. BRL>", month: "yyyy-MM",
+//        id: <stationId>} (ou nmiCode no lugar de id, só pra Austrália).
+//    Os dois testes anteriores falhavam com "necessary parameters are
+//    empty or invalid" porque misturavam os parâmetros dos dois
+//    endpoints (id+month em stationMonthEnergyList, que não aceita id;
+//    e faltava o "money", obrigatório em stationMonth). Este teste usa
+//    stationMonth com os três parâmetros corretos, pra confirmar o
+//    formato da resposta (nomes dos campos diários) antes do backfill.
 //
 // Autenticação da SolisCloud (bem diferente da FoxESS): cada request
 // precisa de um header Authorization = "API " + KeyId + ":" + Sign,
@@ -153,11 +165,13 @@ serve(async (req) => {
 
     let historicoMensal: { status: number; corpoResposta: string } | null = null;
     if (primeiraUsinaId) {
-      historicoMensal = await solisPost("/v1/api/stationMonthEnergyList", {
-        id: primeiraUsinaId,
+      // stationMonth (não stationMonthEnergyList): endpoint por usina,
+      // com detalhe diário. "money" é obrigatório (moeda ISO) mesmo não
+      // sendo usado pra nada aqui além de satisfazer a validação da API.
+      historicoMensal = await solisPost("/v1/api/stationMonth", {
+        money: "BRL",
         month: mesTeste,
-        pageNo: 1,
-        pageSize: 31,
+        id: primeiraUsinaId,
       });
     }
 
@@ -172,7 +186,7 @@ serve(async (req) => {
         corpo_bruto: listaInversores.corpoResposta,
         corpo_json: tentarJson(listaInversores.corpoResposta),
       },
-      stationMonthEnergyList: {
+      stationMonth: {
         usina_id_testada: primeiraUsinaId,
         mes_testado: mesTeste,
         http_status: historicoMensal?.status ?? null,
