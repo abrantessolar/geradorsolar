@@ -17,6 +17,13 @@
 // (x-mon-cron-secret = MON_CRON_SECRET), igual ao padrão já usado em
 // mon-coleta/mon-historico-teste/mon-backfill-diario (AGENTS.md: função
 // privilegiada tem que autenticar quem chama).
+//
+// CONFIRMADO EM PRODUÇÃO (2026-10-17): Content-Type tem que ser
+// exatamente "application/json" (sem ";charset=UTF-8") tanto no header
+// quanto no texto assinado — com charset a Solis responde 403 "wrong
+// sign". userStationList respondeu 200 com as 292 usinas da conta
+// (264 normais, 28 offline, 0 em falha), confirmando a assinatura
+// HMAC-SHA1 e o total esperado.
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { crypto as stdCrypto } from "https://deno.land/std@0.224.0/crypto/mod.ts";
