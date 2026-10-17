@@ -1,12 +1,13 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
-import { Link2, Check, Zap, MapPin, RefreshCw } from 'lucide-react';
+import { Link2, Check, Zap, MapPin, RefreshCw, Pencil } from 'lucide-react';
 import {
   listarUsinasSemVinculo,
   listarUsinasVinculadas,
   listarClientesParaVinculo,
   confirmarVinculo,
   desfazerVinculo,
+  atualizarKwp,
 } from '../lib/usinas';
 import { sugerirClientes } from '../lib/similaridade';
 import type { ClienteBaseResumo, MonUsina } from '../types';
@@ -18,6 +19,68 @@ const MARCA_LABEL: Record<string, string> = {
   sofarcloud: 'SofarCloud',
   hoymiles: 'Hoymiles',
 };
+
+// Ajuste manual de kWp — último recurso quando nem a API da marca nem o
+// fallback automático via cliente vinculado resolvem (ver
+// preencherKwpAusente em mon-coleta/index.ts). Clique no valor (ou no
+// "—", se ainda não tiver nenhum) pra editar.
+function KwpEditavel({ usina, onSalvo }: { usina: MonUsina; onSalvo: () => void }) {
+  const [editando, setEditando] = useState(false);
+  const [valor, setValor] = useState(usina.kwp != null ? String(usina.kwp) : '');
+  const [salvando, setSalvando] = useState(false);
+
+  const salvar = async () => {
+    const numero = valor.trim() === '' ? null : Number(valor.replace(',', '.'));
+    if (numero != null && (Number.isNaN(numero) || numero <= 0)) {
+      toast.error('kWp precisa ser um número maior que zero (ou vazio pra limpar).');
+      return;
+    }
+    setSalvando(true);
+    try {
+      await atualizarKwp(usina.id, numero);
+      toast.success('kWp atualizado.');
+      setEditando(false);
+      onSalvo();
+    } catch (e: any) {
+      toast.error('Erro ao salvar kWp: ' + e.message);
+    } finally {
+      setSalvando(false);
+    }
+  };
+
+  if (!editando) {
+    return (
+      <button
+        onClick={() => setEditando(true)}
+        className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground underline-offset-2 hover:underline"
+        title="Ajustar kWp manualmente"
+      >
+        {usina.kwp ? `${usina.kwp} kWp` : 'sem kWp'} <Pencil className="w-3 h-3" />
+      </button>
+    );
+  }
+
+  return (
+    <div className="inline-flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+      <input
+        type="text"
+        inputMode="decimal"
+        autoFocus
+        value={valor}
+        onChange={(e) => setValor(e.target.value)}
+        onKeyDown={(e) => e.key === 'Enter' && salvar()}
+        placeholder="kWp"
+        className="solar-input text-xs py-0.5 px-1.5 w-16"
+      />
+      <button onClick={salvar} disabled={salvando} className="text-xs text-primary font-medium disabled:opacity-50">
+        OK
+      </button>
+      <button onClick={() => setEditando(false)} className="text-xs text-muted-foreground">
+        ✕
+      </button>
+    </div>
+  );
+}
 
 function LinhaUsinaSemVinculo({
   usina,
@@ -64,13 +127,13 @@ function LinhaUsinaSemVinculo({
           <p className="font-medium truncate">
             {MARCA_LABEL[usina.marca] ?? usina.marca} — {usina.modelo || usina.sn_inversor || usina.id_externo}
           </p>
-          <p className="text-xs text-muted-foreground flex items-center gap-1 truncate">
+          <p className="text-xs text-muted-foreground flex items-center gap-1.5 truncate">
             {usina.cidade && (
-              <>
+              <span className="inline-flex items-center gap-1">
                 <MapPin className="w-3 h-3 shrink-0" /> {usina.cidade}
-              </>
+              </span>
             )}
-            {usina.kwp ? ` • ${usina.kwp} kWp` : ''}
+            <KwpEditavel usina={usina} onSalvo={onVinculado} />
           </p>
         </div>
       </div>
@@ -194,8 +257,10 @@ export default function VinculoUsinas() {
                     <p className="font-medium truncate">
                       {MARCA_LABEL[usina.marca] ?? usina.marca} — {usina.modelo || usina.sn_inversor || usina.id_externo}
                     </p>
-                    <p className="text-xs text-muted-foreground truncate">
+                    <p className="text-xs text-muted-foreground truncate flex items-center gap-1.5">
                       {cliente?.nome_completo || 'Cliente não encontrado'}
+                      <span className="opacity-50">•</span>
+                      <KwpEditavel usina={usina} onSalvo={carregar} />
                     </p>
                   </div>
                   <button

@@ -148,6 +148,29 @@ async function foxessHeaders(path: string): Promise<Record<string, string>> {
   };
 }
 
+// GET pra /op/v0/plant/detail (ver buscarCapacidadeFoxess abaixo) — a
+// assinatura usa só o path, sem query string (confirmado no exemplo em
+// Python da própria documentação da FoxESS: o path assinado nunca inclui
+// "?id=..."), então reaproveita foxessHeaders(path) sem mudança.
+async function foxessGet(path: string, query: Record<string, string>): Promise<any> {
+  const url = new URL(FOXESS_BASE + path);
+  for (const [k, v] of Object.entries(query)) url.searchParams.set(k, v);
+  const res = await fetch(url.toString(), { method: "GET", headers: await foxessHeaders(path) });
+  const textoBruto = await res.text();
+  let data: any;
+  try {
+    data = JSON.parse(textoBruto);
+  } catch {
+    throw new Error(
+      `FoxESS ${path} (GET) retornou algo não-JSON (HTTP ${res.status} ${res.statusText}): ${textoBruto.slice(0, 300) || "(corpo vazio)"}`
+    );
+  }
+  if (data.errno && data.errno !== 0) {
+    throw new Error(`FoxESS ${path} (GET) errno=${data.errno} ${data.msg ?? ""}`);
+  }
+  return data.result ?? data;
+}
+
 async function foxessPost(path: string, body: unknown): Promise<any> {
   const res = await fetch(FOXESS_BASE + path, {
     method: "POST",
@@ -206,6 +229,25 @@ async function listarDispositivosFoxess(): Promise<DispositivoFoxess[]> {
   return todos;
 }
 
+// CORRIGIDO (2026-10-17): o kWp da FoxESS nunca tinha sido puxado —
+// `/op/v0/device/list` (usado em listarDispositivosFoxess) não traz
+// capacidade nenhuma, só dados do dispositivo. O valor fica em
+// `/op/v0/plant/detail?id=<stationID>` (GET, um por usina — achado
+// lendo a documentação oficial da FoxESS, seção "Get power station
+// detail"), campo `capacity` (kW, equivalente ao kWp). Com só 26 usinas
+// e sem endpoint em lote pra isso, 1 chamada extra por usina por ciclo
+// é barato (mesmo padrão de "sem pausa entre chamadas" já usado nas
+// chamadas de leitura desta função, nunca deu problema de rate limit).
+// Falha isolada: se der erro, só loga e segue sem travar a leitura.
+async function buscarCapacidadeFoxess(stationID: string): Promise<number | null> {
+  try {
+    const detalhe = await foxessGet("/op/v0/plant/detail", { id: stationID });
+    return typeof detalhe?.capacity === "number" ? detalhe.capacity : null;
+  } catch {
+    return null;
+  }
+}
+
 // Uma usina (station, `stationID`) pode ter mais de um inversor/micro
 // (`deviceSN`) — por isso recebe a lista de dispositivos daquela estação
 // e soma as leituras, em vez de uma leitura por dispositivo.
@@ -217,6 +259,7 @@ async function buscarLeituraEstacaoFoxess(
   const variaveis = ["generationPower", "todayYield", "generation"];
   const resultado = await foxessPost("/op/v1/device/real/query", { sns, variables: variaveis });
   const linhas: any[] = Array.isArray(resultado) ? resultado : resultado?.data ?? [];
+  const kwp = await buscarCapacidadeFoxess(stationID);
 
   let potenciaTotalW = 0;
   let temLeituraDePotencia = false;
@@ -265,6 +308,7 @@ async function buscarLeituraEstacaoFoxess(
     online: !todosOffline,
     alarmes,
     modelo: dispositivos[0]?.stationName ?? null,
+    kwp,
   };
 }
 
@@ -595,13 +639,20 @@ async function gravarLeituras(leituras: LeituraNormalizada[]): Promise<{ gravada
   const chave = (marca: string, idExterno: string) => `${marca}|${idExterno}`;
 
   for (const lote of emLotes(leituras, TAMANHO_LOTE)) {
+    // CORRIGIDO (2026-10-17): "kwp" saiu de cá de propósito. Antes ia
+    // `kwp: l.kwp ?? null` em TODA leitura — se a FoxESS/Solis não
+    // devolvesse capacidade numa chamada (falha isolada, dado ausente),
+    // esse upsert sobrescrevia o kwp já salvo com null, apagando até uma
+    // correção manual feita por alguém. kwp agora só é escrito no passo
+    // separado abaixo (upsertCapacidadeConhecida), que só inclui linhas
+    // com um valor de verdade — nunca grava null em cima de um valor
+    // existente.
     const payload = lote.map((l) => ({
       marca: l.marca,
       id_externo: l.id_externo_usina,
       sn_inversor: l.sn_inversor,
       modelo: l.modelo ?? null,
       cidade: l.cidade ?? null,
-      kwp: l.kwp ?? null,
     }));
     const { data, error } = await supabaseAdmin
       .from("mon_usinas")
@@ -614,6 +665,18 @@ async function gravarLeituras(leituras: LeituraNormalizada[]): Promise<{ gravada
     for (const row of data ?? []) {
       idPorChave.set(chave(row.marca, row.id_externo), row.id);
     }
+  }
+
+  // kWp: só grava quando a coleta trouxe um valor de verdade (> 0) pra
+  // essa usina neste ciclo — nunca com null, pra não apagar um valor já
+  // confirmado (seja da própria API num ciclo anterior, seja de um
+  // ajuste manual). Ver preencherKwpAusente() pro fallback via cliente
+  // vinculado, chamado no handler depois deste gravarLeituras.
+  const comKwp = leituras.filter((l) => l.kwp != null && l.kwp > 0);
+  for (const lote of emLotes(comKwp, TAMANHO_LOTE)) {
+    const payload = lote.map((l) => ({ marca: l.marca, id_externo: l.id_externo_usina, kwp: l.kwp }));
+    const { error } = await supabaseAdmin.from("mon_usinas").upsert(payload, { onConflict: "marca,id_externo" });
+    if (error) erros.push(`Upsert de kWp (lote de ${lote.length}): ${error.message}`);
   }
 
   // 2) insert em mon_leituras, em lotes — só pras usinas cujo upsert deu certo.
@@ -733,6 +796,52 @@ async function atualizarChamado(usinaId: string, estado: EstadoUsina): Promise<v
   });
 }
 
+// Fallback de kWp (2026-10-17, pedido do usuário): quando a API da marca
+// não trouxe capacidade pra uma usina (nem agora, nem em ciclos
+// anteriores — mon_usinas.kwp ainda null) mas ela já tem vínculo
+// confirmado com um cliente, usa o tamanho do sistema cadastrado na
+// proposta/instalação (clientes_base.qtd_placas × potencia_placa, mesma
+// conta já usada em ClientesPage.tsx) em vez de ficar sem indicador
+// nenhum. Só preenche quando ainda está null — nunca sobrescreve um
+// valor que já veio da própria API (essa é mais confiável, por ser o
+// dado operacional de verdade da marca).
+async function preencherKwpAusente(): Promise<{ preenchidas: number; erros: string[] }> {
+  const erros: string[] = [];
+
+  const { data: usinasSemKwp, error: erroUsinas } = await supabaseAdmin
+    .from("mon_usinas")
+    .select("id, cliente_base_id")
+    .is("kwp", null)
+    .not("cliente_base_id", "is", null);
+  if (erroUsinas) return { preenchidas: 0, erros: [`Falha ao listar usinas sem kWp: ${erroUsinas.message}`] };
+  if (!usinasSemKwp || usinasSemKwp.length === 0) return { preenchidas: 0, erros: [] };
+
+  const clienteIds = Array.from(new Set(usinasSemKwp.map((u: any) => u.cliente_base_id).filter(Boolean)));
+  const { data: clientes, error: erroClientes } = await supabaseAdmin
+    .from("clientes_base")
+    .select("id, qtd_placas, potencia_placa")
+    .in("id", clienteIds);
+  if (erroClientes) return { preenchidas: 0, erros: [`Falha ao buscar clientes pra fallback de kWp: ${erroClientes.message}`] };
+
+  const kwpPorCliente = new Map<string, number>();
+  for (const c of (clientes ?? []) as Array<{ id: string; qtd_placas: number | null; potencia_placa: string | null }>) {
+    const qtd = c.qtd_placas ?? 0;
+    const potencia = parseFloat(c.potencia_placa ?? "0") || 0;
+    if (qtd > 0 && potencia > 0) kwpPorCliente.set(c.id, (qtd * potencia) / 1000);
+  }
+
+  let preenchidas = 0;
+  for (const u of usinasSemKwp as Array<{ id: string; cliente_base_id: string }>) {
+    const kwp = kwpPorCliente.get(u.cliente_base_id);
+    if (kwp == null) continue;
+    const { error } = await supabaseAdmin.from("mon_usinas").update({ kwp }).eq("id", u.id).is("kwp", null);
+    if (error) erros.push(`Fallback de kWp pra usina ${u.id}: ${error.message}`);
+    else preenchidas++;
+  }
+
+  return { preenchidas, erros };
+}
+
 async function avaliarEstados(): Promise<{ atualizadas: number; erros: string[] }> {
   const erros: string[] = [];
   let atualizadas = 0;
@@ -839,12 +948,14 @@ serve(async (req: Request) => {
   const leituras = [...leiturasFoxess, ...leiturasSolis];
   const errosColeta = [...errosFoxess, ...errosSolis];
   const { gravadas, erros: errosGravacao } = await gravarLeituras(leituras);
+  const { preenchidas: kwpPreenchidas, erros: errosKwp } = await preencherKwpAusente();
   const { atualizadas: estadosAtualizados, erros: errosEstado } = await avaliarEstados();
 
   return json({
     usinas_processadas: leituras.length,
     leituras_gravadas: gravadas,
+    kwp_preenchidas_via_cliente: kwpPreenchidas,
     estados_atualizados: estadosAtualizados,
-    erros: [...errosColeta, ...errosGravacao, ...errosEstado],
+    erros: [...errosColeta, ...errosGravacao, ...errosKwp, ...errosEstado],
   });
 });

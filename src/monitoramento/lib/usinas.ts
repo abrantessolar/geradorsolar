@@ -58,6 +58,19 @@ export async function marcarInativa(usinaId: string, ativo: boolean): Promise<vo
   if (error) throw error;
 }
 
+// Ajuste manual de kWp (2026-10-17, pedido do usuário) — último recurso
+// pra quando nem a API da marca nem o fallback automático via cliente
+// vinculado (preencherKwpAusente em mon-coleta) resolvem. Sobrescreve
+// qualquer valor existente de propósito: é uma correção manual
+// explícita, não um preenchimento condicional.
+export async function atualizarKwp(usinaId: string, kwp: number | null): Promise<void> {
+  const { error } = await supabase
+    .from('mon_usinas' as any)
+    .update({ kwp })
+    .eq('id', usinaId);
+  if (error) throw error;
+}
+
 // Painel de saúde da frota (Fase 2) — lista todas as usinas ativas com o
 // `estado_atual` já calculado pela edge function `mon-coleta` (cache em
 // mon_usinas, ver drizzle/migrations/0009_monitoramento_estado_cache.sql),
