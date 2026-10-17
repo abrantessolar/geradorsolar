@@ -1,6 +1,6 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { Link2, Check, Zap, MapPin, RefreshCw, Pencil } from 'lucide-react';
+import { Link2, Check, Zap, MapPin, RefreshCw, Pencil, Search } from 'lucide-react';
 import {
   listarUsinasSemVinculo,
   listarUsinasVinculadas,
@@ -9,7 +9,7 @@ import {
   desfazerVinculo,
   atualizarKwp,
 } from '../lib/usinas';
-import { sugerirClientes } from '../lib/similaridade';
+import { sugerirClientes, normalizar } from '../lib/similaridade';
 import type { ClienteBaseResumo, MonUsina } from '../types';
 
 const MARCA_LABEL: Record<string, string> = {
@@ -82,6 +82,98 @@ function KwpEditavel({ usina, onSalvo }: { usina: MonUsina; onSalvo: () => void 
   );
 }
 
+// Campo de busca pra escolher o cliente no vínculo (2026-10-17, pedido
+// do usuário — antes era um <select> só, difícil de navegar com a base
+// de clientes crescendo). Mostra as sugestões por similaridade primeiro
+// (quando não há busca digitada), e filtra por nome (sem acento/caixa,
+// via `normalizar`) conforme o usuário digita.
+function SeletorCliente({
+  clientes,
+  sugestoes,
+  valorId,
+  onSelecionar,
+}: {
+  clientes: ClienteBaseResumo[];
+  sugestoes: { item: ClienteBaseResumo; pontuacao: number }[];
+  valorId: string;
+  onSelecionar: (id: string) => void;
+}) {
+  const clienteSelecionado = useMemo(() => clientes.find((c) => c.id === valorId) ?? null, [clientes, valorId]);
+  const [busca, setBusca] = useState(clienteSelecionado?.nome_completo ?? '');
+  const [aberto, setAberto] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Mantém o texto do campo sincronizado se o valor mudar por fora
+  // (ex.: sugestão automática aplicada ao carregar a linha).
+  useEffect(() => {
+    setBusca(clienteSelecionado?.nome_completo ?? '');
+  }, [clienteSelecionado?.id]);
+
+  useEffect(() => {
+    function fecharSeClicarFora(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) setAberto(false);
+    }
+    document.addEventListener('mousedown', fecharSeClicarFora);
+    return () => document.removeEventListener('mousedown', fecharSeClicarFora);
+  }, []);
+
+  const termo = normalizar(busca);
+  const pontuacaoPorId = useMemo(() => {
+    const mapa = new Map<string, number>();
+    sugestoes.forEach((s) => mapa.set(s.item.id, s.pontuacao));
+    return mapa;
+  }, [sugestoes]);
+
+  const resultados = useMemo(() => {
+    if (!termo || termo === normalizar(clienteSelecionado?.nome_completo)) {
+      return sugestoes.length > 0 ? sugestoes.map((s) => s.item) : clientes.slice(0, 20);
+    }
+    return clientes.filter((c) => normalizar(c.nome_completo).includes(termo)).slice(0, 20);
+  }, [termo, clientes, sugestoes, clienteSelecionado]);
+
+  return (
+    <div className="relative w-full sm:w-64" ref={containerRef}>
+      <div className="relative">
+        <Search className="w-3.5 h-3.5 absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
+        <input
+          type="text"
+          className="solar-input text-sm py-1.5 pl-7 pr-2 w-full"
+          placeholder="Buscar cliente…"
+          value={busca}
+          onFocus={() => setAberto(true)}
+          onChange={(e) => {
+            setBusca(e.target.value);
+            setAberto(true);
+            if (valorId) onSelecionar('');
+          }}
+        />
+      </div>
+      {aberto && resultados.length > 0 && (
+        <div className="absolute z-10 mt-1 w-full max-h-56 overflow-auto rounded-lg border border-border bg-background shadow-lg">
+          {resultados.map((c) => {
+            const pontuacao = pontuacaoPorId.get(c.id);
+            return (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => {
+                  onSelecionar(c.id);
+                  setBusca(c.nome_completo ?? '');
+                  setAberto(false);
+                }}
+                className="w-full text-left text-sm px-2 py-1.5 hover:bg-muted/60"
+              >
+                {c.nome_completo || '(sem nome)'}
+                {pontuacao != null && pontuacao >= 0.4 && <span className="text-xs text-primary ml-1">— sugerido</span>}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function LinhaUsinaSemVinculo({
   usina,
   clientes,
@@ -138,19 +230,7 @@ function LinhaUsinaSemVinculo({
         </div>
       </div>
 
-      <select
-        className="solar-input text-sm py-1.5 px-2 w-full sm:w-64"
-        value={selecionado}
-        onChange={(e) => setSelecionado(e.target.value)}
-      >
-        <option value="">Selecione o cliente…</option>
-        {sugestoes.map(({ item, pontuacao }) => (
-          <option key={item.id} value={item.id}>
-            {item.nome_completo || '(sem nome)'}
-            {pontuacao >= 0.4 ? ' — sugerido' : ''}
-          </option>
-        ))}
-      </select>
+      <SeletorCliente clientes={clientes} sugestoes={sugestoes} valorId={selecionado} onSelecionar={setSelecionado} />
 
       <button
         onClick={confirmar}
