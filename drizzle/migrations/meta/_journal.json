@@ -71,6 +71,13 @@
       "when": 1792187708646,
       "tag": "0009_monitoramento_estado_cache_corrigido",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1792271858508,
+      "tag": "0010_remover_desvio_frota_ddl",
+      "breakpoints": true
     }
   ]
 }
