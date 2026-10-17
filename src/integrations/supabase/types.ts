@@ -1695,6 +1695,75 @@ export type Database = {
           },
         ]
       }
+      mon_faturas: {
+        Row: {
+          cliente_base_id: string | null
+          consumo_concessionaria_kwh: number
+          consumo_real_casa_kwh: number
+          consumo_simultaneidade_kwh: number
+          criado_em: string
+          criado_por: string | null
+          energia_injetada_kwh: number
+          geracao_kwh: number
+          id: string
+          numero_conta: number
+          periodo_fim: string
+          periodo_inicio: string
+          saldo_acumulado_kwh: number
+          saldo_mes_kwh: number
+          usina_id: string
+        }
+        Insert: {
+          cliente_base_id?: string | null
+          consumo_concessionaria_kwh: number
+          consumo_real_casa_kwh: number
+          consumo_simultaneidade_kwh: number
+          criado_em?: string
+          criado_por?: string | null
+          energia_injetada_kwh: number
+          geracao_kwh: number
+          id?: string
+          numero_conta: number
+          periodo_fim: string
+          periodo_inicio: string
+          saldo_acumulado_kwh: number
+          saldo_mes_kwh: number
+          usina_id: string
+        }
+        Update: {
+          cliente_base_id?: string | null
+          consumo_concessionaria_kwh?: number
+          consumo_real_casa_kwh?: number
+          consumo_simultaneidade_kwh?: number
+          criado_em?: string
+          criado_por?: string | null
+          energia_injetada_kwh?: number
+          geracao_kwh?: number
+          id?: string
+          numero_conta?: number
+          periodo_fim?: string
+          periodo_inicio?: string
+          saldo_acumulado_kwh?: number
+          saldo_mes_kwh?: number
+          usina_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mon_faturas_cliente_base_id_fkey"
+            columns: ["cliente_base_id"]
+            isOneToOne: false
+            referencedRelation: "clientes_base"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mon_faturas_usina_id_fkey"
+            columns: ["usina_id"]
+            isOneToOne: false
+            referencedRelation: "mon_usinas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       mon_guias_reconexao: {
         Row: {
           atualizado_em: string

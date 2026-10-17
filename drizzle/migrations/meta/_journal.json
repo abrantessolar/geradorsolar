@@ -78,6 +78,13 @@
       "when": 1792271858508,
       "tag": "0010_remover_desvio_frota_ddl",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1792275361452,
+      "tag": "0011_mon_faturas_conta_de_luz",
+      "breakpoints": true
     }
   ]
 }
