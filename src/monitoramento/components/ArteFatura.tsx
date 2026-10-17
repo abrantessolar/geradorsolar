@@ -111,21 +111,40 @@ function IconeGeracaoSolar() {
   );
 }
 
-function SetaDiagonal({ rotacao, x, y }: { rotacao: number; x: number; y: number }) {
+// Pontos de um triângulo (ponta de seta) terminando em (x2,y2), apontando
+// na direção de (x1,y1) → (x2,y2).
+function pontosTriangulo(x1: number, y1: number, x2: number, y2: number, tamanho = 11): string {
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  const comprimento = Math.sqrt(dx * dx + dy * dy) || 1;
+  const ux = dx / comprimento;
+  const uy = dy / comprimento;
+  const px = -uy;
+  const py = ux;
+  const baseX = x2 - ux * tamanho;
+  const baseY = y2 - uy * tamanho;
+  const largura = tamanho * 0.6;
+  return `${x2},${y2} ${baseX + px * largura},${baseY + py * largura} ${baseX - px * largura},${baseY - py * largura}`;
+}
+
+// Seta com ponta desenhada como triângulo (<polygon>), não como SVG
+// <marker>. O html2canvas não suporta `<marker>` (usado antes pra ponta de
+// seta via `marker-end`) — a seta inteira (linha + ponta) desaparecia na
+// imagem exportada mesmo aparecendo certinho na tela.
+function SetaComPonta({ x1, y1, x2, y2 }: { x1: number; y1: number; x2: number; y2: number }) {
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  const comprimento = Math.sqrt(dx * dx + dy * dy) || 1;
+  const ux = dx / comprimento;
+  const uy = dy / comprimento;
+  // encurta a linha um pouco pra não vazar por trás da ponta do triângulo
+  const corteX = x2 - ux * 9;
+  const corteY = y2 - uy * 9;
   return (
-    <svg
-      width="90"
-      height="90"
-      viewBox="0 0 90 90"
-      style={{ position: 'absolute', left: x, top: y, transform: `rotate(${rotacao}deg)` }}
-    >
-      <defs>
-        <marker id={`seta-${rotacao}-${x}`} markerWidth="10" markerHeight="10" refX="6" refY="5" orient="auto">
-          <path d="M0,0 L10,5 L0,10 Z" fill="#1a1a1a" />
-        </marker>
-      </defs>
-      <line x1="10" y1="80" x2="78" y2="12" stroke="#1a1a1a" strokeWidth="7" markerEnd={`url(#seta-${rotacao}-${x})`} />
-    </svg>
+    <>
+      <line x1={x1} y1={y1} x2={corteX} y2={corteY} stroke="#1a1a1a" strokeWidth="7" strokeLinecap="round" />
+      <polygon points={pontosTriangulo(x1, y1, x2, y2)} fill="#1a1a1a" />
+    </>
   );
 }
 
@@ -143,6 +162,25 @@ export interface DadosArteFatura {
 }
 
 const ArteFatura = forwardRef<HTMLDivElement, DadosArteFatura>((dados, ref) => {
+  const percentualSolarDireto =
+    dados.consumoRealCasaKwh > 0 ? Math.round((dados.consumoSimultaneidadeKwh / dados.consumoRealCasaKwh) * 100) : null;
+
+  // Todas as setas do diagrama num SVG só, cobrindo o diagrama inteiro
+  // (940×700), posicionado em left:0/top:0 — sem nenhum offset próprio.
+  // Descoberto depurando a exportação: um <svg> pequeno posicionado via
+  // `left`/`top` maiores que o próprio tamanho dele faz o html2canvas
+  // recortar a altura/largura como se o deslocamento fosse descontado do
+  // tamanho do SVG (ex.: `top: 65` num SVG de `height: 20` zera a área
+  // visível) — por isso cada seta era desenhada certinho na tela, mas
+  // sumia por completo na imagem exportada. Um único SVG grande, sem
+  // deslocamento próprio, com todas as coordenadas já calculadas dentro
+  // dele, não sofre desse bug.
+  const setaHorizontal = { x1: 785, y1: 75, x2: 180, y2: 75 }; // concessionária → casa
+  // Centro do ícone de geração solar (box left:420/top:430, ícone 150px
+  // centralizado num container de 260px de largura).
+  const setaCasa = { x1: 540, y1: 435, x2: 280, y2: 375 }; // geração → casa (simultaneidade)
+  const setaConcessionaria = { x1: 600, y1: 435, x2: 790, y2: 375 }; // geração → concessionária (injetada)
+
   return (
     <div
       ref={ref}
@@ -168,6 +206,11 @@ const ArteFatura = forwardRef<HTMLDivElement, DadosArteFatura>((dados, ref) => {
         <p style={{ fontSize: 20, color: '#8a6d1a', marginTop: 10, fontWeight: 700 }}>
           {dados.clienteNome} — {dados.numeroConta}ª conta • {dados.periodoLabel}
         </p>
+        {percentualSolarDireto != null && (
+          <div style={{ marginTop: 14 }}>
+            <Chip texto={`${percentualSolarDireto}% da energia usada veio direto do sol`} destaque />
+          </div>
+        )}
       </div>
 
       {/* Diagrama */}
@@ -186,15 +229,13 @@ const ArteFatura = forwardRef<HTMLDivElement, DadosArteFatura>((dados, ref) => {
           <p style={{ fontSize: 26, fontWeight: 800, margin: '6px 0 0 0', color: '#1a1a1a' }}>Concessionária</p>
         </div>
 
-        {/* Seta horizontal concessionária → casa */}
-        <svg width="100%" height="20" style={{ position: 'absolute', left: 170, top: 65, width: 620 }} viewBox="0 0 620 20">
-          <defs>
-            <marker id="seta-horizontal" markerWidth="12" markerHeight="12" refX="7" refY="6" orient="auto">
-              <path d="M0,0 L12,6 L0,12 Z" fill="#1a1a1a" />
-            </marker>
-          </defs>
-          <line x1="615" y1="10" x2="10" y2="10" stroke="#1a1a1a" strokeWidth="7" markerEnd="url(#seta-horizontal)" />
+        {/* Todas as setas num único SVG cobrindo o diagrama (ver comentário acima) */}
+        <svg width="940" height="700" viewBox="0 0 940 700" style={{ position: 'absolute', left: 0, top: 0 }}>
+          <SetaComPonta x1={setaHorizontal.x1} y1={setaHorizontal.y1} x2={setaHorizontal.x2} y2={setaHorizontal.y2} />
+          <SetaComPonta x1={setaCasa.x1} y1={setaCasa.y1} x2={setaCasa.x2} y2={setaCasa.y2} />
+          <SetaComPonta x1={setaConcessionaria.x1} y1={setaConcessionaria.y1} x2={setaConcessionaria.x2} y2={setaConcessionaria.y2} />
         </svg>
+
         <div style={{ position: 'absolute', left: 300, top: -6, textAlign: 'center', width: 280 }}>
           <p style={{ fontSize: 19, fontWeight: 700, margin: 0, color: '#1a1a1a' }}>Consumo da concessionária</p>
           <div style={{ marginTop: 6 }}>
@@ -209,8 +250,7 @@ const ArteFatura = forwardRef<HTMLDivElement, DadosArteFatura>((dados, ref) => {
           <Chip texto={formatarKwh(dados.geracaoKwh)} destaque />
         </div>
 
-        {/* Seta geração → casa (simultaneidade) */}
-        <SetaDiagonal rotacao={-45} x={210} y={290} />
+        {/* Rótulo da seta geração → casa (simultaneidade) */}
         <div style={{ position: 'absolute', left: 30, top: 330, width: 230, textAlign: 'right' }}>
           <p style={{ fontSize: 19, fontWeight: 700, margin: 0, color: '#1a1a1a' }}>Consumo em simultaneidade</p>
           <div style={{ marginTop: 6 }}>
@@ -218,8 +258,7 @@ const ArteFatura = forwardRef<HTMLDivElement, DadosArteFatura>((dados, ref) => {
           </div>
         </div>
 
-        {/* Seta geração → concessionária (injetada) */}
-        <SetaDiagonal rotacao={45} x={660} y={290} />
+        {/* Rótulo da seta geração → concessionária (injetada) */}
         <div style={{ position: 'absolute', right: 10, top: 330, width: 260 }}>
           <p style={{ fontSize: 19, fontWeight: 700, margin: 0, color: '#1a1a1a' }}>Energia injetada</p>
           <div style={{ marginTop: 6, marginBottom: 14 }}>

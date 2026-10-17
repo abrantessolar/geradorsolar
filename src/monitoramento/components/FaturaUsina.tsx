@@ -130,6 +130,32 @@ export default function FaturaUsina({ usinaId }: { usinaId: string }) {
     return consumoSimultaneidadePrevia + consumoConcessionariaNum;
   }, [consumoSimultaneidadePrevia, consumoConcessionariaNum]);
 
+  // % da energia que a casa consumiu direto da geração solar, sem passar
+  // pela rede (simultaneidade ÷ consumo real × 100) — só informativo aqui;
+  // também aparece na arte exportada (ArteFatura.tsx calcula de novo a
+  // partir dos mesmos dois valores, já salvos).
+  const percentualSolarDiretoPrevia = useMemo(() => {
+    if (consumoSimultaneidadePrevia == null || consumoRealCasaPrevia == null || consumoRealCasaPrevia <= 0) return null;
+    return (consumoSimultaneidadePrevia / consumoRealCasaPrevia) * 100;
+  }, [consumoSimultaneidadePrevia, consumoRealCasaPrevia]);
+
+  // Validações pedidas pelo usuário: nenhum valor negativo, e a energia
+  // injetada não pode superar a geração total do mesmo período (pode, sim,
+  // superar o consumo da concessionária — isso é normal).
+  const valoresNegativos =
+    (consumoConcessionariaNum != null && consumoConcessionariaNum < 0) ||
+    (energiaInjetadaNum != null && energiaInjetadaNum < 0) ||
+    (saldoMesNum != null && saldoMesNum < 0) ||
+    (saldoAcumuladoNum != null && saldoAcumuladoNum < 0);
+
+  const injetadaMaiorQueGeracao = geracaoKwh != null && energiaInjetadaNum != null && energiaInjetadaNum > geracaoKwh;
+
+  const erroValidacao = valoresNegativos
+    ? 'Nenhum valor pode ser negativo.'
+    : injetadaMaiorQueGeracao
+      ? 'A energia injetada não pode ser maior que a geração solar do período.'
+      : null;
+
   const formValido =
     periodoInicio &&
     periodoFim &&
@@ -138,7 +164,8 @@ export default function FaturaUsina({ usinaId }: { usinaId: string }) {
     consumoConcessionariaNum != null &&
     energiaInjetadaNum != null &&
     saldoMesNum != null &&
-    saldoAcumuladoNum != null;
+    saldoAcumuladoNum != null &&
+    !erroValidacao;
 
   const montarDadosArte = (f: MonFatura, nomeCliente: string): DadosArteFatura => ({
     clienteNome: nomeCliente,
@@ -165,6 +192,10 @@ export default function FaturaUsina({ usinaId }: { usinaId: string }) {
   };
 
   const salvarEGerar = async () => {
+    if (erroValidacao) {
+      toast.error(erroValidacao);
+      return;
+    }
     if (!formValido || geracaoKwh == null || consumoConcessionariaNum == null || energiaInjetadaNum == null || saldoMesNum == null || saldoAcumuladoNum == null) {
       toast.error('Preencha todos os campos antes de salvar.');
       return;
@@ -326,7 +357,7 @@ export default function FaturaUsina({ usinaId }: { usinaId: string }) {
             </label>
           </div>
 
-          <div className="grid grid-cols-2 gap-2 pt-1">
+          <div className="grid grid-cols-3 gap-2 pt-1">
             <div className="rounded-lg border border-border bg-background p-2">
               <p className="text-[11px] text-muted-foreground">Consumo em simultaneidade (calculado)</p>
               <p className="text-sm font-semibold">{consumoSimultaneidadePrevia != null ? `${consumoSimultaneidadePrevia.toFixed(1)} kWh` : '—'}</p>
@@ -335,7 +366,13 @@ export default function FaturaUsina({ usinaId }: { usinaId: string }) {
               <p className="text-[11px] text-muted-foreground">Consumo real da casa (calculado)</p>
               <p className="text-sm font-semibold">{consumoRealCasaPrevia != null ? `${consumoRealCasaPrevia.toFixed(1)} kWh` : '—'}</p>
             </div>
+            <div className="rounded-lg border border-border bg-background p-2">
+              <p className="text-[11px] text-muted-foreground">% direto do solar (calculado)</p>
+              <p className="text-sm font-semibold">{percentualSolarDiretoPrevia != null ? `${percentualSolarDiretoPrevia.toFixed(0)}%` : '—'}</p>
+            </div>
           </div>
+
+          {erroValidacao && <p className="text-xs text-destructive font-medium">{erroValidacao}</p>}
 
           <div className="flex items-center gap-2 pt-1">
             <button
@@ -360,8 +397,11 @@ export default function FaturaUsina({ usinaId }: { usinaId: string }) {
               <div className="min-w-0">
                 <p className="font-medium">{f.numero_conta}ª conta — {formatarPeriodoLabel(f.periodo_inicio, f.periodo_fim)}</p>
                 <p className="text-xs text-muted-foreground">
-                  Geração {f.geracao_kwh.toFixed(1)} kWh • Consumo real {f.consumo_real_casa_kwh.toFixed(1)} kWh • Saldo acumulado{' '}
-                  {f.saldo_acumulado_kwh.toFixed(1)} kWh
+                  Geração {f.geracao_kwh.toFixed(1)} kWh • Consumo real {f.consumo_real_casa_kwh.toFixed(1)} kWh
+                  {f.consumo_real_casa_kwh > 0
+                    ? ` (${((f.consumo_simultaneidade_kwh / f.consumo_real_casa_kwh) * 100).toFixed(0)}% direto do solar)`
+                    : ''}{' '}
+                  • Saldo acumulado {f.saldo_acumulado_kwh.toFixed(1)} kWh
                 </p>
               </div>
               <button
