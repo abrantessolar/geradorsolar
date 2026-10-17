@@ -1,9 +1,19 @@
 // Função de TESTE, descartável — serve só pra validar a autenticação
-// HMAC-SHA1 da SolisCloud e confirmar como o endpoint de listagem de
-// usinas (userStationList) se comporta na prática (paginação, total
-// de plantas) antes de construir a integração de verdade (equivalente
-// à Fase 1 que fizemos pra FoxESS). Depois de rodar e ler o resultado,
-// pode apagar esta função.
+// HMAC-SHA1 da SolisCloud e confirmar como os endpoints em LOTE se
+// comportam na prática (paginação, se trazem dado por usina ou só
+// agregado da conta) antes de construir a coleta de verdade pra Solis
+// (equivalente à Fase 1 que fizemos pra FoxESS). Depois de rodar e ler
+// o resultado, pode apagar esta função.
+//
+// Testa três endpoints:
+// 1. userStationList — lista de usinas (já confirmado funcionando).
+// 2. inverterList — lista de inversores com detalhe (potência, energia
+//    hoje, status) em lote, pra ver se dá pra montar a coleta em tempo
+//    real sem 1 chamada por usina.
+// 3. stationMonthEnergyList — geração diária de um mês, em modo "lote"
+//    (sem passar um id de usina específica), pra ver se vem detalhado
+//    por usina ou só o agregado da conta — decide a arquitetura do
+//    backfill histórico da Solis.
 //
 // Autenticação da SolisCloud (bem diferente da FoxESS): cada request
 // precisa de um header Authorization = "API " + KeyId + ":" + Sign,
@@ -108,23 +118,56 @@ serve(async (req) => {
     );
   }
 
+  function tentarJson(texto: string): unknown {
+    try {
+      return JSON.parse(texto);
+    } catch {
+      return null;
+    }
+  }
+
   try {
-    // Página pequena só pra testar auth + ver o campo de total — não
+    // 1. Página pequena só pra testar auth + ver o campo de total — não
     // precisa buscar as 292 de uma vez só pra validar que funciona.
     const listaUsinas = await solisPost("/v1/api/userStationList", { pageNo: 1, pageSize: 10 });
 
-    let listaUsinasJson: unknown = null;
-    try {
-      listaUsinasJson = JSON.parse(listaUsinas.corpoResposta);
-    } catch {
-      // mantém corpoResposta bruto se não for JSON válido
-    }
+    // Respeitar o rate limit (3 chamadas / 5s) entre os testes.
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+
+    // 2. Lista de inversores em lote — ver se trae potência/energia/status
+    // por inversor sem precisar de 1 chamada por usina.
+    const listaInversores = await solisPost("/v1/api/inverterList", { pageNo: 1, pageSize: 10 });
+
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+
+    // 3. Histórico mensal em modo "lote" (sem passar id de usina) — ver
+    // se vem detalhado por usina ou só agregado da conta. Mês de teste:
+    // o mês anterior ao atual, formato "yyyy-MM".
+    const agora = new Date();
+    const mesAnterior = new Date(agora.getFullYear(), agora.getMonth() - 1, 1);
+    const mesTeste = `${mesAnterior.getFullYear()}-${String(mesAnterior.getMonth() + 1).padStart(2, "0")}`;
+    const historicoMensal = await solisPost("/v1/api/stationMonthEnergyList", {
+      month: mesTeste,
+      pageNo: 1,
+      pageSize: 10,
+    });
 
     return json({
       userStationList: {
         http_status: listaUsinas.status,
         corpo_bruto: listaUsinas.corpoResposta,
-        corpo_json: listaUsinasJson,
+        corpo_json: tentarJson(listaUsinas.corpoResposta),
+      },
+      inverterList: {
+        http_status: listaInversores.status,
+        corpo_bruto: listaInversores.corpoResposta,
+        corpo_json: tentarJson(listaInversores.corpoResposta),
+      },
+      stationMonthEnergyList: {
+        mes_testado: mesTeste,
+        http_status: historicoMensal.status,
+        corpo_bruto: historicoMensal.corpoResposta,
+        corpo_json: tentarJson(historicoMensal.corpoResposta),
       },
     });
   } catch (e) {
