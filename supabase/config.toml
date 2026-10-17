@@ -29,8 +29,3 @@ verify_jwt = false
 # seu próprio header comment), mesmo segredo compartilhado da coleta.
 [functions.mon-backfill-solis]
 verify_jwt = false
-
-# mon-recalcular-desvio roda manualmente e no fim de cada backfill/cron
-# diário — mesmo segredo compartilhado da coleta.
-[functions.mon-recalcular-desvio]
-verify_jwt = false

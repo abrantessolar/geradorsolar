@@ -2,15 +2,20 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { Activity, MapPin, RefreshCw, Zap, AlertTriangle, WifiOff, Gauge, ChevronDown, ChevronRight } from 'lucide-react';
 import { listarUsinasSaude, listarPotenciasRecentes, type PotenciaRecente } from '../lib/usinas';
+import { listarKwhPorKwpRecente } from '../lib/diario';
 import HistoricoUsina from './HistoricoUsina';
 import type { MonEstadoDiario, MonUsina } from '../types';
 
 // Central de Monitoramento TLS — Fase 2: painel de saúde da frota. Semáforo
 // por usina (normal/sem_geracao/baixo_desempenho/offline) — o estado em si
 // é calculado e gravado pela edge function `mon-coleta` a cada coleta; esta
-// tela só lê e filtra. "baixo_desempenho" ainda não é emitido pela coleta
-// (Fase 3, depende de histórico acumulado em mon_diario) mas o filtro já
-// existe pra não precisar tocar nesta tela de novo quando entrar.
+// tela só lê e filtra. "baixo_desempenho" nunca é emitido pela coleta hoje
+// (a tentativa de basear isso em desvio vs mediana foi removida em
+// 2026-10-17 — não achada confiável; ver HistoricoUsina.tsx) — o filtro
+// fica aqui só por completude do enum, deve mostrar sempre 0.
+//
+// kWh/kWp (média recente, sem comparação com nada) aparece na própria
+// linha da usina, com o card fechado — pedido do usuário (2026-10-17).
 
 const MARCA_LABEL: Record<string, string> = {
   foxess: 'FoxESS',
@@ -45,6 +50,7 @@ export default function PainelSaude() {
   const [loading, setLoading] = useState(true);
   const [usinas, setUsinas] = useState<MonUsina[]>([]);
   const [potencias, setPotencias] = useState<Map<string, PotenciaRecente>>(new Map());
+  const [kwhPorKwp, setKwhPorKwp] = useState<Map<string, number>>(new Map());
   const [filtroMarca, setFiltroMarca] = useState<string>('');
   const [filtroCidade, setFiltroCidade] = useState<string>('');
   const [filtroEstado, setFiltroEstado] = useState<string>('');
@@ -55,8 +61,10 @@ export default function PainelSaude() {
     try {
       const lista = await listarUsinasSaude();
       setUsinas(lista);
-      const pot = await listarPotenciasRecentes(lista.map((u) => u.id));
+      const ids = lista.map((u) => u.id);
+      const [pot, kwp] = await Promise.all([listarPotenciasRecentes(ids), listarKwhPorKwpRecente(ids)]);
       setPotencias(pot);
+      setKwhPorKwp(kwp);
     } catch (e: any) {
       toast.error('Erro ao carregar painel de saúde: ' + e.message);
     } finally {
@@ -180,6 +188,7 @@ export default function PainelSaude() {
           {filtradas.map((usina) => {
             const cfg = ESTADO_CONFIG[usina.estado_atual];
             const leitura = potencias.get(usina.id);
+            const kwhPorKwpMedio = kwhPorKwp.get(usina.id);
             const expandida = usinaExpandida === usina.id;
             return (
               <div key={usina.id} className="rounded-lg border border-border bg-muted/30 overflow-hidden">
@@ -207,6 +216,7 @@ export default function PainelSaude() {
                           </>
                         )}
                         {usina.kwp ? ` • ${usina.kwp} kWp` : ''}
+                        {kwhPorKwpMedio != null ? ` • ${kwhPorKwpMedio.toFixed(2)} kWh/kWp (30d)` : ''}
                         {leitura?.potencia_w != null ? ` • ${Math.round(leitura.potencia_w)} W agora` : ''}
                       </p>
                     </div>

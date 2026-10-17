@@ -78,13 +78,3 @@ jobs:
             fi
             i=$((i + 1))
           done
-
-      # 2026-10-17: depois de carregar o histórico, recalcula a mediana
-      # de kWh/kWp e o desvio_pct usando a frota inteira (não mais por
-      # cidade — ver mon-recalcular-desvio).
-      - name: Recalcular comparação de desempenho (frota inteira)
-        run: |
-          curl --fail-with-body -sS -X POST \
-            "https://jvlreltjfubennbtjvyq.supabase.co/functions/v1/mon-recalcular-desvio" \
-            -H "Content-Type: application/json" \
-            -H "x-mon-cron-secret: ${{ secrets.MON_CRON_SECRET }}"

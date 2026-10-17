@@ -11,11 +11,16 @@
 //
 // Usa `/op/v0/device/report/query` (dimension="month", variável
 // "generation"), que devolve um valor de kWh por dia do mês — exatamente
-// o formato de `mon_diario` (uma linha por usina por dia). Também
-// calcula, no mesmo passe em memória, a mediana de kWh/kWp da cidade
-// pra cada dia e grava `mediana_cidade`/`desvio_pct` junto — pedido do
-// usuário: comparar cada usina com a mediana da cidade, normalizado por
-// tamanho do sistema (kWp), não só kWh bruto.
+// o formato de `mon_diario` (uma linha por usina por dia). Grava também
+// `kwh_por_kwp` (kWh do dia / kWp da usina), que é o indicador principal
+// de desempenho.
+//
+// 2026-10-17: a comparação de desvio vs mediana (primeiro por cidade,
+// depois tentada como mediana da frota inteira via
+// mon-recalcular-desvio) foi removida a pedido do usuário — não achou
+// confiável. Fica só o kWh/kWp bruto, sem comparação nenhuma; não grava
+// mais `mediana_cidade`/`desvio_pct`, e `estado` nunca mais vira
+// 'baixo_desempenho' aqui.
 //
 // Importante (AGENTS.md): função privilegiada usa service role —
 // autentica quem chama antes de fazer qualquer escrita.
@@ -70,12 +75,6 @@ async function foxessPost(path: string, body: unknown): Promise<{ errno?: number
 }
 
 const PAUSA_ENTRE_CHAMADAS_MS = 1100; // FoxESS limita a 1 chamada/segundo por endpoint
-
-function mediana(valores: number[]): number | null {
-  if (valores.length === 0) return null;
-  const ordenado = [...valores].sort((a, b) => a - b);
-  return ordenado[Math.floor(ordenado.length / 2)];
-}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -140,9 +139,8 @@ serve(async (req) => {
     if (somaPorDia) kwhPorUsinaPorDia.set(usina.id, somaPorDia);
   }
 
-  // 2) monta as linhas de mon_diario, calculando no mesmo passe a
-  // mediana de kWh/kWp por cidade em cada dia (pra normalizar por
-  // tamanho de sistema antes de comparar).
+  // 2) monta as linhas de mon_diario — só kwh/kwh_por_kwp brutos, sem
+  // mediana/desvio (removido, ver comentário no topo do arquivo).
   const usinasPorId = new Map(usinas.map((u: any) => [u.id, u]));
   const maxDias = Math.max(0, ...[...kwhPorUsinaPorDia.values()].map((v) => v.length));
 
@@ -151,49 +149,22 @@ serve(async (req) => {
     data: string;
     kwh: number;
     kwh_por_kwp: number | null;
-    mediana_cidade: number | null;
-    desvio_pct: number | null;
-    estado: "normal" | "sem_geracao" | "baixo_desempenho";
+    estado: "normal" | "sem_geracao";
   }> = [];
 
   for (let dia = 0; dia < maxDias; dia++) {
-    // mediana de kWh/kWp entre as usinas da mesma cidade nesse dia
-    const porKwpPorCidade = new Map<string, number[]>();
-    for (const [usinaId, valores] of kwhPorUsinaPorDia) {
-      const usina = usinasPorId.get(usinaId);
-      if (!usina?.cidade || !usina?.kwp) continue;
-      const kwh = valores[dia];
-      if (kwh == null) continue;
-      const lista = porKwpPorCidade.get(usina.cidade) ?? [];
-      lista.push(kwh / usina.kwp);
-      porKwpPorCidade.set(usina.cidade, lista);
-    }
-    const medianaPorCidade = new Map<string, number | null>();
-    for (const [cidade, lista] of porKwpPorCidade) medianaPorCidade.set(cidade, mediana(lista));
-
     for (const [usinaId, valores] of kwhPorUsinaPorDia) {
       const kwh = valores[dia];
       if (kwh == null) continue;
       const usina = usinasPorId.get(usinaId);
       const kwhPorKwp = usina?.kwp ? kwh / usina.kwp : null;
-      const medianaCidade = usina?.cidade ? medianaPorCidade.get(usina.cidade) ?? null : null;
-      const desvioPct =
-        kwhPorKwp != null && medianaCidade != null && medianaCidade > 0
-          ? ((kwhPorKwp - medianaCidade) / medianaCidade) * 100
-          : null;
-
-      let estado: "normal" | "sem_geracao" | "baixo_desempenho" = "normal";
-      if (kwh === 0) estado = "sem_geracao";
-      else if (desvioPct != null && desvioPct < -30) estado = "baixo_desempenho";
 
       linhas.push({
         usina_id: usinaId,
         data: `${ano}-${String(mes).padStart(2, "0")}-${String(dia + 1).padStart(2, "0")}`,
         kwh,
         kwh_por_kwp: kwhPorKwp,
-        mediana_cidade: medianaCidade,
-        desvio_pct: desvioPct,
-        estado,
+        estado: kwh === 0 ? "sem_geracao" : "normal",
       });
     }
   }

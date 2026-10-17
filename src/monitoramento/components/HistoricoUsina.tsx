@@ -5,9 +5,7 @@ import {
   ComposedChart,
   Legend,
   Line,
-  ReferenceLine,
   ResponsiveContainer,
-  Scatter,
   Tooltip,
   XAxis,
   YAxis,
@@ -18,24 +16,19 @@ import type { MonDiario } from '../types';
 // Central de Monitoramento TLS — Fase 3: histórico diário de uma usina,
 // aberto por clique dentro do Painel de saúde da frota (decisão do
 // usuário: o histórico fica junto da usina, não numa aba separada).
-// Mostra a evolução diária de geração (kWh) e o desvio % em relação à
-// mediana de kWh/kWp da FROTA INTEIRA (todas as usinas, FoxESS + Solis,
-// independente da cidade) naquele dia — populado pelo backfill (FoxESS:
-// mon-backfill-diario; Solis: mon-backfill-solis) e recalculado por
-// mon-recalcular-desvio.
+// Mostra a evolução diária de geração (kWh) e o kWh/kWp (indicador de
+// desempenho, normalizado por tamanho de sistema) — populado pelo
+// backfill (FoxESS: mon-backfill-diario; Solis: mon-backfill-solis).
 //
 // 2026-10-17 — pedidos do usuário atendidos aqui:
 // 1. Filtro de mês/ano (antes os dados vinham "corridos", sem separação),
 //    com somatório do mês selecionado e do ano.
 // 2. kWh/kWp como indicador de problema: mostrado como stat (média do
-//    período) e os dias marcados como baixo desempenho (desvio_pct < -30%)
-//    ganham um ponto vermelho destacado no gráfico.
-// 3. A comparação era por cidade (mediana_cidade) e quase nunca formava
-//    grupo grande o suficiente pra significar algo — trocada pela mediana
-//    da FROTA INTEIRA (ver drizzle/migrations/0010_mon_recalcular_desvio_global.sql
-//    e supabase/functions/mon-recalcular-desvio). A coluna continua se
-//    chamando `mediana_cidade` no banco por razões históricas, mas o valor
-//    agora é da frota toda — daí o rótulo "mediana da frota" aqui.
+//    período).
+// 3. Tentativas de comparação (mediana por cidade, depois mediana da
+//    frota inteira) foram REMOVIDAS — o usuário não achou confiável.
+//    Fica só o kWh/kWp bruto, sem comparação com nada (ver
+//    drizzle/migrations/0011_remover_desvio_frota.sql).
 
 function formatarDataCurta(iso: string): string {
   const [, mes, dia] = iso.split('-');
@@ -108,11 +101,6 @@ export default function HistoricoUsina({ usinaId }: { usinaId: string }) {
     return valores.reduce((a, b) => a + b, 0) / valores.length;
   }, [dadosDoMes]);
 
-  const diasBaixoDesempenho = useMemo(
-    () => dadosDoMes.filter((d) => d.estado === 'baixo_desempenho').length,
-    [dadosDoMes]
-  );
-
   if (loading) {
     return (
       <div className="flex justify-center py-6">
@@ -132,9 +120,7 @@ export default function HistoricoUsina({ usinaId }: { usinaId: string }) {
   const pontos = dadosDoMes.map((d) => ({
     data: formatarDataCurta(d.data),
     kwh: d.kwh ?? 0,
-    desvio_pct: d.desvio_pct != null ? Math.round(d.desvio_pct * 10) / 10 : null,
-    // ponto extra só nos dias de baixo desempenho, pra destacar no gráfico
-    baixo_desempenho: d.estado === 'baixo_desempenho' ? d.kwh ?? 0 : null,
+    kwh_por_kwp: d.kwh_por_kwp != null ? Math.round(d.kwh_por_kwp * 100) / 100 : null,
   }));
 
   return (
@@ -157,7 +143,7 @@ export default function HistoricoUsina({ usinaId }: { usinaId: string }) {
         </p>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+      <div className="grid grid-cols-3 gap-2">
         <div className="rounded-lg border border-border bg-muted/30 p-2">
           <p className="text-[11px] text-muted-foreground">Total do mês</p>
           <p className="text-sm font-semibold">{somatorioMes.toFixed(1)} kWh</p>
@@ -170,10 +156,6 @@ export default function HistoricoUsina({ usinaId }: { usinaId: string }) {
           <p className="text-[11px] text-muted-foreground">kWh/kWp médio no mês</p>
           <p className="text-sm font-semibold">{kwhPorKwpMedio != null ? kwhPorKwpMedio.toFixed(2) : '—'}</p>
         </div>
-        <div className={`rounded-lg border p-2 ${diasBaixoDesempenho > 0 ? 'border-orange-200 bg-orange-50' : 'border-border bg-muted/30'}`}>
-          <p className="text-[11px] text-muted-foreground">Dias de baixo desempenho</p>
-          <p className={`text-sm font-semibold ${diasBaixoDesempenho > 0 ? 'text-orange-700' : ''}`}>{diasBaixoDesempenho}</p>
-        </div>
       </div>
 
       <div className="h-56 w-full">
@@ -182,48 +164,31 @@ export default function HistoricoUsina({ usinaId }: { usinaId: string }) {
             <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
             <XAxis dataKey="data" tick={{ fontSize: 11 }} interval="preserveStartEnd" />
             <YAxis yAxisId="kwh" tick={{ fontSize: 11 }} width={40} />
-            <YAxis yAxisId="desvio" orientation="right" tick={{ fontSize: 11 }} width={40} unit="%" />
+            <YAxis yAxisId="kwp" orientation="right" tick={{ fontSize: 11 }} width={40} />
             <Tooltip
               formatter={(value: number, name: string) => {
                 if (name === 'kwh') return [`${value} kWh`, 'Geração'];
-                if (name === 'baixo_desempenho') return [`${value} kWh`, 'Baixo desempenho'];
-                return [`${value}%`, 'Desvio vs frota'];
+                return [value, 'kWh/kWp'];
               }}
               labelFormatter={(label) => `Dia ${label}`}
             />
             <Legend
-              formatter={(value) =>
-                value === 'kwh'
-                  ? 'Geração (kWh)'
-                  : value === 'baixo_desempenho'
-                  ? 'Baixo desempenho'
-                  : 'Desvio vs mediana da frota (%)'
-              }
+              formatter={(value) => (value === 'kwh' ? 'Geração (kWh)' : 'kWh/kWp')}
               wrapperStyle={{ fontSize: 12 }}
             />
-            <ReferenceLine yAxisId="desvio" y={0} stroke="#94a3b8" strokeDasharray="3 3" />
             <Line yAxisId="kwh" type="monotone" dataKey="kwh" stroke="#16a34a" dot={false} strokeWidth={2} />
             <Line
-              yAxisId="desvio"
+              yAxisId="kwp"
               type="monotone"
-              dataKey="desvio_pct"
-              stroke="#f97316"
+              dataKey="kwh_por_kwp"
+              stroke="#2563eb"
               dot={false}
               strokeWidth={2}
               connectNulls
             />
-            <Scatter yAxisId="kwh" dataKey="baixo_desempenho" fill="#dc2626" shape="circle" />
           </ComposedChart>
         </ResponsiveContainer>
       </div>
-
-      {dadosDoMes.every((d) => d.mediana_cidade == null) && (
-        <p className="text-[11px] text-muted-foreground">
-          Comparação com a mediana da frota ainda não disponível pra essa usina neste período (depende do kWh/kWp
-          estar calculado pra essa usina e de mon-recalcular-desvio já ter rodado) — o kWh/kWp acima é só a média
-          bruta, sem indicador de baixo desempenho.
-        </p>
-      )}
     </div>
   );
 }
