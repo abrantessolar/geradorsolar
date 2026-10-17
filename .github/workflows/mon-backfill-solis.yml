@@ -32,6 +32,31 @@ jobs:
           ano=$(date -u +%Y)
           mes=$((10#$(date -u +%m)))
 
+          # Chama uma página com retry: um 504 (gateway cortando a função
+          # perto do limite de execução — já aconteceu em produção numa
+          # página de 50 usinas) ou qualquer outra falha de rede é
+          # transitório, não quer dizer que os dados estão errados.
+          # upsert é idempotente, então repetir a mesma página não duplica
+          # nada — só vale desistir de verdade depois de várias tentativas.
+          chamar_pagina() {
+            local ano=$1 mes=$2 pagina=$3 tentativa=1
+            while [ "$tentativa" -le 5 ]; do
+              if resposta=$(curl --fail-with-body -sS --max-time 170 -X POST \
+                "https://jvlreltjfubennbtjvyq.supabase.co/functions/v1/mon-backfill-solis" \
+                -H "Content-Type: application/json" \
+                -H "x-mon-cron-secret: ${{ secrets.MON_CRON_SECRET }}" \
+                -d "{\"ano\":$ano,\"mes\":$mes,\"pagina\":$pagina}"); then
+                echo "$resposta"
+                return 0
+              fi
+              echo "Tentativa $tentativa falhou (ano=$ano mes=$mes pagina=$pagina) — tentando de novo em 15s..."
+              tentativa=$((tentativa + 1))
+              sleep 15
+            done
+            echo "Falhou 5 vezes seguidas em ano=$ano mes=$mes pagina=$pagina — abortando o workflow."
+            return 1
+          }
+
           i=0
           while [ "$i" -lt "$meses_atras" ]; do
             echo "=== Backfill Solis $ano-$mes ==="
@@ -39,11 +64,7 @@ jobs:
             total_paginas=1
             while [ "$pagina" -lt "$total_paginas" ]; do
               echo "--- página $pagina ---"
-              resposta=$(curl --fail-with-body -sS --max-time 180 -X POST \
-                "https://jvlreltjfubennbtjvyq.supabase.co/functions/v1/mon-backfill-solis" \
-                -H "Content-Type: application/json" \
-                -H "x-mon-cron-secret: ${{ secrets.MON_CRON_SECRET }}" \
-                -d "{\"ano\":$ano,\"mes\":$mes,\"pagina\":$pagina}")
+              resposta=$(chamar_pagina "$ano" "$mes" "$pagina")
               echo "$resposta"
               total_paginas=$(echo "$resposta" | jq -r '.total_paginas // 1')
               pagina=$((pagina + 1))

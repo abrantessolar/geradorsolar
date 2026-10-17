@@ -10,8 +10,14 @@
 // do limite de ~150s de uma função do Supabase.
 //
 // Por isso esta função é PAGINADA: cada chamada processa um mês inteiro,
-// mas só uma PÁGINA de usinas (padrão: 50 por página, ~90s respeitando o
-// rate limit). O workflow (.github/workflows/mon-backfill-solis.yml)
+// mas só uma PÁGINA de usinas (padrão: 30 por página, ~55s de pausas
+// respeitando o rate limit — reduzido de 50 em 2026-10-17 depois de um
+// 504 real em produção na página 3: com 50 usinas, a soma de pausas +
+// latência da API + gravação em lote ficou perto demais do limite de
+// execução da função, e num dia de latência um pouco mais alta passou
+// do limite, sem a função nem conseguir responder o próprio erro — o
+// gateway já cortava a chamada antes). O workflow
+// (.github/workflows/mon-backfill-solis.yml)
 // itera sobre os meses e, dentro de cada mês, sobre as páginas, usando o
 // `total_paginas` devolvido na resposta pra saber quando passar pro
 // próximo mês. Isso também faz o backfill ser retomável: se uma página
@@ -105,7 +111,7 @@ async function solisPost(caminho: string, corpo: unknown): Promise<any> {
 }
 
 const SOLIS_PAUSA_MS = 1700; // ~3 chamadas/5s = 1 chamada a cada ~1,67s
-const TAMANHO_PAGINA_PADRAO = 50; // 50 * 1,7s ≈ 85s de pausas, com folga pro limite de ~150s da função
+const TAMANHO_PAGINA_PADRAO = 30; // 30 * 1,7s ≈ 51s de pausas, com folga maior pro limite de ~150s da função
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
