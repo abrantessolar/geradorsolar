@@ -521,59 +521,85 @@ async function coletarSolis(): Promise<{ leituras: LeituraNormalizada[]; erros: 
 }
 
 // ---------- grava no banco ----------
+// Reescrito em 2026-10-17: a versão original fazia 2-3 round-trips ao
+// banco POR USINA (select + insert/update + insert da leitura), em
+// sequência. Com só a FoxESS (26 usinas) isso cabia dentro do timeout da
+// edge function (~150s). Com Solis somada (292 usinas, 318 no total),
+// a mesma função passou de ~954 round-trips sequenciais e deu timeout
+// antes de terminar (confirmado: só 26 FoxESS + 275/292 Solis foram
+// gravadas, faltando o resto do ciclo). Reescrito pra gravar em LOTE —
+// um upsert em `mon_usinas` (aproveitando o UNIQUE(marca, id_externo) já
+// existente desde a Fase 1) e um insert em `mon_leituras`, cada um em
+// poucos lotes de até 100 linhas, em vez de 1 chamada por usina.
+//
+// O upsert só atualiza as colunas passadas no payload (sn_inversor,
+// modelo, cidade, kwp) — cliente_base_id/ativo/vinculo_confirmado nunca
+// são tocados aqui, preservando o comportamento original de não
+// sobrescrever vínculo já confirmado.
+const TAMANHO_LOTE = 100;
+
+function emLotes<T>(itens: T[], tamanho: number): T[][] {
+  const lotes: T[][] = [];
+  for (let i = 0; i < itens.length; i += tamanho) lotes.push(itens.slice(i, i + tamanho));
+  return lotes;
+}
+
 async function gravarLeituras(leituras: LeituraNormalizada[]): Promise<{ gravadas: number; erros: string[] }> {
-  let gravadas = 0;
   const erros: string[] = [];
+  if (leituras.length === 0) return { gravadas: 0, erros };
 
-  for (const l of leituras) {
-    try {
-      // upsert em mon_usinas sem sobrescrever vínculo/ativo já confirmados
-      const { data: usinaExistente } = await supabaseAdmin
-        .from("mon_usinas")
-        .select("id")
-        .eq("marca", l.marca)
-        .eq("id_externo", l.id_externo_usina)
-        .maybeSingle();
+  // 1) upsert em mon_usinas, em lotes — devolve o id de cada uma (nova ou
+  // existente) pra usar como usina_id na gravação das leituras.
+  const idPorChave = new Map<string, string>();
+  const chave = (marca: string, idExterno: string) => `${marca}|${idExterno}`;
 
-      let usinaId = usinaExistente?.id as string | undefined;
-
-      if (!usinaId) {
-        const { data: nova, error: erroInsert } = await supabaseAdmin
-          .from("mon_usinas")
-          .insert({
-            marca: l.marca,
-            id_externo: l.id_externo_usina,
-            sn_inversor: l.sn_inversor,
-            modelo: l.modelo ?? null,
-            cidade: l.cidade ?? null,
-            kwp: l.kwp ?? null,
-          })
-          .select("id")
-          .single();
-        if (erroInsert) throw erroInsert;
-        usinaId = nova.id;
-      } else {
-        await supabaseAdmin
-          .from("mon_usinas")
-          .update({ sn_inversor: l.sn_inversor, modelo: l.modelo ?? undefined })
-          .eq("id", usinaId);
-      }
-
-      const { error: erroLeitura } = await supabaseAdmin.from("mon_leituras").insert({
-        usina_id: usinaId,
-        coletado_em: l.ultima_comunicacao ?? new Date().toISOString(),
-        potencia_w: l.potencia_atual_w,
-        energia_dia_kwh: l.energia_hoje_kwh,
-        energia_total_kwh: l.energia_total_kwh,
-        online: l.status_inversor !== "offline",
-        alarmes: l.alarmes,
-      });
-      if (erroLeitura) throw erroLeitura;
-
-      gravadas++;
-    } catch (e) {
-      erros.push(`Gravação ${l.id_externo_usina}: ${e instanceof Error ? e.message : e}`);
+  for (const lote of emLotes(leituras, TAMANHO_LOTE)) {
+    const payload = lote.map((l) => ({
+      marca: l.marca,
+      id_externo: l.id_externo_usina,
+      sn_inversor: l.sn_inversor,
+      modelo: l.modelo ?? null,
+      cidade: l.cidade ?? null,
+      kwp: l.kwp ?? null,
+    }));
+    const { data, error } = await supabaseAdmin
+      .from("mon_usinas")
+      .upsert(payload, { onConflict: "marca,id_externo" })
+      .select("id, marca, id_externo");
+    if (error) {
+      erros.push(`Upsert de usinas (lote de ${lote.length}): ${error.message}`);
+      continue;
     }
+    for (const row of data ?? []) {
+      idPorChave.set(chave(row.marca, row.id_externo), row.id);
+    }
+  }
+
+  // 2) insert em mon_leituras, em lotes — só pras usinas cujo upsert deu certo.
+  let gravadas = 0;
+  const leiturasComId = leituras
+    .map((l) => ({ leitura: l, usinaId: idPorChave.get(chave(l.marca, l.id_externo_usina)) }))
+    .filter((x): x is { leitura: LeituraNormalizada; usinaId: string } => x.usinaId != null);
+
+  const semId = leituras.length - leiturasComId.length;
+  if (semId > 0) erros.push(`${semId} leitura(s) sem usina_id (upsert falhou pra elas) — não gravadas`);
+
+  for (const lote of emLotes(leiturasComId, TAMANHO_LOTE)) {
+    const payload = lote.map(({ leitura: l, usinaId }) => ({
+      usina_id: usinaId,
+      coletado_em: l.ultima_comunicacao ?? new Date().toISOString(),
+      potencia_w: l.potencia_atual_w,
+      energia_dia_kwh: l.energia_hoje_kwh,
+      energia_total_kwh: l.energia_total_kwh,
+      online: l.status_inversor !== "offline",
+      alarmes: l.alarmes,
+    }));
+    const { error } = await supabaseAdmin.from("mon_leituras").insert(payload);
+    if (error) {
+      erros.push(`Insert de leituras (lote de ${lote.length}): ${error.message}`);
+      continue;
+    }
+    gravadas += lote.length;
   }
 
   return { gravadas, erros };
