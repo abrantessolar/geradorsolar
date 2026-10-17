@@ -1,4 +1,4 @@
-// Central de Monitoramento TLS — coleta periódica (Fase 1: só FoxESS).
+// Central de Monitoramento TLS — coleta periódica (FoxESS + Solis).
 //
 // Agendamento: este projeto (Lovable Cloud) não oferece pg_cron/pg_net
 // nem agendamento HTTP gerenciado pelo banco — por isso a chamada
@@ -41,6 +41,9 @@ const supabaseAdmin = createClient(
 );
 
 const FOXESS_API_TOKEN = Deno.env.get("FOXESS_API_KEY"); // nome do secret no Supabase: FOXESS_API_KEY
+const SOLIS_API_URL = Deno.env.get("SOLIS_API_URL"); // ex: https://www.soliscloud.com:13333
+const SOLIS_KEY_ID = Deno.env.get("SOLIS_KEY_ID");
+const SOLIS_KEY_SECRET = Deno.env.get("SOLIS_KEY_SECRET");
 const MON_CRON_SECRET = Deno.env.get("MON_CRON_SECRET"); // segredo compartilhado com o workflow do GitHub Actions
 
 function json(body: unknown, status = 200) {
@@ -92,7 +95,7 @@ async function autorizarChamada(req: Request): Promise<{ ok: true } | { ok: fals
 
 // ---------- formato padronizado (contrato comum a todos os adaptadores) ----------
 interface LeituraNormalizada {
-  marca: "foxess";
+  marca: "foxess" | "solis";
   id_externo_usina: string;
   sn_inversor: string | null;
   potencia_atual_w: number | null;
@@ -288,6 +291,229 @@ async function coletarFoxess(): Promise<{ leituras: LeituraNormalizada[]; erros:
       leituras.push(leitura);
     } catch (e) {
       erros.push(`FoxESS estação ${stationID}: ${e instanceof Error ? e.message : e}`);
+    }
+  }
+
+  return { leituras, erros };
+}
+
+// ---------- adaptador Solis ----------
+// SolisCloud API (single account permission). Autenticação por
+// assinatura HMAC-SHA1 (bem diferente da FoxESS): header
+// Authorization = "API " + KeyID + ":" + Sign, onde Sign é
+// base64(HMAC-SHA1(KeySecret, texto)) e o texto assinado é
+// VERBO\nContent-MD5\nContent-Type\nDate\nCaminho. Confirmado contra a
+// conta real da TLS em 2026-10-17 via mon-solis-teste: Content-Type tem
+// que ser EXATAMENTE "application/json" (sem ";charset=UTF-8"), senão
+// a Solis responde 403 "wrong sign". Rate limit: 3 chamadas/5s por IP
+// (mais apertado que o 1/seg da FoxESS) — por isso a pausa entre
+// chamadas abaixo.
+//
+// Diferente da FoxESS, a Solis tem endpoints em LOTE que trazem várias
+// usinas/inversores por chamada (confirmado: userStationList e
+// inverterList paginados trazem todas as 292 usinas / 302 inversores em
+// poucas páginas) — a coleta em tempo real não precisa de 1 chamada por
+// usina. (O histórico diário por mês, usado no backfill da Fase 3, já é
+// outra história: stationMonthEnergyList em modo lote NÃO funciona,
+// confirmado em teste — precisa de 1 chamada por usina, ver
+// mon-backfill-diario quando a Fase 3 da Solis for construída.)
+const SOLIS_BASE = SOLIS_API_URL ?? "";
+const SOLIS_PAUSA_MS = 1700; // ~3 chamadas/5s = 1 chamada a cada ~1.67s
+
+async function solisMd5Base64(texto: string): Promise<string> {
+  const buf = await stdCrypto.subtle.digest("MD5", new TextEncoder().encode(texto));
+  return btoa(Array.from(new Uint8Array(buf)).map((b) => String.fromCharCode(b)).join(""));
+}
+
+async function solisHmacSha1Base64(chave: string, texto: string): Promise<string> {
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(chave),
+    { name: "HMAC", hash: "SHA-1" },
+    false,
+    ["sign"],
+  );
+  const assinatura = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(texto));
+  return btoa(Array.from(new Uint8Array(assinatura)).map((b) => String.fromCharCode(b)).join(""));
+}
+
+async function solisPost(caminho: string, corpo: unknown): Promise<any> {
+  const corpoTexto = JSON.stringify(corpo);
+  const contentMd5 = await solisMd5Base64(corpoTexto);
+  const contentType = "application/json"; // confirmado: SEM ";charset=UTF-8"
+  const data = new Date().toUTCString();
+  const paraAssinar = `POST\n${contentMd5}\n${contentType}\n${data}\n${caminho}`;
+  const assinatura = await solisHmacSha1Base64(SOLIS_KEY_SECRET!, paraAssinar);
+  const authorization = `API ${SOLIS_KEY_ID}:${assinatura}`;
+
+  const res = await fetch(SOLIS_BASE + caminho, {
+    method: "POST",
+    headers: { "Content-MD5": contentMd5, "Content-Type": contentType, Date: data, Authorization: authorization },
+    body: corpoTexto,
+  });
+  const textoBruto = await res.text();
+  let dados: any;
+  try {
+    dados = JSON.parse(textoBruto);
+  } catch {
+    throw new Error(`Solis ${caminho} retornou algo não-JSON (HTTP ${res.status}): ${textoBruto.slice(0, 300) || "(corpo vazio)"}`);
+  }
+  if (dados.success !== true) {
+    throw new Error(`Solis ${caminho} code=${dados.code} ${dados.msg ?? ""}`);
+  }
+  return dados.data;
+}
+
+interface UsinaSolis {
+  id: string; // stationId
+  stationName: string | null;
+  capacity: number | null;
+  cityStr: string | null;
+}
+
+async function listarUsinasSolis(): Promise<Map<string, UsinaSolis>> {
+  const porId = new Map<string, UsinaSolis>();
+  let pagina = 1;
+  const pageSize = 100;
+  while (true) {
+    const dados = await solisPost("/v1/api/userStationList", { pageNo: pagina, pageSize });
+    const registros = dados?.page?.records ?? [];
+    for (const r of registros) {
+      porId.set(r.id, { id: r.id, stationName: r.stationName ?? null, capacity: r.capacity ?? null, cityStr: r.cityStr ?? null });
+    }
+    const total = dados?.page?.total ?? registros.length;
+    await new Promise((resolve) => setTimeout(resolve, SOLIS_PAUSA_MS));
+    if (registros.length === 0 || porId.size >= total) break;
+    pagina++;
+  }
+  return porId;
+}
+
+interface InversorSolis {
+  sn: string;
+  stationId: string;
+  inverterSeries: string | null;
+  pacW: number | null; // potência AC atual, em W (campo pac1)
+  etodayKwh: number | null;
+  etotalKwh: number | null;
+  dataTimestampMs: number | null;
+  alarmLevel: number;
+  stateExceptionFlag: number;
+}
+
+async function listarInversoresSolis(): Promise<InversorSolis[]> {
+  const todos: InversorSolis[] = [];
+  let pagina = 1;
+  const pageSize = 100;
+  while (true) {
+    const dados = await solisPost("/v1/api/inverterList", { pageNo: pagina, pageSize });
+    const registros = dados?.page?.records ?? [];
+    for (const r of registros) {
+      todos.push({
+        sn: r.sn,
+        stationId: r.stationId,
+        inverterSeries: r.inverterSeries ?? null,
+        pacW: r.pac1 ?? (r.pac != null ? r.pac * 1000 : null),
+        etodayKwh: r.etoday1 ?? r.etoday ?? null,
+        etotalKwh: r.etotal1 ?? null,
+        dataTimestampMs: r.dataTimestamp ? Number(r.dataTimestamp) : null,
+        alarmLevel: r.alarmLevel ?? 0,
+        stateExceptionFlag: r.stateExceptionFlag ?? 0,
+      });
+    }
+    const total = dados?.page?.total ?? registros.length;
+    await new Promise((resolve) => setTimeout(resolve, SOLIS_PAUSA_MS));
+    if (registros.length === 0 || todos.length >= total) break;
+    pagina++;
+  }
+  return todos;
+}
+
+// A Solis não documenta com clareza o significado do campo "state" do
+// inversor (relatos de terceiros dizem que nem sempre bate com o que a
+// própria interface da Solis mostra) — por isso, em vez de confiar nesse
+// código numérico, usamos um sinal mais confiável: se o `dataTimestamp`
+// do inversor está recente (dentro do ciclo de coleta + folga), ele está
+// comunicando; se não, está offline. Alarme vem de `alarmLevel`/
+// `stateExceptionFlag`, que são campos claramente dedicados a isso.
+const SOLIS_FRESCOR_MAXIMO_MS = 60 * 60 * 1000; // 1h de folga sobre o ciclo de ~20min
+
+async function coletarSolis(): Promise<{ leituras: LeituraNormalizada[]; erros: string[] }> {
+  const leituras: LeituraNormalizada[] = [];
+  const erros: string[] = [];
+
+  if (!SOLIS_API_URL || !SOLIS_KEY_ID || !SOLIS_KEY_SECRET) {
+    return { leituras, erros: ["SOLIS_API_URL/SOLIS_KEY_ID/SOLIS_KEY_SECRET não configurados em Secrets — pulando Solis"] };
+  }
+
+  let usinas: Map<string, UsinaSolis>;
+  let inversores: InversorSolis[];
+  try {
+    usinas = await listarUsinasSolis();
+    inversores = await listarInversoresSolis();
+  } catch (e) {
+    return { leituras, erros: [`Falha ao listar usinas/inversores Solis: ${e instanceof Error ? e.message : e}`] };
+  }
+
+  const porUsina = new Map<string, InversorSolis[]>();
+  for (const inv of inversores) {
+    const lista = porUsina.get(inv.stationId) ?? [];
+    lista.push(inv);
+    porUsina.set(inv.stationId, lista);
+  }
+
+  const agora = Date.now();
+
+  for (const [stationId, invsDaUsina] of porUsina) {
+    try {
+      const usina = usinas.get(stationId);
+      let potenciaTotalW = 0;
+      let temLeituraDePotencia = false;
+      let energiaHojeKwh = 0;
+      let energiaTotalKwh = 0;
+      let algumOnline = false;
+      let algumAlarme = false;
+      let todosOffline = true;
+      const alarmes: string[] = [];
+
+      for (const inv of invsDaUsina) {
+        if (inv.pacW != null) {
+          potenciaTotalW += inv.pacW;
+          temLeituraDePotencia = true;
+        }
+        energiaHojeKwh += inv.etodayKwh ?? 0;
+        energiaTotalKwh += inv.etotalKwh ?? 0;
+
+        const frescor = inv.dataTimestampMs != null ? agora - inv.dataTimestampMs : Infinity;
+        const online = frescor <= SOLIS_FRESCOR_MAXIMO_MS;
+        if (online) {
+          algumOnline = true;
+          todosOffline = false;
+        }
+        if (inv.alarmLevel > 0 || inv.stateExceptionFlag !== 0) {
+          algumAlarme = true;
+          alarmes.push(`${inv.sn}: alarmLevel=${inv.alarmLevel} stateExceptionFlag=${inv.stateExceptionFlag}`);
+        }
+      }
+
+      const statusUsina = algumAlarme ? "alarme" : todosOffline ? "offline" : algumOnline ? "online" : null;
+
+      leituras.push({
+        marca: "solis",
+        id_externo_usina: stationId,
+        sn_inversor: invsDaUsina.map((i) => i.sn).join(", "),
+        potencia_atual_w: temLeituraDePotencia ? potenciaTotalW : null,
+        energia_hoje_kwh: energiaHojeKwh,
+        energia_total_kwh: energiaTotalKwh,
+        ultima_comunicacao: new Date().toISOString(),
+        status_inversor: statusUsina,
+        alarmes,
+        modelo: invsDaUsina[0]?.inverterSeries ?? usina?.stationName ?? null,
+        cidade: usina?.cityStr ?? null,
+        kwp: usina?.capacity ?? null,
+      });
+    } catch (e) {
+      erros.push(`Solis usina ${stationId}: ${e instanceof Error ? e.message : e}`);
     }
   }
 
@@ -531,9 +757,13 @@ serve(async (req: Request) => {
   const auth = await autorizarChamada(req);
   if (!auth.ok) return json({ error: auth.motivo }, 401);
 
-  // Cada marca falha isolada — Fase 1 só tem FoxESS; Solarman/Solis entram
-  // como mais um bloco igual a este, sem afetar o que já funciona.
-  const { leituras, erros: errosColeta } = await coletarFoxess();
+  // Cada marca falha isolada — uma falhar não impede a outra de coletar.
+  // Solarman/SofarCloud/Hoymiles entram como mais um bloco igual a estes,
+  // sem afetar o que já funciona.
+  const { leituras: leiturasFoxess, erros: errosFoxess } = await coletarFoxess();
+  const { leituras: leiturasSolis, erros: errosSolis } = await coletarSolis();
+  const leituras = [...leiturasFoxess, ...leiturasSolis];
+  const errosColeta = [...errosFoxess, ...errosSolis];
   const { gravadas, erros: errosGravacao } = await gravarLeituras(leituras);
   const { atualizadas: estadosAtualizados, erros: errosEstado } = await avaliarEstados();
 
