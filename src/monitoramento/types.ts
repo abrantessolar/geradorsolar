@@ -75,6 +75,29 @@ export interface MonChamadoEvento {
   criado_em: string;
 }
 
+// Relatório de conta de luz ("Quanto sua casa consumiu?") — Fase 4,
+// ferramenta de pós-venda. `geracao_kwh` vem de mon_diario (somatório do
+// período de faturamento, congelado no lançamento); o resto vem digitado
+// da fatura física; simultaneidade/consumo_real são derivados e também
+// gravados (ver migração 0012).
+export interface MonFatura {
+  id: string;
+  usina_id: string;
+  cliente_base_id: string | null;
+  numero_conta: number;
+  periodo_inicio: string;
+  periodo_fim: string;
+  geracao_kwh: number;
+  consumo_concessionaria_kwh: number;
+  energia_injetada_kwh: number;
+  saldo_mes_kwh: number;
+  saldo_acumulado_kwh: number;
+  consumo_simultaneidade_kwh: number;
+  consumo_real_casa_kwh: number;
+  criado_em: string;
+  criado_por: string | null;
+}
+
 export interface MonGuiaReconexao {
   id: string;
   marca: MonMarca;

@@ -1,20 +1,27 @@
 import React, { useState } from 'react';
-import { Link2, Activity, Phone, Siren } from 'lucide-react';
+import { Link2, Activity, Phone, Siren, Receipt } from 'lucide-react';
 import VinculoUsinas from './components/VinculoUsinas';
 import PainelSaude from './components/PainelSaude';
 import FilaContato from './components/FilaContato';
 import HistoricoAlarmes from './components/HistoricoAlarmes';
+import ContaDeLuzTab from './components/ContaDeLuzTab';
 
 // Central de Monitoramento TLS — módulo isolado dentro do painel do
 // gestor. Fase 1 (base) trouxe a aba de vínculo usina↔cliente; Fase 2
 // acrescenta o painel de saúde da frota e a fila de contato (kanban
 // reativo, separado da agenda de lembretes de tarefas_posvenda); Fase 3
 // (2026-10-17) acrescenta a aba de histórico de alarmes, unificando o
-// que antes só existia espalhado dentro de `mon_leituras`.
-type MonTab = 'vinculo' | 'saude' | 'fila' | 'alarmes';
+// que antes só existia espalhado dentro de `mon_leituras`; Fase 4
+// (2026-10-17) acrescenta "Conta de luz" — ferramenta de pós-venda que
+// gera o relatório "Quanto sua casa consumiu?" (ver FaturaUsina.tsx).
+// Essa ferramenta tem DOIS atalhos de propósito (pedido do usuário):
+// esta aba (busca livre por cliente) e um botão dentro de cada usina em
+// "Saúde da frota" (PainelSaude.tsx) — mesmo componente nos dois.
+type MonTab = 'vinculo' | 'saude' | 'fila' | 'alarmes' | 'fatura';
 
 const TABS: { key: MonTab; label: string; icon: typeof Link2 }[] = [
   { key: 'saude', label: 'Saúde da frota', icon: Activity },
+  { key: 'fatura', label: 'Conta de luz', icon: Receipt },
   { key: 'fila', label: 'Fila de contato', icon: Phone },
   { key: 'alarmes', label: 'Alarmes', icon: Siren },
   { key: 'vinculo', label: 'Vínculo de usinas', icon: Link2 },
@@ -40,6 +47,7 @@ export default function MonitoramentoModule() {
       </div>
 
       {tab === 'saude' && <PainelSaude />}
+      {tab === 'fatura' && <ContaDeLuzTab />}
       {tab === 'fila' && <FilaContato />}
       {tab === 'alarmes' && <HistoricoAlarmes />}
       {tab === 'vinculo' && <VinculoUsinas />}

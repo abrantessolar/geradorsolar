@@ -25,6 +25,24 @@ export async function listarUsinasVinculadas(): Promise<MonUsina[]> {
   return (data ?? []) as unknown as MonUsina[];
 }
 
+// Usina única — usada pela ferramenta de conta de luz (Fase 4) pra
+// montar o cabeçalho do relatório sem precisar carregar a lista inteira.
+export async function obterUsina(usinaId: string): Promise<MonUsina | null> {
+  const { data, error } = await supabase.from('mon_usinas' as any).select('*').eq('id', usinaId).maybeSingle();
+  if (error) throw error;
+  return (data as unknown as MonUsina) ?? null;
+}
+
+export async function obterClienteBase(clienteId: string): Promise<ClienteBaseResumo | null> {
+  const { data, error } = await supabase
+    .from('clientes_base' as any)
+    .select('id, nome_completo, endereco, uc')
+    .eq('id', clienteId)
+    .maybeSingle();
+  if (error) throw error;
+  return (data as unknown as ClienteBaseResumo) ?? null;
+}
+
 export async function listarClientesParaVinculo(): Promise<ClienteBaseResumo[]> {
   const { data, error } = await supabase
     .from('clientes_base' as any)

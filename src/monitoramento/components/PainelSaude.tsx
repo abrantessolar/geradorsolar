@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
-import { Activity, MapPin, RefreshCw, Zap, AlertTriangle, WifiOff, Gauge, ChevronDown, ChevronRight } from 'lucide-react';
+import { Activity, MapPin, RefreshCw, Zap, AlertTriangle, WifiOff, Gauge, ChevronDown, ChevronRight, Receipt } from 'lucide-react';
 import { listarUsinasSaude, listarPotenciasRecentes, type PotenciaRecente } from '../lib/usinas';
 import { listarKwhPorKwpRecente } from '../lib/diario';
 import HistoricoUsina from './HistoricoUsina';
+import FaturaUsina from './FaturaUsina';
 import type { MonEstadoDiario, MonUsina } from '../types';
 
 // Central de Monitoramento TLS — Fase 2: painel de saúde da frota. Semáforo
@@ -55,6 +56,7 @@ export default function PainelSaude() {
   const [filtroCidade, setFiltroCidade] = useState<string>('');
   const [filtroEstado, setFiltroEstado] = useState<string>('');
   const [usinaExpandida, setUsinaExpandida] = useState<string | null>(null);
+  const [subAbaExpandida, setSubAbaExpandida] = useState<'historico' | 'fatura'>('historico');
 
   const carregar = async () => {
     setLoading(true);
@@ -193,7 +195,10 @@ export default function PainelSaude() {
             return (
               <div key={usina.id} className="rounded-lg border border-border bg-muted/30 overflow-hidden">
                 <button
-                  onClick={() => setUsinaExpandida(expandida ? null : usina.id)}
+                  onClick={() => {
+                    setUsinaExpandida(expandida ? null : usina.id);
+                    setSubAbaExpandida('historico');
+                  }}
                   className="w-full flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 p-3 text-left"
                 >
                   <div className="flex items-center gap-2 min-w-0 flex-1">
@@ -234,7 +239,31 @@ export default function PainelSaude() {
 
                 {expandida && (
                   <div className="px-3 pb-3 border-t border-border/50">
-                    <HistoricoUsina usinaId={usina.id} />
+                    <div className="flex gap-1.5 pt-2">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSubAbaExpandida('historico');
+                        }}
+                        className={`px-2.5 py-1 rounded-lg text-xs font-medium ${
+                          subAbaExpandida === 'historico' ? 'bg-primary text-primary-foreground' : 'bg-muted/50 hover:bg-muted'
+                        }`}
+                      >
+                        Histórico
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSubAbaExpandida('fatura');
+                        }}
+                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium ${
+                          subAbaExpandida === 'fatura' ? 'bg-primary text-primary-foreground' : 'bg-muted/50 hover:bg-muted'
+                        }`}
+                      >
+                        <Receipt className="w-3 h-3" /> Conta de luz
+                      </button>
+                    </div>
+                    {subAbaExpandida === 'historico' ? <HistoricoUsina usinaId={usina.id} /> : <FaturaUsina usinaId={usina.id} />}
                   </div>
                 )}
               </div>
