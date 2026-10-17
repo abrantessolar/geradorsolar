@@ -24,3 +24,8 @@ verify_jwt = false
 # marca). Apagar esta entrada junto quando a função for removida.
 [functions.mon-solis-teste]
 verify_jwt = false
+
+# mon-backfill-solis roda manualmente (workflow_dispatch, paginado — ver
+# seu próprio header comment), mesmo segredo compartilhado da coleta.
+[functions.mon-backfill-solis]
+verify_jwt = false

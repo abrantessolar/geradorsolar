@@ -1,0 +1,59 @@
+name: Central de Monitoramento — backfill de histórico diário (Solis)
+
+# Equivalente ao mon-backfill-diario.yml (FoxESS), mas com um nível extra
+# de loop: a função mon-backfill-solis só processa UMA PÁGINA de usinas
+# por chamada (ver comentário no topo da função — a Solis não cabe no
+# tempo de execução processando as 292 usinas de um mês de uma vez só).
+# Então este workflow itera meses, e dentro de cada mês itera páginas
+# até `total_paginas` (lido da própria resposta da função). Idempotente
+# via upsert — se o workflow cair no meio, só rodar de novo (ou rodar só
+# os meses que faltaram).
+#
+# Escopo padrão: 13 meses pra trás (reduzido dos ~22 da FoxESS, decisão
+# tomada por causa do volume bem maior de chamadas por mês da Solis).
+#
+# Requer o mesmo secret MON_CRON_SECRET já cadastrado neste repositório.
+
+on:
+  workflow_dispatch:
+    inputs:
+      meses_atras:
+        description: "Quantos meses pra trás, a partir do mês atual (padrão 13)"
+        required: true
+        default: "13"
+
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Puxar histórico mês a mês, página a página
+        run: |
+          meses_atras=${{ inputs.meses_atras }}
+          ano=$(date -u +%Y)
+          mes=$((10#$(date -u +%m)))
+
+          i=0
+          while [ "$i" -lt "$meses_atras" ]; do
+            echo "=== Backfill Solis $ano-$mes ==="
+            pagina=0
+            total_paginas=1
+            while [ "$pagina" -lt "$total_paginas" ]; do
+              echo "--- página $pagina ---"
+              resposta=$(curl --fail-with-body -sS --max-time 180 -X POST \
+                "https://jvlreltjfubennbtjvyq.supabase.co/functions/v1/mon-backfill-solis" \
+                -H "Content-Type: application/json" \
+                -H "x-mon-cron-secret: ${{ secrets.MON_CRON_SECRET }}" \
+                -d "{\"ano\":$ano,\"mes\":$mes,\"pagina\":$pagina}")
+              echo "$resposta"
+              total_paginas=$(echo "$resposta" | jq -r '.total_paginas // 1')
+              pagina=$((pagina + 1))
+              sleep 2
+            done
+
+            mes=$((mes - 1))
+            if [ "$mes" -lt 1 ]; then
+              mes=12
+              ano=$((ano - 1))
+            fi
+            i=$((i + 1))
+          done
