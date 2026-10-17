@@ -103,6 +103,11 @@ interface LeituraNormalizada {
   energia_total_kwh: number | null;
   ultima_comunicacao: string | null;
   status_inversor: string | null;
+  // Se a usina está comunicando AGORA (sinal de conectividade puro,
+  // independente de ter alarme ou não). Corrigido em 2026-10-17 — ver
+  // comentário em gravarLeituras sobre por que isso precisou ser
+  // desacoplado de `status_inversor`.
+  online: boolean;
   alarmes: string[];
   // extras usados só pra popular/atualizar o cadastro da usina (mon_usinas)
   modelo?: string | null;
@@ -257,6 +262,7 @@ async function buscarLeituraEstacaoFoxess(
     energia_total_kwh: energiaTotalKwh,
     ultima_comunicacao: new Date().toISOString(),
     status_inversor: statusEstacao,
+    online: !todosOffline,
     alarmes,
     modelo: dispositivos[0]?.stationName ?? null,
   };
@@ -515,6 +521,17 @@ async function coletarSolis(): Promise<{ leituras: LeituraNormalizada[]; erros: 
         energia_total_kwh: energiaTotalKwh,
         ultima_comunicacao: new Date().toISOString(),
         status_inversor: statusUsina,
+        // CORRIGIDO (2026-10-17): não usar "status_inversor !== 'offline'"
+        // pra isso (era o que gravarLeituras fazia antes) — `alarmLevel`/
+        // `stateExceptionFlag` são sinais independentes da conectividade na
+        // Solis (diferente da FoxESS, onde fault/offline são estados
+        // mutuamente exclusivos do mesmo campo). Um inversor pode estar
+        // REALMENTE offline (dataTimestamp velho) e ainda carregar um
+        // alarme antigo registrado antes de parar de comunicar — nesse
+        // caso `statusUsina` vira "alarme" (prioridade de exibição), mas
+        // isso não deve apagar o sinal de "está offline". `online` aqui é
+        // só o sinal de frescor, puro.
+        online: !todosOffline,
         alarmes,
         // Prioridade invertida da FoxESS, de propósito: lá "modelo" guarda o
         // nome do dono da usina (stationName), não o modelo do inversor — é
@@ -615,7 +632,14 @@ async function gravarLeituras(leituras: LeituraNormalizada[]): Promise<{ gravada
       potencia_w: l.potencia_atual_w,
       energia_dia_kwh: l.energia_hoje_kwh,
       energia_total_kwh: l.energia_total_kwh,
-      online: l.status_inversor !== "offline",
+      // CORRIGIDO (2026-10-17): usar o sinal de conectividade puro (`l.online`),
+      // não derivar de `status_inversor !== "offline"`. Esse derivado dava
+      // falso "online" pra usinas Solis que estavam offline MAS com alarme
+      // registrado (alarme tem prioridade de exibição em status_inversor,
+      // então virava "alarme", e "alarme" !== "offline" → online=true por
+      // engano) — isso fazia avaliarEstados() pular o branch de "offline" e
+      // classificar como "sem_geracao" em vez de "offline".
+      online: l.online,
       alarmes: l.alarmes,
     }));
     const { error } = await supabaseAdmin.from("mon_leituras").insert(payload);
