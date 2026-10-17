@@ -69,7 +69,7 @@ async function hmacSha1Base64(chave: string, texto: string): Promise<string> {
 async function solisPost(caminho: string, corpo: unknown): Promise<{ status: number; corpoResposta: string }> {
   const corpoTexto = JSON.stringify(corpo);
   const contentMd5 = await md5Base64(corpoTexto);
-  const contentType = "application/json;charset=UTF-8";
+  const contentType = "application/json";
   const data = new Date().toUTCString(); // ex: "Fri, 17 Oct 2026 16:43:00 GMT"
   const paraAssinar = `POST\n${contentMd5}\n${contentType}\n${data}\n${caminho}`;
   const assinatura = await hmacSha1Base64(SOLIS_KEY_SECRET!, paraAssinar);
