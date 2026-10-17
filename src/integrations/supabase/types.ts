@@ -2870,7 +2870,6 @@ export type Database = {
         Args: { _codigo: string }
         Returns: undefined
       }
-      recalcular_desvio_global: { Args: never; Returns: undefined }
     }
     Enums: {
       [_ in never]: never
