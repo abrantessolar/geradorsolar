@@ -1,0 +1,33 @@
+name: Central de Monitoramento — atualização diária do histórico
+
+# Depois do backfill inicial (mon-backfill-diario.yml, manual), este
+# workflow mantém mon_diario em dia sozinho — chama a MESMA função
+# (mon-backfill-diario) todos os dias só pro mês atual. É idempotente
+# (upsert por usina_id+data em mon_diario), então rodar todo dia não
+# duplica nada e também não precisa saber até onde o histórico já foi:
+# ele sempre atualiza o mês corrente do zero com os dados mais recentes
+# da FoxESS.
+#
+# Roda de madrugada (horário de Brasília/Campo Grande) pra já pegar o
+# dia anterior fechado. Requer o mesmo secret MON_CRON_SECRET já
+# cadastrado neste repositório (ver mon-coleta-cron.yml).
+
+on:
+  schedule:
+    - cron: '0 8 * * *' # ~4h da manhã em Três Lagoas/Campo Grande (UTC-4)
+  workflow_dispatch: {} # permite rodar manualmente, pra testar
+
+jobs:
+  atualizar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Atualizar mon_diario do mês atual
+        run: |
+          ano=$(date -u +%Y)
+          mes=$(date -u +%-m)
+          echo "=== Atualizando histórico diário de $ano-$mes ==="
+          curl --fail-with-body -sS -X POST \
+            "https://jvlreltjfubennbtjvyq.supabase.co/functions/v1/mon-backfill-diario" \
+            -H "Content-Type: application/json" \
+            -H "x-mon-cron-secret: ${{ secrets.MON_CRON_SECRET }}" \
+            -d "{\"ano\":$ano,\"mes\":$mes}"
