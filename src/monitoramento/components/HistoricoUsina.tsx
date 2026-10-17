@@ -19,19 +19,23 @@ import type { MonDiario } from '../types';
 // aberto por clique dentro do Painel de saúde da frota (decisão do
 // usuário: o histórico fica junto da usina, não numa aba separada).
 // Mostra a evolução diária de geração (kWh) e o desvio % em relação à
-// mediana de kWh/kWp das usinas da mesma cidade naquele dia — populado
-// pelo backfill (FoxESS: mon-backfill-diario; Solis: mon-backfill-solis).
+// mediana de kWh/kWp da FROTA INTEIRA (todas as usinas, FoxESS + Solis,
+// independente da cidade) naquele dia — populado pelo backfill (FoxESS:
+// mon-backfill-diario; Solis: mon-backfill-solis) e recalculado por
+// mon-recalcular-desvio.
 //
-// 2026-10-17 — dois pedidos do usuário atendidos aqui:
+// 2026-10-17 — pedidos do usuário atendidos aqui:
 // 1. Filtro de mês/ano (antes os dados vinham "corridos", sem separação),
 //    com somatório do mês selecionado e do ano.
 // 2. kWh/kWp como indicador de problema: mostrado como stat (média do
-//    período) e os dias marcados como baixo desempenho (desvio_pct < -30%,
-//    ver mon-backfill-diario) ganham um ponto vermelho destacado no
-//    gráfico. Só disponível pra FoxESS por ora — o backfill da Solis
-//    (mon-backfill-solis) não calcula mediana_cidade/desvio_pct ainda
-//    (ver comentário no topo daquela função), então pra usinas Solis o
-//    kWh/kWp aparece como stat mas sem o destaque de baixo desempenho.
+//    período) e os dias marcados como baixo desempenho (desvio_pct < -30%)
+//    ganham um ponto vermelho destacado no gráfico.
+// 3. A comparação era por cidade (mediana_cidade) e quase nunca formava
+//    grupo grande o suficiente pra significar algo — trocada pela mediana
+//    da FROTA INTEIRA (ver drizzle/migrations/0010_mon_recalcular_desvio_global.sql
+//    e supabase/functions/mon-recalcular-desvio). A coluna continua se
+//    chamando `mediana_cidade` no banco por razões históricas, mas o valor
+//    agora é da frota toda — daí o rótulo "mediana da frota" aqui.
 
 function formatarDataCurta(iso: string): string {
   const [, mes, dia] = iso.split('-');
@@ -183,7 +187,7 @@ export default function HistoricoUsina({ usinaId }: { usinaId: string }) {
               formatter={(value: number, name: string) => {
                 if (name === 'kwh') return [`${value} kWh`, 'Geração'];
                 if (name === 'baixo_desempenho') return [`${value} kWh`, 'Baixo desempenho'];
-                return [`${value}%`, 'Desvio vs cidade'];
+                return [`${value}%`, 'Desvio vs frota'];
               }}
               labelFormatter={(label) => `Dia ${label}`}
             />
@@ -193,7 +197,7 @@ export default function HistoricoUsina({ usinaId }: { usinaId: string }) {
                   ? 'Geração (kWh)'
                   : value === 'baixo_desempenho'
                   ? 'Baixo desempenho'
-                  : 'Desvio vs mediana da cidade (%)'
+                  : 'Desvio vs mediana da frota (%)'
               }
               wrapperStyle={{ fontSize: 12 }}
             />
@@ -215,8 +219,9 @@ export default function HistoricoUsina({ usinaId }: { usinaId: string }) {
 
       {dadosDoMes.every((d) => d.mediana_cidade == null) && (
         <p className="text-[11px] text-muted-foreground">
-          Comparação com a mediana da cidade ainda não disponível pra essa usina neste período (hoje só a FoxESS
-          calcula isso no backfill) — o kWh/kWp acima é só a média bruta, sem indicador de baixo desempenho.
+          Comparação com a mediana da frota ainda não disponível pra essa usina neste período (depende do kWh/kWp
+          estar calculado pra essa usina e de mon-recalcular-desvio já ter rodado) — o kWh/kWp acima é só a média
+          bruta, sem indicador de baixo desempenho.
         </p>
       )}
     </div>
