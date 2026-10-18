@@ -67,6 +67,7 @@ export default function FaturaUsina({ usinaId }: { usinaId: string }) {
   // mostra a seção "quanto pagou / sem energia solar / economia".
   const [tarifa, setTarifa] = useState('');
   const [salvando, setSalvando] = useState(false);
+  const [gerandoSemSalvar, setGerandoSemSalvar] = useState(false);
   const [gerandoImagemId, setGerandoImagemId] = useState<string | null>(null);
 
   const arteRef = useRef<HTMLDivElement>(null);
@@ -195,6 +196,46 @@ export default function FaturaUsina({ usinaId }: { usinaId: string }) {
     if (!arteRef.current) throw new Error('Não foi possível montar a arte da imagem.');
     await gerarEBaixarImagemFatura(arteRef.current, `${dados.clienteNome}_conta_${dados.numeroConta}`);
     setDadosArte(null);
+  };
+
+  // Pedido do usuário (2026-10-17): poder gerar/baixar a imagem sem
+  // salvar no histórico — útil pra conferir o relatório antes de
+  // confirmar, ou pra uma conta avulsa que não deve contar na sequência
+  // (1ª, 2ª...) da usina. Monta a arte com os valores atuais do
+  // formulário e chama a mesma captura/download de sempre, sem passar
+  // por `criarFatura` (nada é persistido em `mon_faturas`).
+  const gerarSemSalvar = async () => {
+    if (erroValidacao) {
+      toast.error(erroValidacao);
+      return;
+    }
+    if (!formValido || geracaoKwh == null || consumoConcessionariaNum == null || energiaInjetadaNum == null || saldoMesNum == null || saldoAcumuladoNum == null) {
+      toast.error('Preencha todos os campos antes de gerar.');
+      return;
+    }
+    const consumoSimultaneidade = geracaoKwh - energiaInjetadaNum;
+    const consumoRealCasa = consumoSimultaneidade + consumoConcessionariaNum;
+    const dados: DadosArteFatura = {
+      clienteNome,
+      numeroConta,
+      periodoLabel: formatarPeriodoLabel(periodoInicio, periodoFim),
+      geracaoKwh,
+      consumoConcessionariaKwh: consumoConcessionariaNum,
+      consumoRealCasaKwh: consumoRealCasa,
+      consumoSimultaneidadeKwh: consumoSimultaneidade,
+      energiaInjetadaKwh: energiaInjetadaNum,
+      saldoMesKwh: saldoMesNum,
+      saldoAcumuladoKwh: saldoAcumuladoNum,
+      tarifaKwh: tarifaNum,
+    };
+    setGerandoSemSalvar(true);
+    try {
+      await capturarEBaixar(dados);
+    } catch (e: any) {
+      toast.error('Erro ao gerar imagem: ' + e.message);
+    } finally {
+      setGerandoSemSalvar(false);
+    }
   };
 
   const salvarEGerar = async () => {
@@ -400,11 +441,20 @@ export default function FaturaUsina({ usinaId }: { usinaId: string }) {
           <div className="flex items-center gap-2 pt-1">
             <button
               onClick={salvarEGerar}
-              disabled={!formValido || salvando}
+              disabled={!formValido || salvando || gerandoSemSalvar}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
             >
               {salvando ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
               Salvar e baixar imagem
+            </button>
+            <button
+              onClick={gerarSemSalvar}
+              disabled={!formValido || salvando || gerandoSemSalvar}
+              title="Gera e baixa a imagem sem salvar no histórico dessa usina"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border border-border bg-background hover:bg-muted disabled:opacity-50"
+            >
+              {gerandoSemSalvar ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileImage className="w-3.5 h-3.5" />}
+              Gerar sem salvar
             </button>
             <button onClick={() => setMostrarForm(false)} className="text-sm text-muted-foreground hover:text-foreground">
               Cancelar

@@ -79,13 +79,25 @@ export async function criarFatura(dados: NovaFatura): Promise<MonFatura> {
   const consumoSimultaneidade = dados.geracao_kwh - dados.energia_injetada_kwh;
   const consumoRealCasa = consumoSimultaneidade + dados.consumo_concessionaria_kwh;
 
+  // `tarifa_kwh` (migração 0012) ainda não foi aplicada pelo Lovable no
+  // banco em produção (coluna não existe de verdade — confirmado pelo
+  // erro "Could not find the 'tarifa_kwh' column... in the schema
+  // cache" reportado pelo usuário em 2026-10-17). Enquanto isso não for
+  // aplicado, SÓ inclui a chave no insert quando a tarifa foi
+  // informada — assim o lançamento normal (sem tarifa, o caso mais
+  // comum) continua salvando normalmente; só quem tentar usar a seção
+  // financeira continua bloqueado até a migração entrar.
+  const { tarifa_kwh, ...resto } = dados;
+  const payload: Record<string, unknown> = {
+    ...resto,
+    consumo_simultaneidade_kwh: consumoSimultaneidade,
+    consumo_real_casa_kwh: consumoRealCasa,
+  };
+  if (tarifa_kwh != null) payload.tarifa_kwh = tarifa_kwh;
+
   const { data, error } = await supabase
     .from('mon_faturas' as any)
-    .insert({
-      ...dados,
-      consumo_simultaneidade_kwh: consumoSimultaneidade,
-      consumo_real_casa_kwh: consumoRealCasa,
-    })
+    .insert(payload)
     .select('*')
     .single();
   if (error) throw error;
