@@ -2,16 +2,21 @@ import React, { forwardRef } from 'react';
 import logoTls from '@/assets/proposta-template/logo-tls-color.png';
 
 // Arte do relatório "Quanto sua casa consumiu?" (Fase 4, pós-venda).
-// Redesenhada em 2026-10-17 pra usar a MESMA identidade visual das
-// propostas comerciais (PropostaPlacaTemplate.tsx) — mesma paleta, mesma
-// tipografia (Bricolage Grotesque + Inter, já carregadas globalmente em
-// index.html), mesmo tratamento de card/stat — em vez de cores/estilo
-// genéricos. Pedido do usuário: "bem bonito, alinhado e profissional",
-// no mesmo padrão de qualidade das propostas.
 //
-// Tamanho fixo 1080×1350 (4:5, bom pra WhatsApp/Instagram), capturado com
-// html2canvas em resolução previsível — por isso tudo em `px` fixo, sem
-// classes Tailwind responsivas.
+// Redesenhada em 2026-10-17 pra usar a identidade visual das propostas
+// comerciais (PropostaPlacaTemplate.tsx) — primeira versão. Reajustada no
+// mesmo dia pra seguir o layout que o próprio usuário desenhou no Canva
+// (arquivo "Ajuste_de_Layout_do_Design.svg"): logo grande no topo, caixa
+// de "simultaneidade %" no canto superior direito, torre de transmissão
+// no lugar do poste simples, rótulos das setas diagonais escritos ao
+// longo da própria seta (rotacionados), "Saldo do mês"/"Saldo acumulado"
+// como uma coluna ao lado do diagrama (não mais só no rodapé), e um novo
+// rodapé financeiro opcional (quanto pagou / sem energia solar / economia
+// estimada), só quando o usuário informa a tarifa (R$/kWh) no formulário.
+//
+// Altura NÃO é mais fixa (era 1350px) — o container cresce com o
+// conteúdo (a seção financeira é opcional), capturado com
+// `windowHeight: el.offsetHeight` em gerarImagemFatura.ts.
 
 const VERDE = '#4A5A2A';
 const VERDE_ESC = '#2F3A1A';
@@ -34,14 +39,95 @@ function formatarKwh(valor: number): string {
   return `${Math.round(valor).toLocaleString('pt-BR')} kWh`;
 }
 
-// Card de estatística (rótulo + valor) — mesmo princípio do StatBox das
-// propostas comerciais: rótulo pequeno em caixa alta e muted, valor grande
-// em Bricolage Grotesque. Substitui o antigo par "texto solto + chip".
+function formatarReais(valor: number): string {
+  return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+}
+
+// Rótulo pequeno em caixa alta (nome do campo) — usado sozinho, sem caixa
+// própria, ficando por cima ou ao lado da caixa de valor (CaixaValor).
+function Rotulo({
+  children,
+  align = 'left',
+  tamanho = 15,
+}: {
+  children: React.ReactNode;
+  align?: 'left' | 'center' | 'right';
+  tamanho?: number;
+}) {
+  return (
+    <p
+      style={{
+        fontSize: tamanho,
+        fontWeight: 700,
+        color: VERDE_ESC,
+        textTransform: 'uppercase',
+        letterSpacing: '0.06em',
+        textAlign: align,
+        margin: 0,
+        lineHeight: 1.3,
+      }}
+    >
+      {children}
+    </p>
+  );
+}
+
+// Caixa de valor "nua" (sem rótulo embutido) — o rótulo vem de fora,
+// como no layout de referência do usuário (texto solto acima da caixa,
+// não dentro dela). Ver StatCard abaixo pro padrão com rótulo embutido,
+// usado só nas 3 caixas financeiras do rodapé.
+function CaixaValor({
+  valor,
+  align = 'left',
+  largura,
+  destaque = false,
+  tamanho = 28,
+}: {
+  valor: string;
+  align?: 'left' | 'center' | 'right';
+  largura?: number;
+  destaque?: boolean;
+  tamanho?: number;
+}) {
+  return (
+    <div
+      style={{
+        // `display:table`, não `inline-block` — ver nota em StatCard.
+        display: 'table',
+        margin: align === 'center' ? '0 auto' : align === 'right' ? '0 0 0 auto' : 0,
+        minWidth: largura,
+        background: WHITE,
+        border: `1px solid ${LINHA}`,
+        borderRadius: 14,
+        padding: '13px 20px',
+        textAlign: align,
+      }}
+    >
+      <span
+        style={{
+          fontFamily: DISPLAY,
+          fontSize: tamanho,
+          fontWeight: 600,
+          color: destaque ? OURO_ESC : VERDE,
+          letterSpacing: '-0.01em',
+          whiteSpace: 'nowrap',
+        }}
+      >
+        {valor}
+      </span>
+    </div>
+  );
+}
+
+// Card de estatística com rótulo EMBUTIDO na caixa (rótulo pequeno em
+// cima, valor grande embaixo) — mesmo princípio do StatBox das propostas
+// comerciais. Usado só nas 3 caixas financeiras do rodapé (no layout de
+// referência, essas têm o rótulo dentro da caixa, diferente das outras).
 function StatCard({
   label,
   valor,
   destaque = false,
-  tamanhoValor = 28,
+  tamanhoValor = 26,
   align = 'left',
 }: {
   label: string;
@@ -63,15 +149,16 @@ function StatCard({
         // pro conteúdo (shrink-to-fit) sem precisar de width fixo — por
         // isso o alinhamento usa margin em vez de depender de ser inline.
         display: 'table',
+        width: '100%',
         margin: align === 'center' ? '0 auto' : align === 'right' ? '0 0 0 auto' : 0,
         background: WHITE,
         border: `1px solid ${LINHA}`,
         borderRadius: 14,
-        padding: '14px 22px',
+        padding: '14px 20px',
         textAlign: align,
       }}
     >
-      <div style={{ fontSize: 14, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.07em', fontWeight: 700 }}>
+      <div style={{ fontSize: 13, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.07em', fontWeight: 700 }}>
         {label}
       </div>
       <div
@@ -103,17 +190,51 @@ function IconeCasa() {
   );
 }
 
-function IconePoste() {
+// Torre de transmissão (treliça) no lugar do poste simples antigo — pedido
+// do usuário (referência visual própria). Construída por geometria (não
+// SVG `transform`) em alguns níveis de travessas + tirantes em X, mais um
+// braço horizontal no topo com fios — mesmo princípio de "calcular em JS
+// em vez de usar transform" já usado no ícone do sol.
+function IconeTorre() {
+  const cx = 64;
+  const topoY = 18;
+  const baseY = 134;
+  const topoMeiaLargura = 9;
+  const baseMeiaLargura = 48;
+  const niveis = 4;
+
+  const linhas: { x1: number; y1: number; x2: number; y2: number }[] = [];
+  for (let i = 0; i < niveis; i++) {
+    const t0 = i / niveis;
+    const t1 = (i + 1) / niveis;
+    const y0 = topoY + (baseY - topoY) * t0;
+    const y1 = topoY + (baseY - topoY) * t1;
+    const hw0 = topoMeiaLargura + (baseMeiaLargura - topoMeiaLargura) * t0;
+    const hw1 = topoMeiaLargura + (baseMeiaLargura - topoMeiaLargura) * t1;
+    linhas.push({ x1: cx - hw0, y1: y0, x2: cx + hw0, y2: y0 }); // travessa horizontal
+    linhas.push({ x1: cx - hw0, y1: y0, x2: cx + hw1, y2: y1 }); // tirante \
+    linhas.push({ x1: cx + hw0, y1: y0, x2: cx - hw1, y2: y1 }); // tirante /
+  }
+
   return (
-    <svg width="116" height="116" viewBox="0 0 116 116" fill="none">
-      <line x1="26" y1="112" x2="26" y2="10" stroke={VERDE_ESC} strokeWidth="7" strokeLinecap="round" />
-      <line x1="86" y1="112" x2="86" y2="36" stroke={VERDE_ESC} strokeWidth="7" strokeLinecap="round" />
-      <line x1="9" y1="20" x2="43" y2="20" stroke={VERDE_ESC} strokeWidth="7" strokeLinecap="round" />
-      <line x1="9" y1="34" x2="43" y2="34" stroke={VERDE_ESC} strokeWidth="7" strokeLinecap="round" />
-      <line x1="70" y1="43" x2="102" y2="43" stroke={VERDE_ESC} strokeWidth="7" strokeLinecap="round" />
-      <line x1="16" y1="20" x2="76" y2="43" stroke={OURO_ESC} strokeWidth="2.5" />
-      <line x1="16" y1="34" x2="76" y2="43" stroke={OURO_ESC} strokeWidth="2.5" />
-      <line x1="38" y1="20" x2="96" y2="43" stroke={OURO_ESC} strokeWidth="2.5" />
+    <svg width="128" height="150" viewBox="0 0 128 150" fill="none">
+      {/* pernas externas */}
+      <line x1={cx - topoMeiaLargura} y1={topoY} x2={cx - baseMeiaLargura} y2={baseY} stroke={TEXTO} strokeWidth="5" strokeLinecap="round" />
+      <line x1={cx + topoMeiaLargura} y1={topoY} x2={cx + baseMeiaLargura} y2={baseY} stroke={TEXTO} strokeWidth="5" strokeLinecap="round" />
+      {/* base */}
+      <line x1={cx - baseMeiaLargura} y1={baseY} x2={cx + baseMeiaLargura} y2={baseY} stroke={TEXTO} strokeWidth="5" strokeLinecap="round" />
+      {/* travessas + tirantes em X */}
+      {linhas.map((l, i) => (
+        <line key={i} x1={l.x1} y1={l.y1} x2={l.x2} y2={l.y2} stroke={TEXTO} strokeWidth="3.5" strokeLinecap="round" />
+      ))}
+      {/* braço horizontal no topo + fios */}
+      <line x1={cx - 42} y1={topoY - 8} x2={cx + 42} y2={topoY - 8} stroke={TEXTO} strokeWidth="5" strokeLinecap="round" />
+      <line x1={cx - 42} y1={topoY - 8} x2={cx - 42} y2={topoY + 4} stroke={TEXTO} strokeWidth="3.5" strokeLinecap="round" />
+      <line x1={cx + 42} y1={topoY - 8} x2={cx + 42} y2={topoY + 4} stroke={TEXTO} strokeWidth="3.5" strokeLinecap="round" />
+      <line x1={cx} y1={topoY - 8} x2={cx} y2={topoY + 2} stroke={TEXTO} strokeWidth="3.5" strokeLinecap="round" />
+      {/* fios saindo lateralmente, como no ícone antigo */}
+      <line x1={cx - 42} y1={topoY - 2} x2={cx - 70} y2={topoY + 28} stroke={OURO_ESC} strokeWidth="2.5" />
+      <line x1={cx + 42} y1={topoY - 2} x2={cx + 70} y2={topoY + 28} stroke={OURO_ESC} strokeWidth="2.5" />
     </svg>
   );
 }
@@ -213,6 +334,56 @@ function SetaComPonta({
   );
 }
 
+// Rótulo escrito ao longo de uma seta diagonal, rotacionado via CSS
+// `transform: rotate()` num <div> normal (TESTADO isoladamente antes de
+// usar aqui: ao contrário do `transform` em atributo SVG — ver IconeSol —
+// o `transform` CSS num elemento HTML comum renderiza normalmente no
+// html2canvas).
+function RotuloNaSeta({
+  x1,
+  y1,
+  x2,
+  y2,
+  t = 0.42,
+  children,
+}: {
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+  // Posição ao longo da seta (0 = ponto inicial, 1 = ponto final). Usar
+  // um pouco menos que 0.5 (padrão 0.42) afasta o rótulo da caixa de
+  // valor que fica na ponta da seta, evitando que o texto encoste nela.
+  t?: number;
+  children: React.ReactNode;
+}) {
+  const px = x1 + (x2 - x1) * t;
+  const py = y1 + (y2 - y1) * t;
+  let angulo = (Math.atan2(y2 - y1, x2 - x1) * 180) / Math.PI;
+  // Normaliza pra nunca ficar de cabeça pra baixo (texto sempre legível
+  // da esquerda pra direita, mesmo quando a seta aponta pra "trás").
+  if (angulo > 90) angulo -= 180;
+  if (angulo < -90) angulo += 180;
+  const largura = 160;
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        left: px - largura / 2,
+        top: py - 24,
+        width: largura,
+        textAlign: 'center',
+        transform: `rotate(${angulo}deg)`,
+        transformOrigin: 'center',
+      }}
+    >
+      <Rotulo align="center" tamanho={13}>
+        {children}
+      </Rotulo>
+    </div>
+  );
+}
+
 export interface DadosArteFatura {
   clienteNome: string;
   numeroConta: number;
@@ -224,46 +395,104 @@ export interface DadosArteFatura {
   energiaInjetadaKwh: number;
   saldoMesKwh: number;
   saldoAcumuladoKwh: number;
+  // R$/kWh opcional — quando ausente, a seção financeira do rodapé não é
+  // exibida (ver migração 0012).
+  tarifaKwh: number | null;
 }
 
 const ArteFatura = forwardRef<HTMLDivElement, DadosArteFatura>((dados, ref) => {
   const percentualSolarDireto =
     dados.consumoRealCasaKwh > 0 ? Math.round((dados.consumoSimultaneidadeKwh / dados.consumoRealCasaKwh) * 100) : null;
 
-  // Grade do diagrama — tudo calculado a partir de CONTENT_W (920) pra
-  // ficar simétrico de verdade (coluna da casa e da concessionária à
-  // mesma distância do centro), em vez de posições "no olho".
-  //
-  // `diagramaTop` é relativo ao TOPO DO PRÓPRIO container "Diagrama"
-  // (que tem position:relative e 700px de altura) — não à página inteira.
-  // Antes estava em 560, um valor que fazia sentido como coordenada
-  // absoluta do canvas, mas usado aqui como offset relativo empurrava
-  // todo o conteúdo (incl. a seção "Geração solar") pra muito perto do
-  // fim do container de 700px, invadindo visualmente o rodapé. Os 56px
-  // abaixo deixam espaço só pro card "Consumo da concessionária", que
-  // flutua 50px acima da linha dos ícones.
-  const diagramaTop = 56;
-  const linhaIconesY = diagramaTop + 52; // centro vertical dos ícones casa/poste
-  const casaIconeX = 0; // relativo ao início do diagrama (PAD)
-  const concIconeX = CONTENT_W - 116; // alinhado à direita
+  // Seção financeira — só quando o usuário informou a tarifa. Fórmula
+  // definida pelo próprio usuário na nota de rodapé do layout de
+  // referência: "Estimativa = consumo real × tarifa informada". "Quanto
+  // pagou" usa o consumo da CONCESSIONÁRIA (o que de fato foi faturado);
+  // "sem energia solar" usa o consumo REAL da casa (toda a energia que a
+  // casa precisaria comprar se não tivesse geração própria).
+  const tarifa = dados.tarifaKwh;
+  const quantoPagou = tarifa != null ? dados.consumoConcessionariaKwh * tarifa : null;
+  const semSolar = tarifa != null ? dados.consumoRealCasaKwh * tarifa : null;
+  const economiaEstimada = quantoPagou != null && semSolar != null ? semSolar - quantoPagou : null;
+
+  // Grade do diagrama — tudo relativo ao topo do próprio container
+  // "Diagrama" (abaixo), nunca à página inteira (ver nota de depuração em
+  // FaturaUsina.tsx sobre o bug do deslocamento duplo da versão anterior).
   const centroX = CONTENT_W / 2;
+  const casaIconeX = 0;
+  const torreIconeX = CONTENT_W - 128;
 
-  const setaHorizontal = { x1: concIconeX - 24, y1: linhaIconesY, x2: casaIconeX + 116 + 24, y2: linhaIconesY };
+  // Linha dos ícones (casa/torre) e seta horizontal entre eles.
+  const iconesY = 128; // topo dos ícones
+  const casaCentroY = iconesY + 52; // centro vertical do ícone da casa (104 de altura)
+  const setaHorizontal = { x1: torreIconeX - 20, y1: casaCentroY, x2: casaIconeX + 116 + 20, y2: casaCentroY };
 
-  const labelsY = diagramaTop + 260;
-  const solY = diagramaTop + 374;
-  const solCentroX = PAD + centroX;
-  const solTopoY = solY + 10;
+  // "Consumo da concessionária" flutua acima da seta horizontal, centrado.
+  const concRotuloY = iconesY - 92;
+  const concCaixaY = concRotuloY + 38;
 
-  const setaCasa = { x1: solCentroX - 30, y1: solTopoY + 8, x2: PAD + 170, y2: labelsY + 92 };
-  const setaConcessionaria = { x1: solCentroX + 30, y1: solTopoY + 8, x2: PAD + CONTENT_W - 170, y2: labelsY + 92 };
+  // Rótulo + caixa sob a casa.
+  const casaRotuloY = iconesY + 104 + 16;
+  const casaCaixaY = casaRotuloY + 28;
+  const casaCaixaBottom = casaCaixaY + 58;
+
+  // Coluna "Saldo do mês / Saldo acumulado" ao lado direito, pareada com
+  // a coluna da casa. Largura 170 (não 128) pra "Saldo acumulado:" caber
+  // numa linha só — com menos espaço, o rótulo quebra em duas linhas e a
+  // segunda linha fica escondida atrás da caixa de valor logo abaixo.
+  const saldoLargura = 170;
+  const saldoX = CONTENT_W - saldoLargura;
+  const saldoMesRotuloY = casaRotuloY;
+  const saldoMesCaixaY = casaCaixaY;
+  const saldoAcumRotuloY = saldoMesCaixaY + 58 + 24;
+  const saldoAcumCaixaY = saldoAcumRotuloY + 26;
+
+  // Setas diagonais (simultaneidade à esquerda, injetada à direita) saindo
+  // da área do sol pra duas caixas de valor mais abaixo. As duas caixas
+  // ficam a uma distância SIMÉTRICA do centro (não "casa coluna até x=0" /
+  // "direita até a borda") — senão a caixa da direita, espremida pela
+  // coluna de saldo ao lado, fica muito mais perto do centro que a da
+  // esquerda, e a seta da direita sai bem mais íngreme que a da esquerda
+  // (quebra a simetria visual e aperta o rótulo rotacionado contra a
+  // caixa). A distância usada (100px do centro) é a maior que ainda cabe
+  // sem a caixa da direita encostar na coluna de saldo.
+  const diagonalCaixaY = casaCaixaBottom + 56;
+  const diagonalCaixaLargura = 160;
+  const distanciaDoCentro = 100;
+  const esquerdaCaixaX = centroX - distanciaDoCentro - diagonalCaixaLargura;
+  const direitaCaixaX = centroX + distanciaDoCentro;
+
+  const solY = diagonalCaixaY + 170;
+  const solCentroX = centroX;
+  const solTopoY = solY + 12;
+
+  // Setas apontam pro CENTRO de cada caixa (não pra borda) — garante que
+  // fiquem simétricas mesmo que as caixas não estejam mais a distâncias
+  // diferentes da borda do diagrama.
+  const setaSimultaneidade = {
+    x1: solCentroX - 26,
+    y1: solTopoY + 6,
+    x2: esquerdaCaixaX + diagonalCaixaLargura / 2,
+    y2: diagonalCaixaY + 54,
+  };
+  const setaInjetada = {
+    x1: solCentroX + 26,
+    y1: solTopoY + 6,
+    x2: direitaCaixaX + diagonalCaixaLargura / 2,
+    y2: diagonalCaixaY + 54,
+  };
+
+  const solRotuloY = solY + 128 + 12;
+  const solCaixaY = solRotuloY + 34;
+  const solCaixaBottom = solCaixaY + 72;
+
+  const diagramaAltura = solCaixaBottom + 16;
 
   return (
     <div
       ref={ref}
       style={{
         width: W,
-        height: 1350,
         background: BEGE,
         position: 'relative',
         fontFamily: FONT,
@@ -271,59 +500,59 @@ const ArteFatura = forwardRef<HTMLDivElement, DadosArteFatura>((dados, ref) => {
         overflow: 'hidden',
       }}
     >
-      {/* decoração sutil no canto superior direito */}
-      <div
-        style={{
-          position: 'absolute',
-          top: -70,
-          right: -70,
-          width: 280,
-          height: 280,
-          borderRadius: '50%',
-          background: 'rgba(232,184,75,0.18)',
-        }}
-      />
-
       {/* Cabeçalho */}
       <div style={{ padding: `${PAD}px ${PAD}px 0` }}>
-        <div style={{ fontSize: 15, fontWeight: 700, color: OURO_ESC, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-          Relatório de consumo
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 24 }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 15, fontWeight: 700, color: OURO_ESC, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+              Relatório de consumo
+            </div>
+            <h1
+              style={{
+                fontFamily: DISPLAY,
+                fontSize: 52,
+                fontWeight: 600,
+                color: VERDE,
+                margin: '10px 0 0 0',
+                lineHeight: 1.04,
+                letterSpacing: '-0.02em',
+              }}
+            >
+              Quanto sua casa
+            </h1>
+            <h1
+              style={{
+                fontFamily: DISPLAY,
+                fontSize: 52,
+                fontWeight: 600,
+                color: OURO_ESC,
+                margin: 0,
+                lineHeight: 1.04,
+                letterSpacing: '-0.02em',
+              }}
+            >
+              consumiu?
+            </h1>
+            <p style={{ fontSize: 20, color: MUTED, marginTop: 16, maxWidth: 560, lineHeight: 1.45 }}>
+              Descubra quanto da energia veio da geração solar e quanto veio da concessionária.
+            </p>
+          </div>
+
+          <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 16 }}>
+            <img src={logoTls} alt="Três Lagoas Solar" style={{ width: 280, objectFit: 'contain' }} />
+            {percentualSolarDireto != null && (
+              <div style={{ textAlign: 'right' }}>
+                <Rotulo align="right">Simultaneidade %</Rotulo>
+                <div style={{ marginTop: 8 }}>
+                  <CaixaValor valor={`${percentualSolarDireto}%`} align="right" destaque />
+                </div>
+              </div>
+            )}
+          </div>
         </div>
-        <h1
-          style={{
-            fontFamily: DISPLAY,
-            fontSize: 58,
-            fontWeight: 600,
-            color: VERDE,
-            margin: '10px 0 0 0',
-            lineHeight: 1.04,
-            letterSpacing: '-0.02em',
-          }}
-        >
-          Quanto sua casa
-        </h1>
-        <h1
-          style={{
-            fontFamily: DISPLAY,
-            fontSize: 58,
-            fontWeight: 600,
-            color: OURO_ESC,
-            margin: 0,
-            lineHeight: 1.04,
-            letterSpacing: '-0.02em',
-          }}
-        >
-          consumiu?
-        </h1>
-        <p style={{ fontSize: 22, color: MUTED, marginTop: 16, maxWidth: 740, lineHeight: 1.45 }}>
-          Descubra quanto da energia veio da geração solar e quanto veio da concessionária.
-        </p>
 
         <div
           style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
             marginTop: 30,
             paddingBottom: 26,
             borderBottom: `1px solid ${LINHA}`,
@@ -333,107 +562,118 @@ const ArteFatura = forwardRef<HTMLDivElement, DadosArteFatura>((dados, ref) => {
             {dados.clienteNome}
             <span style={{ color: MUTED, fontWeight: 500 }}> — {dados.numeroConta}ª conta · {dados.periodoLabel}</span>
           </div>
-          {percentualSolarDireto != null && (
-            <div
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                background: 'rgba(232,184,75,0.18)',
-                color: OURO_ESC,
-                fontWeight: 700,
-                fontSize: 19,
-                padding: '10px 20px',
-                borderRadius: 999,
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {percentualSolarDireto}% direto do sol
-            </div>
-          )}
         </div>
       </div>
 
       {/* Diagrama */}
-      <div style={{ position: 'relative', margin: `0 ${PAD}px`, height: 700 }}>
+      <div style={{ position: 'relative', margin: `36px ${PAD}px 0`, height: diagramaAltura }}>
         {/* Todas as setas num único SVG cobrindo o diagrama, sem offset
             próprio (ver nota de depuração em FaturaUsina.tsx) */}
-        <svg width={CONTENT_W} height="700" viewBox={`0 0 ${CONTENT_W} 700`} style={{ position: 'absolute', left: 0, top: 0 }}>
+        <svg
+          width={CONTENT_W}
+          height={diagramaAltura}
+          viewBox={`0 0 ${CONTENT_W} ${diagramaAltura}`}
+          style={{ position: 'absolute', left: 0, top: 0 }}
+        >
           <SetaComPonta x1={setaHorizontal.x1} y1={setaHorizontal.y1} x2={setaHorizontal.x2} y2={setaHorizontal.y2} espessura={6} />
-          <SetaComPonta x1={setaCasa.x1} y1={setaCasa.y1} x2={setaCasa.x2} y2={setaCasa.y2} cor={OURO_ESC} />
-          <SetaComPonta
-            x1={setaConcessionaria.x1}
-            y1={setaConcessionaria.y1}
-            x2={setaConcessionaria.x2}
-            y2={setaConcessionaria.y2}
-            cor={OURO_ESC}
-          />
+          <SetaComPonta x1={setaSimultaneidade.x1} y1={setaSimultaneidade.y1} x2={setaSimultaneidade.x2} y2={setaSimultaneidade.y2} cor={OURO_ESC} />
+          <SetaComPonta x1={setaInjetada.x1} y1={setaInjetada.y1} x2={setaInjetada.x2} y2={setaInjetada.y2} cor={OURO_ESC} />
         </svg>
 
+        {/* Rótulos ao longo das setas diagonais — por cima do SVG das
+            setas, por isso ficam fora dele (são <div>, não SVG). */}
+        <RotuloNaSeta {...setaSimultaneidade}>Consumo em simultaneidade</RotuloNaSeta>
+        <RotuloNaSeta {...setaInjetada}>Energia injetada</RotuloNaSeta>
+
         {/* Casa (esquerda) */}
-        <div style={{ position: 'absolute', left: casaIconeX, top: diagramaTop - 4 }}>
+        <div style={{ position: 'absolute', left: casaIconeX, top: iconesY }}>
           <IconeCasa />
-          <p style={{ fontFamily: DISPLAY, fontSize: 24, fontWeight: 600, margin: '12px 0 0 0', color: VERDE }}>Sua casa</p>
-          <div style={{ marginTop: 10 }}>
-            <StatCard label="Consumo real da casa" valor={formatarKwh(dados.consumoRealCasaKwh)} />
+        </div>
+        <div style={{ position: 'absolute', left: casaIconeX, top: casaRotuloY, width: 220 }}>
+          <Rotulo>Consumo real</Rotulo>
+          <div style={{ marginTop: 8 }}>
+            <CaixaValor valor={formatarKwh(dados.consumoRealCasaKwh)} largura={200} />
           </div>
         </div>
 
-        {/* Concessionária (direita) */}
-        <div style={{ position: 'absolute', left: concIconeX, top: diagramaTop - 4, textAlign: 'right' }}>
-          <IconePoste />
-          <p style={{ fontFamily: DISPLAY, fontSize: 24, fontWeight: 600, margin: '12px 0 0 0', color: VERDE }}>
-            Concessionária
-          </p>
+        {/* Torre de transmissão (direita) */}
+        <div style={{ position: 'absolute', left: torreIconeX, top: iconesY - 18 }}>
+          <IconeTorre />
         </div>
 
         {/* Consumo da concessionária, centrado sobre a seta horizontal */}
-        <div style={{ position: 'absolute', left: centroX - 140, top: diagramaTop - 50, width: 280, textAlign: 'center' }}>
-          <StatCard label="Consumo da concessionária" valor={formatarKwh(dados.consumoConcessionariaKwh)} align="center" />
-        </div>
-
-        {/* Consumo em simultaneidade (esquerda, abaixo das setas) */}
-        <div style={{ position: 'absolute', left: 0, top: labelsY }}>
-          <StatCard label="Consumo em simultaneidade" valor={formatarKwh(dados.consumoSimultaneidadeKwh)} />
-        </div>
-
-        {/* Energia injetada + saldo do mês (direita, abaixo das setas) */}
-        <div style={{ position: 'absolute', right: 0, top: labelsY, textAlign: 'right' }}>
-          <StatCard label="Energia injetada" valor={formatarKwh(dados.energiaInjetadaKwh)} align="right" />
-          <div style={{ marginTop: 12 }}>
-            <StatCard label="+ Saldo do mês" valor={formatarKwh(dados.saldoMesKwh)} align="right" />
+        <div style={{ position: 'absolute', left: centroX - 150, top: concRotuloY, width: 300, textAlign: 'center' }}>
+          <Rotulo align="center">Consumo da concessionária</Rotulo>
+          <div style={{ marginTop: 8 }}>
+            <CaixaValor valor={formatarKwh(dados.consumoConcessionariaKwh)} align="center" largura={200} />
           </div>
+        </div>
+
+        {/* Consumo em simultaneidade — caixa de valor abaixo da seta,
+            rótulo já está escrito na própria seta (RotuloNaSeta acima). */}
+        <div style={{ position: 'absolute', left: esquerdaCaixaX, top: diagonalCaixaY, width: diagonalCaixaLargura }}>
+          <CaixaValor valor={formatarKwh(dados.consumoSimultaneidadeKwh)} largura={diagonalCaixaLargura - 20} />
+        </div>
+
+        {/* Energia injetada — idem, à direita. */}
+        <div style={{ position: 'absolute', left: direitaCaixaX, top: diagonalCaixaY, width: diagonalCaixaLargura, textAlign: 'right' }}>
+          <CaixaValor valor={formatarKwh(dados.energiaInjetadaKwh)} align="right" largura={diagonalCaixaLargura - 20} />
+        </div>
+
+        {/* Saldo do mês / Saldo acumulado — coluna ao lado direito,
+            pareada com a coluna da casa (não mais só no rodapé). */}
+        <div style={{ position: 'absolute', left: saldoX, top: saldoMesRotuloY, width: saldoLargura, textAlign: 'right' }}>
+          <p style={{ fontSize: 16, fontWeight: 600, color: VERDE_ESC, margin: 0, whiteSpace: 'nowrap' }}>Saldo do mês:</p>
+        </div>
+        <div style={{ position: 'absolute', left: saldoX, top: saldoMesCaixaY, width: saldoLargura }}>
+          <CaixaValor valor={formatarKwh(dados.saldoMesKwh)} align="right" tamanho={22} />
+        </div>
+        <div style={{ position: 'absolute', left: saldoX, top: saldoAcumRotuloY, width: saldoLargura, textAlign: 'right' }}>
+          <p style={{ fontSize: 16, fontWeight: 600, color: VERDE_ESC, margin: 0, whiteSpace: 'nowrap' }}>Saldo acumulado:</p>
+        </div>
+        <div style={{ position: 'absolute', left: saldoX, top: saldoAcumCaixaY, width: saldoLargura }}>
+          <CaixaValor valor={formatarKwh(dados.saldoAcumuladoKwh)} align="right" tamanho={22} destaque />
         </div>
 
         {/* Geração solar (centro-baixo) */}
         <div style={{ position: 'absolute', left: centroX - 130, top: solY, width: 260, textAlign: 'center' }}>
           <IconeSol />
-          <p style={{ fontFamily: DISPLAY, fontSize: 26, fontWeight: 600, margin: '10px 0 10px 0', color: VERDE }}>
+        </div>
+        <div style={{ position: 'absolute', left: centroX - 150, top: solRotuloY, width: 300, textAlign: 'center' }}>
+          <p
+            style={{
+              fontFamily: DISPLAY,
+              fontSize: 26,
+              fontWeight: 600,
+              margin: 0,
+              color: VERDE,
+            }}
+          >
             Geração solar
           </p>
-          <StatCard label="Total do período" valor={formatarKwh(dados.geracaoKwh)} destaque align="center" tamanhoValor={32} />
+          <div style={{ marginTop: 10 }}>
+            <CaixaValor valor={formatarKwh(dados.geracaoKwh)} destaque align="center" tamanho={32} largura={220} />
+          </div>
         </div>
       </div>
 
-      {/* Rodapé */}
-      <div
-        style={{
-          position: 'absolute',
-          left: PAD,
-          right: PAD,
-          bottom: 64,
-          display: 'flex',
-          alignItems: 'flex-end',
-          justifyContent: 'space-between',
-        }}
-      >
-        <div style={{ display: 'flex', gap: 16 }}>
-          <StatCard label="Saldo do mês" valor={formatarKwh(dados.saldoMesKwh)} />
-          <StatCard label="Saldo acumulado" valor={formatarKwh(dados.saldoAcumuladoKwh)} destaque />
+      {/* Seção financeira — só aparece quando a tarifa foi informada. */}
+      {tarifa != null && quantoPagou != null && semSolar != null && economiaEstimada != null && (
+        <div style={{ margin: `40px ${PAD}px 0`, paddingBottom: 36 }}>
+          <div style={{ borderTop: `1px solid ${LINHA}`, paddingTop: 28, display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
+            <StatCard label="Quanto pagou" valor={formatarReais(quantoPagou)} />
+            <StatCard label="Sem energia solar*" valor={formatarReais(semSolar)} />
+            <StatCard label="Economia estimada" valor={formatarReais(economiaEstimada)} destaque />
+          </div>
+          <p style={{ fontSize: 13, color: MUTED, marginTop: 14, lineHeight: 1.5 }}>
+            * Estimativa = consumo real × tarifa informada; valores reais variam conforme tributos, tarifas e regras de
+            compensação.
+          </p>
         </div>
-        <img src={logoTls} alt="Três Lagoas Solar" style={{ height: 84, objectFit: 'contain' }} />
-      </div>
+      )}
 
-      <div style={{ position: 'absolute', left: 0, bottom: 0, width: '100%', height: 6, background: OURO }} />
+      <div style={{ height: tarifa != null ? 0 : 44 }} />
+      <div style={{ width: '100%', height: 6, background: OURO }} />
     </div>
   );
 });

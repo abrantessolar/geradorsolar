@@ -94,6 +94,9 @@ export interface MonFatura {
   saldo_acumulado_kwh: number;
   consumo_simultaneidade_kwh: number;
   consumo_real_casa_kwh: number;
+  // Tarifa (R$/kWh) opcional — migração 0012. Null = relatório omite a
+  // seção financeira (quanto pagou / sem solar / economia estimada).
+  tarifa_kwh: number | null;
   criado_em: string;
   criado_por: string | null;
 }

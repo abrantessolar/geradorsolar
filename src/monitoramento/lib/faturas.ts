@@ -65,6 +65,9 @@ export interface NovaFatura {
   energia_injetada_kwh: number;
   saldo_mes_kwh: number;
   saldo_acumulado_kwh: number;
+  // R$/kWh opcional — ver migração 0012. Quando ausente, o relatório
+  // simplesmente não mostra a seção financeira.
+  tarifa_kwh: number | null;
   criado_por: string | null;
 }
 

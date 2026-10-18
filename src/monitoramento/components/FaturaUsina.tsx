@@ -63,6 +63,9 @@ export default function FaturaUsina({ usinaId }: { usinaId: string }) {
   const [energiaInjetada, setEnergiaInjetada] = useState('');
   const [saldoMes, setSaldoMes] = useState('');
   const [saldoAcumulado, setSaldoAcumulado] = useState('');
+  // Opcional — ver migração 0012. Quando em branco, o relatório não
+  // mostra a seção "quanto pagou / sem energia solar / economia".
+  const [tarifa, setTarifa] = useState('');
   const [salvando, setSalvando] = useState(false);
   const [gerandoImagemId, setGerandoImagemId] = useState<string | null>(null);
 
@@ -117,6 +120,7 @@ export default function FaturaUsina({ usinaId }: { usinaId: string }) {
   const energiaInjetadaNum = parseNumero(energiaInjetada);
   const saldoMesNum = parseNumero(saldoMes);
   const saldoAcumuladoNum = parseNumero(saldoAcumulado);
+  const tarifaNum = parseNumero(tarifa);
 
   // Pré-visualização dos valores derivados, calculados ao vivo conforme
   // o usuário digita (mesma fórmula gravada em lib/faturas.ts).
@@ -146,7 +150,8 @@ export default function FaturaUsina({ usinaId }: { usinaId: string }) {
     (consumoConcessionariaNum != null && consumoConcessionariaNum < 0) ||
     (energiaInjetadaNum != null && energiaInjetadaNum < 0) ||
     (saldoMesNum != null && saldoMesNum < 0) ||
-    (saldoAcumuladoNum != null && saldoAcumuladoNum < 0);
+    (saldoAcumuladoNum != null && saldoAcumuladoNum < 0) ||
+    (tarifaNum != null && tarifaNum < 0);
 
   const injetadaMaiorQueGeracao = geracaoKwh != null && energiaInjetadaNum != null && energiaInjetadaNum > geracaoKwh;
 
@@ -178,6 +183,7 @@ export default function FaturaUsina({ usinaId }: { usinaId: string }) {
     energiaInjetadaKwh: f.energia_injetada_kwh,
     saldoMesKwh: f.saldo_mes_kwh,
     saldoAcumuladoKwh: f.saldo_acumulado_kwh,
+    tarifaKwh: f.tarifa_kwh,
   });
 
   // A arte (ArteFatura) é renderizada fora da tela só no momento de
@@ -213,6 +219,7 @@ export default function FaturaUsina({ usinaId }: { usinaId: string }) {
         energia_injetada_kwh: energiaInjetadaNum,
         saldo_mes_kwh: saldoMesNum,
         saldo_acumulado_kwh: saldoAcumuladoNum,
+        tarifa_kwh: tarifaNum,
         criado_por: usuarioId,
       });
       toast.success(`${numeroConta}ª conta salva.`);
@@ -222,6 +229,7 @@ export default function FaturaUsina({ usinaId }: { usinaId: string }) {
       setEnergiaInjetada('');
       setSaldoMes('');
       setSaldoAcumulado('');
+      setTarifa('');
       setPeriodoInicio('');
       setPeriodoFim('');
       setGeracaoKwh(null);
@@ -355,7 +363,22 @@ export default function FaturaUsina({ usinaId }: { usinaId: string }) {
                 onChange={(e) => setSaldoAcumulado(e.target.value)}
               />
             </label>
+            <label className="text-xs text-muted-foreground">
+              Tarifa R$/kWh (opcional)
+              <input
+                type="text"
+                inputMode="decimal"
+                placeholder="ex: 0,95"
+                className="solar-input text-sm py-1.5 px-2 w-full mt-1"
+                value={tarifa}
+                onChange={(e) => setTarifa(e.target.value)}
+              />
+            </label>
           </div>
+          <p className="text-[11px] text-muted-foreground -mt-1">
+            Se informada, o relatório mostra quanto o cliente pagou, quanto pagaria sem energia
+            solar e a economia estimada (consumo × tarifa).
+          </p>
 
           <div className="grid grid-cols-3 gap-2 pt-1">
             <div className="rounded-lg border border-border bg-background p-2">
