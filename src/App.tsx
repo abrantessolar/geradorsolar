@@ -29,6 +29,7 @@ import SimuladorCartaoPage from "@/pages/SimuladorCartaoPage";
 import AntecipacaoRecebiveisPage from "@/pages/AntecipacaoRecebiveisPage";
 import CentralPage from "@/pages/CentralPage";
 import PropostaPlacaFerramentaPage from "@/pages/PropostaPlacaFerramentaPage";
+import ContaDeLuzFerramentaPage from "@/pages/ContaDeLuzFerramentaPage";
 import ClientesPage from "@/pages/ClientesPage";
 import RastreamentoPage from "@/pages/RastreamentoPage";
 import FaqPage from "@/pages/FaqPage";
@@ -265,6 +266,11 @@ const App = () => {
             <Route path="/ferramentas/antecipacao-recebiveis" element={
               <ProtectedRoute>
                 <SeoNoIndex /><Layout><AntecipacaoRecebiveisPage /></Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/ferramentas/conta-de-luz" element={
+              <ProtectedRoute>
+                <SeoNoIndex /><Layout><ContaDeLuzFerramentaPage /></Layout>
               </ProtectedRoute>
             } />
             <Route path="/central" element={<CentralPage />} />

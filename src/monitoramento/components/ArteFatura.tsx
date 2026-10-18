@@ -142,7 +142,11 @@ function ValorNoPonto({ ponto, valor }: { ponto: Ponto; valor: string }) {
 
 export interface DadosArteFatura {
   clienteNome: string;
-  numeroConta: number;
+  // Número da conta (1ª, 2ª...) — só existe quando o relatório está
+  // vinculado a uma usina com histórico (FaturaUsina.tsx). A ferramenta
+  // avulsa de Ferramentas (sem usina) não tem esse conceito de sequência,
+  // então passa `null` e o header mostra só nome · período, sem "— Xª conta".
+  numeroConta: number | null;
   periodoLabel: string;
   geracaoKwh: number;
   consumoConcessionariaKwh: number;
@@ -215,7 +219,8 @@ const ArteFatura = forwardRef<HTMLDivElement, DadosArteFatura>((dados, ref) => {
       >
         {dados.clienteNome}
         <span style={{ fontWeight: 500 }}>
-          &nbsp;— {dados.numeroConta}ª conta · {dados.periodoLabel}
+          &nbsp;— {dados.numeroConta != null ? `${dados.numeroConta}ª conta · ` : ''}
+          {dados.periodoLabel}
         </span>
       </div>
 

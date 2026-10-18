@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Calculator, Wrench, ChevronRight, Sun, BatteryCharging, Waves, Battery, CreditCard, PanelTop, Banknote } from 'lucide-react';
+import { Calculator, Wrench, ChevronRight, Sun, BatteryCharging, Waves, Battery, CreditCard, PanelTop, Banknote, Receipt } from 'lucide-react';
 
 const tools = [
   {
@@ -49,6 +49,12 @@ const tools = [
     icon: Banknote,
     title: 'Antecipação de Recebíveis',
     desc: 'Calcula quanto cobrar do cliente para sobrar o líquido desejado após antecipar no banco',
+  },
+  {
+    to: '/ferramentas/conta-de-luz',
+    icon: Receipt,
+    title: 'Conta de Luz — Quanto sua casa consumiu?',
+    desc: 'Gera o relatório em imagem digitando os dados manualmente, sem precisar de usina cadastrada',
   },
 ];
 
