@@ -65,9 +65,13 @@ export interface NovaFatura {
   energia_injetada_kwh: number;
   saldo_mes_kwh: number;
   saldo_acumulado_kwh: number;
-  // R$/kWh opcional — ver migração 0012. Quando ausente, o relatório
-  // simplesmente não mostra a seção financeira.
+  // Tarifa estimada R$/kWh, opcional — ver migração 0012. Usada SÓ pra
+  // simular "quanto pagaria sem solar".
   tarifa_kwh: number | null;
+  // Valor REAL pago na fatura (R$), opcional — ver migração 0013.
+  // Digitado manualmente; NÃO é calculado a partir de consumo × tarifa
+  // ("Regras do motor — Raio-X da energia", 2026-10-17).
+  valor_pago_reais: number | null;
   criado_por: string | null;
 }
 
@@ -79,21 +83,24 @@ export async function criarFatura(dados: NovaFatura): Promise<MonFatura> {
   const consumoSimultaneidade = dados.geracao_kwh - dados.energia_injetada_kwh;
   const consumoRealCasa = consumoSimultaneidade + dados.consumo_concessionaria_kwh;
 
-  // `tarifa_kwh` (migração 0012) ainda não foi aplicada pelo Lovable no
-  // banco em produção (coluna não existe de verdade — confirmado pelo
-  // erro "Could not find the 'tarifa_kwh' column... in the schema
-  // cache" reportado pelo usuário em 2026-10-17). Enquanto isso não for
-  // aplicado, SÓ inclui a chave no insert quando a tarifa foi
-  // informada — assim o lançamento normal (sem tarifa, o caso mais
-  // comum) continua salvando normalmente; só quem tentar usar a seção
-  // financeira continua bloqueado até a migração entrar.
-  const { tarifa_kwh, ...resto } = dados;
+  // `tarifa_kwh` (migração 0012) e `valor_pago_reais` (migração 0013)
+  // podem ainda não ter sido aplicadas pelo Lovable no banco em
+  // produção (coluna não existe de verdade — confirmado com
+  // `tarifa_kwh` pelo erro "Could not find the 'tarifa_kwh' column...
+  // in the schema cache" reportado pelo usuário em 2026-10-17).
+  // Enquanto isso não for aplicado, SÓ inclui a chave no insert quando
+  // o valor foi de fato informado — assim o lançamento normal (sem
+  // tarifa/valor pago, o caso mais comum até a migração entrar) continua
+  // salvando normalmente; só quem tentar usar a seção financeira
+  // continua bloqueado até a migração correspondente entrar.
+  const { tarifa_kwh, valor_pago_reais, ...resto } = dados;
   const payload: Record<string, unknown> = {
     ...resto,
     consumo_simultaneidade_kwh: consumoSimultaneidade,
     consumo_real_casa_kwh: consumoRealCasa,
   };
   if (tarifa_kwh != null) payload.tarifa_kwh = tarifa_kwh;
+  if (valor_pago_reais != null) payload.valor_pago_reais = valor_pago_reais;
 
   const { data, error } = await supabase
     .from('mon_faturas' as any)

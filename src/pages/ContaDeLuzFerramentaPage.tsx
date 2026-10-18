@@ -47,9 +47,13 @@ export default function ContaDeLuzFerramentaPage() {
   const [energiaInjetada, setEnergiaInjetada] = useState('');
   const [saldoMes, setSaldoMes] = useState('');
   const [saldoAcumulado, setSaldoAcumulado] = useState('');
-  // Opcional — quando em branco, o relatório mostra "—" na seção
-  // financeira (quanto pagou / sem solar / economia) em vez do valor.
+  // Tarifa estimada (R$/kWh), opcional — usada SÓ pra simular "quanto
+  // pagaria sem solar". Quando em branco, essa caixa (e a de economia)
+  // mostram "—".
   const [tarifa, setTarifa] = useState('');
+  // Valor REAL pago na fatura (R$), opcional — digitado manualmente, NÃO
+  // calculado ("Regras do motor — Raio-X da energia", 2026-10-17).
+  const [valorPago, setValorPago] = useState('');
   const [gerando, setGerando] = useState(false);
 
   const arteRef = useRef<HTMLDivElement>(null);
@@ -61,6 +65,7 @@ export default function ContaDeLuzFerramentaPage() {
   const saldoMesNum = parseNumero(saldoMes);
   const saldoAcumuladoNum = parseNumero(saldoAcumulado);
   const tarifaNum = parseNumero(tarifa);
+  const valorPagoNum = parseNumero(valorPago);
 
   // Pré-visualização dos valores derivados (mesmas fórmulas de
   // lib/faturas.ts / FaturaUsina.tsx): simultaneidade = geração −
@@ -82,7 +87,8 @@ export default function ContaDeLuzFerramentaPage() {
     (energiaInjetadaNum != null && energiaInjetadaNum < 0) ||
     (saldoMesNum != null && saldoMesNum < 0) ||
     (saldoAcumuladoNum != null && saldoAcumuladoNum < 0) ||
-    (tarifaNum != null && tarifaNum < 0);
+    (tarifaNum != null && tarifaNum < 0) ||
+    (valorPagoNum != null && valorPagoNum < 0);
 
   const injetadaMaiorQueGeracao = geracaoNum != null && energiaInjetadaNum != null && energiaInjetadaNum > geracaoNum;
 
@@ -135,6 +141,7 @@ export default function ContaDeLuzFerramentaPage() {
       saldoMesKwh: saldoMesNum,
       saldoAcumuladoKwh: saldoAcumuladoNum,
       tarifaKwh: tarifaNum,
+      valorPagoReais: valorPagoNum,
     };
 
     setGerando(true);
@@ -253,8 +260,19 @@ export default function ContaDeLuzFerramentaPage() {
               onChange={(e) => setSaldoAcumulado(e.target.value)}
             />
           </label>
-          <label className="text-sm font-medium col-span-2">
-            Tarifa R$/kWh (opcional)
+          <label className="text-sm font-medium">
+            Valor pago na fatura (R$) (opcional)
+            <input
+              type="text"
+              inputMode="decimal"
+              placeholder="ex: 270,00"
+              className="solar-input mt-1 w-full"
+              value={valorPago}
+              onChange={(e) => setValorPago(e.target.value)}
+            />
+          </label>
+          <label className="text-sm font-medium">
+            Tarifa estimada sem solar R$/kWh (opcional)
             <input
               type="text"
               inputMode="decimal"
@@ -266,7 +284,9 @@ export default function ContaDeLuzFerramentaPage() {
           </label>
         </div>
         <p className="text-xs text-muted-foreground -mt-1">
-          Se informada, o relatório mostra quanto o cliente pagou, quanto pagaria sem energia solar e a economia estimada.
+          "Valor pago" é digitado direto da fatura (não é calculado). Se a tarifa estimada também
+          for informada, o relatório mostra quanto pagaria sem energia solar e a economia estimada
+          (consumo real × tarifa − valor pago) — simulação simplificada, não substitui a fatura real.
         </p>
 
         <div className="grid grid-cols-3 gap-2 pt-1">

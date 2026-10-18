@@ -63,9 +63,13 @@ export default function FaturaUsina({ usinaId }: { usinaId: string }) {
   const [energiaInjetada, setEnergiaInjetada] = useState('');
   const [saldoMes, setSaldoMes] = useState('');
   const [saldoAcumulado, setSaldoAcumulado] = useState('');
-  // Opcional — ver migração 0012. Quando em branco, o relatório não
-  // mostra a seção "quanto pagou / sem energia solar / economia".
+  // Opcional — ver migração 0012. Usada SÓ pra simular "quanto pagaria
+  // sem solar"; quando em branco, essa caixa (e a de economia) mostram "—".
   const [tarifa, setTarifa] = useState('');
+  // Valor REAL pago na fatura (R$), opcional — ver migração 0013.
+  // Digitado manualmente, NÃO calculado ("Regras do motor — Raio-X da
+  // energia", 2026-10-17).
+  const [valorPago, setValorPago] = useState('');
   const [salvando, setSalvando] = useState(false);
   const [gerandoSemSalvar, setGerandoSemSalvar] = useState(false);
   const [gerandoImagemId, setGerandoImagemId] = useState<string | null>(null);
@@ -122,6 +126,7 @@ export default function FaturaUsina({ usinaId }: { usinaId: string }) {
   const saldoMesNum = parseNumero(saldoMes);
   const saldoAcumuladoNum = parseNumero(saldoAcumulado);
   const tarifaNum = parseNumero(tarifa);
+  const valorPagoNum = parseNumero(valorPago);
 
   // Pré-visualização dos valores derivados, calculados ao vivo conforme
   // o usuário digita (mesma fórmula gravada em lib/faturas.ts).
@@ -152,7 +157,8 @@ export default function FaturaUsina({ usinaId }: { usinaId: string }) {
     (energiaInjetadaNum != null && energiaInjetadaNum < 0) ||
     (saldoMesNum != null && saldoMesNum < 0) ||
     (saldoAcumuladoNum != null && saldoAcumuladoNum < 0) ||
-    (tarifaNum != null && tarifaNum < 0);
+    (tarifaNum != null && tarifaNum < 0) ||
+    (valorPagoNum != null && valorPagoNum < 0);
 
   const injetadaMaiorQueGeracao = geracaoKwh != null && energiaInjetadaNum != null && energiaInjetadaNum > geracaoKwh;
 
@@ -185,6 +191,7 @@ export default function FaturaUsina({ usinaId }: { usinaId: string }) {
     saldoMesKwh: f.saldo_mes_kwh,
     saldoAcumuladoKwh: f.saldo_acumulado_kwh,
     tarifaKwh: f.tarifa_kwh,
+    valorPagoReais: f.valor_pago_reais,
   });
 
   // A arte (ArteFatura) é renderizada fora da tela só no momento de
@@ -227,6 +234,7 @@ export default function FaturaUsina({ usinaId }: { usinaId: string }) {
       saldoMesKwh: saldoMesNum,
       saldoAcumuladoKwh: saldoAcumuladoNum,
       tarifaKwh: tarifaNum,
+      valorPagoReais: valorPagoNum,
     };
     setGerandoSemSalvar(true);
     try {
@@ -261,6 +269,7 @@ export default function FaturaUsina({ usinaId }: { usinaId: string }) {
         saldo_mes_kwh: saldoMesNum,
         saldo_acumulado_kwh: saldoAcumuladoNum,
         tarifa_kwh: tarifaNum,
+        valor_pago_reais: valorPagoNum,
         criado_por: usuarioId,
       });
       toast.success(`${numeroConta}ª conta salva.`);
@@ -271,6 +280,7 @@ export default function FaturaUsina({ usinaId }: { usinaId: string }) {
       setSaldoMes('');
       setSaldoAcumulado('');
       setTarifa('');
+      setValorPago('');
       setPeriodoInicio('');
       setPeriodoFim('');
       setGeracaoKwh(null);
@@ -405,7 +415,18 @@ export default function FaturaUsina({ usinaId }: { usinaId: string }) {
               />
             </label>
             <label className="text-xs text-muted-foreground">
-              Tarifa R$/kWh (opcional)
+              Valor pago na fatura (R$) (opcional)
+              <input
+                type="text"
+                inputMode="decimal"
+                placeholder="ex: 270,00"
+                className="solar-input text-sm py-1.5 px-2 w-full mt-1"
+                value={valorPago}
+                onChange={(e) => setValorPago(e.target.value)}
+              />
+            </label>
+            <label className="text-xs text-muted-foreground">
+              Tarifa estimada sem solar R$/kWh (opcional)
               <input
                 type="text"
                 inputMode="decimal"
@@ -417,8 +438,10 @@ export default function FaturaUsina({ usinaId }: { usinaId: string }) {
             </label>
           </div>
           <p className="text-[11px] text-muted-foreground -mt-1">
-            Se informada, o relatório mostra quanto o cliente pagou, quanto pagaria sem energia
-            solar e a economia estimada (consumo × tarifa).
+            "Valor pago" é digitado direto da fatura (não é calculado). Se a tarifa estimada também
+            for informada, o relatório mostra quanto pagaria sem energia solar e a economia
+            estimada (consumo real × tarifa − valor pago). Essa simulação não substitui a fatura
+            real — tributos, bandeiras e descontos podem não estar incorporados.
           </p>
 
           <div className="grid grid-cols-3 gap-2 pt-1">

@@ -46,10 +46,15 @@ import fundoContaDeLuz from '@/assets/monitoramento/conta-de-luz-fundo.png';
 // 6. Fórmulas (confirmadas pelo LEIA-ME do usuário, batendo com o que já
 //    estava em `criarFatura` / `lib/faturas.ts`): consumo em
 //    simultaneidade = geração − injetada; consumo real = consumo da
-//    concessionária (medido) + simultaneidade; "quanto pagaria sem solar"
-//    = consumo real × tarifa informada (estimativa, não simulação
-//    tarifária regulatória); "saldo do mês" é um campo digitado
-//    manualmente e NÃO entra em nenhuma dessas contas.
+//    concessionária (medido) + simultaneidade; "saldo do mês" é um campo
+//    digitado manualmente e NÃO entra em nenhuma dessas contas.
+//    ATUALIZADO em 2026-10-17 pelo documento "Regras do motor — Raio-X
+//    da energia": "quanto pagou" passou a ser o VALOR REAL digitado da
+//    fatura (campo `valorPagoReais`), não mais calculado (consumo da
+//    concessionária × tarifa); "quanto pagaria sem solar" continua
+//    sendo só SIMULAÇÃO (consumo real × tarifa estimada informada,
+//    pode não incorporar tributos/bandeiras/descontos direito); economia
+//    = sem-solar − quanto pagou.
 //
 // Isso elimina de vez a categoria inteira de bugs do html2canvas com SVG
 // desenhado à mão (marker, clipping por offset, transform/rotate, display
@@ -155,22 +160,31 @@ export interface DadosArteFatura {
   energiaInjetadaKwh: number;
   saldoMesKwh: number;
   saldoAcumuladoKwh: number;
-  // R$/kWh opcional — quando ausente, as 3 caixas financeiras mostram "—"
-  // em vez do valor (ver migração 0012).
+  // R$/kWh opcional — usada SÓ pra estimar "quanto pagaria sem solar"
+  // (ver migração 0012). Quando ausente, essa caixa (e a de economia,
+  // que depende dela) mostram "—".
   tarifaKwh: number | null;
+  // Valor REAL pago na fatura (R$), digitado manualmente — "Regras do
+  // motor — Raio-X da energia" (2026-10-17): o valor pago NÃO é mais
+  // calculado (consumo da concessionária × tarifa); ele vem direto da
+  // fatura física do cliente. Quando ausente, a caixa "quanto pagou" (e
+  // a de economia) mostram "—".
+  valorPagoReais: number | null;
 }
 
 const ArteFatura = forwardRef<HTMLDivElement, DadosArteFatura>((dados, ref) => {
   const percentualSolarDireto =
     dados.consumoRealCasaKwh > 0 ? Math.round((dados.consumoSimultaneidadeKwh / dados.consumoRealCasaKwh) * 100) : null;
 
-  // Fórmula definida pelo próprio usuário na nota de rodapé do mockup:
-  // "Estimativa = consumo real × tarifa informada". "Quanto pagou" usa o
-  // consumo da CONCESSIONÁRIA (o que de fato foi faturado); "sem energia
-  // solar" usa o consumo REAL da casa (tudo que ela precisaria comprar sem
-  // geração própria).
+  // Fórmulas da seção financeira — "Regras do motor — Raio-X da
+  // energia" (2026-10-17, documento do usuário):
+  // - "quanto pagou" é o VALOR REAL digitado da fatura (não calculado).
+  // - "sem energia solar" é só SIMULAÇÃO: consumo real × tarifa
+  //   estimada informada (se a tarifa não incorporar tributos/bandeiras/
+  //   descontos direito, o resultado é uma estimativa simplificada).
+  // - economia = sem-solar − quanto pagou.
   const tarifa = dados.tarifaKwh;
-  const quantoPagou = tarifa != null ? dados.consumoConcessionariaKwh * tarifa : null;
+  const quantoPagou = dados.valorPagoReais;
   const semSolar = tarifa != null ? dados.consumoRealCasaKwh * tarifa : null;
   const economiaEstimada = quantoPagou != null && semSolar != null ? semSolar - quantoPagou : null;
 

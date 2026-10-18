@@ -94,9 +94,16 @@ export interface MonFatura {
   saldo_acumulado_kwh: number;
   consumo_simultaneidade_kwh: number;
   consumo_real_casa_kwh: number;
-  // Tarifa (R$/kWh) opcional — migração 0012. Null = relatório omite a
-  // seção financeira (quanto pagou / sem solar / economia estimada).
+  // Tarifa estimada (R$/kWh) opcional — migração 0012. Usada SÓ pra
+  // simular "quanto pagaria sem solar" (consumo real × tarifa). Null =
+  // essa caixa (e a de economia) mostram "—".
   tarifa_kwh: number | null;
+  // Valor REAL pago na fatura (R$), opcional — migração 0013. Digitado
+  // manualmente a partir da fatura física; NÃO é mais calculado a
+  // partir de consumo × tarifa ("Regras do motor — Raio-X da energia",
+  // 2026-10-17). Null = caixa "quanto pagou" (e a de economia) mostram
+  // "—".
+  valor_pago_reais: number | null;
   criado_em: string;
   criado_por: string | null;
 }
