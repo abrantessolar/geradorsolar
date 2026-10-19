@@ -117,7 +117,7 @@ const PONTOS: Record<string, Ponto> = {
 // nome/conta/período reais por cima (ver nota 4 acima).
 const MASCARA_CABECALHO = { x: 45, y: 272, largura: 315, altura: 28 };
 
-const TAMANHOS: Record<Estilo, number> = { normal: 35, money: 33, small: 28 };
+const TAMANHOS: Record<Estilo, number> = { normal: 35, gold: 35, money: 33, small: 28 };
 
 // Valor numérico/monetário centralizado no ponto exato da tabela PONTOS
 // (percentual do viewBox + `translate(-50%,-50%)`, igual ao protótipo do
