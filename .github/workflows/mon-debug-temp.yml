@@ -1,0 +1,35 @@
+name: DEBUG TEMP — diagnosticar mon-coleta
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  debug:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Chamar mon-coleta e salvar resposta
+        run: |
+          set +e
+          STATUS=$(curl -sS -o /tmp/body.txt -w "%{http_code}" -X POST \
+            --max-time 180 \
+            "https://jvlreltjfubennbtjvyq.supabase.co/functions/v1/mon-coleta" \
+            -H "Content-Type: application/json" \
+            -H "x-mon-cron-secret: ${{ secrets.MON_CRON_SECRET }}" \
+            -d '{"origem":"debug-temp"}')
+          mkdir -p debug
+          {
+            echo "HTTP_STATUS=$STATUS"
+            echo "---BODY---"
+            cat /tmp/body.txt
+          } > debug/mon-coleta-debug.txt
+          cat debug/mon-coleta-debug.txt
+      - name: Commitar resultado
+        run: |
+          git config user.name "debug-bot"
+          git config user.email "debug-bot@users.noreply.github.com"
+          git add debug/mon-coleta-debug.txt
+          git commit -m "debug: resposta do mon-coleta" || echo "nada pra commitar"
+          git push
