@@ -951,11 +951,37 @@ serve(async (req: Request) => {
   const { preenchidas: kwpPreenchidas, erros: errosKwp } = await preencherKwpAusente();
   const { atualizadas: estadosAtualizados, erros: errosEstado } = await avaliarEstados();
 
+  // DEBUG TEMPORÁRIO (2026-10-19) — investigando "todas as usinas
+  // marcadas como online" reportado pelo usuário. Sem acesso a logs do
+  // GitHub Actions nem ao banco a partir do ambiente do agente, então
+  // expõe um resumo read-only aqui pra inspecionar via curl. REMOVER
+  // depois do diagnóstico.
+  let debugEstados: unknown = null;
+  try {
+    const { data: todasUsinas } = await supabaseAdmin
+      .from("mon_usinas")
+      .select("id, marca, estado_atual, estado_atualizado_em, ativo")
+      .eq("ativo", true);
+    const contagem: Record<string, number> = {};
+    for (const u of (todasUsinas ?? []) as Array<{ estado_atual: string }>) {
+      contagem[u.estado_atual] = (contagem[u.estado_atual] ?? 0) + 1;
+    }
+    const { data: ultimasLeituras } = await supabaseAdmin
+      .from("mon_leituras")
+      .select("usina_id, coletado_em, potencia_w, online")
+      .order("coletado_em", { ascending: false })
+      .limit(10);
+    debugEstados = { contagem_estado_atual: contagem, amostra_leituras_recentes: ultimasLeituras };
+  } catch (e) {
+    debugEstados = { erro: e instanceof Error ? e.message : String(e) };
+  }
+
   return json({
     usinas_processadas: leituras.length,
     leituras_gravadas: gravadas,
     kwp_preenchidas_via_cliente: kwpPreenchidas,
     estados_atualizados: estadosAtualizados,
     erros: [...errosColeta, ...errosGravacao, ...errosKwp, ...errosEstado],
+    debug_estados_temp: debugEstados,
   });
 });
