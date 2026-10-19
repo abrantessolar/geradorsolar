@@ -12,7 +12,13 @@ name: Central de Monitoramento — coleta FoxESS + Solis
 
 on:
   schedule:
-    - cron: '*/20 * * * *'
+    # Trocado de */20min pra de 2 em 2h em 2026-10-19 — o GitHub Actions
+    # não honra schedules muito frequentes (throttling do próprio GitHub,
+    # ver "🚨 Incidente" no doc do projeto: rodava de verdade a cada
+    # 2h-5h30, não a cada 20min). Minuto 13 (não 0) pra evitar o
+    # congestionamento no topo da hora, quando mais workflows do mundo
+    # inteiro tentam rodar ao mesmo tempo.
+    - cron: '13 */2 * * *'
   workflow_dispatch: {} # permite rodar manualmente pela aba Actions, pra testar
 
 jobs:
