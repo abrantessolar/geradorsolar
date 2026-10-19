@@ -1,0 +1,6 @@
+== contagem por estado_atual ==
+[]
+== amostra de 8 usinas (id, marca, estado_atual, estado_atualizado_em) ==
+[]
+== amostra de 10 leituras mais recentes (usina_id, coletado_em, potencia_w, online) ==
+[]
