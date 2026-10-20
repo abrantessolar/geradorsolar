@@ -21,6 +21,7 @@ import fachadaImg from '@/assets/proposta-template/fachada-empresa.jpg';
 import instalacoesImg from '@/assets/proposta-template/instalacoes.jpg';
 import inversorFallback from '@/assets/proposta-template/inversor.png';
 import moduloFallback from '@/assets/proposta-template/modulo.png';
+import badgeRsd from '@/assets/proposta-template/badge-rsd-incluso.png';
 
 import { formatCurrency, formatNumber } from '@/data/calculations';
 
@@ -82,6 +83,8 @@ export interface PropostaTemplateData {
   fluxo_caixa: CashflowRow[];
   fotos_portfolio: string[];
   observacoes?: string;
+  /** Selo "Sistema de RSD incluso" (NT 47/2026) sobreposto na página 3 — ligado por botão manual na edição da proposta. */
+  inclui_rsd?: boolean;
 }
 
 // ────────────────────────────────────────────────────────────
@@ -598,6 +601,24 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
             </div>
 
             <Grafico dados={data.dados_mensais} />
+
+            {data.inclui_rsd && (
+              <img
+                src={badgeRsd}
+                alt="Sistema de RSD incluso"
+                crossOrigin="anonymous"
+                style={{
+                  position: 'absolute',
+                  left: '50%',
+                  top: `${mm(127)}px`,
+                  transform: 'translate(-50%, -50%)',
+                  width: `${mm(100)}px`,
+                  height: 'auto',
+                  display: 'block',
+                  zIndex: 5,
+                }}
+              />
+            )}
 
             <div style={{ marginTop: `${mm(6)}px` }}>
               <TableHead>Equipamentos principais</TableHead>

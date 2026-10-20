@@ -309,7 +309,21 @@ export default function ProposalPage() {
       fluxo_caixa: fluxo,
       fotos_portfolio: pdfPortfolioPhotos,
       observacoes: proposal.observacoes || undefined,
+      inclui_rsd: !!proposal.inclui_rsd,
     };
+  };
+
+  const toggleIncluiRsd = async () => {
+    const updated = { ...proposal, inclui_rsd: !proposal.inclui_rsd };
+    setProposal(updated);
+    try {
+      await savePropostaDB(updated);
+      toast.success(updated.inclui_rsd ? 'Selo "RSD incluso" adicionado à proposta.' : 'Selo "RSD incluso" removido da proposta.');
+    } catch (err) {
+      console.error(err);
+      toast.error('Não consegui salvar essa alteração.');
+      setProposal(proposal); // reverte em caso de erro
+    }
   };
 
   const buildPdfBlob = async (): Promise<Blob> => {
@@ -667,11 +681,19 @@ export default function ProposalPage() {
               <h2 className="text-lg font-bold text-primary flex items-center gap-2">
                 <Edit className="w-5 h-5 text-secondary" /> Ajustes da Proposta
               </h2>
-              {!editingProposal && (
-                <button onClick={openEditPanel} className="solar-btn-outline text-xs py-1.5 px-3">
-                  Editar campos
+              <div className="flex gap-2">
+                <button
+                  onClick={toggleIncluiRsd}
+                  className={proposal.inclui_rsd ? 'solar-btn-primary text-xs py-1.5 px-3' : 'solar-btn-outline text-xs py-1.5 px-3'}
+                >
+                  {proposal.inclui_rsd ? '✓ Selo RSD incluso' : 'Adicionar selo "RSD incluso"'}
                 </button>
-              )}
+                {!editingProposal && (
+                  <button onClick={openEditPanel} className="solar-btn-outline text-xs py-1.5 px-3">
+                    Editar campos
+                  </button>
+                )}
+              </div>
             </div>
 
             {editingProposal && (
