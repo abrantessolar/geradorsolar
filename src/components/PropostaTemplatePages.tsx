@@ -610,9 +610,9 @@ export const PropostaTemplatePages = forwardRef<HTMLDivElement, { data: Proposta
                 style={{
                   position: 'absolute',
                   left: '50%',
-                  top: `${mm(127)}px`,
+                  top: `${mm(140)}px`,
                   transform: 'translate(-50%, -50%)',
-                  width: `${mm(100)}px`,
+                  width: `${mm(70)}px`,
                   height: 'auto',
                   display: 'block',
                   zIndex: 5,
